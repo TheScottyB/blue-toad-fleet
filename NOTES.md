@@ -110,7 +110,6 @@ another state."
 - Friday 8:00 PM absentee cutoff
 - Bid rule: max ≈ 35–40% of low-mid resale; all-in = bid × 1.15 fee × tax
 - Categories: breweriana, railroad, advertising, travel posters, stoneware, Native American, vintage toys, cameras
-- Illinois context: Multi-Board 7.0 ¶10 attorney review and ¶12 inspection notice both run five business days from acceptance (unrelated to this project, retained from the earlier direction)
 
 ## Built so far
 
@@ -121,9 +120,32 @@ another state."
 - `src/appraiser` — two-tier model routing (Flash Lite triage / 3.6 Flash appraisal), Vertex structured-output schemas, and system prompts that forbid inventing a price or inferring an unseen mark. 24 tests.
 - `src/gate` — the Gate console. A pure state-to-HTML renderer, zero dependencies, so the same function serves the credential-free demo, the tests, and the Cloud Run app. 17 tests including XSS escaping and tag balance.
 - `demo/build_console.py` — renders the console from seeded data. `make console`.
+- `src/intake` — gallery drop parsing, fan-out planning, previous-caption context carry so
+  uncaptioned extra angles are recognised rather than invented as new lots. 19 tests.
 - `docs/BROKER.md` — credential proxy design, written before the code, with an honest bounds table.
 
-**95 tests green.** Verified from a clean extract.
+**126 tests green.** Verified from a clean extract.
+
+## Next, in order — from the day-2 audit
+
+**The schedule is now the problem, not the design.** Zero lines have touched Vertex.
+Roughly 400 lines of schema and prompt sit on an integration nobody has proven, and the
+rules-compliance risk (API still on `gemini-3-flash-preview`) is still open.
+
+| By | Must be true |
+|---|---|
+| **Aug 20** | One real Vertex call from `threebatdrone-prod-420` on a 3.5+ model returning valid structured output against `APPRAISAL_SCHEMA` for one real photo. Until this exists nothing else is real. |
+| Aug 21 | Photos in a GCS bucket; one Cloud Run service deployed and invoked. |
+| Aug 22 | Pub/Sub topic + subscription + dead-letter; Appraiser consuming; Firestore writes; idempotency proven by replaying a message. |
+| Aug 23 | Full fan-out over a real gallery at real scale — quota, concurrency, timeouts and cost surprises only appear at hundreds of photos. |
+| Aug 24 | **Mid-gate.** Gate console served from Cloud Run against real Firestore; one Gmail draft created for real. |
+
+**Cut rule, decided in advance:** if the Aug 20 Vertex call isn't done by end of Aug 20,
+the Broker stays design-only permanently and the README says so. `docs/BROKER.md` already
+earns most of the architecture credit; shipping it half-built is worse than the document alone.
+
+**Still on the calendar and previously dropped:** the public write-up (draft Aug 26) and the
+hashtag post (Aug 28). Stage Three bonus points are scored, not decorative.
 
 ## Open items
 

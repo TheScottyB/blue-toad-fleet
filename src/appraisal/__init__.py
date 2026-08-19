@@ -43,7 +43,7 @@ _CONF_GAP = {
 
 
 class QuestionKind(str, Enum):
-    """Ordered roughly by how much of the sheet the answer repairs."""
+    """Roughly ordered by reach. Breadth dominates in practice; this is a tiebreak."""
     LOT_GROUPING = "lot_grouping"   # are these N photos one lot or N lots?
     SCOPE = "scope"                 # whole shelf, or just the crock?
     MARK = "mark"                   # is there a maker's mark I can't see?
@@ -76,6 +76,11 @@ class Appraisal:
         return _CONF_GAP[self.confidence]
 
 
+# Kinds whose questions are about a specific cluster of photos, not a whole
+# category. Two unrelated shelves of stoneware are two questions, not one.
+_CLUSTER_SCOPED = frozenset({QuestionKind.LOT_GROUPING, QuestionKind.SCOPE})
+
+
 @dataclass(frozen=True)
 class Question:
     kind: QuestionKind
@@ -85,10 +90,27 @@ class Question:
     value_at_stake: float = 0.0
     confidence_gap: float = 0.5
     wants_photo: bool = False
+    cluster_id: str | None = None
+
+    @property
+    def merge_key(self) -> tuple:
+        """
+        How questions collapse together for asking.
+
+        Distinct from rule_key on purpose. "Is there a mark on the base?" asked
+        of nine crocks is one question about nine lots. But "are these six
+        photos one lot?" asked of two different shelves is two questions —
+        merging them produces a prompt naming one shelf while covering both,
+        which is unanswerable, and the single answer would silently govern both.
+        """
+        if self.kind in _CLUSTER_SCOPED:
+            return (self.kind.value, self.category,
+                    self.cluster_id or self.lot_ids[0] if self.lot_ids else "")
+        return (self.kind.value, self.category)
 
     @property
     def rule_key(self) -> tuple[str, str]:
-        """Answers generalise by (kind, category). This is the memory key."""
+        """How an answer generalises into memory. Always (kind, category)."""
         return (self.kind.value, self.category)
 
     @property
@@ -98,8 +120,8 @@ class Question:
 
         Lots affected drives it — a grouping question covering six photos is
         worth more than a condition question on one. Value at stake and the
-        confidence gap scale it. A log-ish damping on value keeps one
-        expensive lot from monopolising the queue.
+        confidence gap scale it. A square-root damping on value keeps
+        one expensive lot from monopolising the queue.
         """
         breadth = len(self.lot_ids)
         value = 1.0 + (self.value_at_stake ** 0.5) / 10.0
@@ -144,11 +166,13 @@ def group(questions: Iterable[Question]) -> list[Question]:
     "Is there a mark on the base?" asked of nine pieces of stoneware is one
     question about nine lots, not nine questions.
     """
-    merged: dict[tuple[str, str], Question] = {}
+    merged: dict[tuple, Question] = {}
+    bases: dict[tuple, str] = {}
     for q in questions:
-        key = q.rule_key
+        key = q.merge_key
         if key not in merged:
             merged[key] = q
+            bases[key] = q.prompt
             continue
         prev = merged[key]
         lots = tuple(dict.fromkeys(prev.lot_ids + q.lot_ids))
@@ -158,8 +182,8 @@ def group(questions: Iterable[Question]) -> list[Question]:
             value_at_stake=prev.value_at_stake + q.value_at_stake,
             confidence_gap=max(prev.confidence_gap, q.confidence_gap),
             wants_photo=prev.wants_photo or q.wants_photo,
-            prompt=prev.prompt if len(lots) == len(prev.lot_ids)
-            else f"{prev.prompt} ({len(lots)} lots)",
+            prompt=(bases[key] if len(lots) == 1
+                    else f"{bases[key]} ({len(lots)} lots)"),
         )
     return list(merged.values())
 

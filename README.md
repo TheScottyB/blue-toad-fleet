@@ -9,6 +9,22 @@ Built for the All Things Agentic Hackathon, August 2026.
 
 ---
 
+## Status — day 2 of 13
+
+| Component | State |
+|---|---|
+| Bid math, priority, allocation, auto-send | **Built** — `src/bidmath`, tested |
+| Intake clarification queue + cross-cycle memory | **Built** — `src/appraisal`, tested |
+| Appraiser routing, schemas, prompts | **Built** — `src/appraiser`, tested |
+| Gallery drop parsing and fan-out planning | **Built** — `src/intake`, tested |
+| Gate console renderer | **Built** — `src/gate`, tested |
+| Credential-free demos | **Built** — `make demo`, `make cycles`, `make console` |
+| Credential broker | **Designed** — [docs/BROKER.md](docs/BROKER.md), not implemented |
+| Vertex client, Cloud Run deploy, Pub/Sub, Firestore | **Planned** |
+| Watcher, Comps, ledger | **Planned** |
+
+Nothing below is described as working unless this table says it is.
+
 ## Try it in 30 seconds — no GCP project, no OAuth, no API keys
 
 ```bash
@@ -23,7 +39,7 @@ split, refused lots, and the allocated sheet against a budget cap. This is the
 same code path that runs in production downstream of the Appraiser.
 
 ```bash
-make test    # 25 unit tests over the bid math
+make test    # 123 unit tests
 ```
 
 ## The problem
@@ -47,14 +63,22 @@ All of it done by hand, on a deadline someone else sets.
 | Component | Job |
 |---|---|
 | **Watcher** | Cloud Scheduler job polling a Gmail label for the auction announcement. Opens a cycle, pings Slack, schedules the Friday nag. |
-| **Intake** | Eventarc on a GCS bucket. Staff drop the gallery export; Intake fans out one Pub/Sub message per photo. |
+| **Intake** | Eventarc on a GCS bucket. Staff drop the saved gallery page; Intake fans out one Pub/Sub message per photo. |
 | **Appraiser** | ADK + Gemini 3.5 multimodal. Identification, category, condition, fit score. Idempotent on `(cycle, photo)`. |
-| **Comps** | Own sales history + eBay Browse + Gemini with Google Search grounding. Emits range, confidence, source count, and a `no external comp` flag. |
+| **Comps** | *Planned.* Own sales history plus Gemini with Google Search grounding, run only on lots confident enough to price. Everything else emits `no external comp — human pricing required`. |
 | **Bidder** | The bid math in [`src/bidmath`](src/bidmath/__init__.py). Priority, pricing, greedy allocation against a budget cap. |
 | **Gate** | Review, trim, approve → Gmail draft. Lots at or under a configured all-in threshold send without a human. |
 | **Broker** | Credential proxy. Agents hold no tokens. See [docs/BROKER.md](docs/BROKER.md). |
 
-## Two design decisions worth explaining
+## Model routing
+
+Two tiers, deliberately. **Gemini 3.5 Flash Lite** triages all ~428 photos —
+a wide fan-out is a throughput problem, and Flash Lite runs it for about
+thirty cents. **Gemini 3.6 Flash** appraises the ~60 survivors, where judgment
+matters. One model for both would waste money on the first pass or accuracy on
+the second. A full cycle costs roughly **$0.64**.
+
+## Three design decisions worth explaining
 
 **Pricing is advisory; triage is the product.** Sorting hundreds of photos into
 categorised candidates with condition notes is what a multimodal model is
@@ -63,6 +87,15 @@ photograph is what it is worst at — and the shop owner knows the market better
 than the model does. So lots without an external comp are **not priced**. They
 are surfaced with `no external comp — human pricing required`. Refusing to
 guess is a feature.
+
+**The clarification loop is the point.** An earlier attempt at this pipeline
+produced an unusable spreadsheet because the agent guessed where it should have
+asked. Errors here are asymmetric — one wrong row in sixty costs trust in the
+whole sheet, not a sixtieth of it. So the Appraiser emits ranked, grouped,
+hard-capped questions wherever a determining attribute isn't visible, and
+answers are promoted to standing rules so the same question isn't asked every
+fortnight. Questions never block: at the cutoff the sheet ships with unanswered
+rows flagged.
 
 **Nothing scrapes the auction site.** AuctionZip returns 403 to automated
 requests, and this repo contains no scraper of anyone. Ingestion is a
@@ -101,10 +134,10 @@ Secret Manager · Cloud KMS · Cloud Trace
 ## Deploying for real
 
 See [`infra/deploy.sh`](infra/deploy.sh). You will need: a GCP project with
-billing, Vertex AI enabled, and a Gmail OAuth client. **Note:** an OAuth app
-left in *Testing* publishing status issues refresh tokens that expire every 7
-days. For anything beyond a demo, install as an *Internal* app inside a Google
-Workspace organisation.
+billing, Vertex AI enabled, and a Gmail OAuth client whose publishing status is
+**In production** — verification is not required to publish, and the 100-user
+cap on unverified apps is irrelevant for a single operator. The 7-day refresh
+token expiry applies only to apps left in *Testing* status.
 
 ## Disclosure
 

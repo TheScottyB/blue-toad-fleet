@@ -74,6 +74,7 @@ def main(cycle: str = "2026-08-22", prior_rules: bool = True) -> int:
         summary=summarize(decisions), budget_cap=BUDGET_CAP,
         auto_send_threshold=AUTO_SEND,
         captions={l.lot_id: l.caption for l in lots},
+        illustrative=True, lots_total=61,
     )
 
     OUT.mkdir(exist_ok=True)

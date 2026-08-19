@@ -27,6 +27,8 @@ class CycleView:
     auto_send_threshold: float
     captions: dict[str, str] = field(default_factory=dict)
     deadline: str = "Friday 8:00 PM"
+    illustrative: bool = False
+    lots_total: int | None = None
 
 
 _CSS = """
@@ -164,10 +166,11 @@ def _sheet_block(v: CycleView) -> str:
 
 def render_console(v: CycleView) -> str:
     s = v.summary
+    of_total = f" of {v.lots_total}" if v.lots_total else ""
     used = (s.committed_all_in / v.budget_cap * 100) if v.budget_cap else 0
     stats = [
         ("ok" if v.photos_ingested else "", f"<b>{v.photos_ingested}</b> photos ingested"),
-        ("", f"<b>{s.total_lots}</b> lots appraised"),
+        ("", f"<b>{s.total_lots}</b>{of_total} lots appraised"),
         ("warn" if v.queue.asked else "ok", f"<b>{len(v.queue.asked)}</b> questions"),
         ("ok" if v.queue.auto_answered else "",
          f"<b>{len(v.queue.auto_answered)}</b> from memory"),
@@ -178,12 +181,20 @@ def render_console(v: CycleView) -> str:
     ]
     stat_html = "".join(f'<span class="stat {c}">{t}</span>' for c, t in stats)
 
+    banner = (
+        '<div style="background:var(--card);border:1px solid var(--amber);'
+        'border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:13px;'
+        'color:var(--amber)"><b>Illustrative cycle.</b> Seeded appraisals and '
+        'comps; the decision code, ranking and memory are real.</div>'
+        if v.illustrative else "")
+
     return f"""<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Blue Toad Fleet &mdash; {escape(v.cycle_id)}</title>
 <style>{_CSS}</style></head><body><div class="wrap">
 <header>
+  {banner}
   <div class="eyebrow">Blue Toad Fleet &middot; Gate console</div>
   <h1>Cycle {escape(v.cycle_id)}</h1>
   <p class="sub">Sale {escape(v.auction_date)} &middot; absentee cutoff

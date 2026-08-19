@@ -124,3 +124,17 @@ class TestFraming:
 
     def test_states_that_questions_do_not_block(self):
         assert "do not block" in render_console(_view())
+
+
+class TestIllustrativeBanner:
+    def test_banner_absent_by_default(self):
+        assert "Illustrative cycle" not in render_console(_view())
+
+    def test_banner_present_when_flagged(self):
+        v = _view(); v.illustrative = True
+        assert "Illustrative cycle" in render_console(v)
+        assert "the decision code, ranking and memory are real" in render_console(v)
+
+    def test_partial_lot_count_is_disclosed(self):
+        v = _view(); v.lots_total = 61
+        assert "of 61 lots appraised" in render_console(v)

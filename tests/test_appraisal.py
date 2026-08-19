@@ -190,3 +190,60 @@ class TestTwoCycleDecay:
             rules += learn([(x, "a") for x in r.asked], cycle=f"c{i}")
         assert counts[0] > counts[1]
         assert counts[1] == counts[2] == counts[3], "should settle, not hit zero"
+
+
+class TestMergeKeyVsRuleKey:
+    """
+    Regression: rule_key was doing double duty as both the merge key and the
+    memory key. Two unrelated stoneware shelves collapsed into one prompt that
+    named one shelf while covering both — unanswerable, and the single answer
+    would have been promoted to a rule governing all future stoneware grouping.
+    """
+
+    def _cluster(self, cid, lots, kind=QuestionKind.LOT_GROUPING):
+        return Question(kind=kind, category="stoneware",
+                        prompt=f"Shelf {cid}: one lot or {len(lots)}?",
+                        lot_ids=tuple(lots), value_at_stake=300.0,
+                        confidence_gap=1.0, cluster_id=cid)
+
+    def test_distinct_clusters_stay_distinct(self):
+        out = group([self._cluster("A", ["a1", "a2", "a3"]),
+                     self._cluster("B", ["b1", "b2", "b3"])])
+        assert len(out) == 2
+        for x in out:
+            assert len(x.lot_ids) == 3
+
+    def test_same_cluster_still_merges(self):
+        out = group([self._cluster("A", ["a1", "a2"]), self._cluster("A", ["a3"])])
+        assert len(out) == 1
+        assert sorted(out[0].lot_ids) == ["a1", "a2", "a3"]
+
+    def test_scope_is_also_cluster_scoped(self):
+        out = group([self._cluster("A", ["a1"], QuestionKind.SCOPE),
+                     self._cluster("B", ["b1"], QuestionKind.SCOPE)])
+        assert len(out) == 2
+
+    def test_object_kinds_still_merge_by_category(self):
+        mark = lambda l: Question(kind=QuestionKind.MARK, category="stoneware",
+                                  prompt="Mark on the base?", lot_ids=(l,),
+                                  value_at_stake=100.0, confidence_gap=0.7)
+        out = group([mark("a"), mark("b"), mark("c")])
+        assert len(out) == 1 and len(out[0].lot_ids) == 3
+
+    def test_memory_still_generalises_across_clusters(self):
+        # One answer about shelf A must still suppress shelf B next cycle:
+        # rule_key stays (kind, category) even though merge_key does not.
+        a = self._cluster("A", ["a1", "a2"])
+        rules = learn([(a, "whole shelf")], cycle="c1")
+        r = build_queue([self._cluster("B", ["b1", "b2"])], rules)
+        assert r.asked == [] and len(r.auto_answered) == 1
+
+    def test_prompt_suffix_does_not_stack(self):
+        out = group([self._cluster("A", ["a1"]), self._cluster("A", ["a2"]),
+                     self._cluster("A", ["a3"])])
+        assert out[0].prompt.count("lots)") == 1
+        assert "(3 lots)" in out[0].prompt
+
+    def test_single_lot_keeps_the_bare_prompt(self):
+        out = group([self._cluster("A", ["a1"])])
+        assert "lots)" not in out[0].prompt
