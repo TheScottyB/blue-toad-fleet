@@ -39,7 +39,7 @@ split, refused lots, and the allocated sheet against a budget cap. This is the
 same code path that runs in production downstream of the Appraiser.
 
 ```bash
-make test    # 126 unit tests
+make test    # 132 unit tests
 ```
 
 ## The problem
