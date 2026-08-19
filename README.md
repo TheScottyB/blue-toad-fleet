@@ -45,18 +45,24 @@ make test    # 126 unit tests
 ## The problem
 
 Richmond General, a resale shop in Richmond, Illinois, buys inventory from Blue
-Toad Auctions — a Wisconsin auction house a few miles over the state line — every
-two weeks. Per cycle, from the shop's own tracker:
+Toad Auctions — a Wisconsin auction house a couple of miles over the state
+line, close enough to walk, far enough to be in another state. The July 2026
+cycle, from the shop's own prep:
 
-- **~428 gallery photos** to review
-- **~61 candidate lots** shortlisted
-- **~17 absentee bids** placed
-- **~$1,820 max / ~$2,205 all-in** committed
+- **428 gallery photos** reviewed by hand
+- **88 lots** worked up on the full bid sheet — 24 A-priority, max bids
+  summing to **~$5,945**
+- trimmed to a plan of **~61 candidates / 17 absentee bids / ~$1,820 max
+  (~$2,205 all-in)**
 - Hard cutoff: **Friday 8:00 PM**
 - Bid rule: **max ≈ 35–40% of low-mid resale**, all-in = bid × 1.15 absentee
   fee × tax
 
-All of it done by hand, on a deadline someone else sets.
+And that cycle, none of it was submitted. The shop has exactly one operator;
+the auction ran on a Saturday, walking distance from the store, and the store
+had to stay open. The prep was finished — the bids never went out. That last
+mile, one person who cannot be in two places, is the friction this fleet
+removes.
 
 ## What the fleet does
 

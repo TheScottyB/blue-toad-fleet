@@ -101,12 +101,23 @@ README, the video, the write-up and the Devpost description — get them right o
 auction house in Genoa City, Wisconsin — close enough to walk, far enough to be in
 another state."
 
-## Real numbers (from the business's tracker)
+## Real numbers (July 2026 cycle — prepped by hand, not executed)
+
+Two sets of figures exist; both are real, and they are different documents.
+The bid sheet (`BlueToad_2026-07-11_BidSheet.xlsx`, committed to the private
+repo 2026-07-04) is the **full prep**: 88 lots (24 A / 43 B / 21 C), a Max Bid
+column summing to ~$5,945, and all 452 gallery photos captioned with
+predictions. The tracker's figures — 61 candidates, 17 A-priority bids,
+~$1,820 max / ~$2,205 all-in — are the **trimmed plan**. Neither was executed:
+no bid, absentee, or confirmation email exists anywhere in the operator's
+mailbox for Jun 20 – Jul 20 2026 (searched 2026-08-19, search proven live
+against controls), and the operator confirms he was keeping the store open
+that Saturday. The sheet's ground-truth columns (Staff ID Correct / Value
+Check / Actual Hammer) are 0/452 — real captions, real predictions, complete
+bid sheet prepared; the cycle was not executed, and Actual Hammer cannot be
+filled for it.
 
 - ~428 gallery photos per cycle
-- 61 candidate lots shortlisted
-- 17 A-priority absentee bids
-- ~$1,820 max / ~$2,205 all-in committed
 - Friday 8:00 PM absentee cutoff
 - Bid rule: max ≈ 35–40% of low-mid resale; all-in = bid × 1.15 fee × tax
 - Categories: breweriana, railroad, advertising, travel posters, stoneware, Native American, vintage toys, cameras
@@ -157,7 +168,7 @@ hashtag post (Aug 28). Stage Three bonus points are scored, not decorative.
 | **Switch AI Studio / API off `gemini-3-flash-preview` to a 3.5+ model** | Scott | **Open — rules compliance** |
 | Confirm 3.5+/3.6 available in Vertex for the chosen region | Scott | Open |
 | Blue Toad auction date — does one fall in window? | Scott | Open (AuctionZip blocks automated checks) |
-| Prior-cycle results / sold prices | Scott | Looking — a screenshot is fine, it's the ingestion path |
+| Prior-cycle results / sold prices | Scott | Open — the July 11 bids were never submitted (Gmail searched 2026-08-19), so no invoice exists and that cycle's Actual Hammer column is unfillable. Ground truth needs a future executed cycle |
 | The four or five recurring intake ambiguities | Scott | Open — highest-value input |
 | ~~Contents of private `rg-auction-pipeline`~~ | Scott | **Done 2026-08-19** — read in full: a working pipeline (42 KB Python, 452-row workbook, scheduled watch task), not notes. Disclosure rewritten; structural comparison supports "no code copied" |
 | Staff hours-per-cycle number | Scott | Open — needed for the video's opening claim |
