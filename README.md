@@ -39,7 +39,7 @@ split, refused lots, and the allocated sheet against a budget cap. This is the
 same code path that runs in production downstream of the Appraiser.
 
 ```bash
-make test    # 123 unit tests
+make test    # 126 unit tests
 ```
 
 ## The problem
@@ -76,7 +76,13 @@ Two tiers, deliberately. **Gemini 3.5 Flash Lite** triages all ~428 photos —
 a wide fan-out is a throughput problem, and Flash Lite runs it for about
 thirty cents. **Gemini 3.6 Flash** appraises the ~60 survivors, where judgment
 matters. One model for both would waste money on the first pass or accuracy on
-the second. A full cycle costs roughly **$0.64**.
+the second. A full cycle costs roughly **$1.50–2.00**: a real appraisal call
+ran 2,149 tokens in and 917 out — 589 of them thinking tokens, which bill as
+output and roughly double the naive per-call estimate.
+
+The model endpoint is pinned separately from `CLOUD_RUN_REGION` because it has
+to be: both models 404 on `us-central1` and serve only from the `global`
+endpoint (verified 2026-08-19), so `.env.example` sets `VERTEX_LOCATION=global`.
 
 ## Three design decisions worth explaining
 
