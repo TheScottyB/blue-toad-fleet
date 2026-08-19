@@ -16,6 +16,34 @@ CONFIDENCE = ["none", "low", "medium", "high"]
 QUESTION_KINDS = ["lot_grouping", "scope", "mark", "condition", "appetite"]
 
 
+def to_vertex(node):
+    """
+    Translate a JSON-Schema node into a Vertex ``responseSchema``.
+
+    Vertex accepts an OpenAPI 3.0 subset: union types such as
+    ``{"type": ["string", "null"]}`` are rejected and must be expressed as
+    ``{"type": "string", "nullable": True}``. Proven against the live endpoint
+    2026-08-19 — the schemas below 400 without this translation. Returns a new
+    structure; the input is never mutated.
+    """
+    if not isinstance(node, dict):
+        return node
+    out = {}
+    for k, v in node.items():
+        if k == "type" and isinstance(v, list):
+            non_null = [t for t in v if t != "null"]
+            out["type"] = non_null[0] if non_null else "string"
+            if "null" in v:
+                out["nullable"] = True
+        elif k == "properties":
+            out["properties"] = {pk: to_vertex(pv) for pk, pv in v.items()}
+        elif k == "items":
+            out["items"] = to_vertex(v)
+        else:
+            out[k] = v
+    return out
+
+
 TRIAGE_SCHEMA = {
     "type": "object",
     "properties": {

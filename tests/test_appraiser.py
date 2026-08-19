@@ -5,7 +5,7 @@ from src.appraiser import (
     build_appraisal_prompt, build_triage_prompt, model_for,
 )
 from src.appraiser.routing import estimate_cost_usd
-from src.appraiser.schema import CATEGORIES, CONFIDENCE, QUESTION_KINDS
+from src.appraiser.schema import CATEGORIES, CONFIDENCE, QUESTION_KINDS, to_vertex
 
 
 class TestRouting:
@@ -66,6 +66,52 @@ class TestSchemas:
     def test_question_items_are_fully_specified(self):
         q = APPRAISAL_SCHEMA["properties"]["questions"]["items"]
         assert set(q["required"]) == set(q["properties"])
+
+
+class TestToVertex:
+    # Vertex responseSchema is an OpenAPI 3.0 subset: it rejects union types
+    # like {"type": ["string", "null"]} and wants nullable: true instead.
+    # Proven live 2026-08-19 — the unconverted schema 400s.
+
+    def test_union_typed_fields_become_nullable(self):
+        v = to_vertex(APPRAISAL_SCHEMA)
+        for f in ("maker", "period"):
+            assert v["properties"][f]["type"] == "string"
+            assert v["properties"][f]["nullable"] is True
+
+    def test_no_union_types_survive_anywhere(self):
+        def walk(node):
+            if isinstance(node, dict):
+                assert not isinstance(node.get("type"), list), node
+                for child in node.values():
+                    walk(child)
+            elif isinstance(node, list):
+                for child in node:
+                    walk(child)
+        walk(to_vertex(APPRAISAL_SCHEMA))
+
+    def test_recurses_into_array_items(self):
+        nested = {"type": "array",
+                  "items": {"type": "object",
+                            "properties": {"note": {"type": ["string", "null"]}}}}
+        v = to_vertex(nested)
+        assert v["items"]["properties"]["note"] == {"type": "string",
+                                                    "nullable": True}
+
+    def test_untouched_fields_pass_through(self):
+        v = to_vertex(APPRAISAL_SCHEMA)
+        assert v["properties"]["category"]["enum"] == CATEGORIES
+        assert v["required"] == APPRAISAL_SCHEMA["required"]
+        q = v["properties"]["questions"]["items"]
+        assert set(q["required"]) == set(q["properties"])
+
+    def test_schema_without_unions_converts_unchanged(self):
+        assert to_vertex(TRIAGE_SCHEMA) == TRIAGE_SCHEMA
+
+    def test_does_not_mutate_its_input(self):
+        before = repr(APPRAISAL_SCHEMA)
+        to_vertex(APPRAISAL_SCHEMA)
+        assert repr(APPRAISAL_SCHEMA) == before
 
 
 class TestPrompts:
