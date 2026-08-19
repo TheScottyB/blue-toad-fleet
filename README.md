@@ -97,10 +97,10 @@ answers are promoted to standing rules so the same question isn't asked every
 fortnight. Questions never block: at the cutoff the sheet ships with unanswered
 rows flagged.
 
-**Nothing scrapes the auction site.** AuctionZip returns 403 to automated
-requests, and this repo contains no scraper of anyone. Ingestion is a
-sanctioned boundary: staff export the gallery once per cycle into a bucket, and
-everything after that is unattended.
+**This pipeline does not fetch the auction site.** AuctionZip returns 403 to
+automated requests; ingestion is a sanctioned bucket drop instead. Staff
+export the gallery once per cycle into a bucket, and everything after that is
+unattended.
 
 ## Architecture
 
@@ -143,8 +143,11 @@ token expiry applies only to apps left in *Testing* status.
 
 All code in this repository was written between August 18 and August 31, 2026.
 
-Pre-existing work: (a) a private repository containing early notes and planning
-for this pipeline — no code was copied from it; (b) an internal
+Pre-existing work: (a) a private repository, `rg-auction-pipeline` — an
+earlier working version of this pipeline: roughly 42 KB of Python that
+assembled a 452-row bid workbook for a July 2026 auction cycle, plus a
+scheduled listing-watch task. No code was copied from it; this repository is a
+from-scratch rewrite, decomposed and tested differently. (b) an internal
 Anthropic-format skills library including a catalog classification taxonomy —
 the taxonomy is reused as configuration, no skill code is included; (c) design
 lessons on token brokering from an unrelated project. The bid math and workflow

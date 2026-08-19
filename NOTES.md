@@ -75,7 +75,7 @@ A full gallery pass costs **one to two dollars.** The $40/month GDP credits alon
 | **Appraising, not pricing** | Identification and attribution is what a multimodal model is good at, and it's a *checkable* claim. A dollar range is a market guess taken on faith. Pricing stays advisory with a visible refusal flag. |
 | **Intake clarification loop** | The prior attempt produced "a total mess" because the agent guessed where it should have asked. Errors are asymmetric — one bad row in sixty costs trust in the whole sheet. Usable output is the friction removed; a mess is friction added. |
 | **Ground truth from documents, not chant audio** | Lot numbers usually aren't spoken; "now two" after "one seventy-five" means $200; choice lots break sequence alignment. Photographed results/invoice gives ~100% instead of ~40%, in 4 hours instead of 2 days. |
-| **No AuctionZip fetching, ever** | Returns 403 to automated requests. Ingestion is a bucket drop instead. The repo contains no scraper of anyone. |
+| **No AuctionZip fetching, ever** | Returns 403 to automated requests. This pipeline does not fetch the auction site; ingestion is a sanctioned bucket drop instead. |
 | **Comps shrunk** | Own-shop history plus grounded search, only on lots confident enough to price. Retires the eBay production-key dependency. |
 | **Memory stays dumb** | Keyed lookup on (question kind, category) promoted to standing rules. No vector store — a day-plus for nothing at this data volume. |
 
@@ -159,18 +159,18 @@ hashtag post (Aug 28). Stage Three bonus points are scored, not decorative.
 | Blue Toad auction date — does one fall in window? | Scott | Open (AuctionZip blocks automated checks) |
 | Prior-cycle results / sold prices | Scott | Looking — a screenshot is fine, it's the ingestion path |
 | The four or five recurring intake ambiguities | Scott | Open — highest-value input |
-| Contents of private `rg-auction-pipeline` | Scott | Open — affects the disclosure statement |
+| ~~Contents of private `rg-auction-pipeline`~~ | Scott | **Done 2026-08-19** — read in full: a working pipeline (42 KB Python, 452-row workbook, scheduled watch task), not notes. Disclosure rewritten; structural comparison supports "no code copied" |
 | Staff hours-per-cycle number | Scott | Open — needed for the video's opening claim |
 | GEAR signup (35 monthly no-cost learning credits) | Scott | Optional, free |
 | ~~Google Cloud credit form~~ | Scott | **Submitted Aug 19.** Not a dependency — see cost estimate. |
 
 ## Disclosure (for README and Devpost)
 
-> All code in this repository was written between August 18 and August 31, 2026. Pre-existing work: (a) a private repository containing early notes and planning for this pipeline — no code was copied from it; (b) an internal Anthropic-format skills library including a catalog classification taxonomy — the taxonomy is reused as configuration, no skill code is included; (c) design lessons on token brokering from an unrelated project. The bid math and workflow follow the business's own documented process.
+> All code in this repository was written between August 18 and August 31, 2026. Pre-existing work: (a) a private repository, `rg-auction-pipeline` — an earlier working version of this pipeline: roughly 42 KB of Python that assembled a 452-row bid workbook for a July 2026 auction cycle, plus a scheduled listing-watch task. No code was copied from it; this repository is a from-scratch rewrite, decomposed and tested differently. (b) an internal Anthropic-format skills library including a catalog classification taxonomy — the taxonomy is reused as configuration, no skill code is included; (c) design lessons on token brokering from an unrelated project. The bid math and workflow follow the business's own documented process.
 >
 > Built solo, in 13 days, by one person.
 
-**Conditional:** if `rg-auction-pipeline` contains working code intended for porting, this statement is false and must be rewritten before Day 2.
+**Conditional fired 2026-08-19:** `rg-auction-pipeline` was read in full — it contains a working pipeline, not "early notes and planning." The disclosure above is the rewritten version; the README carries the same text. A structural comparison found this repo independently written and differently decomposed, so "no code was copied" stands as literally true.
 
 ## Process note
 
