@@ -1,0 +1,14 @@
+[
+  {"lot_id":"BT-014","caption":"Hamm's Beer lighted back bar sign, rotating motion, 1960s","category":"breweriana","fit_score":0.92,"condition_penalty":0.10,"comp":{"low":180,"high":260,"source_count":4,"confidence":"high"}},
+  {"lot_id":"BT-021","caption":"Chicago & North Western Railway brass builder's plate","category":"railroad","fit_score":0.88,"condition_penalty":0.05,"comp":{"low":140,"high":210,"source_count":3,"confidence":"high"}},
+  {"lot_id":"BT-033","caption":"Red Wing 5 gallon salt glaze crock, wing mark, hairline","category":"stoneware","fit_score":0.81,"condition_penalty":0.25,"comp":{"low":120,"high":190,"source_count":3,"confidence":"medium"}},
+  {"lot_id":"BT-047","caption":"Northwest Airlines travel poster, Japan, linen backed","category":"travel posters","fit_score":0.86,"condition_penalty":0.08,"comp":{"low":300,"high":520,"source_count":2,"confidence":"medium"}},
+  {"lot_id":"BT-052","caption":"Argus C3 'Brick' 35mm rangefinder with case","category":"cameras","fit_score":0.64,"condition_penalty":0.15,"comp":{"low":35,"high":60,"source_count":3,"confidence":"high"}},
+  {"lot_id":"BT-058","caption":"Marx tin litho wind-up circus truck, no key","category":"vintage toys","fit_score":0.72,"condition_penalty":0.20,"comp":{"low":70,"high":110,"source_count":2,"confidence":"medium"}},
+  {"lot_id":"BT-061","caption":"Hand woven basket, unmarked, possibly Southwest origin","category":"native american","fit_score":0.78,"condition_penalty":0.10,"comp":{"low":null,"high":null,"source_count":0,"confidence":"none"}},
+  {"lot_id":"BT-066","caption":"Coca-Cola porcelain button sign, 16 inch, repainted","category":"advertising","fit_score":0.83,"condition_penalty":0.45,"comp":{"low":200,"high":300,"source_count":4,"confidence":"high"}},
+  {"lot_id":"BT-072","caption":"Pabst Blue Ribbon reverse painted glass sign","category":"breweriana","fit_score":0.89,"condition_penalty":0.05,"comp":{"low":90,"high":150,"source_count":3,"confidence":"high"}},
+  {"lot_id":"BT-079","caption":"Box lot, assorted kitchen utensils and linens","category":"unsorted","fit_score":0.18,"condition_penalty":0.0,"comp":{"low":10,"high":25,"source_count":1,"confidence":"low"}},
+  {"lot_id":"BT-084","caption":"Milwaukee Road dining car creamer, Syracuse china","category":"railroad","fit_score":0.79,"condition_penalty":0.05,"comp":{"low":45,"high":75,"source_count":2,"confidence":"medium"}},
+  {"lot_id":"BT-091","caption":"Unmarked stoneware jug, cobalt decoration, chip to lip","category":"stoneware","fit_score":0.69,"condition_penalty":0.30,"comp":{"low":null,"high":null,"source_count":0,"confidence":"none"}}
+]

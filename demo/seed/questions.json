@@ -1,0 +1,16 @@
+[
+  {"kind":"lot_grouping","category":"stoneware","prompt":"Six photos show what may be one shelf of crocks or six separate lots. One lot or six?","lot_ids":["BT-033","BT-091","BT-092","BT-093","BT-094","BT-095"],"value_at_stake":640,"confidence_gap":1.0,"wants_photo":false},
+  {"kind":"scope","category":"advertising","prompt":"Caption reads 'wall of signs'. Does the lot include the whole wall or just the marked piece?","lot_ids":["BT-066","BT-067"],"value_at_stake":520,"confidence_gap":0.7,"wants_photo":false},
+  {"kind":"appetite","category":"native american","prompt":"No prior RG purchases in this category. Surface these lots or skip the category?","lot_ids":["BT-061"],"value_at_stake":200,"confidence_gap":1.0,"wants_photo":false},
+  {"kind":"mark","category":"stoneware","prompt":"Base not visible. Is there a maker's mark? A photo of the underside would settle it.","lot_ids":["BT-033"],"value_at_stake":190,"confidence_gap":0.7,"wants_photo":true},
+  {"kind":"mark","category":"breweriana","prompt":"Can't read the lower text band on the sign. Photo of the bottom edge?","lot_ids":["BT-072"],"value_at_stake":150,"confidence_gap":0.7,"wants_photo":true},
+  {"kind":"condition","category":"railroad","prompt":"Reverse of the builder's plate not shown. Any pitting or repair?","lot_ids":["BT-021"],"value_at_stake":210,"confidence_gap":0.35,"wants_photo":true},
+  {"kind":"condition","category":"travel posters","prompt":"Linen backing claimed in caption but edges not visible. Confirm?","lot_ids":["BT-047"],"value_at_stake":520,"confidence_gap":0.35,"wants_photo":false},
+  {"kind":"scope","category":"vintage toys","prompt":"'Group of tin toys' — how many pieces are in the lot?","lot_ids":["BT-058"],"value_at_stake":110,"confidence_gap":0.7,"wants_photo":false},
+  {"kind":"lot_grouping","category":"cameras","prompt":"Three camera photos, possibly the same body from different angles. One lot or three?","lot_ids":["BT-052","BT-053","BT-054"],"value_at_stake":180,"confidence_gap":1.0,"wants_photo":false},
+  {"kind":"appetite","category":"unsorted","prompt":"Twelve box lots with no usable captions. Worth appraising or skip box lots entirely?","lot_ids":["BT-079","BT-080","BT-081"],"value_at_stake":75,"confidence_gap":1.0,"wants_photo":false},
+  {"kind":"mark","category":"advertising","prompt":"Cannot tell if the button sign is original or a reproduction from this angle.","lot_ids":["BT-066"],"value_at_stake":300,"confidence_gap":0.7,"wants_photo":true},
+  {"kind":"condition","category":"stoneware","prompt":"Hairline mentioned in caption — through the wall or surface only?","lot_ids":["BT-033"],"value_at_stake":190,"confidence_gap":0.35,"wants_photo":true},
+  {"kind":"scope","category":"railroad","prompt":"'Railroadiana grouping' — single lot or does the house split these?","lot_ids":["BT-084"],"value_at_stake":75,"confidence_gap":0.7,"wants_photo":false},
+  {"kind":"condition","category":"breweriana","prompt":"Lighted sign — does it power on? House may not have tested.","lot_ids":["BT-014"],"value_at_stake":260,"confidence_gap":0.35,"wants_photo":false}
+]
