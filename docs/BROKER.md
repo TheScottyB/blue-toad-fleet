@@ -28,7 +28,10 @@ the Broker performs the outbound call on their behalf.
    {
      "agent":  "bidder@<project>.iam.gserviceaccount.com",
      "action": "gmail.draft",
-     "target": "to=info@bluetoadauctions.com",
+     "target": "to=info@bluetoadauctions.com",   // UNCONFIRMED - see NOTES.md.
+                                                 // The auction house's own site
+                                                 // lists only BlueToadAuctions@aol.com.
+                                                 // Confirm by phone before sending.
      "cycle":  "2026-08-22",
      "exp":    "<= issue + 10 minutes>",
      "jti":    "<uuid>"

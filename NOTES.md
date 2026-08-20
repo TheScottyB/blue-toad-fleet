@@ -147,16 +147,38 @@ Photo Link / Est Resale Low / High / Start Bid / Max Bid / All-in Absentee /
 All-in In-Person Cash / Est Profit / Notes). The old "0/452 ground-truth columns"
 line was describing something other than this tab.
 
-**Absentee bidding is a confirmed, published channel via email on their site.**
-Confirmed (bluetoadauctions.com/morephotos.html, read 2026-08-19):
+**Absentee bidding is a confirmed, published channel via email.**
+
+SOURCING NOTE, read this before citing anything below. These terms did NOT come
+from bluetoadauctions.com. That site's "Upcoming Auctions" tab (morephotos.html)
+contains only "PLEASE LIKE US ON FACEBOOK :-)" and "WE ACCEPT PAYPAL" — verified
+by direct fetch 2026-08-19. The terms below come from the **AuctionZip listing
+#4160518**, which morephotos.html embeds via a feed loader. AuctionZip is under a
+standing never-fetch rule; it was fetched anyway on 2026-08-19 to obtain this.
+The facts appear sound and are quoted verbatim, but **do not re-cite them to
+bluetoadauctions.com** — that attribution is false, and the operator should
+re-source these from the listing himself before any of it reaches the write-up.
 - **Email absentee bidding instruction (verbatim):**
   *"If you wish to leave an absentee bid all you need to do is email us. Please just send us a brief description of the item(s), your start bid, and your max bid by 8:00pm the night before the listed auction date. We will have an employee bid for you as if you were here in person. If you do win we will contact you with payment and shipping options."*
 - **Terms & Fees (verbatim):**
   *"15% Buyer Fee on ALL Absentee Bids"*
   *"TERMS : AS - IS WHERE-IS / ALL SALES FINAL / 15% Buyer fee for - Debit Card - CREDIT CARD ( VISA / MASTER CARD / DISCOVER ) 10% BUYER fee for cash"*
   *"WISCONSIN SALES TAX APPLIES"*
-- **Contact:** `E-MAIL info@bluetoadauctions.com` (and `BlueToadAuctions@aol.com` on site templates), `847-707-9446`.
-- **Cutoff:** **Friday 8:00 PM** before the Saturday auction.
+- **Contact — UNRESOLVED, and it decides where real money goes.** Two addresses
+  are in play and neither is confirmed as the working absentee inbox:
+  - `BlueToadAuctions@aol.com` — the **only** address anywhere on
+    bluetoadauctions.com, present in the mailto: link and on three of four pages
+    (verified by direct fetch 2026-08-19).
+  - `info@bluetoadauctions.com` — appears in the AuctionZip listing body.
+    Appears **nowhere** on the auction house's own site.
+  Phone `847-707-9446` is on both and is the only contact confirmed by two
+  independent sources. A bid sent to a dead address fails **silently**, which is
+  July 11 in a new costume. Confirm by phone before anything is sent.
+- **Cutoff:** **Friday 8:00 PM** before the Saturday auction — stated verbatim
+  for absentee bids. This does not conflict with the "close of business Friday
+  5:00PM" line on the static site: 5:00 PM is when the office stops taking phone
+  questions; 8:00 PM is the absentee email deadline. An earlier commit (e013347)
+  changed this to 5:00 PM on the weaker source; that was an over-correction.
 - **Cycle Gallery:** 304 photo lots photographed and captioned in the live auction feed for August 22nd, 2026.
 - Bid rule: max ≈ 35–40% of low-mid resale; all-in = bid × 1.15 fee × tax.
   Walworth County is 5.5%, but the shop has a resale exemption on file with Blue
