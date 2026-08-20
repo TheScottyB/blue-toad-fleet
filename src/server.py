@@ -71,6 +71,23 @@ STATE = {
 engine = AppraisalEngine()
 
 
+def cached_photo_bytes(lot_id: str) -> bytes | None:
+    """The lot's cached gallery photo, or None if the drop has no image for it."""
+    manifest_path = Path("data/aug22_gallery_4160518/manifest.json")
+    if not manifest_path.exists():
+        manifest_path = Path("/app/data/aug22_gallery_4160518/manifest.json")
+    if not manifest_path.exists():
+        return None
+
+    manifest = json.loads(manifest_path.read_text())
+    for photo in manifest["photos"]:
+        if f"BT-{photo['sequence']:03d}" != lot_id:
+            continue
+        path = Path(photo.get("local_path") or "")
+        return path.read_bytes() if path.is_file() else None
+    return None
+
+
 def get_aug22_state():
     manifest_path = Path("data/aug22_gallery_4160518/manifest.json")
     if not manifest_path.exists():
@@ -365,10 +382,18 @@ def appraise_live(payload: dict = Body(...)):
     if not lot_id:
         raise HTTPException(status_code=400, detail="Missing lot_id")
 
+    photo_bytes = cached_photo_bytes(lot_id)
+    if photo_bytes is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No cached photo for {lot_id}; cannot appraise from a caption alone.",
+        )
+
     try:
         raw_result = engine.appraise_lot(
             lot_id=lot_id,
             caption=caption,
+            image_bytes=photo_bytes,
             category_hint=category_hint,
             standing_rules=STATE["standing_rules"],
         )

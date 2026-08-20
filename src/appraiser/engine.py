@@ -25,6 +25,7 @@ except ImportError:
     GENAI_AVAILABLE = False
 
 from src.appraisal import Appraisal, Confidence, Question, QuestionKind, StandingRule
+from src.appraiser.images import assert_appraisal_grade, read_local_image
 from src.appraiser.routing import TRIAGE_MODEL, APPRAISAL_MODEL
 from src.appraiser.schema import TRIAGE_SCHEMA, APPRAISAL_SCHEMA, to_vertex
 from src.appraiser.prompts import (
@@ -113,7 +114,15 @@ class AppraisalEngine:
         category_hint: Optional[str] = None,
         standing_rules: Optional[list[StandingRule]] = None,
     ) -> dict:
-        """Execute Stage 2 detailed structured appraisal on a candidate lot."""
+        """
+        Execute Stage 2 detailed structured appraisal on a candidate lot.
+
+        The photo is checked before anything else — before the credential check,
+        so that a thumbnail fails as a thumbnail rather than as a missing client
+        when this runs offline.
+        """
+        assert_appraisal_grade(image_bytes, lot_id=lot_id)
+
         if not self.client:
             raise RuntimeError("Vertex AI client is not available.")
 
@@ -185,8 +194,7 @@ class AppraisalEngine:
         for idx, item in enumerate(photos):
             photo_id = item["photo_id"]
             caption = item.get("caption", "")
-            img_path = Path(item.get("local_path", ""))
-            img_bytes = img_path.read_bytes() if img_path.exists() else None
+            img_bytes = read_local_image(item.get("local_path"))
             prev_sum = results[-1].get("summary") if results else None
 
             try:
@@ -256,8 +264,7 @@ class AppraisalEngine:
                 lot_id = item["lot_id"]
                 caption = item.get("caption", "")
                 cat_hint = item.get("category_hint")
-                img_path = Path(item.get("local_path", ""))
-                img_bytes = img_path.read_bytes() if img_path.exists() else None
+                img_bytes = read_local_image(item.get("local_path"))
 
                 f = executor.submit(
                     self.appraise_lot,
