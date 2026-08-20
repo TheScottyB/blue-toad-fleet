@@ -76,18 +76,30 @@ anywhere this repository can verify, so it is not claimed here. What is recorded
 is the receipt (`ops/receipts/2026-07-11-blue-toad-auctions.jpeg`, in the shop's
 private inventory repo) and four items naming that sale as their source:
 
-| Lot | Item | Paid |
+| Lot | Item | Hammer |
 |---|---|---|
-| 203 | Tobacco sign | $10.00 |
+| 52 | Airplane compass | $25.00 |
+| 55 | Railroad spikes | $10.00 |
+| 203 | Tobacco sign | $30.00 |
 | 208 | Uncle Sam picture | $5.00 |
-| 55 | Railroad spikes | $30.00 |
+| 289 | Playboys | $10.00 |
 | 326 | Hanging lamp, stained glass | $10.00 |
+| 338 | Kids books | $5.00 |
+| 348 | Jewelry stands | $5.00 |
+| 359 | Lot toys | $5.00 |
+| | **Total** | **$105.00** |
+
+The receipt also settles two numbers this project depends on. The buyer's premium
+line reads $15.75 on a $105 total — exactly 15%. And the bidder is recorded
+`(EXEMPT)` with tax of $0.00 on a Wisconsin purchase, which is why
+`DEFAULT_TAX_RATE` is 0 here. `all_in_cost(105.0)` returns **$120.75**, the exact
+figure on the receipt.
 
 That is worth stating plainly because the July bid sheet carried predictions for
-three of those four lots. It is a small sample and it is not a benchmark, but it
-is real prediction against real hammer prices on real money — the only such
-evidence this project has, and it exists because the cycle was prepped even
-though the bids were never sent.
+several of these lots. Nine lots is a sample, not a benchmark, and we are not
+going to dress it up as one — but it is real prediction against real hammer
+prices on real money, and it exists because the cycle was prepped even though the
+absentee bids were never sent.
 
 ## What the fleet does
 

@@ -123,12 +123,26 @@ absence of a transaction. Four lots from that sale entered inventory, receipt
 filed at `ops/receipts/2026-07-11-blue-toad-auctions.jpeg` in the richmondgeneral
 repo:
 
-| SKU | Lot | Item | Paid | Listed |
-|---|---|---|---|---|
-| RG-0061 | 203 | TOBACCO SIGN | $10.00 | $45.00 |
-| RG-0062 | 208 | UNCLE SAM PIC | $5.00 | $32.00 |
-| RG-0065 | 55 | RAILROAD SPIKES | $30.00 | $3.00 |
-| RG-0066 | 326 | HANGING LAMP STAINED GLASS | $10.00 | (blank) |
+**Nine lots, not four** — the receipt lists the full purchase; only four became
+RG SKUs. Hammer prices, verbatim from the receipt:
+
+| Item # | Title | Hammer | RG SKU |
+|---|---|---|---|
+| 52 | AIRPLANE COMPASS | $25.00 | — |
+| 55 | RAILROAD SPIKES | $10.00 | RG-0065 |
+| 203 | TOBACCO SIGN | $30.00 | RG-0061 |
+| 208 | UNCLE SAM PIC | $5.00 | RG-0062 |
+| 289 | PLAYBOYS | $10.00 | — |
+| 326 | HANGING LAMP STAINED GLASS | $10.00 | RG-0066 |
+| 338 | KIDS BOOKS | $5.00 | — |
+| 348 | JEWELRY STANDS | $5.00 | — |
+| 359 | LOT TOYS | $5.00 | — |
+| | **ITEM TOTAL** | **$105.00** | |
+
+**DEFECT, richmondgeneral repo (not ours):** `RG-0065` records
+`acquisition_cost "30.00"` and `RG-0061` records `"10.00"`. The receipt has those
+transposed — spikes were $10, the sign was $30. Margin math on both SKUs is wrong
+until corrected.
 
 By what route those four were bought — in person, by phone, after the sale — is
 not recorded anywhere verifiable from here. **Do not assert a mechanism.** The
@@ -164,21 +178,29 @@ re-source these from the listing himself before any of it reaches the write-up.
   *"15% Buyer Fee on ALL Absentee Bids"*
   *"TERMS : AS - IS WHERE-IS / ALL SALES FINAL / 15% Buyer fee for - Debit Card - CREDIT CARD ( VISA / MASTER CARD / DISCOVER ) 10% BUYER fee for cash"*
   *"WISCONSIN SALES TAX APPLIES"*
-- **Contact — UNRESOLVED, and it decides where real money goes.** Two addresses
-  are in play and neither is confirmed as the working absentee inbox:
-  - `BlueToadAuctions@aol.com` — the **only** address anywhere on
-    bluetoadauctions.com, present in the mailto: link and on three of four pages
-    (verified by direct fetch 2026-08-19).
-  - `info@bluetoadauctions.com` — appears in the AuctionZip listing body.
-    Appears **nowhere** on the auction house's own site.
-  Phone `847-707-9446` is on both and is the only contact confirmed by two
-  independent sources. A bid sent to a dead address fails **silently**, which is
-  July 11 in a new costume. Confirm by phone before anything is sent.
+- **Contact: `info@bluetoadauctions.com` — CONFIRMED from first-party paper.**
+  The July 11 2026 receipt (`ops/receipts/2026-07-11-blue-toad-auctions.jpeg`,
+  richmondgeneral repo) is Blue Toad's own printed letterhead:
+  *Blue Toad Auctions / 200 Elizabeth Ln. / Genoa City, WI 53128 / 847-707-9446 /
+  info@bluetoadauctions.com / www.bluetoadauctions.com*. A document the business
+  handed the operator outranks both the static site and the AuctionZip listing.
+  `BlueToadAuctions@aol.com` is also real — it is the mailto: on their template
+  site — but `info@` is what the business prints. Use `info@`, keep AOL as
+  secondary. Earlier notes calling `info@` "invented" were wrong.
 - **Cutoff:** **Friday 8:00 PM** before the Saturday auction — stated verbatim
   for absentee bids. This does not conflict with the "close of business Friday
   5:00PM" line on the static site: 5:00 PM is when the office stops taking phone
   questions; 8:00 PM is the absentee email deadline. An earlier commit (e013347)
   changed this to 5:00 PM on the weaker source; that was an over-correction.
+- **The 15% is confirmed by a paid receipt, not just the listing.** Same receipt:
+  ITEM TOTAL $105 · FEE TOTAL $0 · TAX TOTAL $0.00 · PREMIUM PAID $15.75 ·
+  TOTAL PAYMENTS $120.75, "PAID IN FULL". 105 x 0.15 = 15.75 exactly.
+- **The resale exemption is confirmed applied.** The bidder line reads
+  "Bidder #31 / Scott Beilfuss (EXEMPT)" and TAX TOTAL is $0.00 on a $105
+  Wisconsin purchase. `all_in_cost(105.0)` with `DEFAULT_TAX_RATE = 0.0` returns
+  $120.75 — the exact total paid. The bid math reproduces a real receipt to the cent.
+- **He is a registered bidder — "Bidder #31".** The relationship with the house
+  exists; what has never been exercised is the EMAIL absentee path specifically.
 - **Cycle Gallery:** 304 photo lots photographed and captioned in the live auction feed for August 22nd, 2026.
 - Bid rule: max ≈ 35–40% of low-mid resale; all-in = bid × 1.15 fee × tax.
   Walworth County is 5.5%, but the shop has a resale exemption on file with Blue

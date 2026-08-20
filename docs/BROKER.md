@@ -28,10 +28,11 @@ the Broker performs the outbound call on their behalf.
    {
      "agent":  "bidder@<project>.iam.gserviceaccount.com",
      "action": "gmail.draft",
-     "target": "to=info@bluetoadauctions.com",   // UNCONFIRMED - see NOTES.md.
-                                                 // The auction house's own site
-                                                 // lists only BlueToadAuctions@aol.com.
-                                                 // Confirm by phone before sending.
+     "target": "to=info@bluetoadauctions.com",   // CONFIRMED: printed on Blue Toad's
+                                                 // own receipt letterhead, July 11 2026.
+                                                 // BlueToadAuctions@aol.com is the
+                                                 // mailto: on their template site and
+                                                 // is a valid secondary.
      "cycle":  "2026-08-22",
      "exp":    "<= issue + 10 minutes>",
      "jti":    "<uuid>"
