@@ -49,9 +49,11 @@ Capital was never the constraint — **time and visual throughput were**. The go
 Blue Toad Fleet transforms an uncataloged 450-photo gallery drop into an actionable, positive-EV absentee bid sheet through six domain-specific agent mechanisms:
 
 ### 1. The Spatial Room Graph (Reconstructing the Pole Barn)
-Auctioneers don't teleport; they walk a physical room. Blue Toad Fleet reconstructs the physical 200 Elizabeth Lane pole barn showroom (two long side walls, two center island tables, back wall hanging displays, and under-table floor space). 
-* By analyzing background tablecloth signatures (blue cloth vs. bare wood vs. concrete floor) and peripheral co-visibility on image margins (e.g. a sliver of a DiMaggio hat on the border of a Dan Marino photo), the agent links uncaptioned photos to table clusters.
-* It merges 10 loose under-table box photos into **ONE Poppy Trail estate dinnerware set** instead of 10 blind bids, and provides an interactive 2D map of the showroom floor.
+* **Why We Do It:** Auction galleries drop 450+ unlabelled photos with zero lot numbers. Treating photos as isolated images causes duplicate bids on multi-angle shots, misses multi-box estate runs, and leaves the buyer blind during Saturday's 1-hour preview window. Reconstructing the physical room solves these critical failure modes.
+* **How It Works:** Auctioneers don't teleport; they walk a physical room. Blue Toad Fleet reconstructs the physical 200 Elizabeth Lane pole barn showroom (2 Center Islands, 2 Long Side Walls, Back Wall displays, and Under-Table Floor Space):
+  * **Surface Signature Invariants:** Segments background surface textures (blue pleated vinyl vs. raw pine plywood vs. concrete slab) to determine physical room zones.
+  * **Peripheral Margin Co-Visibility:** Scans image borders for neighboring items (e.g., a sliver of a DiMaggio hat on the border of a Dan Marino photo) to anchor uncaptioned photos to table clusters.
+  * **Trajectory Clustering:** Preserves the auctioneer's physical walking path via natural sorting, merging 10 loose under-table box photos into **ONE Poppy Trail estate dinnerware set** instead of 10 blind bids and eliminating 95 duplicate multi-angle bids.
 
 ### 2. Container Lot Decomposition ("Mining for Gold")
 In rural auctions, high-margin items are buried in uncataloged plastic tubs and cardboard box lots. The agent segments container boundaries, extracts and itemizes individual high-velocity assets (such as 11–12 vintage Edison cylinder records or 1970s costume jewelry bins), while explicitly masking surrounding table clutter (clocks, bobbleheads) to prevent dirty comps.

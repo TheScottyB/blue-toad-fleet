@@ -65,9 +65,11 @@ Capital is not the constraint — **time and visual throughput are**. The goal i
 </div>
 
 ### 1. The Spatial Room Graph (Reconstructing the Pole Barn)
-Auctioneers don't teleport; they walk a physical room. Blue Toad Fleet reconstructs the physical 200 Elizabeth Lane pole barn showroom (2 Center Islands, 2 Long Side Walls, Back Wall displays, and Under-Table Floor Space).
-* **Peripheral Co-visibility:** Uses image border artifacts (e.g., a sliver of a DiMaggio hat on the border of a Dan Marino photo) to link uncaptioned photos to table clusters.
-* **Multi-Box Run Collapse:** Merges 10 loose under-table box photos into **ONE Poppy Trail estate dinnerware set** instead of 10 blind bids.
+* **Why We Do It:** Auction galleries drop 450+ unlabelled photos with zero lot numbers. Treating photos as isolated images causes duplicate bids on multi-angle shots, misses multi-box estate runs, and leaves the buyer blind during Saturday's 1-hour preview window.
+* **How It Works:** Auctioneers don't teleport; they walk a physical room. Blue Toad Fleet reconstructs the physical 200 Elizabeth Lane pole barn showroom (2 Center Islands, 2 Long Side Walls, Back Wall displays, and Under-Table Floor Space):
+  * **Surface Signature Invariants:** Segments background surface textures (blue pleated vinyl vs. raw pine plywood vs. concrete slab) to determine physical room zones.
+  * **Peripheral Margin Co-Visibility:** Scans image borders for neighboring items (e.g., a sliver of a DiMaggio hat on the border of a Dan Marino photo) to anchor uncaptioned photos to table clusters.
+  * **Trajectory Clustering:** Preserves the auctioneer's physical walking path via natural sorting, merging 10 loose under-table box photos into **ONE Poppy Trail estate dinnerware set** and eliminating 95 duplicate multi-angle bids.
 
 ### 2. Multi-Tiered Model Routing on Vertex AI
 * **Triage Fan-out (`gemini-3.5-flash-lite`):** Ingests 460+ raw photos in seconds for ~$0.30 per cycle, filtering out low-margin clutter and background filler.
