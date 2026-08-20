@@ -106,8 +106,14 @@ Appraisals feed into pure, unit-tested valuation logic implementing the store's 
 
 ---
 
-## Live Gate Console UI (Screenshots)
+## Visual Walkthrough & Screenshots
 
+### The Input: 462 Uncataloged Raw Photos (AuctionZip Gallery Drop)
+<div align="center">
+  <img src="docs/screenshots/00-raw-auction-gallery.png" width="100%" alt="Raw Uncataloged AuctionZip Gallery Drop" style="border-radius: 8px; margin-bottom: 16px;" />
+</div>
+
+### The Output: Live Gate Console UI (Google Cloud Run)
 <div align="center">
   <img src="docs/screenshots/01-gate-console.png" width="48%" alt="Gate Console Header" style="border-radius: 8px;" />
   <img src="docs/screenshots/02-showroom-topology.png" width="48%" alt="Showroom Topology Map" style="border-radius: 8px;" />
