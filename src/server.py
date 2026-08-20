@@ -101,7 +101,8 @@ def get_aug22_state():
                 cat_hint = REFERENCE_COMPS.get(lot_id, {}).get("cat")
                 app_obj, qs = engine.parse_appraisal_to_domain(raw, category_override=cat_hint)
                 appraisals_by_lot[app_obj.lot_id] = (app_obj, raw)
-                emitted_questions.extend(qs)
+                # Friday absentee gate: only surface desk-answerable questions (conventions, groupings, scope, appetite)
+                emitted_questions.extend([q for q in qs if not q.wants_photo])
         except Exception as e:
             print(f"[!] Warning: Could not parse appraisal cache: {e}")
 

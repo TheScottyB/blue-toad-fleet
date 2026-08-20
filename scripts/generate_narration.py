@@ -24,6 +24,22 @@ def api_key() -> str:
     return key
 
 
+# Words that read fine on screen but get mangled by TTS (e.g. "comps" -> "comm").
+# Applied only to the synthesis input -- docs/VIDEO_SCRIPT.md keeps the real wording,
+# including the literal 'NO EXTERNAL COMP' string the system actually emits.
+_SPEECH_FIXES = [
+    (r"\bcomps\b", "comparables"),
+    (r"\bCOMP\b", "COMPARABLE"),
+]
+
+
+def speakify(text: str) -> str:
+    """Apply TTS-only pronunciation substitutions."""
+    for pattern, repl in _SPEECH_FIXES:
+        text = re.sub(pattern, repl, text)
+    return text
+
+
 def beats() -> list[dict]:
     """Pull the > blockquote voiceover out of each ## Beat N section."""
     src = pathlib.Path("docs/VIDEO_SCRIPT.md").read_text()
@@ -35,7 +51,7 @@ def beats() -> list[dict]:
         text = " ".join(re.sub(r"[*_]", "", v).strip() for v in lines if v.strip())
         text = re.sub(r"\s+", " ", text).strip()
         if text:
-            out.append({"beat": int(num), "title": title, "text": text})
+            out.append({"beat": int(num), "title": title, "text": speakify(text)})
     return out
 
 
