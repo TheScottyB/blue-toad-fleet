@@ -1,289 +1,341 @@
 [
   {
-    "identification": "Collection of vintage sports trading cards, primarily Topps, c. 1950s-1970s",
-    "maker": "Topps",
-    "period": "c. 1950s-1970s",
+    "identification": "Collection of vintage Topps sports trading cards (circa 1956-1962), featuring major Hall of Famers and stars including 1956 Topps Sandy Koufax (#79), 1957 Topps Bart Starr Rookie (#119), 1957 Topps Paul Hornung Rookie (#90), 1958 Topps All-Star Willie Mays (#436) and Mickey Mantle (#487), 1959 Topps Yogi Berra (#180, 2 copies), 1960 Topps Roger Maris (#377), 1961 Topps Yogi Berra (#425), Roger Maris (#2), Willie Mays (#150), 1961 NL HR Leaders (#2), and 1962 Topps Roberto Clemente (#300).",
+    "maker": "Topps Chewing Gum, Inc.",
+    "period": "1956-1962",
     "marks_observed": [
-      "TOPPS"
+      "Yogi Berra",
+      "Roger Maris",
+      "Sandy Koufax",
+      "Clemente",
+      "Willie Mays",
+      "Mickey Mantle",
+      "Bart Starr",
+      "Paul Hornung",
+      "SPORT Magazine '58 All Star Selection"
     ],
-    "category": "other",
+    "category": "vintage toys",
     "condition_notes": [
-      "Cards housed in protective sleeves and top loaders inside display cases",
-      "Visible edge and corner wear, centering variations typical of raw vintage cards"
+      "Cards are sleeved in plastic top-loaders in display case",
+      "Backs of cards are not visible to inspect for paper loss, wax stains, writing, centering, or reprint indicators",
+      "Corner wear, surface rubbing, and off-center cutting visible on select cards (e.g., 1956 Koufax shows top/right edge wear)"
     ],
-    "condition_penalty": 0.3,
-    "fit_score": 0.3,
+    "condition_penalty": 0.35,
+    "fit_score": 0.75,
     "confidence": "medium",
-    "value_magnitude_hint": 300,
+    "value_magnitude_hint": 1000,
     "questions": [
       {
-        "kind": "appetite",
-        "prompt": "Does Richmond General purchase vintage sports trading cards, as this category falls outside core inventory focus?",
-        "wants_photo": false,
-        "confidence_gap": 0.6
+        "kind": "mark",
+        "prompt": "Can photos of the card backs be provided to inspect card numbers, cardboard stock/color, and check for reproduction notices or damage?",
+        "wants_photo": true,
+        "confidence_gap": 0.8
+      },
+      {
+        "kind": "condition",
+        "prompt": "Can close-up photographs of the key cards (1957 Bart Starr, 1956 Sandy Koufax, 1958 Mickey Mantle) out of top-loaders be provided to inspect corners, surface creases, and print dots for authenticity?",
+        "wants_photo": true,
+        "confidence_gap": 0.7
       },
       {
         "kind": "scope",
-        "prompt": "Are both display trays shown included together in a single lot?",
+        "prompt": "Is the lot being offered as a single lot containing all 12 displayed cards?",
         "wants_photo": false,
-        "confidence_gap": 0.4
+        "confidence_gap": 0.2
       }
     ],
     "lot_id": "BT-001",
     "model_used": "gemini-3.6-flash"
   },
   {
-    "identification": "Assorted estate costume jewelry trays including beaded necklaces, brooches, chains, and pendants, mid to late 20th century.",
+    "identification": "Large group of vintage estate costume jewelry and wristwatches across three display trays (numbered 12, 14, and 16), including rhinestone Christmas tree brooches, beaded strands, gold-tone chains, pendants, and ladies' wristwatches, mid-to-late 20th century.",
     "maker": null,
-    "period": "mid-to-late 20th century",
+    "period": "c. 1950s-1980s",
     "marks_observed": [],
     "category": "other",
     "condition_notes": [
-      "Unsorted estate lot in display trays",
-      "Potential light surface wear and tangling consistent with mixed estate costume jewelry"
+      "Items are sorted in display trays; individual wear, metal plating wear, missing rhinestones, or watch working conditions cannot be determined at distance."
     ],
-    "condition_penalty": 0.2,
-    "fit_score": 0.3,
-    "confidence": "medium",
-    "value_magnitude_hint": 50,
+    "condition_penalty": 0.25,
+    "fit_score": 0.2,
+    "confidence": "low",
+    "value_magnitude_hint": 150,
     "questions": [
       {
         "kind": "appetite",
-        "prompt": "Does the shop buy un-sorted estate costume jewelry lots, or only high-end signed/precious metal pieces?",
+        "prompt": "Does Richmond General purchase bulk estate costume jewelry or wristwatches for storefront or online sales?",
         "wants_photo": false,
-        "confidence_gap": 0.4
+        "confidence_gap": 0.8
       },
       {
         "kind": "lot_grouping",
-        "prompt": "Are trays marked 12, 14, and 16 being sold together as a single lot or as separate individual auction lots?",
+        "prompt": "Are trays 12, 14, and 16 sold together as a single auction lot or as separate lots?",
         "wants_photo": false,
-        "confidence_gap": 0.3
+        "confidence_gap": 0.5
       },
       {
         "kind": "mark",
-        "prompt": "Are any items in these trays marked for precious metals (e.g., sterling silver, 14K) or signed by desirable makers (e.g., Weiss, Haskell, Coro, Eisenberg)?",
+        "prompt": "Are any individual pieces stamped with designer marks (e.g., Weiss, Coro, Eisenberg, Monet) or precious metal purities (e.g., 925, 10K, 14K)?",
         "wants_photo": true,
-        "confidence_gap": 0.3
+        "confidence_gap": 0.7
       }
     ],
     "lot_id": "BT-002",
     "model_used": "gemini-3.6-flash"
   },
   {
-    "identification": "Multi-row cardboard storage box containing large collection of sports trading cards, c. 1980s-2000s",
+    "identification": "Cardboard multi-row storage box containing bulk sports trading cards including hockey, football, and baseball, produced by various manufacturers such as Score and Fleer Ultra, c. late 1980s to 2000s.",
     "maker": null,
     "period": "c. 1980s-2000s",
-    "marks_observed": [],
+    "marks_observed": [
+      "NHL.com",
+      "Mike Richter",
+      "Score",
+      "Ultra"
+    ],
     "category": "other",
     "condition_notes": [
-      "Uninspected bulk collection stored loose in rows",
-      "Cards show varying degrees of handling and organization"
+      "Cards stored loose and un-sleeved in a multi-row cardboard monster box",
+      "Minor corner and edge wear visible on top exposed cards",
+      "Condition and identity of cards inside the stacks cannot be seen"
     ],
-    "condition_penalty": 0.2,
+    "condition_penalty": 0.3,
     "fit_score": 0.2,
     "confidence": "medium",
     "value_magnitude_hint": 50,
     "questions": [
       {
         "kind": "appetite",
-        "prompt": "Are bulk sports trading card collections within the shop's buying appetite?",
+        "prompt": "Does Richmond General buy modern/junk-wax era bulk sports trading cards?",
         "wants_photo": false,
         "confidence_gap": 0.8
       },
       {
         "kind": "scope",
-        "prompt": "Does this lot include the binder albums and items adjacent to the storage box on the table?",
-        "wants_photo": false,
-        "confidence_gap": 0.4
+        "prompt": "Are any key rookie cards, autographed inserts, or hall of famer cards included or sleeved separately in this box?",
+        "wants_photo": true,
+        "confidence_gap": 0.6
       }
     ],
     "lot_id": "BT-016",
     "model_used": "gemini-3.6-flash"
   },
   {
-    "identification": "Vintage pink push-button Princess telephone by Western Electric / Bell System in original box, circa 1970s",
-    "maker": "Western Electric",
-    "period": "1970s",
+    "identification": "Western Electric / Bell System pink Touch-Tone 'Princess' telephone in original box, c. 1970s.",
+    "maker": "Western Electric / Bell System",
+    "period": "c. 1970s",
     "marks_observed": [
-      "The Princess telephone",
-      "Bell System logo"
+      "THE Princess PHONE",
+      "Bell System logo",
+      "SW",
+      "1",
+      "ABC 2",
+      "DEF 3",
+      "*",
+      "OPER 0",
+      "#"
     ],
     "category": "other",
     "condition_notes": [
-      "Original cardboard packaging included with light edge wear",
-      "Phone body and receiver appear structurally sound with intact coiled cord"
+      "Original box present with light shelf wear and edge rubbing.",
+      "Plastic housing on phone appears clean and glossy with no visible cracks in top view.",
+      "Coiled handset cord attached with minor twist.",
+      "Underside of base, feet, line cord, and internal components not visible."
     ],
     "condition_penalty": 0.15,
     "fit_score": 0.4,
-    "confidence": "high",
-    "value_magnitude_hint": 45,
+    "confidence": "medium",
+    "value_magnitude_hint": 50,
     "questions": [
       {
-        "kind": "appetite",
-        "prompt": "Vintage telephones fall outside Richmond General's core primary categories. Does the shop want to acquire vintage telecommunications equipment?",
-        "wants_photo": false,
-        "confidence_gap": 0.5
+        "kind": "mark",
+        "prompt": "What model number, date code, or Western Electric stamp is stamped on the underside of the phone base?",
+        "wants_photo": true,
+        "confidence_gap": 0.35
       },
       {
         "kind": "condition",
-        "prompt": "Is the phone fitted with a standard modular jack or an older 4-prong connection, and are internal components undamaged?",
+        "prompt": "Is the mounting/line cord present on the back of the phone, and are any modular plugs intact?",
         "wants_photo": true,
-        "confidence_gap": 0.3
+        "confidence_gap": 0.25
       }
     ],
     "lot_id": "BT-021",
     "model_used": "gemini-3.6-flash"
   },
   {
-    "identification": "Assorted vintage non-sport trading card collection in protective sleeves, including MAD Magazine, automotive, and pop culture cards, c. 1970s-1990s",
-    "maker": null,
-    "period": "c. 1970s-1990s",
+    "identification": "Assortment of non-sport movie and pop culture trading cards in protective acrylic cases, including 1984 Fleer Dune, 1991 Pro Set Fievel Goes West, MAD Magazine, Robin Hood, and automotive sets, c. 1980s-1990s.",
+    "maker": "Various (Fleer, Pro Set, etc.)",
+    "period": "c. 1984-1992",
     "marks_observed": [
-      "MAD"
+      "PRINCESS IRULAN MUST LEAVE",
+      "AN AMERICAN TAIL FIEVEL GOES WEST OFFICIAL MOVIE TRADING CARDS",
+      "MAD",
+      "12 Full-Color Animated Cards!"
     ],
     "category": "vintage toys",
     "condition_notes": [
-      "Cards are individually stored in plastic top-loaders and sleeves",
-      "Uninspected for full set completion or hidden wear"
+      "Cards are housed in individual clear acrylic snap cases",
+      "Visible top cards show clean edges and bright ink",
+      "Full contents, completeness of sets, and reverse sides cannot be verified from image"
     ],
     "condition_penalty": 0.15,
-    "fit_score": 0.6,
+    "fit_score": 0.75,
     "confidence": "medium",
-    "value_magnitude_hint": 50,
+    "value_magnitude_hint": 60,
     "questions": [
       {
-        "kind": "appetite",
-        "prompt": "Trading cards are on the periphery of our core buying categories (breweriana, railroad, advertising, travel posters, stoneware, Native American, vintage toys, cameras). Does the store have appetite for non-sport trading card lots?",
+        "kind": "scope",
+        "prompt": "Does this lot include only the tray of acrylic card cases, or are the adjacent chalk boxes and office supplies included?",
         "wants_photo": false,
-        "confidence_gap": 0.4
+        "confidence_gap": 0.2
       },
       {
-        "kind": "scope",
-        "prompt": "Does this lot include only the center tray of plastic-cased non-sport cards, or are the adjacent trays/boxes included in the lot?",
-        "wants_photo": false,
-        "confidence_gap": 0.3
+        "kind": "condition",
+        "prompt": "Are the individual card sets complete inside the acrylic cases, and are all insert/hologram cards included?",
+        "wants_photo": true,
+        "confidence_gap": 0.4
       }
     ],
     "lot_id": "BT-030",
     "model_used": "gemini-3.6-flash"
   },
   {
-    "identification": "Group of Edison phonograph cylinder record containers and cylinders, Thomas A. Edison, early 20th century.",
+    "identification": "Group of Edison phonograph cylinder record containers and cylinders, including Edison Gold Moulded and Blue Amberol issues, early 20th century",
     "maker": "Thomas A. Edison, Inc.",
     "period": "c. 1902-1929",
     "marks_observed": [
-      "Edison Gold Moulded Record",
-      "Thomas A. Edison portrait"
+      "EDISON GOLD MOULDED RECORD",
+      "EDISON BLUE AMBEROL RECORD",
+      "THOMAS A. EDISON"
     ],
     "category": "other",
     "condition_notes": [
-      "Cardboard cylinder tubes show exterior shelf wear, staining, and edge rubbing",
-      "Internal physical condition of the wax or Amberol cylinders cannot be fully inspected from photo"
+      "Containers show shelf wear, light soil, and edge fraying",
+      "Some container lids are missing or loose",
+      "Condition of internal cylinder records (cracks, mold, plaster loss) cannot be seen for most items"
     ],
-    "condition_penalty": 0.3,
-    "fit_score": 0.4,
+    "condition_penalty": 0.35,
+    "fit_score": 0.5,
     "confidence": "medium",
-    "value_magnitude_hint": 50,
+    "value_magnitude_hint": 100,
     "questions": [
       {
-        "kind": "appetite",
-        "prompt": "Phonograph cylinders fall outside the store's primary focus list (breweriana, railroad, advertising, travel posters, stoneware, Native American, vintage toys, cameras). Does the store buy antique audio cylinders?",
-        "wants_photo": false,
-        "confidence_gap": 0.6
-      },
-      {
         "kind": "condition",
-        "prompt": "Are all cylinder containers complete with records inside, and are any cylinders cracked, broken, or mold-affected?",
+        "prompt": "Are intact records inside each container, and are any cracked, chipped, or mold-damaged?",
         "wants_photo": true,
         "confidence_gap": 0.4
+      },
+      {
+        "kind": "mark",
+        "prompt": "What catalog numbers and titles are stamped on the record rims?",
+        "wants_photo": true,
+        "confidence_gap": 0.3
       }
     ],
     "lot_id": "BT-041",
     "model_used": "gemini-3.6-flash"
   },
   {
-    "identification": "E.T. The Extra-Terrestrial nightlight figure, molded ceramic or soft plastic, c. 1982.",
-    "maker": "Universal City Studios (Licensed)",
-    "period": "1980s",
+    "identification": "E.T. the Extra-Terrestrial glazed ceramic nightlight / lamp figurine, c. 1982. Features E.T. with hand raised to forehead and painted blue eyes.",
+    "maker": "Universal City Studios / Sigma (attributed)",
+    "period": "c. 1982",
     "marks_observed": [],
     "category": "vintage toys",
     "condition_notes": [
-      "Electrical cord and bulb fixture not visible/untested from front angle",
-      "Minor surface dust and scuffing on base"
+      "Front ceramic body and glaze appear intact without visible chips or cracks.",
+      "Wiring, light bulb socket, power cord, and reverse/base condition are not visible and untested."
     ],
-    "condition_penalty": 0.2,
-    "fit_score": 0.75,
+    "condition_penalty": 0.15,
+    "fit_score": 0.8,
     "confidence": "medium",
-    "value_magnitude_hint": 35,
+    "value_magnitude_hint": 40,
     "questions": [
       {
-        "kind": "condition",
-        "prompt": "Is the electrical cord and lighting socket intact and functional, and are there any cracks or chips on the underside or back?",
+        "kind": "mark",
+        "prompt": "Does the underside or back carry a Universal City Studios copyright, date, or maker mark (such as Sigma)?",
         "wants_photo": true,
         "confidence_gap": 0.3
       },
       {
-        "kind": "scope",
-        "prompt": "Does this lot include only the E.T. nightlight, or are the surrounding boxed items included as a group lot?",
-        "wants_photo": false,
-        "confidence_gap": 0.2
+        "kind": "condition",
+        "prompt": "Is the electrical light fixture, cord, and switch present, intact, and functioning?",
+        "wants_photo": true,
+        "confidence_gap": 0.25
       }
     ],
     "lot_id": "BT-048",
     "model_used": "gemini-3.6-flash"
   },
   {
-    "identification": "Vintage Lionel metal construction building set in fitted wooden case",
-    "maker": "Lionel",
-    "period": "1930s-1940s",
-    "marks_observed": [],
+    "identification": "Vintage Lionel metal construction set in fitted wooden presentation box, circa late 1940s.",
+    "maker": "Lionel Corporation",
+    "period": "1940s",
+    "marks_observed": [
+      "LIONEL winged emblem on inner lid board"
+    ],
     "category": "vintage toys",
     "condition_notes": [
-      "Loose components in open case compartments",
-      "Wear to interior felt lining and wooden case structure",
-      "Completeness unverified; manual and motor/transformer not explicitly visible"
+      "Upper red display card is missing majority of held parts/tools",
+      "Parts are loose in main compartment",
+      "Wooden case shows minor exterior wear but retains hardware and handle"
     ],
     "condition_penalty": 0.35,
     "fit_score": 0.85,
     "confidence": "medium",
-    "value_magnitude_hint": 75,
+    "value_magnitude_hint": 100,
     "questions": [
       {
         "kind": "condition",
-        "prompt": "Is the set complete with its original instruction manual and electric motor/power assembly?",
+        "prompt": "Is the instruction manual included, and are the missing display parts present among the loose pieces?",
+        "wants_photo": false,
+        "confidence_gap": 0.25
+      },
+      {
+        "kind": "mark",
+        "prompt": "Is there a model/set number stamped on the outside of the wooden box or printed on any enclosed paper?",
         "wants_photo": true,
-        "confidence_gap": 0.3
+        "confidence_gap": 0.2
       }
     ],
     "lot_id": "BT-050",
     "model_used": "gemini-3.6-flash"
   },
   {
-    "identification": "Collection of vintage electronic handheld LCD games including Radica titles, c. 1990s-2000s",
-    "maker": "Radica Electronics and others",
+    "identification": "Assorted handheld electronic games lot, including Excalibur Casino Calculators, Milton Bradley Electronic Yahtzee, and Radica electronic poker/slot games, c. 1990s-2000s.",
+    "maker": "Excalibur Electronics, Milton Bradley, Radica",
     "period": "c. 1990s-2000s",
     "marks_observed": [
-      "Radica"
+      "Excalibur",
+      "CASINO CALCULATOR",
+      "BONUS POKER",
+      "DRAW POKER",
+      "SOLITAIRE",
+      "ELECTRONIC Yahtzee!",
+      "RADICA",
+      "VIDEO SLOT 5000"
     ],
     "category": "vintage toys",
     "condition_notes": [
-      "Unboxed loose units",
-      "Untested for functionality or battery compartment corrosion"
+      "Light surface scuffing and edge wear on plastic housings",
+      "LCD screens intact without visible screen bleed from front view",
+      "Battery contacts and reverse battery cover status not visible",
+      "Functional state and screen light/digit completeness untested"
     ],
-    "condition_penalty": 0.25,
-    "fit_score": 0.85,
+    "condition_penalty": 0.35,
+    "fit_score": 0.8,
     "confidence": "medium",
-    "value_magnitude_hint": 40,
+    "value_magnitude_hint": 30,
     "questions": [
       {
         "kind": "condition",
-        "prompt": "Are the battery compartments clean and free of corrosion, and do the games power on?",
+        "prompt": "Are the battery compartments clean and free of corrosion, with all battery covers present?",
         "wants_photo": true,
         "confidence_gap": 0.4
       },
       {
-        "kind": "scope",
-        "prompt": "Does this lot include all six handheld games displayed in the tray?",
+        "kind": "lot_grouping",
+        "prompt": "Are all six handheld electronic games included together as a single tray lot?",
         "wants_photo": false,
         "confidence_gap": 0.2
       }
@@ -292,79 +344,80 @@
     "model_used": "gemini-3.6-flash"
   },
   {
-    "identification": "Bulk plastic tub containing assorted vintage and modern costume jewelry, including faux pearls, beaded necklaces, pins, and fashion accessories, mid-to-late 20th century.",
+    "identification": "Bulk assortment of vintage and modern costume jewelry in plastic tub",
     "maker": null,
-    "period": "mid-to-late 20th century",
+    "period": "Mid-to-late 20th century",
     "marks_observed": [],
     "category": "other",
     "condition_notes": [
-      "Unsorted bulk lot stored loose in a plastic tub",
-      "Potential tangling, missing stones, or broken clasps throughout uninspected contents"
+      "Jewelry pieces are tangled and piled together in bulk tub",
+      "Individual piece conditions, clasps, and stones cannot be fully inspected"
     ],
-    "condition_penalty": 0.35,
+    "condition_penalty": 0.3,
     "fit_score": 0.2,
     "confidence": "low",
-    "value_magnitude_hint": 35,
+    "value_magnitude_hint": 40,
     "questions": [
       {
         "kind": "appetite",
-        "prompt": "Does Richmond General buy bulk unsorted costume jewelry lots outside of Native American or specialized silver categories?",
+        "prompt": "Does the shop buy unsorted bulk lots of mixed costume jewelry outside of Native American silver or advertising items?",
         "wants_photo": false,
-        "confidence_gap": 0.6
+        "confidence_gap": 0.5
       },
       {
         "kind": "mark",
-        "prompt": "Are there any signed designer maker marks (e.g., Trifari, Weiss, Miriam Haskell) or precious metal stamps (Sterling/925, Gold) on items in this tub?",
+        "prompt": "Are any individual pieces marked for precious metals (sterling, gold) or signed by notable makers (e.g., Trifari, Coro, Weiss)?",
         "wants_photo": true,
-        "confidence_gap": 0.5
+        "confidence_gap": 0.8
       }
     ],
     "lot_id": "BT-087",
     "model_used": "gemini-3.6-flash"
   },
   {
-    "identification": "Assorted vintage estate costume jewelry lot including rhinestone brooches, Christmas tree pin, beaded necklaces, and gold-tone chains, mid-to-late 20th century",
+    "identification": "Assorted vintage costume jewelry tray lot including Christmas tree brooches, leaf-link and rhinestone necklaces, nautical charm bracelet, and beaded jewelry, mid-to-late 20th century.",
     "maker": null,
-    "period": "mid-20th century",
+    "period": "c. 1950s-1980s",
     "marks_observed": [],
     "category": "other",
     "condition_notes": [
-      "Surface wear and tarnishing consistent with age and use",
-      "Stones and metals untested"
+      "Items appear generally complete with light surface wear visible.",
+      "Detailed condition of clasps, stone settings, and reverse sides cannot be determined from overhead photo."
     ],
-    "condition_penalty": 0.2,
-    "fit_score": 0.2,
-    "confidence": "medium",
+    "condition_penalty": 0.15,
+    "fit_score": 0.3,
+    "confidence": "low",
     "value_magnitude_hint": 50,
     "questions": [
       {
         "kind": "appetite",
-        "prompt": "Does the shop have an appetite for general vintage costume jewelry lots?",
+        "prompt": "Does Richmond General purchase bulk estate costume jewelry lots for in-store or online resale?",
         "wants_photo": false,
-        "confidence_gap": 0.5
+        "confidence_gap": 0.4
       },
       {
         "kind": "mark",
-        "prompt": "Are any individual pieces in the tray signed by collectible costume makers (e.g., Trifari, Weiss, Eisenberg, Coro, or marked sterling)?",
+        "prompt": "Are any individual pieces marked or signed on the reverse or clasps (e.g., Weiss, Trifari, Coro, Eisenberg, or sterling marks)?",
         "wants_photo": true,
-        "confidence_gap": 0.4
+        "confidence_gap": 0.5
       }
     ],
     "lot_id": "BT-181",
     "model_used": "gemini-3.6-flash"
   },
   {
-    "identification": "1933 Chicago World's Fair Century of Progress embossed clear glass souvenir bottle",
+    "identification": "1833-1933 Chicago World's Fair 'A Century of Progress' embossed clear glass commemorative bottle/flask, circa 1933.",
     "maker": null,
     "period": "1933",
     "marks_observed": [
-      "1933 CENTURY OF PROGRESS CHICAGO"
+      "A CENTURY OF PROGRESS"
     ],
     "category": "advertising",
     "condition_notes": [
-      "Clear glass appears intact without major visible fractures or heavy clouding from front photo",
-      "Base and reverse side not visible for hidden chips or hairlines",
-      "Original cap/top closure condition uninspected"
+      "Clear glass intact without visible major cracks or fractures from front view",
+      "Metal closure/cap is present on neck",
+      "Slight internal film or dust visible",
+      "Base and reverse surface not visible in photo"
     ],
     "condition_penalty": 0.1,
     "fit_score": 0.85,
@@ -373,15 +426,15 @@
     "questions": [
       {
         "kind": "mark",
-        "prompt": "Is there a maker's mark or patent number embossed on the bottom base of the bottle?",
+        "prompt": "Is there a glassmaker trademark (such as Owens-Illinois, Hazel-Atlas, or Ball) or patent date embossed on the bottom of the bottle?",
         "wants_photo": true,
-        "confidence_gap": 0.2
+        "confidence_gap": 0.3
       },
       {
         "kind": "condition",
-        "prompt": "Are there any chips, cracks, or severe internal hazing visible on the reverse side or base?",
+        "prompt": "Are there any fleabites, chips, or cracks along the threaded neck/lip or reverse side?",
         "wants_photo": true,
-        "confidence_gap": 0.25
+        "confidence_gap": 0.2
       }
     ],
     "lot_id": "BT-235",

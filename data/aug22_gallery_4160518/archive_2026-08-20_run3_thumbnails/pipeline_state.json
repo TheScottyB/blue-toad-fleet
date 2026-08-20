@@ -1,0 +1,23 @@
+{
+  "cycle_id": "2026-08-22",
+  "listing_id": "4160518",
+  "budget_cap": 600.0,
+  "auto_send_threshold": 35.0,
+  "summary": {
+    "total_lots": 359,
+    "allocated": 12,
+    "auto_send": 10,
+    "needs_approval": 2,
+    "needs_human_pricing": 0,
+    "skipped": 347,
+    "committed_max": 335.0,
+    "committed_all_in": 385.25,
+    "by_priority": {
+      "A": 12,
+      "SKIP": 347
+    }
+  },
+  "approved_lots_count": 12,
+  "total_lots_count": 359,
+  "photos_count": 462
+}
