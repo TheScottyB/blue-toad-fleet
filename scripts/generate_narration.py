@@ -83,5 +83,33 @@ def main() -> None:
               f"({dest.stat().st_size / 1024:.0f} KB)")
 
 
+# Longer than any natural inter-sentence pause the voice leaves on its own
+# (those run ~0.3-1.2s), so silencedetect can find these boundaries reliably
+# and split the one continuous track back into per-beat spans.
+_BEAT_BREAK = '<break time="1.6s" />'
+
+
+def main_full() -> None:
+    """Synthesize the whole script as ONE continuous take.
+
+    One TTS call instead of four separately-encoded clips means there are no
+    internal beat-to-beat audio splice points to introduce clicks/gaps when
+    the final video is assembled -- only the two joins against the silent
+    open/close title cards remain, and those are plain PCM concatenation.
+    eleven_multilingual_v2 supports SSML <break> tags (unlike v3), so an
+    explicit break marks each beat boundary for later detection.
+    """
+    key = api_key()
+    OUT.mkdir(parents=True, exist_ok=True)
+    text = f" {_BEAT_BREAK} ".join(b["text"] for b in beats())
+    dest = OUT / "narration_full.mp3"
+    try:
+        dest.write_bytes(synthesize(text, key))
+    except urllib.error.HTTPError as e:
+        sys.exit(f"full narration: HTTP {e.code} — {e.read().decode()[:300]}")
+    print(f"full narration: {len(text.split()):3d} words -> {dest} "
+          f"({dest.stat().st_size / 1024:.0f} KB)")
+
+
 if __name__ == "__main__":
-    main()
+    main_full() if "--full" in sys.argv else main()
