@@ -13,7 +13,7 @@ CATEGORIES = [
 
 CONFIDENCE = ["none", "low", "medium", "high"]
 
-QUESTION_KINDS = ["lot_grouping", "scope", "mark", "condition", "appetite"]
+QUESTION_KINDS = ["policy", "lot_grouping", "scope", "mark", "condition", "appetite"]
 
 
 def to_vertex(node):

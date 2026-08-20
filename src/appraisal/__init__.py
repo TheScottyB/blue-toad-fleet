@@ -44,6 +44,7 @@ _CONF_GAP = {
 
 class QuestionKind(str, Enum):
     """Roughly ordered by reach. Breadth dominates in practice; this is a tiebreak."""
+    POLICY = "policy"               # uncertified risk / house rules / bidding policy
     LOT_GROUPING = "lot_grouping"   # are these N photos one lot or N lots?
     SCOPE = "scope"                 # whole shelf, or just the crock?
     MARK = "mark"                   # is there a maker's mark I can't see?
@@ -53,6 +54,7 @@ class QuestionKind(str, Enum):
 
 # How much a resolved answer of this kind repairs, per affected lot.
 _KIND_WEIGHT = {
+    QuestionKind.POLICY: 1.00,
     QuestionKind.LOT_GROUPING: 1.00,
     QuestionKind.SCOPE: 0.90,
     QuestionKind.MARK: 0.70,

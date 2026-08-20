@@ -97,42 +97,33 @@ def get_aug22_state():
     decisions = allocate(decisions, budget_cap=STATE["budget_cap"], auto_send_threshold=STATE["auto_send_threshold"])
     summary = summarize(decisions)
 
-    # 3. Questions Queue
+    # 3. Questions Queue (Policy, House Conventions, and Appetite)
     questions = [
         Question(
-            kind=QuestionKind.CONDITION,
+            kind=QuestionKind.POLICY,
             category="sports memorabilia",
-            prompt="Michael Jordan Signed Hat (Photo #6): Verify if JSA/PSA authentication sticker or COA card is visible.",
-            lot_ids=("BT-006",),
-            value_at_stake=450.0,
+            prompt="Uncertified Autographs (Jordan Hat BT-006, DiMaggio Hat BT-010): No visible PSA/JSA certificate in photos. Bid speculative raw floor ($35 max bid) or skip uncertified sports ink entirely?",
+            lot_ids=("BT-006", "BT-010"),
+            value_at_stake=800.0,
             confidence_gap=0.5,
-            wants_photo=True
-        ),
-        Question(
-            kind=QuestionKind.CONDITION,
-            category="sports memorabilia",
-            prompt="Joe DiMaggio Signed Hat (Photo #10): Verify signature clarity and whether Yankee cap is vintage or modern reproduction.",
-            lot_ids=("BT-010",),
-            value_at_stake=350.0,
-            confidence_gap=0.4,
-            wants_photo=True
-        ),
-        Question(
-            kind=QuestionKind.SCOPE,
-            category="phonograph / records",
-            prompt="Edison rolls (Photo #41): Confirm count of intact celluloid Blue Amberol cylinders vs. empty canisters.",
-            lot_ids=("BT-041",),
-            value_at_stake=180.0,
-            confidence_gap=0.4,
             wants_photo=False
         ),
         Question(
             kind=QuestionKind.LOT_GROUPING,
             category="dinnerware / pottery",
-            prompt="Poppy Trail dishes (Under-Table Run): Confirm all 10 under-table boxes sell together as one multi-box lot.",
-            lot_ids=("BT-008",),
+            prompt="Under-Table Box Runs (Poppy Trail BT-073): Blue Toad convention check — assume all 10 under-table boxes sell together as ONE bulk estate lot ($45 max for all), or bid as choice per box?",
+            lot_ids=("BT-073", "BT-075", "BT-078", "BT-080"),
             value_at_stake=200.0,
             confidence_gap=0.3,
+            wants_photo=False
+        ),
+        Question(
+            kind=QuestionKind.APPETITE,
+            category="sports memorabilia",
+            prompt="Store Inventory Balance: Sourcing engine selected $650 across sports memorabilia. Is the sports showcase low, or should we cap sports at $300 and bias budget toward tools and breweriana?",
+            lot_ids=("BT-004", "BT-006", "BT-007", "BT-008", "BT-010", "BT-012", "BT-023"),
+            value_at_stake=650.0,
+            confidence_gap=0.4,
             wants_photo=False
         ),
     ]
