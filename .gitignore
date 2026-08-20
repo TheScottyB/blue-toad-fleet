@@ -4,3 +4,4 @@ __pycache__/
 .env
 .venv/
 demo/out/
+data/**/images/
