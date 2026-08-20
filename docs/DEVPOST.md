@@ -56,7 +56,8 @@ Blue Toad Fleet transforms an uncataloged 450-photo gallery drop into an actiona
   * **Trajectory Clustering:** Preserves the auctioneer's physical walking path via natural sorting, merging 10 loose under-table box photos into **ONE Poppy Trail estate dinnerware set** instead of 10 blind bids and eliminating 95 duplicate multi-angle bids.
 
 ### 2. Container Lot Decomposition ("Mining for Gold")
-In rural auctions, high-margin items are buried in uncataloged plastic tubs and cardboard box lots. The agent segments container boundaries, extracts and itemizes individual high-velocity assets (such as 11–12 vintage Edison cylinder records or 1970s costume jewelry bins), while explicitly masking surrounding table clutter (clocks, bobbleheads) to prevent dirty comps.
+* **Why Spatial Isolation is Required:** High-margin gold in rural auctions (e.g., 11–12 Edison Blue Amberol cylinders, 1959–69 Topps baseball cards, estate costume jewelry trays) is dumped into cardboard boxes or plastic tubs on crowded utility tables. Without spatial mapping to isolate the container and mask out surrounding room noise, vision models blend the box with adjacent table clutter (clocks, lamps, tools) and generate dirty, hallucinated comps.
+* **How It Works:** Relying directly on the Spatial Room Graph, the agent isolates the container boundary, suppresses background table noise, and itemizes the individual high-velocity assets inside the bin. It separates genuine alpha from filler, unlocking hidden margin while maintaining clean pricing boundaries.
 
 ### 3. The Honest Refusal Rule & Uncertainty Budget
 Unlike generic AI tools that hallucinate a price on every photo, Blue Toad Fleet enforces an explicit **uncertainty budget**. On recognizable items (e.g., 1960s Pabst lighted sign), it extracts maker, period, and comps. On unmarked, low-velocity pottery, it explicitly emits `"NO EXTERNAL COMP — human pricing required"`. Refusing to guess is a production safety feature.

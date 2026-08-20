@@ -71,18 +71,22 @@ Capital is not the constraint — **time and visual throughput are**. The goal i
   * **Peripheral Margin Co-Visibility:** Scans image borders for neighboring items (e.g., a sliver of a DiMaggio hat on the border of a Dan Marino photo) to anchor uncaptioned photos to table clusters.
   * **Trajectory Clustering:** Preserves the auctioneer's physical walking path via natural sorting, merging 10 loose under-table box photos into **ONE Poppy Trail estate dinnerware set** and eliminating 95 duplicate multi-angle bids.
 
-### 2. Multi-Tiered Model Routing on Vertex AI
+### 2. Container Lot Decomposition ("Mining for Gold")
+* **Why Spatial Isolation is Required:** High-margin gold in rural auctions (e.g., 11–12 Edison Blue Amberol cylinders, 1959–69 Topps baseball cards, estate costume jewelry trays) is dumped into cardboard boxes or plastic tubs on crowded utility tables. Without spatial mapping to isolate the container and mask out surrounding room noise, vision models blend the box with adjacent table clutter (clocks, lamps, tools) and generate dirty, hallucinated comps.
+* **How It Works:** Relying directly on the Spatial Room Graph, the agent isolates the container boundary, suppresses background table noise, and itemizes the individual high-velocity assets inside the bin. It separates genuine alpha from filler, unlocking hidden margin while maintaining clean pricing boundaries.
+
+### 3. Multi-Tiered Model Routing on Vertex AI
 * **Triage Fan-out (`gemini-3.5-flash-lite`):** Ingests 460+ raw photos in seconds for ~$0.30 per cycle, filtering out low-margin clutter and background filler.
 * **Deep Multimodal Appraisal (`gemini-3.6-flash`):** Evaluates high-conviction survivors using structured OpenAPI 3.0 schemas on the `global` Vertex endpoint.
 * **Honest Refusal Rule:** On unrecognizable or ungrounded pottery, the model explicitly emits `"NO EXTERNAL COMP — human pricing required"` rather than hallucinating prices.
 
-### 3. The "Buyer's Choice" Shelf Sniper
+### 4. The "Buyer's Choice" Shelf Sniper
 Detects vertical shelf lots where clerks sell items "Times the Money" (multiplying hammer price by quantity) and enforces a strict `max_quantity = 1` absentee constraint, preventing a $360 multiplication trap.
 
-### 4. The Collaborative Partner & Proactive Pushback
+### 5. The Collaborative Partner & Proactive Pushback
 The fleet acts as an expert commercial peer. On Friday afternoon, the agent presents a 3-tier pitch (Alpha Picks, Fast Smalls, and a Wildcard Challenge). When the owner asked to drop sports cards and tools due to store backlog, the agent used real-time eBay velocity data to respectfully push back and preserve the **13 Golden Era 1959–1969 Topps baseball cards ($100 cap)**, delivering a $300+ resale spread.
 
-### 5. Pure Deterministic BidMath Engine
+### 6. Pure Deterministic BidMath Engine
 Appraisals feed into pure, unit-tested valuation logic implementing the store's 38% margin target, condition discounts, standard **$5.00 bidding increments**, and the mandatory **15% absentee fee**.
 
 ---
