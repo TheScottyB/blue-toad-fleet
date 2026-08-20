@@ -165,6 +165,39 @@ done in time.** July 11 he went and took nine lots off the floor chosen in a
 preview hour — not a short list chosen deliberately against comps. That is the
 failure mode, not the success case.
 
+## THE OPERATING CADENCE — operator, 2026-08-20. This is the product.
+
+Not a time-saver. **An enabler.** *"its not 'saving' time, this is the case where
+the friction is so high that the process of doing a full analysis is time
+prohibitive in itself. its truely an enabler and coupled to a 2 week repeating
+event creates consistency, consistency is the first step to success."* The analysis
+does not happen slowly today — it does not happen at all. And the two-week
+repetition is half the value: possible again, on schedule, without a heroic week.
+
+**The week, as he describes it:**
+
+| When | What |
+|---|---|
+| Mon–Fri | The agents work the cycle. Intake, triage, appraisal, comps, bid math. |
+| **Fri ~4:00 PM** | **"Staff meeting."** The human review gate. List finalised, adjustments made, items added, retractions sent. |
+| **Fri 8:00 PM** | Absentee cutoff. Final user review lands before this — always. |
+| **Pre-9:00 AM Sat** | **Automated failsafe audit** before the preview opens. Last chance to catch a bad bid. |
+
+**Questions never go to zero, and that is by design.** *"there will always be some
+questions, just smaller sets, as learning ebbs and flows."* Some items will go out
+with no questions at all as standing rules accumulate; new categories will
+generate new ones. The question count ebbs and flows — it does not converge to
+nothing. **Do not claim the loop eliminates questions.** Claim it shrinks them and
+keeps shrinking the recurring ones.
+
+**The human gate is non-removable.** Real money, one shot per fortnight. Even at
+full autonomy the Friday review stands. Retractions are a first-class operation,
+not an error path — the sheet can be amended after submission and before the sale.
+
+**Track implication (open):** this cadence is a genuine human-in-the-loop
+collaboration, not autonomous task completion. It argues for **Collaborative
+Partner** over Taskmaster. See the drafts; operator's call.
+
 ## DEFECT — the lot-number assumption does not hold for Blue Toad
 
 `src/intake/manifest.py:19` comments *"Lot numbers as they appear in Blue Toad
