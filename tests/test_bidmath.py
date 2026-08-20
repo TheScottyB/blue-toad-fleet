@@ -167,3 +167,28 @@ class TestSummarize:
             budget_cap=10_000, auto_send_threshold=20.0)
         s = summarize(ds)
         assert s.auto_send + s.needs_approval == s.allocated
+
+
+class TestConditionPenaltyIsClamped:
+    """condition_penalty is documented 0..1 but nothing enforced it.
+
+    The schema only described the range in prose — no minimum/maximum keys —
+    so Vertex's constrained decoding would not reject an out-of-range value
+    either. `base * (1 - penalty)` then turns a NEGATIVE penalty into a bid
+    INCREASE: a model slip silently raises what the sheet is willing to pay.
+    """
+
+    def test_negative_penalty_cannot_raise_the_bid(self):
+        clean = price_lot(lot(cond=0.0))
+        slipped = price_lot(lot(cond=-0.5))
+        assert slipped.max_bid == clean.max_bid
+
+    def test_penalty_above_one_never_produces_a_negative_bid(self):
+        d = price_lot(lot(cond=1.7))
+        assert d.max_bid is None or d.max_bid >= 0
+
+    def test_penalty_in_range_still_discounts(self):
+        """The clamp must not flatten legitimate penalties."""
+        clean = price_lot(lot(cond=0.0))
+        worn = price_lot(lot(cond=0.30))
+        assert worn.max_bid < clean.max_bid

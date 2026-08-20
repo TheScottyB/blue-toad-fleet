@@ -146,7 +146,12 @@ def price_lot(
 
     fraction = bid_fraction_for(lot.category, calibration)
     base = lot.comp.low_mid * fraction
-    max_bid = round(base * (1 - lot.condition_penalty), 2)
+    # Clamp before it touches money. The field is documented 0..1 but nothing
+    # enforced it, and `1 - penalty` turns a NEGATIVE penalty into a bid
+    # INCREASE — a model slip of -0.5 raised a $41.25 max to $61.88. Values >1
+    # would go negative. Neither is a bid we would ever intend to place.
+    penalty = min(max(lot.condition_penalty, 0.0), 1.0)
+    max_bid = round(base * (1 - penalty), 2)
 
     if max_bid < 1:
         return Decision(
@@ -162,7 +167,7 @@ def price_lot(
         bid_fraction=fraction,
         reason=(
             f"low-mid ${lot.comp.low_mid:.0f} x {fraction:.0%} "
-            f"less {lot.condition_penalty:.0%} condition, "
+            f"less {penalty:.0%} condition, "
             f"{lot.comp.source_count} source(s), {lot.comp.confidence.value} confidence"
         ),
         needs_human_pricing=False,

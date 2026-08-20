@@ -95,6 +95,8 @@ APPRAISAL_SCHEMA = {
         "condition_notes": {"type": "array", "items": {"type": "string"}},
         "condition_penalty": {
             "type": "number",
+            "minimum": 0,
+            "maximum": 1,
             "description": "0 to 1. Fraction of value lost to observed condition.",
         },
         "fit_score": {"type": "number"},

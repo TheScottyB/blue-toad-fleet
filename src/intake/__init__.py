@@ -17,7 +17,9 @@ nonsense, this is not where you have to look.
 """
 
 from src.intake.manifest import (
-    GalleryDrop, PhotoRef, WorkItem, parse_drop, plan_fanout,
+    GalleryDrop, LotGroup, PhotoRef, TriagedPhoto, WorkItem,
+    group_into_lots, parse_drop, plan_fanout,
 )
 
-__all__ = ["GalleryDrop", "PhotoRef", "WorkItem", "parse_drop", "plan_fanout"]
+__all__ = ["GalleryDrop", "LotGroup", "PhotoRef", "TriagedPhoto", "WorkItem",
+           "group_into_lots", "parse_drop", "plan_fanout"]
