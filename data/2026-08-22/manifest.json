@@ -4,7 +4,6 @@
   "auctioneer": "Blue Toad Auctions, LLC",
   "phone": "847-707-9446",
   "email": "info@bluetoadauctions.com",
-  "alt_email": "BlueToadAuctions@aol.com",
   "auction_date": "Saturday, August 22, 2026",
   "absentee_deadline": "Friday, August 21, 2026 8:00 PM",
   "absentee_fee": 0.15,
@@ -14,2435 +13,1827 @@
   "photos": [
     {
       "sequence": 1,
-      "photo_id": "fp1",
+      "photo_id": "fp001",
       "caption": "Vintage Topps Baseball Cards",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838421457_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838421457",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp001.jpg"
     },
     {
       "sequence": 2,
-      "photo_id": "fp2",
+      "photo_id": "fp002",
       "caption": "Estate Costume Jewelry",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838421481_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838421481",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp002.jpg"
     },
     {
       "sequence": 3,
-      "photo_id": "fp3",
+      "photo_id": "fp003",
       "caption": "Hollywood Photos",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838421477_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838421477",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp003.jpg"
     },
     {
       "sequence": 4,
-      "photo_id": "fp4",
+      "photo_id": "fp004",
       "caption": "Peyton Manning Signed Jersey",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838421497_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838421497",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp004.jpg"
     },
     {
       "sequence": 5,
-      "photo_id": "fp5",
+      "photo_id": "fp005",
       "caption": "Yearbooks",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838421491_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838421491",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp005.jpg"
     },
     {
       "sequence": 6,
-      "photo_id": "fp6",
+      "photo_id": "fp006",
       "caption": "Michael Jordan Signed Hat",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838421518_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838421518",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp006.jpg"
     },
     {
       "sequence": 7,
-      "photo_id": "fp7",
+      "photo_id": "fp007",
       "caption": "Dan Marino signed Photo",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838421527_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838421527",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp007.jpg"
     },
     {
       "sequence": 8,
-      "photo_id": "fp8",
+      "photo_id": "fp008",
       "caption": "Rusty Wallace signed helmet",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838421529_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838421529",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp008.jpg"
     },
     {
       "sequence": 9,
-      "photo_id": "fp9",
+      "photo_id": "fp009",
       "caption": "Joe DiMaggio signed hat",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838421533_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838421533",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp009.jpg"
     },
     {
       "sequence": 11,
-      "photo_id": "fp11",
+      "photo_id": "fp011",
       "caption": "Joe Flacco signed jersey",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838421572_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838421572",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp011.jpg"
     },
     {
       "sequence": 13,
-      "photo_id": "fp13",
+      "photo_id": "fp013",
       "caption": "sports apparel",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838421565_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838421565",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp013.jpg"
     },
     {
       "sequence": 14,
-      "photo_id": "fp14",
+      "photo_id": "fp014",
       "caption": "baseballs",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838421566_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838421566",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp014.jpg"
     },
     {
       "sequence": 15,
-      "photo_id": "fp15",
+      "photo_id": "fp015",
       "caption": "sports collectibles",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838421601_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838421601",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp015.jpg"
     },
     {
       "sequence": 16,
-      "photo_id": "fp16",
+      "photo_id": "fp016",
       "caption": "trading cards",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838421603_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838421603",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp016.jpg"
     },
     {
       "sequence": 17,
-      "photo_id": "fp17",
+      "photo_id": "fp017",
       "caption": "mini hope chest",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838421613_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838421613",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp017.jpg"
     },
     {
       "sequence": 18,
-      "photo_id": "fp18",
+      "photo_id": "fp018",
       "caption": "scrapbook",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838421620_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838421620",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp018.jpg"
     },
     {
       "sequence": 19,
-      "photo_id": "fp19",
+      "photo_id": "fp019",
       "caption": "collector spoons",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838421629_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838421629",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp019.jpg"
     },
     {
       "sequence": 20,
-      "photo_id": "fp20",
+      "photo_id": "fp020",
       "caption": "baseball cards",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838421627_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838421627",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp020.jpg"
     },
     {
       "sequence": 21,
-      "photo_id": "fp21",
+      "photo_id": "fp021",
       "caption": "princess phone",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838421663_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838421663",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp021.jpg"
     },
     {
       "sequence": 22,
-      "photo_id": "fp22",
+      "photo_id": "fp022",
       "caption": "Harry Potter postcards",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838421674_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838421674",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp022.jpg"
     },
     {
       "sequence": 23,
-      "photo_id": "fp23",
+      "photo_id": "fp023",
       "caption": "Reggie Bush signed jersey",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838421653_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838421653",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp023.jpg"
     },
     {
       "sequence": 24,
-      "photo_id": "fp24",
+      "photo_id": "fp024",
       "caption": "Pope John Paul figure",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838421683_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838421683",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp024.jpg"
     },
     {
       "sequence": 25,
-      "photo_id": "fp25",
+      "photo_id": "fp025",
       "caption": "Mahjong",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838421703_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838421703",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp025.jpg"
     },
     {
       "sequence": 26,
-      "photo_id": "fp26",
+      "photo_id": "fp026",
       "caption": "Waterford crystal bowl",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838421723_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838421723",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp026.jpg"
     },
     {
       "sequence": 27,
-      "photo_id": "fp27",
+      "photo_id": "fp027",
       "caption": "butterfly bowl",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838421737_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838421737",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp027.jpg"
     },
     {
       "sequence": 28,
-      "photo_id": "fp28",
+      "photo_id": "fp028",
       "caption": "animal figurines",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838421749_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838421749",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp028.jpg"
     },
     {
       "sequence": 29,
-      "photo_id": "fp29",
+      "photo_id": "fp029",
       "caption": "Chicago Bears glasses",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838421766_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838421766",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp029.jpg"
     },
     {
       "sequence": 30,
-      "photo_id": "fp30",
+      "photo_id": "fp030",
       "caption": "non-spoprt trading cards",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838421778_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838421778",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp030.jpg"
     },
     {
       "sequence": 31,
-      "photo_id": "fp31",
+      "photo_id": "fp031",
       "caption": "beer pitchers",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838421788_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838421788",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp031.jpg"
     },
     {
       "sequence": 32,
-      "photo_id": "fp32",
+      "photo_id": "fp032",
       "caption": "Tonka trucks",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838421906_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838421906",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp032.jpg"
     },
     {
       "sequence": 33,
-      "photo_id": "fp33",
+      "photo_id": "fp033",
       "caption": "smalls",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838421924_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838421924",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp033.jpg"
     },
     {
       "sequence": 34,
-      "photo_id": "fp34",
+      "photo_id": "fp034",
       "caption": "glassware",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838421935_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838421935",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp034.jpg"
     },
     {
       "sequence": 35,
-      "photo_id": "fp35",
+      "photo_id": "fp035",
       "caption": "Playboy magazines",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838421939_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838421939",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp035.jpg"
     },
     {
       "sequence": 36,
-      "photo_id": "fp36",
+      "photo_id": "fp036",
       "caption": "hardware",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838421955_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838421955",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp036.jpg"
     },
     {
       "sequence": 38,
-      "photo_id": "fp38",
+      "photo_id": "fp038",
       "caption": "vintage toys",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838421983_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838421983",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp038.jpg"
     },
     {
       "sequence": 39,
-      "photo_id": "fp39",
+      "photo_id": "fp039",
       "caption": "collectibles",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838421992_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838421992",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp039.jpg"
     },
     {
       "sequence": 41,
-      "photo_id": "fp41",
+      "photo_id": "fp041",
       "caption": "Edison rolls",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838421998_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838421998",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp041.jpg"
     },
     {
       "sequence": 42,
-      "photo_id": "fp42",
+      "photo_id": "fp042",
       "caption": "HP printer",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422002_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422002",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp042.jpg"
     },
     {
       "sequence": 43,
-      "photo_id": "fp43",
+      "photo_id": "fp043",
       "caption": "doll house furniture",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422036_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422036",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp043.jpg"
     },
     {
       "sequence": 44,
-      "photo_id": "fp44",
+      "photo_id": "fp044",
       "caption": "wall clock",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422039_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422039",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp044.jpg"
     },
     {
       "sequence": 45,
-      "photo_id": "fp45",
+      "photo_id": "fp045",
       "caption": "Glass ornaments",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422051_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422051",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp045.jpg"
     },
     {
       "sequence": 46,
-      "photo_id": "fp46",
+      "photo_id": "fp046",
       "caption": "battery chargers",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422076_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422076",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp046.jpg"
     },
     {
       "sequence": 47,
-      "photo_id": "fp47",
+      "photo_id": "fp047",
       "caption": "ET nightlight",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422042_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422042",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp047.jpg"
     },
     {
       "sequence": 49,
-      "photo_id": "fp49",
+      "photo_id": "fp049",
       "caption": "beachball lamp shade",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422047_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422047",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp049.jpg"
     },
     {
       "sequence": 50,
-      "photo_id": "fp50",
+      "photo_id": "fp050",
       "caption": "Lionel building set",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422109_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422109",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp050.jpg"
     },
     {
       "sequence": 51,
-      "photo_id": "fp51",
+      "photo_id": "fp051",
       "caption": "ephemera",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422112_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422112",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp051.jpg"
     },
     {
       "sequence": 52,
-      "photo_id": "fp52",
+      "photo_id": "fp052",
       "caption": "vintage trumpet",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422100_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422100",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp052.jpg"
     },
     {
       "sequence": 54,
-      "photo_id": "fp54",
+      "photo_id": "fp054",
       "caption": "35mm camera",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422131_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422131",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp054.jpg"
     },
     {
       "sequence": 55,
-      "photo_id": "fp55",
+      "photo_id": "fp055",
       "caption": "wheat cent pennies",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422157_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422157",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp055.jpg"
     },
     {
       "sequence": 57,
-      "photo_id": "fp57",
+      "photo_id": "fp057",
       "caption": "signed sports photos",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422146_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422146",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp057.jpg"
     },
     {
       "sequence": 58,
-      "photo_id": "fp58",
+      "photo_id": "fp058",
       "caption": "Walter Payton",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422166_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422166",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp058.jpg"
     },
     {
       "sequence": 60,
-      "photo_id": "fp60",
+      "photo_id": "fp060",
       "caption": "Michael Jordan",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422174_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422174",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp060.jpg"
     },
     {
       "sequence": 62,
-      "photo_id": "fp62",
+      "photo_id": "fp062",
       "caption": "Jim Brown",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422195_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422195",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp062.jpg"
     },
     {
       "sequence": 63,
-      "photo_id": "fp63",
+      "photo_id": "fp063",
       "caption": "graded Star Wars card",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422178_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422178",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp063.jpg"
     },
     {
       "sequence": 64,
-      "photo_id": "fp64",
+      "photo_id": "fp064",
       "caption": "graded sports cards",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422180_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422180",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp064.jpg"
     },
     {
       "sequence": 65,
-      "photo_id": "fp65",
+      "photo_id": "fp065",
       "caption": "hand held video games",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422181_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422181",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp065.jpg"
     },
     {
       "sequence": 67,
-      "photo_id": "fp67",
+      "photo_id": "fp067",
       "caption": "collector doll",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422243_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422243",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp067.jpg"
     },
     {
       "sequence": 68,
-      "photo_id": "fp68",
+      "photo_id": "fp068",
       "caption": "glassware",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422227_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422227",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp068.jpg"
     },
     {
       "sequence": 69,
-      "photo_id": "fp69",
+      "photo_id": "fp069",
       "caption": "barware",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422258_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422258",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp069.jpg"
     },
     {
       "sequence": 71,
-      "photo_id": "fp71",
+      "photo_id": "fp071",
       "caption": "Marilyn Monroe plates",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422254_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422254",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp071.jpg"
     },
     {
       "sequence": 72,
-      "photo_id": "fp72",
+      "photo_id": "fp072",
       "caption": "Poppy Trail dishes",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422240_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422240",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp072.jpg"
     },
     {
       "sequence": 74,
-      "photo_id": "fp74",
+      "photo_id": "fp074",
       "caption": "Poppy Trail dishes",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422293_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422293",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp074.jpg"
     },
     {
       "sequence": 76,
-      "photo_id": "fp76",
+      "photo_id": "fp076",
       "caption": "Poppy Trail dishes",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422298_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422298",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp076.jpg"
     },
     {
       "sequence": 77,
-      "photo_id": "fp77",
+      "photo_id": "fp077",
       "caption": "Poppy Trail dishes",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422285_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422285",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp077.jpg"
     },
     {
       "sequence": 79,
-      "photo_id": "fp79",
+      "photo_id": "fp079",
       "caption": "Poppy Trail dishes",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422349_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422349",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp079.jpg"
     },
     {
       "sequence": 81,
-      "photo_id": "fp81",
+      "photo_id": "fp081",
       "caption": "matchbooks",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422366_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422366",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp081.jpg"
     },
     {
       "sequence": 82,
-      "photo_id": "fp82",
+      "photo_id": "fp082",
       "caption": "mini Coca-Cola bottles",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422361_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422361",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp082.jpg"
     },
     {
       "sequence": 83,
-      "photo_id": "fp83",
+      "photo_id": "fp083",
       "caption": "toolbox",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422384_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422384",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp083.jpg"
     },
     {
       "sequence": 84,
-      "photo_id": "fp84",
+      "photo_id": "fp084",
       "caption": "wrenches",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422416_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422416",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp084.jpg"
     },
     {
       "sequence": 87,
-      "photo_id": "fp87",
+      "photo_id": "fp087",
       "caption": "costume jewelry",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422448_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422448",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp087.jpg"
     },
     {
       "sequence": 88,
-      "photo_id": "fp88",
+      "photo_id": "fp088",
       "caption": "stamp collection",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422495_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422495",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp088.jpg"
     },
     {
       "sequence": 89,
-      "photo_id": "fp89",
+      "photo_id": "fp089",
       "caption": "Mlay skin care",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422509_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422509",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp089.jpg"
     },
     {
       "sequence": 90,
-      "photo_id": "fp90",
+      "photo_id": "fp090",
       "caption": "rock collection",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422512_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422512",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp090.jpg"
     },
     {
       "sequence": 92,
-      "photo_id": "fp92",
+      "photo_id": "fp092",
       "caption": "Ilight skin care",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422559_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422559",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp092.jpg"
     },
     {
       "sequence": 93,
-      "photo_id": "fp93",
+      "photo_id": "fp093",
       "caption": "Pontiac care kit",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422552_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422552",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp093.jpg"
     },
     {
       "sequence": 94,
-      "photo_id": "fp94",
+      "photo_id": "fp094",
       "caption": "stamp album",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422556_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422556",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp094.jpg"
     },
     {
       "sequence": 95,
-      "photo_id": "fp95",
+      "photo_id": "fp095",
       "caption": "foreign coin collection",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422570_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422570",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp095.jpg"
     },
     {
       "sequence": 96,
-      "photo_id": "fp96",
+      "photo_id": "fp096",
       "caption": "Bulls collectibles",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422589_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422589",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp096.jpg"
     },
     {
       "sequence": 97,
-      "photo_id": "fp97",
+      "photo_id": "fp097",
       "caption": "White Sox collectibles",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422592_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422592",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp097.jpg"
     },
     {
       "sequence": 100,
       "photo_id": "fp100",
       "caption": "trading cards",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422623_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422623",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp100.jpg"
     },
     {
       "sequence": 102,
       "photo_id": "fp102",
       "caption": "1994 World Series Ball",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422646_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422646",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp102.jpg"
     },
     {
       "sequence": 103,
       "photo_id": "fp103",
       "caption": "Don Mattingly signed ball",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422630_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422630",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp103.jpg"
     },
     {
       "sequence": 104,
       "photo_id": "fp104",
       "caption": "Billy Martin signed ball",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422680_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422680",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp104.jpg"
     },
     {
       "sequence": 106,
       "photo_id": "fp106",
       "caption": "Greg Maddux",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422683_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422683",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp106.jpg"
     },
     {
       "sequence": 108,
       "photo_id": "fp108",
       "caption": "Bud Selig",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422687_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422687",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp108.jpg"
     },
     {
       "sequence": 109,
       "photo_id": "fp109",
       "caption": "Nintendo Game Boy games",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422756_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422756",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp109.jpg"
     },
     {
       "sequence": 111,
       "photo_id": "fp111",
       "caption": "baseball cards",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422814_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422814",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp111.jpg"
     },
     {
       "sequence": 113,
       "photo_id": "fp113",
       "caption": "vintage baseball cards",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422869_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422869",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp113.jpg"
     },
     {
       "sequence": 114,
       "photo_id": "fp114",
       "caption": "1970 proof set",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422827_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422827",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp114.jpg"
     },
     {
       "sequence": 116,
       "photo_id": "fp116",
       "caption": "sports bobble heads",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422898_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422898",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp116.jpg"
     },
     {
       "sequence": 118,
       "photo_id": "fp118",
       "caption": "signed sports photos",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422925_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422925",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp118.jpg"
     },
     {
       "sequence": 119,
       "photo_id": "fp119",
       "caption": "signed sports photos",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838422928_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838422928",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp119.jpg"
     },
     {
       "sequence": 125,
       "photo_id": "fp125",
       "caption": "cracker Jack mini cards",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838423067_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838423067",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp125.jpg"
     },
     {
       "sequence": 126,
       "photo_id": "fp126",
       "caption": "cut autographs",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838423084_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838423084",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp126.jpg"
     },
     {
       "sequence": 128,
       "photo_id": "fp128",
       "caption": "roberto Clemente bat",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838423181_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838423181",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp128.jpg"
     },
     {
       "sequence": 129,
       "photo_id": "fp129",
       "caption": "Frank Thomas signed photo",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838423187_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838423187",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp129.jpg"
     },
     {
       "sequence": 131,
       "photo_id": "fp131",
       "caption": "factory baseball sets",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838423223_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838423223",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp131.jpg"
     },
     {
       "sequence": 136,
       "photo_id": "fp136",
       "caption": "squuish mellows",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838423371_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838423371",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp136.jpg"
     },
     {
       "sequence": 137,
       "photo_id": "fp137",
       "caption": "animal trap",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838423361_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838423361",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp137.jpg"
     },
     {
       "sequence": 138,
       "photo_id": "fp138",
       "caption": "wringer",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838423389_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838423389",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp138.jpg"
     },
     {
       "sequence": 139,
       "photo_id": "fp139",
       "caption": "skittles game",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838423382_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838423382",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp139.jpg"
     },
     {
       "sequence": 140,
       "photo_id": "fp140",
       "caption": "New shower head",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838423405_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838423405",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp140.jpg"
     },
     {
       "sequence": 141,
       "photo_id": "fp141",
       "caption": "Tarzan movie display",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838423421_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838423421",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp141.jpg"
     },
     {
       "sequence": 142,
       "photo_id": "fp142",
       "caption": "Madame Alexander doll",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838423432_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838423432",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp142.jpg"
     },
     {
       "sequence": 143,
       "photo_id": "fp143",
       "caption": "Fisher Price toys",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838423427_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838423427",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp143.jpg"
     },
     {
       "sequence": 144,
       "photo_id": "fp144",
       "caption": "Snack Sets",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838423437_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838423437",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp144.jpg"
     },
     {
       "sequence": 145,
       "photo_id": "fp145",
       "caption": "Fiesta Ware dishes",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838423489_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838423489",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp145.jpg"
     },
     {
       "sequence": 150,
       "photo_id": "fp150",
       "caption": "Fry cutter",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838423499_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838423499",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp150.jpg"
     },
     {
       "sequence": 151,
       "photo_id": "fp151",
       "caption": "coffee grinder",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838423502_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838423502",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp151.jpg"
     },
     {
       "sequence": 153,
       "photo_id": "fp153",
       "caption": "Pyrex bowl",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838423567_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838423567",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp153.jpg"
     },
     {
       "sequence": 155,
       "photo_id": "fp155",
       "caption": "Yashica",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838423561_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838423561",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp155.jpg"
     },
     {
       "sequence": 156,
       "photo_id": "fp156",
       "caption": "necklace",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838423610_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838423610",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp156.jpg"
     },
     {
       "sequence": 157,
       "photo_id": "fp157",
       "caption": "punch bowl mugs",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838423631_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838423631",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp157.jpg"
     },
     {
       "sequence": 159,
       "photo_id": "fp159",
       "caption": "Lego building blocks",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838423645_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838423645",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp159.jpg"
     },
     {
       "sequence": 160,
       "photo_id": "fp160",
       "caption": "Polaroid camera",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838423649_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838423649",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp160.jpg"
     },
     {
       "sequence": 162,
       "photo_id": "fp162",
       "caption": "Tonka crane",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838423740_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838423740",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp162.jpg"
     },
     {
       "sequence": 163,
       "photo_id": "fp163",
       "caption": "bobble heads",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838423764_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838423764",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp163.jpg"
     },
     {
       "sequence": 164,
       "photo_id": "fp164",
       "caption": "bobble heads",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838423785_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838423785",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp164.jpg"
     },
     {
       "sequence": 166,
       "photo_id": "fp166",
       "caption": "bobble heads",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838423836_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838423836",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp166.jpg"
     },
     {
       "sequence": 168,
       "photo_id": "fp168",
       "caption": "Bob Ross bobble head",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838423967_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838423967",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp168.jpg"
     },
     {
       "sequence": 169,
       "photo_id": "fp169",
       "caption": "Wahl pens",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838423980_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838423980",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp169.jpg"
     },
     {
       "sequence": 171,
       "photo_id": "fp171",
       "caption": "antique flatware",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838424046_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838424046",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp171.jpg"
     },
     {
       "sequence": 172,
       "photo_id": "fp172",
       "caption": "steak knives",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838424051_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838424051",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp172.jpg"
     },
     {
       "sequence": 173,
       "photo_id": "fp173",
       "caption": "the Beatles magazine",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838424087_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838424087",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp173.jpg"
     },
     {
       "sequence": 175,
       "photo_id": "fp175",
       "caption": "UNCLE magazine",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838424142_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838424142",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp175.jpg"
     },
     {
       "sequence": 176,
       "photo_id": "fp176",
       "caption": "vintage Pens &amp; pencils",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838424181_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838424181",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp176.jpg"
     },
     {
       "sequence": 177,
       "photo_id": "fp177",
       "caption": "watches",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838424197_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838424197",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp177.jpg"
     },
     {
       "sequence": 178,
       "photo_id": "fp178",
       "caption": "vintage wrist watches",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838424210_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838424210",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp178.jpg"
     },
     {
       "sequence": 179,
       "photo_id": "fp179",
       "caption": "necklaces",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838424232_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838424232",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp179.jpg"
     },
     {
       "sequence": 180,
       "photo_id": "fp180",
       "caption": "estate costume jewelry",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838424264_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838424264",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp180.jpg"
     },
     {
       "sequence": 182,
       "photo_id": "fp182",
       "caption": "Wonder Woman shield",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838424323_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838424323",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp182.jpg"
     },
     {
       "sequence": 185,
       "photo_id": "fp185",
       "caption": "hummingbird window",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838424439_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838424439",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp185.jpg"
     },
     {
       "sequence": 186,
       "photo_id": "fp186",
       "caption": "sports pennnats",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838424447_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838424447",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp186.jpg"
     },
     {
       "sequence": 188,
       "photo_id": "fp188",
       "caption": "Pink Floyd concert poster",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838424493_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838424493",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp188.jpg"
     },
     {
       "sequence": 190,
       "photo_id": "fp190",
       "caption": "Jurassic Park 3-D panels",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838424487_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838424487",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp190.jpg"
     },
     {
       "sequence": 191,
       "photo_id": "fp191",
       "caption": "Canada Dry trays",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838424517_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838424517",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp191.jpg"
     },
     {
       "sequence": 192,
       "photo_id": "fp192",
       "caption": "signed Packers poster",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838424544_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838424544",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp192.jpg"
     },
     {
       "sequence": 193,
       "photo_id": "fp193",
       "caption": "Safety score board",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838424596_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838424596",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp193.jpg"
     },
     {
       "sequence": 194,
       "photo_id": "fp194",
       "caption": "Packers plaques",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838424633_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838424633",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp194.jpg"
     },
     {
       "sequence": 197,
       "photo_id": "fp197",
       "caption": "Ronnie Harper signed photo",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838424654_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838424654",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp197.jpg"
     },
     {
       "sequence": 201,
       "photo_id": "fp201",
       "caption": "Ryne Sandberg signed photo",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838424731_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838424731",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp201.jpg"
     },
     {
       "sequence": 202,
       "photo_id": "fp202",
       "caption": "Planters Peanuts display",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838424746_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838424746",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp202.jpg"
     },
     {
       "sequence": 204,
       "photo_id": "fp204",
       "caption": "framed beaded purse",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838424788_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838424788",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp204.jpg"
     },
     {
       "sequence": 207,
       "photo_id": "fp207",
       "caption": "framed beaded purse",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838424900_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838424900",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp207.jpg"
     },
     {
       "sequence": 209,
       "photo_id": "fp209",
       "caption": "Mattel store displays",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838424980_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838424980",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp209.jpg"
     },
     {
       "sequence": 210,
       "photo_id": "fp210",
       "caption": "Boyscout sign",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838424981_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838424981",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp210.jpg"
     },
     {
       "sequence": 211,
       "photo_id": "fp211",
       "caption": "baseball display case",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425052_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425052",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp211.jpg"
     },
     {
       "sequence": 213,
       "photo_id": "fp213",
       "caption": "Star Wars posters",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425086_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425086",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp213.jpg"
     },
     {
       "sequence": 214,
       "photo_id": "fp214",
       "caption": "Lion walking stick",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425089_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425089",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp214.jpg"
     },
     {
       "sequence": 216,
       "photo_id": "fp216",
       "caption": "display case",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425101_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425101",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp216.jpg"
     },
     {
       "sequence": 217,
       "photo_id": "fp217",
       "caption": "Bob Hope record set",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425090_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425090",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp217.jpg"
     },
     {
       "sequence": 218,
       "photo_id": "fp218",
       "caption": "trench coat",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425091_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425091",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp218.jpg"
     },
     {
       "sequence": 219,
       "photo_id": "fp219",
       "caption": "sports books",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425112_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425112",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp219.jpg"
     },
     {
       "sequence": 221,
       "photo_id": "fp221",
       "caption": "Simpsons poster",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425123_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425123",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp221.jpg"
     },
     {
       "sequence": 223,
       "photo_id": "fp223",
       "caption": "Firestone outboard motor",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425104_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425104",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp223.jpg"
     },
     {
       "sequence": 224,
       "photo_id": "fp224",
       "caption": "gear chest",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425106_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425106",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp224.jpg"
     },
     {
       "sequence": 225,
       "photo_id": "fp225",
       "caption": "hockey gear",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425140_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425140",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp225.jpg"
     },
     {
       "sequence": 226,
       "photo_id": "fp226",
       "caption": "Ken Griffey Jr Nike poster",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425126_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425126",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp226.jpg"
     },
     {
       "sequence": 227,
       "photo_id": "fp227",
       "caption": "Angel figures",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425128_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425128",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp227.jpg"
     },
     {
       "sequence": 228,
       "photo_id": "fp228",
       "caption": "art glass paper weights",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425147_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425147",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp228.jpg"
     },
     {
       "sequence": 231,
       "photo_id": "fp231",
       "caption": "pottery",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425265_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425265",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp231.jpg"
     },
     {
       "sequence": 232,
       "photo_id": "fp232",
       "caption": "ball jars",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425283_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425283",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp232.jpg"
     },
     {
       "sequence": 233,
       "photo_id": "fp233",
       "caption": "RC car",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425305_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425305",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp233.jpg"
     },
     {
       "sequence": 234,
       "photo_id": "fp234",
       "caption": "mini nutcrackes",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425311_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425311",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp234.jpg"
     },
     {
       "sequence": 235,
       "photo_id": "fp235",
       "caption": "Century Progress bottle",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425392_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425392",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp235.jpg"
     },
     {
       "sequence": 236,
       "photo_id": "fp236",
       "caption": "glass bowl",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425431_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425431",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp236.jpg"
     },
     {
       "sequence": 237,
       "photo_id": "fp237",
       "caption": "military uniforms",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425469_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425469",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp237.jpg"
     },
     {
       "sequence": 239,
       "photo_id": "fp239",
       "caption": "sports wall plaques",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425485_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425485",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp239.jpg"
     },
     {
       "sequence": 240,
       "photo_id": "fp240",
       "caption": "Funko Pop figs",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425490_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425490",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp240.jpg"
     },
     {
       "sequence": 241,
       "photo_id": "fp241",
       "caption": "New curved monitor",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425544_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425544",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp241.jpg"
     },
     {
       "sequence": 242,
       "photo_id": "fp242",
       "caption": "glass Christmas ornaments",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425542_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425542",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp242.jpg"
     },
     {
       "sequence": 243,
       "photo_id": "fp243",
       "caption": "Snoopy comic",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425605_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425605",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp243.jpg"
     },
     {
       "sequence": 244,
       "photo_id": "fp244",
       "caption": "brass horn",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425587_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425587",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp244.jpg"
     },
     {
       "sequence": 245,
       "photo_id": "fp245",
       "caption": "Batman wallet",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425653_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425653",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp245.jpg"
     },
     {
       "sequence": 246,
       "photo_id": "fp246",
       "caption": "Scottie dog glass set",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425656_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425656",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp246.jpg"
     },
     {
       "sequence": 247,
       "photo_id": "fp247",
       "caption": "Schlitz hat",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425661_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425661",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp247.jpg"
     },
     {
       "sequence": 248,
       "photo_id": "fp248",
       "caption": "Circus collectibles",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425631_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425631",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp248.jpg"
     },
     {
       "sequence": 249,
       "photo_id": "fp249",
       "caption": "Coca-Cola collectibles",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425644_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425644",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp249.jpg"
     },
     {
       "sequence": 252,
       "photo_id": "fp252",
       "caption": "Lite Brite",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425693_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425693",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp252.jpg"
     },
     {
       "sequence": 255,
       "photo_id": "fp255",
       "caption": "dog figures",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425695_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425695",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp255.jpg"
     },
     {
       "sequence": 256,
       "photo_id": "fp256",
       "caption": "new Barbie doll",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425670_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425670",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp256.jpg"
     },
     {
       "sequence": 257,
       "photo_id": "fp257",
       "caption": "NASCAR collectibles",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425671_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425671",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp257.jpg"
     },
     {
       "sequence": 258,
       "photo_id": "fp258",
       "caption": "boxing headlines",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425696_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425696",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp258.jpg"
     },
     {
       "sequence": 260,
       "photo_id": "fp260",
       "caption": "sports shoes",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425673_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425673",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp260.jpg"
     },
     {
       "sequence": 261,
       "photo_id": "fp261",
       "caption": "sports apparel",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425682_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425682",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp261.jpg"
     },
     {
       "sequence": 262,
       "photo_id": "fp262",
       "caption": "sports ephemera",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425699_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425699",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp262.jpg"
     },
     {
       "sequence": 265,
       "photo_id": "fp265",
       "caption": "circus programs",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425690_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425690",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp265.jpg"
     },
     {
       "sequence": 266,
       "photo_id": "fp266",
       "caption": "catchers gear",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425677_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425677",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp266.jpg"
     },
     {
       "sequence": 267,
       "photo_id": "fp267",
       "caption": "Pope John Paul records",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425724_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425724",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp267.jpg"
     },
     {
       "sequence": 269,
       "photo_id": "fp269",
       "caption": "stamp collection",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425716_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425716",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp269.jpg"
     },
     {
       "sequence": 270,
       "photo_id": "fp270",
       "caption": "Brewers collectibles",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425718_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425718",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp270.jpg"
     },
     {
       "sequence": 271,
       "photo_id": "fp271",
       "caption": "sports autographs",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425744_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425744",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp271.jpg"
     },
     {
       "sequence": 272,
       "photo_id": "fp272",
       "caption": "Budweiser egg can",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425733_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425733",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp272.jpg"
     },
     {
       "sequence": 274,
       "photo_id": "fp274",
       "caption": "coffee cans",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425775_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425775",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp274.jpg"
     },
     {
       "sequence": 275,
       "photo_id": "fp275",
       "caption": "Ernie Banks signed T-shirt",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425794_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425794",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp275.jpg"
     },
     {
       "sequence": 276,
       "photo_id": "fp276",
       "caption": "smalls",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425803_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425803",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp276.jpg"
     },
     {
       "sequence": 277,
       "photo_id": "fp277",
       "caption": "stereo optic cards",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425824_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425824",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp277.jpg"
     },
     {
       "sequence": 279,
       "photo_id": "fp279",
       "caption": "Coca-Cola bank",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425903_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425903",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp279.jpg"
     },
     {
       "sequence": 281,
       "photo_id": "fp281",
       "caption": "vintage topps baseball cards",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838425916_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838425916",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp281.jpg"
     },
     {
       "sequence": 285,
       "photo_id": "fp285",
       "caption": "vintage Topps football cards",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838426043_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838426043",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp285.jpg"
     },
     {
       "sequence": 286,
       "photo_id": "fp286",
       "caption": "new German silver rings",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838426067_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838426067",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp286.jpg"
     },
     {
       "sequence": 299,
       "photo_id": "fp299",
       "caption": "new necklaces",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838426395_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838426395",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp299.jpg"
     },
     {
       "sequence": 301,
       "photo_id": "fp301",
       "caption": "Bears Jersey",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838426435_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838426435",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp301.jpg"
     },
     {
       "sequence": 302,
       "photo_id": "fp302",
       "caption": "Packers / Bears program",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838426475_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838426475",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp302.jpg"
     },
     {
       "sequence": 303,
       "photo_id": "fp303",
       "caption": "display cases",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838426511_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838426511",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp303.jpg"
     },
     {
       "sequence": 304,
       "photo_id": "fp304",
       "caption": "Shure microphone",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838426495_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838426495",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp304.jpg"
     },
     {
       "sequence": 307,
       "photo_id": "fp307",
       "caption": "Jenkins signed jersey",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838426537_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838426537",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp307.jpg"
     },
     {
       "sequence": 309,
       "photo_id": "fp309",
       "caption": "hand tools",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838426539_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838426539",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp309.jpg"
     },
     {
       "sequence": 311,
       "photo_id": "fp311",
       "caption": "fruit plaques",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838426544_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838426544",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp311.jpg"
     },
     {
       "sequence": 312,
       "photo_id": "fp312",
       "caption": "sewing supplies",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838426547_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838426547",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp312.jpg"
     },
     {
       "sequence": 313,
       "photo_id": "fp313",
       "caption": "children's records",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838426555_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838426555",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp313.jpg"
     },
     {
       "sequence": 314,
       "photo_id": "fp314",
       "caption": "movie projectors",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838426566_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838426566",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp314.jpg"
     },
     {
       "sequence": 316,
       "photo_id": "fp316",
       "caption": "linens",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838426561_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838426561",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp316.jpg"
     },
     {
       "sequence": 318,
       "photo_id": "fp318",
       "caption": "Moon walk headline",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838426595_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838426595",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp318.jpg"
     },
     {
       "sequence": 319,
       "photo_id": "fp319",
       "caption": "paintball gun",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838426625_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838426625",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp319.jpg"
     },
     {
       "sequence": 321,
       "photo_id": "fp321",
       "caption": "game used trading cards",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838426634_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838426634",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp321.jpg"
     },
     {
       "sequence": 323,
       "photo_id": "fp323",
       "caption": "Kodak camera",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838426687_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838426687",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp323.jpg"
     },
     {
       "sequence": 324,
       "photo_id": "fp324",
       "caption": "Van Briggle ashtray",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838426700_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838426700",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp324.jpg"
     },
     {
       "sequence": 325,
       "photo_id": "fp325",
       "caption": "NASCAR cars",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838426704_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838426704",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp325.jpg"
     },
     {
       "sequence": 326,
       "photo_id": "fp326",
       "caption": "new slot car track",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838426714_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838426714",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp326.jpg"
     },
     {
       "sequence": 328,
       "photo_id": "fp328",
       "caption": "bottle toppers",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838426731_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838426731",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp328.jpg"
     },
     {
       "sequence": 329,
       "photo_id": "fp329",
       "caption": "vintage book set",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838426725_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838426725",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp329.jpg"
     },
     {
       "sequence": 330,
       "photo_id": "fp330",
       "caption": "wooden puzzle",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838426756_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838426756",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp330.jpg"
     },
     {
       "sequence": 331,
       "photo_id": "fp331",
       "caption": "signed baseballs",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838426737_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838426737",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp331.jpg"
     },
     {
       "sequence": 332,
       "photo_id": "fp332",
       "caption": "dietz lantern",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838426767_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838426767",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp332.jpg"
     },
     {
       "sequence": 333,
       "photo_id": "fp333",
       "caption": "Ammo",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838426777_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838426777",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp333.jpg"
     },
     {
       "sequence": 335,
       "photo_id": "fp335",
       "caption": "sports trading cards",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838426798_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838426798",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp335.jpg"
     },
     {
       "sequence": 336,
       "photo_id": "fp336",
       "caption": "belt buckles",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838426851_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838426851",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp336.jpg"
     },
     {
       "sequence": 337,
       "photo_id": "fp337",
       "caption": "vintage lighters",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838426863_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838426863",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp337.jpg"
     },
     {
       "sequence": 338,
       "photo_id": "fp338",
       "caption": "new wrist watch",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838426880_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838426880",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp338.jpg"
     },
     {
       "sequence": 339,
       "photo_id": "fp339",
       "caption": "Morgan dollar pocket watch",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838426883_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838426883",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp339.jpg"
     },
     {
       "sequence": 342,
       "photo_id": "fp342",
       "caption": "Jim Beam decanters",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838426914_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838426914",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp342.jpg"
     },
     {
       "sequence": 343,
       "photo_id": "fp343",
       "caption": "Louis L'Amour books",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838426938_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838426938",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp343.jpg"
     },
     {
       "sequence": 344,
       "photo_id": "fp344",
       "caption": "Tractor diecast",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838426943_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838426943",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp344.jpg"
     },
     {
       "sequence": 345,
       "photo_id": "fp345",
       "caption": "gas pump pocket knives",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838426953_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838426953",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp345.jpg"
     },
     {
       "sequence": 346,
       "photo_id": "fp346",
       "caption": "Budweiser belt buckles",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838426958_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838426958",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp346.jpg"
     },
     {
       "sequence": 350,
       "photo_id": "fp350",
       "caption": "Royal typewriter",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427032_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427032",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp350.jpg"
     },
     {
       "sequence": 351,
       "photo_id": "fp351",
       "caption": "Cuckoo Clock",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427036_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427036",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp351.jpg"
     },
     {
       "sequence": 352,
       "photo_id": "fp352",
       "caption": "comic books",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427024_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427024",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp352.jpg"
     },
     {
       "sequence": 353,
       "photo_id": "fp353",
       "caption": "Pong video game system",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427069_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427069",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp353.jpg"
     },
     {
       "sequence": 354,
       "photo_id": "fp354",
       "caption": "Harley Davidson pocket watches",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427118_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427118",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp354.jpg"
     },
     {
       "sequence": 355,
       "photo_id": "fp355",
       "caption": "John Wayne collectibles",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427122_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427122",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp355.jpg"
     },
     {
       "sequence": 357,
       "photo_id": "fp357",
       "caption": "Thomas Kinkade train set",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427163_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427163",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp357.jpg"
     },
     {
       "sequence": 358,
       "photo_id": "fp358",
       "caption": "Gone with Wind dolls",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427162_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427162",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp358.jpg"
     },
     {
       "sequence": 359,
       "photo_id": "fp359",
       "caption": "Ali signed gloves",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427187_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427187",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp359.jpg"
     },
     {
       "sequence": 361,
       "photo_id": "fp361",
       "caption": "replica Packers rings",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427228_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427228",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp361.jpg"
     },
     {
       "sequence": 362,
       "photo_id": "fp362",
       "caption": "vintage Babe Ruth postcards",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427236_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427236",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp362.jpg"
     },
     {
       "sequence": 364,
       "photo_id": "fp364",
       "caption": "Mickey Mouse Zippo lighter",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427283_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427283",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp364.jpg"
     },
     {
       "sequence": 367,
       "photo_id": "fp367",
       "caption": "Vans jacket",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427280_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427280",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp367.jpg"
     },
     {
       "sequence": 372,
       "photo_id": "fp372",
       "caption": "sports cards",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427338_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427338",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp372.jpg"
     },
     {
       "sequence": 374,
       "photo_id": "fp374",
       "caption": "gaming cards",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427358_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427358",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp374.jpg"
     },
     {
       "sequence": 376,
       "photo_id": "fp376",
       "caption": "Garbage Pail Kids cards",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427367_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427367",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp376.jpg"
     },
     {
       "sequence": 377,
       "photo_id": "fp377",
       "caption": "GI Joe action figures",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427376_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427376",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp377.jpg"
     },
     {
       "sequence": 380,
       "photo_id": "fp380",
       "caption": "antique postcards",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427401_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427401",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp380.jpg"
     },
     {
       "sequence": 382,
       "photo_id": "fp382",
       "caption": "Hot Wheels Gear Box",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427384_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427384",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp382.jpg"
     },
     {
       "sequence": 386,
       "photo_id": "fp386",
       "caption": "Rte 66 plaque",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427416_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427416",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp386.jpg"
     },
     {
       "sequence": 388,
       "photo_id": "fp388",
       "caption": "Daisy bb gun",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427449_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427449",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp388.jpg"
     },
     {
       "sequence": 390,
       "photo_id": "fp390",
       "caption": "sword",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427457_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427457",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp390.jpg"
     },
     {
       "sequence": 391,
       "photo_id": "fp391",
       "caption": "Zorro toy weapons",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427445_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427445",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp391.jpg"
     },
     {
       "sequence": 393,
       "photo_id": "fp393",
       "caption": "toys",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427494_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427494",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp393.jpg"
     },
     {
       "sequence": 395,
       "photo_id": "fp395",
       "caption": "Barbie dolls",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427498_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427498",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp395.jpg"
     },
     {
       "sequence": 396,
       "photo_id": "fp396",
       "caption": "cap guns",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427504_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427504",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp396.jpg"
     },
     {
       "sequence": 400,
       "photo_id": "fp400",
       "caption": "Novelity gifts",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427535_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427535",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp400.jpg"
     },
     {
       "sequence": 401,
       "photo_id": "fp401",
       "caption": "sports collectibles",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427554_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427554",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp401.jpg"
     },
     {
       "sequence": 405,
       "photo_id": "fp405",
       "caption": "N scale train set",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427596_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427596",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp405.jpg"
     },
     {
       "sequence": 407,
       "photo_id": "fp407",
       "caption": "carnival glass",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427614_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427614",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp407.jpg"
     },
     {
       "sequence": 409,
       "photo_id": "fp409",
       "caption": "door knocker",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427623_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427623",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp409.jpg"
     },
     {
       "sequence": 410,
       "photo_id": "fp410",
       "caption": "home decor",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427644_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427644",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp410.jpg"
     },
     {
       "sequence": 411,
       "photo_id": "fp411",
       "caption": "mini picnic table",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427660_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427660",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp411.jpg"
     },
     {
       "sequence": 412,
       "photo_id": "fp412",
       "caption": "purses",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427652_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427652",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp412.jpg"
     },
     {
       "sequence": 414,
       "photo_id": "fp414",
       "caption": "batter bowl",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427671_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427671",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp414.jpg"
     },
     {
       "sequence": 415,
       "photo_id": "fp415",
       "caption": "new M&amp;Ms blanket",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427689_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427689",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp415.jpg"
     },
     {
       "sequence": 416,
       "photo_id": "fp416",
       "caption": "book shelf speakers",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427692_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427692",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp416.jpg"
     },
     {
       "sequence": 417,
       "photo_id": "fp417",
       "caption": "birthday figures",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427707_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427707",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp417.jpg"
     },
     {
       "sequence": 418,
       "photo_id": "fp418",
       "caption": "vintage lighter",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427711_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427711",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp418.jpg"
     },
     {
       "sequence": 419,
       "photo_id": "fp419",
       "caption": "new steamer",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427742_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427742",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp419.jpg"
     },
     {
       "sequence": 420,
       "photo_id": "fp420",
       "caption": "new juicer",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427698_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427698",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp420.jpg"
     },
     {
       "sequence": 422,
       "photo_id": "fp422",
       "caption": "swim fins",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427714_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427714",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp422.jpg"
     },
     {
       "sequence": 423,
       "photo_id": "fp423",
       "caption": "new canister set",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427717_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427717",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp423.jpg"
     },
     {
       "sequence": 424,
       "photo_id": "fp424",
       "caption": "puzzles",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427771_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427771",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp424.jpg"
     },
     {
       "sequence": 425,
       "photo_id": "fp425",
       "caption": "cake caddy",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427810_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427810",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp425.jpg"
     },
     {
       "sequence": 426,
       "photo_id": "fp426",
       "caption": "art supplies",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427802_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427802",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp426.jpg"
     },
     {
       "sequence": 427,
       "photo_id": "fp427",
       "caption": "Sealife camera",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427777_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427777",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp427.jpg"
     },
     {
       "sequence": 431,
       "photo_id": "fp431",
       "caption": "mini military toys",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427836_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427836",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp431.jpg"
     },
     {
       "sequence": 432,
       "photo_id": "fp432",
       "caption": "Pokemon collectibles",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427875_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427875",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp432.jpg"
     },
     {
       "sequence": 433,
       "photo_id": "fp433",
       "caption": "brass table lamps",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427865_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427865",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp433.jpg"
     },
     {
       "sequence": 436,
       "photo_id": "fp436",
       "caption": "Hamm's beer keg",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427893_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427893",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp436.jpg"
     },
     {
       "sequence": 437,
       "photo_id": "fp437",
       "caption": "35mm cameras",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427895_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427895",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp437.jpg"
     },
     {
       "sequence": 438,
       "photo_id": "fp438",
       "caption": "Fisher Price little people circus train",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427930_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427930",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp438.jpg"
     },
     {
       "sequence": 439,
       "photo_id": "fp439",
       "caption": "Big Ben alarm clock",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427961_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427961",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp439.jpg"
     },
     {
       "sequence": 440,
       "photo_id": "fp440",
       "caption": "basket",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427936_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427936",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp440.jpg"
     },
     {
       "sequence": 441,
       "photo_id": "fp441",
       "caption": "Mid Century table lamp",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427951_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427951",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp441.jpg"
     },
     {
       "sequence": 443,
       "photo_id": "fp443",
       "caption": "board games",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427989_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427989",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp443.jpg"
     },
     {
       "sequence": 444,
       "photo_id": "fp444",
       "caption": "carving set",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427994_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427994",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp444.jpg"
     },
     {
       "sequence": 445,
       "photo_id": "fp445",
       "caption": "belt buckles",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838427955_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838427955",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp445.jpg"
     },
     {
       "sequence": 446,
       "photo_id": "fp446",
       "caption": "toys",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838428033_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838428033",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp446.jpg"
     },
     {
       "sequence": 451,
       "photo_id": "fp451",
       "caption": "action figures",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838428083_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838428083",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp451.jpg"
     },
     {
       "sequence": 452,
       "photo_id": "fp452",
       "caption": "New bird bath",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838428073_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838428073",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp452.jpg"
     },
     {
       "sequence": 455,
       "photo_id": "fp455",
       "caption": "Waterford crystal bowl",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838428113_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838428113",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp455.jpg"
     },
     {
       "sequence": 456,
       "photo_id": "fp456",
       "caption": "movie camera",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838428103_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838428103",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp456.jpg"
     },
     {
       "sequence": 457,
       "photo_id": "fp457",
       "caption": "beer tap handles",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838428126_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838428126",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp457.jpg"
     },
     {
       "sequence": 459,
       "photo_id": "fp459",
       "caption": "antique telephone",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838428149_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838428149",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp459.jpg"
     },
     {
       "sequence": 461,
       "photo_id": "fp461",
       "caption": "new Barbie dolls",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838428130_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838428130",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp461.jpg"
     },
     {
       "sequence": 463,
       "photo_id": "fp463",
       "caption": "new Barbie dolls",
-      "thumb_url": "https://content.auctionzip.com/listing/4160518/838428190_th",
-      "full_url": "https://content.auctionzip.com/listing/4160518/838428190",
-      "listing_id": "4160518"
+      "uri": "gs://blue-toad-intake/2026-08-22/fp463.jpg"
     }
   ]
 }
