@@ -75,10 +75,15 @@ walk — so attending is possible when the day allows. The 15% on that receipt i
 the credit-card buyer's premium, not an absentee fee; the two happen to share a
 multiplier.
 
-So July 11 is **not** an example of a sale the owner could not reach. It is an
-example of a prepared absentee cycle that went unused because he was able to
-attend. The driving example — a sale he genuinely could not attend — is being
-re-sourced from the shop's own records rather than asserted here.
+So July 11 is **not** an example of a sale the owner could not reach — Blue Toad
+is 2.3 miles from the store, five minutes up US-12. It is an example of a
+prepared absentee cycle that went unused.
+
+What the cycle actually costs him is the prep: **~428 gallery photos reviewed by
+hand and an 88-lot priced sheet built manually, every two weeks**, on top of
+running the shop alone. The absentee channel is real, published, and has never
+once been used — preparing it by hand costs more than it returns. That is the
+friction this fleet is built to remove.
 
 Four lots from that sale did reach inventory, by some route other than an
 absentee bid. How — in person, by phone, after the sale — is not recorded

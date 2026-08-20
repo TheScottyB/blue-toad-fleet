@@ -118,9 +118,23 @@ in-person card is 15%, absentee is 15% — same multiplier, different fee). **Do
 cite the July 11 receipt as evidence of an absentee execution, and do not write
 copy saying he could not attend that sale.** He could and did.
 
-Blue Toad is **2.3 miles** from the store — 5-minute drive, 53-minute walk. An
-"eight miles / not walking distance" figure circulated on the bus 2026-08-20 and
-was retracted by its author as fabricated. Never repeat it.
+**Distance, settled by the operator's own map 2026-08-20:** Blue Toad Auctions,
+200 Elizabeth Ln, Genoa City WI -> 10324 N Main St, Richmond IL is **2.3 miles
+via US-12 E** — 5 min drive, 14 min bike, **53 min walk**, directly north of the
+store. Walking distance is accurate and always was. An "eight miles / not walking
+distance" figure was fabricated by an agent which then used it to question the
+operator's account of his own town without verifying first. That agent was
+terminated for it. **Never repeat the figure, and never spend an unverified number
+to doubt a first-hand account.**
+
+**GRAFE #2887 / RED DOGS IS NOT THIS PROJECT'S SPINE.** Operator, directly
+2026-08-20: it was *"a one-off research project on a CLOSED auction."* He saw an
+item inside Red Dogs while visiting, missed the sale, wanted to email and ask who
+bought it, and could not find the closed lot list. An agent found the catalog
+still online and pulled it to search for the item — **the item was not in it.**
+It stands as a separate demonstration that this kind of retrieval works, and it
+*"has nothing to do with Blue Toad's bi-weekly."* Do not weld it onto the Blue
+Toad narrative. An earlier relay had it as the replacement spine; that was wrong.
 
 **The absentee submission never ran.** No bid, absentee, or confirmation email
 exists anywhere in the operator's mailbox for Jun 20 – Jul 20 2026 (searched
