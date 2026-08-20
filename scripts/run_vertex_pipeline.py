@@ -150,7 +150,9 @@ def run_pipeline(
     appraisal_by_lot = {}
     emitted_questions = []
     for raw in raw_appraisals:
-        app, qs = engine.parse_appraisal_to_domain(raw)
+        lot_id = raw.get("lot_id")
+        cat_hint = REFERENCE_COMPS.get(lot_id, {}).get("cat")
+        app, qs = engine.parse_appraisal_to_domain(raw, category_override=cat_hint)
         appraisal_by_lot[app.lot_id] = (app, raw)
         emitted_questions.extend(qs)
 

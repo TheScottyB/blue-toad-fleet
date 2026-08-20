@@ -97,7 +97,9 @@ def get_aug22_state():
         try:
             cached_data = json.loads(appraisal_cache_path.read_text())
             for raw in cached_data:
-                app_obj, qs = engine.parse_appraisal_to_domain(raw)
+                lot_id = raw.get("lot_id")
+                cat_hint = REFERENCE_COMPS.get(lot_id, {}).get("cat")
+                app_obj, qs = engine.parse_appraisal_to_domain(raw, category_override=cat_hint)
                 appraisals_by_lot[app_obj.lot_id] = (app_obj, raw)
                 emitted_questions.extend(qs)
         except Exception as e:

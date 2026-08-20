@@ -43,7 +43,7 @@ const close = `<div class="full"><div class="glow"></div>
 <div class="facts">
  <div class="fact"><b>359</b><span>lots appraised</span></div>
  <div class="fact"><b>12</b><span>bids allocated</span></div>
- <div class="fact"><b>160</b><span>tests · &lt;0.1s</span></div>
+ <div class="fact"><b>173</b><span>tests · &lt;0.1s</span></div>
 </div>
 <div class="url">blue-toad-fleet-u5gvrqwvua-uc.a.run.app</div>
 <div class="rule"></div></div>`;

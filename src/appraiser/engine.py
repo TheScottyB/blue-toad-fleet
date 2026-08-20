@@ -307,10 +307,11 @@ class AppraisalEngine:
     @staticmethod
     def parse_appraisal_to_domain(
         data: dict,
+        category_override: Optional[str] = None,
     ) -> tuple[Appraisal, list[Question]]:
         """Convert a raw Vertex JSON appraisal response into domain dataclasses."""
         lot_id = data.get("lot_id", "UNKNOWN")
-        category = data.get("category", "other")
+        category = category_override or data.get("category", "other")
         identification = data.get("identification", "")
         conf_str = data.get("confidence", "medium").lower()
 
