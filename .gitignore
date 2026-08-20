@@ -10,3 +10,6 @@ media/main.mp4
 media/open.mp4
 media/close.mp4
 media/list.txt
+node_modules/
+.agents/
+ORIGINAL_REQUEST.md

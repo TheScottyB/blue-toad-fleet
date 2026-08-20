@@ -25,6 +25,6 @@ URL=$(gcloud run services describe "$SERVICE_NAME" --region "$REGION" --project 
 echo "=================================================================="
 echo "==> [✓] BLUE TOAD FLEET IS LIVE ON GOOGLE CLOUD RUN!"
 echo "==> Live Gate Console: $URL"
-echo "==> Health Endpoint:  $URL/healthz"
+echo "==> Health Endpoint:  $URL/health"
 echo "==> Sourcing API:     $URL/api/lots"
 echo "=================================================================="

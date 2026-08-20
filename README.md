@@ -7,8 +7,8 @@
 
   [![Google Cloud Run](https://img.shields.io/badge/Google%20Cloud%20Run-Live%20Service-34d399?style=flat-square&logo=googlecloud)](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app)
   [![Vertex AI](https://img.shields.io/badge/Vertex%20AI-Gemini%203.6%20Flash-a78bfa?style=flat-square&logo=google)](https://cloud.google.com/vertex-ai)
-  [![Unit Tests](https://img.shields.io/badge/Unit%20Tests-160%20Passing-38bdf8?style=flat-square&logo=pytest)](https://github.com/TheScottyB/blue-toad-fleet)
-  [![License](https://img.shields.io/badge/License-MIT-fbbf24?style=flat-square)](#disclosure)
+  [![Unit Tests](https://img.shields.io/badge/Unit%20Tests-167%20Passing-38bdf8?style=flat-square&logo=pytest)](https://github.com/TheScottyB/blue-toad-fleet)
+  [![License: MIT](https://img.shields.io/badge/License-MIT-fbbf24?style=flat-square)](LICENSE)
 </div>
 
 ---
@@ -46,7 +46,7 @@ make test
 
 ## The Commercial Problem
 
-Richmond General is a one-person resale shop in Richmond, Illinois. Blue Toad Auctions is 2.3 miles north, across the Wisconsin state line in Genoa City — five minutes up US-12.
+Richmond General is a one-person heritage resale shop in Richmond, Illinois (McHenry County). Blue Toad Auctions is located at 200 Elizabeth Lane, Genoa City, Wisconsin (Walworth County), 2.3 miles north via US-12 (5-minute drive / 53-minute walk across the state line).
 
 **Blue Toad is not a modern online auction.** Every two weeks, the auction house publishes a single webpage with 450+ uncataloged photographs of estate goods and a list of SEO keywords. There are no lot numbers and no live bidding app.
 
@@ -131,8 +131,8 @@ Appraisals feed into pure, unit-tested valuation logic implementing the store's 
 blue-toad-fleet/
 ├── data/                       # Verified cycle data, manifests, and bid sheets
 │   ├── aug22_absentee_bid_email.txt            # Final sealed absentee bid email draft
-│   ├── BlueToad_2026-08-22_BidSheet.xlsx       # 10-column approved bid workbook
-│   └── BlueToad_2026-07-11_Benchmark_Comparison.xlsx
+│   ├── BlueToad_2026-08-22_BidSheet.xlsx       # 8-column approved bid workbook
+│   └── BlueToad_2026-07-11_Benchmark_Comparison.xlsx # 10-column benchmark workbook
 ├── demo/                       # Credential-free reproducible demo runners
 │   ├── run_demo.py             # Pure decision pipeline demo
 │   ├── run_cycles.py           # 2-cycle cross-cycle learning demo
@@ -141,10 +141,10 @@ blue-toad-fleet/
 │   ├── architecture_diagram.png
 │   ├── app_icon.png
 │   ├── DEVPOST.md              # Complete Devpost submission story
+│   ├── VIDEO_SCRIPT.md         # 4-minute video walkthrough script
 │   └── screenshots/            # High-resolution UI captures
-├── infra/                      # Cloud Run deployment scripts & Dockerfile
-│   ├── deploy.sh               # Idempotent Cloud Run deployment script
-│   └── Dockerfile              # Container definition for Cloud Run
+├── infra/                      # Cloud Run deployment scripts
+│   └── deploy.sh               # Idempotent Cloud Run deployment script
 ├── scripts/                    # Live cycle runners & verification tools
 │   ├── run_aug22_cycle.py      # Production sourcing cycle compiler
 │   ├── run_july11_benchmark.py # Historical A/B benchmark reconciler
@@ -157,8 +157,11 @@ blue-toad-fleet/
 │   ├── gate/                   # Gate Console UI renderer (pure HTML/CSS)
 │   ├── intake/                 # Manifest parsing, natural sort & spatial clustering
 │   └── server.py               # Cloud Run FastAPI server & API endpoints
-├── tests/                      # Comprehensive pytest unit suite (160 tests)
+├── tests/                      # Comprehensive pytest unit suite (167 tests)
+├── Dockerfile                  # Container definition for Google Cloud Run
+├── LICENSE                     # MIT License
 ├── Makefile                    # Standard developer workflow targets
+├── pytest.ini                  # Root pytest configuration
 └── requirements.txt            # Production Python dependencies
 ```
 

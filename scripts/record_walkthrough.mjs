@@ -1,6 +1,6 @@
 // Deterministic screen recording of the live Gate Console.
 // Emits media/raw/beats.json so the ffmpeg pass knows where each title card goes.
-import { chromium } from '/Users/scottybe/.npm/_npx/31e32ef8478fbf80/node_modules/playwright/index.mjs';
+import { chromium } from 'playwright';
 import { writeFileSync, readdirSync, renameSync } from 'fs';
 
 const URL = process.env.BTF_URL || 'https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app';

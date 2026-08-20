@@ -56,7 +56,7 @@ def generate_diagram():
 
     # Pillar 5: Output Sourcing Execution
     draw_box(12.4, 1.2, 3.0, 2.4, "5. SOURCING EXECUTION", 
-             "• Sealed Absentee Bid Email Draft\n  (info@bluetoadauctions.com)\n• $5.00 Bidding Increments\n• 15% Absentee Fee Enforced\n• 10-Column Excel Workbook", 
+             "• Sealed Absentee Bid Email Draft\n  (info@bluetoadauctions.com)\n• $5.00 Bidding Increments\n• 15% Absentee Fee Enforced\n• Excel Sourcing Workbooks", 
              '#34d399')
 
     # Draw Connections

@@ -107,7 +107,7 @@ class Question:
         """
         if self.kind in _CLUSTER_SCOPED:
             return (self.kind.value, self.category,
-                    self.cluster_id or self.lot_ids[0] if self.lot_ids else "")
+                    self.cluster_id or (self.lot_ids[0] if self.lot_ids else ""))
         return (self.kind.value, self.category)
 
     @property

@@ -30,7 +30,7 @@
 
 ## Inspiration
 
-Richmond General is a one-person resale shop in Richmond, Illinois. Blue Toad Auctions is 2.3 miles north, across the Wisconsin state line in Genoa City — five minutes up US-12.
+Richmond General is a one-person heritage resale shop in Richmond, Illinois (McHenry County). Blue Toad Auctions is located at 200 Elizabeth Lane, Genoa City, Wisconsin (Walworth County), 2.3 miles north via US-12 (5-minute drive / 53-minute walk across the state line).
 
 Blue Toad is not a modern online auction with lot numbers or bidding apps. Every two weeks, the auction house publishes a single webpage with 450+ unlabelled, uncataloged photographs of estate goods and a list of SEO keywords. 
 

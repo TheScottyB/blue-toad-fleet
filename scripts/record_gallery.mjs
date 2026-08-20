@@ -1,5 +1,5 @@
 // Beat 1 footage: the raw 462-photo gallery drop, scrolled top to bottom.
-import { chromium } from '/Users/scottybe/.npm/_npx/31e32ef8478fbf80/node_modules/playwright/index.mjs';
+import { chromium } from 'playwright';
 import { readdirSync, renameSync } from 'fs';
 
 // The live gallery serves 403 to automated clients (see src/intake/__init__.py),

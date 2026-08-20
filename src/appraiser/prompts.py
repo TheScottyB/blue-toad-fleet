@@ -16,8 +16,9 @@ from src.appraisal import StandingRule
 
 _SHOP = (
     "Richmond General is a resale shop in Richmond, Illinois. It buys at Blue Toad "
-    "Auctions in Genoa City, Wisconsin — a couple of miles over the state line — and "
-    "resells in-store, on its Square storefront and on eBay.\n"
+    "Auctions (located at 200 Elizabeth Lane, Genoa City, Wisconsin — 2.3 miles north "
+    "via US-12 across the state line) and resells in-store, on its Square storefront "
+    "and on eBay.\n"
     "It buys: breweriana, railroad, advertising, travel posters, stoneware, Native "
     "American, vintage toys, cameras."
 )

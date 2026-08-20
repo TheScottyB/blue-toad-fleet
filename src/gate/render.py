@@ -280,7 +280,7 @@ def render_console(v: CycleView) -> str:
 <footer>
   The agent manages its own uncertainty budget: it asks when confidence is low,
   sends without asking when value is low, and needs you less every cycle.<br>
-  Unanswered questions do not block &mdash; at the 4PM cutoff the sheet ships with
+  Unanswered questions do not block &mdash; at the Friday 8:00 PM cutoff the sheet ships with
   those rows flagged low-confidence.
 </footer>
 </div></body></html>"""

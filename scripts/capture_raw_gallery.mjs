@@ -1,4 +1,4 @@
-import { chromium } from '/Users/scottybe/.npm/_npx/31e32ef8478fbf80/node_modules/playwright/index.mjs';
+import { chromium } from 'playwright';
 
 async function capture() {
   const b = await chromium.launch({ channel: 'chrome', headless: true });

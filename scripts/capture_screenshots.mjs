@@ -1,4 +1,4 @@
-import { chromium } from '/Users/scottybe/.npm/_npx/31e32ef8478fbf80/node_modules/playwright/index.mjs';
+import { chromium } from 'playwright';
 const URL='https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app';
 const OUT='docs/screenshots';
 const b=await chromium.launch({channel:'chrome'});

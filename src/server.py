@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 from typing import Optional
 from fastapi import FastAPI, HTTPException, Body
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse
 
 from src.intake.manifest import parse_drop, group_into_lots, TriagedPhoto
@@ -20,9 +21,17 @@ from src.bidmath import (
 )
 from src.appraisal import Question, QuestionKind, build_queue, learn, StandingRule
 from src.gate import CycleView, render_console
-from scripts.run_aug22_cycle import APPROVED_BIDS, ABSENTEE_FEE
+from scripts.run_aug22_cycle import APPROVED_BIDS
 
 app = FastAPI(title="Blue Toad Fleet", version="2.0.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # In-memory runtime state for the active cycle
 STATE = {
@@ -262,8 +271,13 @@ def answer_question(payload: dict = Body(...)):
     if not kind_str or not cat or not ans:
         raise HTTPException(status_code=400, detail="Missing kind, category, or answer")
 
+    try:
+        kind = QuestionKind(kind_str.lower())
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid question kind: {kind_str}")
+
     new_rule = StandingRule(
-        kind=QuestionKind(kind_str),
+        kind=kind,
         category=cat,
         answer=ans,
         learned_cycle=STATE["cycle_id"],
