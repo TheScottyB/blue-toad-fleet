@@ -9,13 +9,15 @@
 
 * **Visual on Screen:**
   1. **(0:00 – 0:03)** Title card: `Blue Toad Fleet — Built solo, in 13 days, by one person.`
-  2. **(0:03 – 0:45)** Open browser tab showing the messy 462-photo AuctionZip gallery (or `data/aug22_gallery_4160518/manifest.json`). Scroll through the uncataloged, unlabelled photos.
+  2. **(0:03 – 0:45)** Open browser tab showing the raw 462-photo uncataloged gallery drop (`docs/screenshots/00-raw-auction-gallery.png` or `manifest.json`). Scroll through the uncataloged, unlabelled photos.
 * **Voiceover:**
-  > *"I run Richmond General, a one-person resale shop in Richmond, Illinois. Five minutes up US-12 across the Wisconsin line in Genoa City, Blue Toad Auctions drops 450 uncataloged photos every two weeks for a Saturday estate sale. There are no lot numbers, no online bidding app, and a strict Friday 8:00 PM absentee cutoff.*
+  > *"I run Richmond General, a one-person resale shop in Richmond, Illinois. Five minutes up US-12 across the Wisconsin line in Genoa City, Blue Toad Auctions publishes 450 uncataloged photos every two weeks for a Saturday estate sale. There are no lot numbers, no online bidding app, and a strict Friday 8:00 PM absentee cutoff.
   >
-  > *For a solo shopkeeper running the counter, reviewing 450 photos, identifying obscure makers, and researching comps is impossible. Every two weeks I faced the same dilemma: either rush over at 9:00 AM on Saturday for a 1-hour preview and get stuck with an uncurated $300 truckload of low-margin junk, or freeze from the fear of making an embarrassing $500 pricing blunder and miss the sale completely.*
+  > Because the listing site blocks automated scrapers, our pipeline begins with a sanctioned gallery drop. For a solo shopkeeper running the counter, reviewing 450 unlabelled photos, identifying obscure makers, and researching comps by hand is impossible.
   >
-  > *Capital was never the constraint — time, visual throughput, and bidding confidence were."*
+  > Every two weeks I faced the same dilemma: either rush over at 9:00 AM on Saturday for a 1-hour preview and get stuck with an uncurated $300 truckload of low-margin junk, or freeze from the fear of making an embarrassing $500 pricing blunder and miss the sale completely.
+  >
+  > Capital was never the constraint — time, visual throughput, and bidding confidence were."*
 
 ---
 

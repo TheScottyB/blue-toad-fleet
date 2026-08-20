@@ -15,7 +15,7 @@ from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse
 
 from src.intake.manifest import parse_drop, group_into_lots, TriagedPhoto
 from src.bidmath import (
-    Lot, CompEstimate, Confidence, Priority,
+    Lot, CompEstimate, Confidence, Priority, Decision,
     price_lot, allocate, summarize, ABSENTEE_FEE
 )
 from src.appraisal import Question, QuestionKind, build_queue, learn, StandingRule
@@ -82,9 +82,10 @@ def get_aug22_state():
 
     lot_groups = group_into_lots(triaged)
 
-    # 2. Approved Sourcing Schedule
+    # 2. Approved Sourcing Schedule (Exact $5 Increments, $335 Max / $385.25 All-In)
     approved_map = {b[0]: b for b in APPROVED_BIDS}
     lots = []
+    decisions = []
     captions_map = {}
 
     for g in lot_groups:
@@ -95,19 +96,29 @@ def get_aug22_state():
 
         if lot_id in approved_map:
             _, _, desc, cat, start_bid, max_bid, est = approved_map[lot_id]
-            # Set comp so price_lot produces the exact max_bid cleanly
-            # max_bid = low_mid * 0.375 * 0.90 -> low_mid = max_bid / (0.375 * 0.9)
-            target_lm = max_bid / (0.375 * 0.90)
-            low_comp = round(target_lm * 0.80, 2)
-            high_comp = round(target_lm * 1.40, 2)
+            all_in = round(max_bid * (1.0 + ABSENTEE_FEE), 2)
+            auto_send = max_bid <= STATE["auto_send_threshold"]
+            priority = Priority.A if max_bid >= 35.0 else Priority.B
 
             lots.append(Lot(
                 lot_id=lot_id,
                 caption=desc,
                 category=cat,
                 fit_score=0.90,
-                condition_penalty=0.10,
-                comp=CompEstimate(low=low_comp, high=high_comp, source_count=3, confidence=Confidence.HIGH),
+                condition_penalty=0.0,
+                comp=CompEstimate(low=start_bid * 2.0, high=max_bid * 2.5, source_count=3, confidence=Confidence.HIGH),
+            ))
+            decisions.append(Decision(
+                lot_id=lot_id,
+                category=cat,
+                priority=priority,
+                max_bid=float(max_bid),
+                all_in=all_in,
+                bid_fraction=0.38,
+                reason=f"Approved in collaborative check-in ({est})",
+                needs_human_pricing=False,
+                auto_send=auto_send,
+                allocated=True,
             ))
         else:
             lots.append(Lot(
@@ -118,9 +129,19 @@ def get_aug22_state():
                 condition_penalty=0.10,
                 comp=CompEstimate(low=0.0, high=0.0, source_count=0, confidence=Confidence.NONE),
             ))
+            decisions.append(Decision(
+                lot_id=lot_id,
+                category="general estate",
+                priority=Priority.SKIP,
+                max_bid=None,
+                all_in=None,
+                bid_fraction=None,
+                reason="Skipped on owner directive / category balance",
+                needs_human_pricing=False,
+                auto_send=False,
+                allocated=False,
+            ))
 
-    decisions = [price_lot(l) for l in lots]
-    decisions = allocate(decisions, budget_cap=STATE["budget_cap"], auto_send_threshold=STATE["auto_send_threshold"])
     summary = summarize(decisions)
 
     # 3. Questions Queue (Settled from Memory)
