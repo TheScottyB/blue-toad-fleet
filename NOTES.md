@@ -165,6 +165,49 @@ done in time.** July 11 he went and took nine lots off the floor chosen in a
 preview hour — not a short list chosen deliberately against comps. That is the
 failure mode, not the success case.
 
+## TRACK: COLLABORATIVE PARTNER. Settled by the operator 2026-08-20.
+
+And the differentiator is NOT the shrinking question count. That was my framing and
+it was the wrong metric — counting questions measures how often the agent bothers
+him.
+
+**Operator's framing, which is better:** *"its not that the questions go away, it
+is that they change over time to match the situation... the user will not tire of
+all the same stupid questions and will start to appreciate the prompting, of just
+that right question that was needed to be asked."*
+
+**The code already implements this** — my copy undersold it. `Question.impact`
+(src/appraisal/__init__.py:117) ranks by how much of the sheet an answer repairs:
+breadth first (a grouping question over six photos outranks a condition note on
+one), scaled by value at stake and the model's confidence gap, square-root damped
+so one expensive lot cannot monopolise the queue. `build_queue` groups, suppresses
+anything a standing rule already answers, ranks by impact, hard-caps, and **drops**
+the remainder rather than deferring it.
+
+So questions don't vanish, they MOVE. Standing rules retire the recurring ones and
+the cap refills with the next most consequential unknowns for the sale actually in
+front of him. Cycle 2 survivors score 1.82 / 1.58 / 1.48 / 0.89 / 0.71 / 0.66 /
+0.64. `demo/run_cycles.py` already prints the right line: *"It settles rather than
+reaching zero, which is correct: a maker's mark on a new object is a new question
+every time. That is the honest version of learning."*
+
+**Why not Taskmaster** — operator: *"there are those that just want the agents to
+take over everything and send me money. Taskmaster won't work like that, that track
+is truly for much larger pipelines and workflows."* And the analogy worth keeping
+in the write-up: *"its like all the 'I made a trading agent that makes 100k a day'
+— it might be fully automated trading but its not making money, although the videos
+on YouTube make it seem like that."*
+
+Full autonomy is easy to film and hard to verify. The projects that lean on it are
+usually the ones that cannot show results. **This is the direct argument for why
+this repo's honesty rules are load-bearing rather than decorative:** a system that
+will eventually claim positive EV per bid has to be the kind of system that would
+have reported a negative one.
+
+**The value statement, his words:** *"its the velocity that can get info processed
+AND collab with the user where the real value is."* Both halves. Throughput alone
+is the trading-bot video; collaboration alone is a chat window.
+
 ## VELOCITY — the definition behind `fit_score`. Operator, 2026-08-20.
 
 `fit_score` has been doing the selection work with nothing behind it. This is the
