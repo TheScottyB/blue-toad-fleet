@@ -10,6 +10,7 @@ media/main.mp4
 media/open.mp4
 media/close.mp4
 media/list.txt
+media/beat*.mp4
 node_modules/
 .agents/
 ORIGINAL_REQUEST.md
