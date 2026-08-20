@@ -26,8 +26,9 @@ def to_vertex(node):
     and ``items``, so nested objects and array element schemas are translated
     too. Returns a new structure; the input is never mutated.
 
-    NOT yet verified against the live endpoint. ``scripts/test_vertex_live.py``
-    is the check; record the date here once it passes.
+    Verified against the live endpoint 2026-08-19: one real photo through
+    ``gemini-3.6-flash`` on ``threebatdrone-prod-420`` (global), schema-valid,
+    9.87s, 2149 in / 373 out. Re-run ``scripts/test_vertex_live.py`` to confirm.
     """
     if not isinstance(node, dict):
         return node

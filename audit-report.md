@@ -3,8 +3,14 @@
 **Target:** one real `generate_content` call from `threebatdrone-prod-420`, on a 3.5+ model,
 returning structured output valid against `APPRAISAL_SCHEMA`, for one real photo.
 **Run:** 2026-08-19, against the working tree at `a5f4fbe`.
-**Verdict:** **the gate cannot currently be attempted.** Three hard blockers, all verified
-by command, none of them in the code under review.
+**Verdict at audit time:** the gate could not be attempted. Three hard blockers, all
+verified by command, none of them in the code under review.
+
+> **CLOSED 2026-08-19 — THE GATE PASSES.** All three blockers cleared. One real photo
+> (`items/RG-0012/hero.png`) through `gemini-3.6-flash` on `threebatdrone-prod-420`
+> (global), schema-valid against `APPRAISAL_SCHEMA`, 9.87s, 2149 in / 373 out, two
+> clarifying questions emitted and no price stated. §1 below is kept as the record of
+> what was actually wrong, not edited to look prescient.
 
 Everything below was checked, not inferred. Where the first pass of this audit guessed, it
 is marked and corrected.
@@ -121,8 +127,8 @@ Exit codes: `0` pass · `1` gate failed · `2` preflight failed. Current state e
 1. ~~`pip install google-genai`~~ — **done.** `google-genai 2.19.0` installed clean on
    Python 3.14.4; `pydantic-core` and `websockets` both ship `cp314` arm64 wheels and
    `cryptography` used `cp311-abi3`. Nothing compiled. **The 3.12 fallback is unnecessary.**
-2. `gcloud auth application-default login` — **still open, and needs a human.** It opens a
-   browser OAuth flow; it cannot be run from a non-interactive session.
+2. ~~`gcloud auth application-default login`~~ — **done by the operator.** ADC written
+   with `quota_project_id = threebatdrone-prod-420`.
 3. ~~Get one JPEG off `bluetoadauctions.com/morephotos.html`~~ — **withdrawn, this was
    wrong.** That page carries no photos. It is a 5 KB shell that injects an AuctionZip feed
    widget client-side (`az_feed_uid=35615`, `az_feed=129`); its only image is a Facebook
@@ -137,7 +143,17 @@ Exit codes: `0` pass · `1` gate failed · `2` preflight failed. Current state e
    `richmondgeneral/items/RG-0012/hero.png` (1.2 MB) is a Hallmark Keepsake Lionel GG-1
    locomotive — a real photo of a real object in `railroad`, one of the shop's own buy
    categories. It proves the integration; it just is not an auction lot.
-4. Run the gate.
+4. ~~Run the gate.~~ — **PASSED**, on `items/RG-0012/hero.png` (Hallmark Keepsake Lionel
+   GG-1, category `railroad`). Steps 5 and 6 were never needed: the schema was accepted
+   with `minimum`/`maximum` intact, and `gemini-3.6-flash` resolved on the first try.
+
+   Two findings the gate itself produced, both for the fan-out rather than the gate:
+   - **Latency 9.87s, ~2x the 5s the script reports.** Reported, not enforced. Worth
+     examining before 304 photos.
+   - **`value_magnitude_hint` anchored on a price sticker.** It returned `15` and listed
+     `"USD $ 15.00"` in `marks_observed` — it read the shop's own retail sticker off the
+     box. Correct under the prompt, but the model will anchor on visible price text, and
+     auction gallery photos can carry lot tags and estimate cards.
 5. If it 400s on the schema: drop `minimum`/`maximum` from `condition_penalty`, retry.
    `bidmath` re-clamps the range anyway.
 6. If it 404s on the model: `gemini-3.5-flash-lite` is the cheaper second try; a GA model
