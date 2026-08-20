@@ -1,6 +1,6 @@
 // Beat 1 footage: the raw 462-photo gallery drop, scrolled top to bottom.
 import { chromium } from 'playwright';
-import { readdirSync, renameSync } from 'fs';
+import { readdirSync, renameSync, statSync } from 'fs';
 
 // The live gallery serves 403 to automated clients (see src/intake/__init__.py),
 // so Beat 1 renders the cached drop from the manifest the pipeline actually ingests.
@@ -33,6 +33,15 @@ await p.waitForTimeout(1800);
 
 await ctx.close();
 await b.close();
-const webm = readdirSync(DIR).filter(f => f.endsWith('.webm') && f !== 'walkthrough.webm').sort().pop();
+const OUTPUTS = new Set(['walkthrough.webm', 'gallery.webm']);
+// Sort by mtime, not by name: playwright's filenames are random hex, so a
+// lexicographic sort picks an arbitrary file -- often a leftover from an
+// earlier run -- and the fresh recording is silently thrown away.
+const webm = readdirSync(DIR)
+  .filter(f => f.endsWith('.webm') && !OUTPUTS.has(f))
+  .map(f => ({ f, t: statSync(`${DIR}/${f}`).mtimeMs }))
+  .sort((a, b) => a.t - b.t)
+  .pop()?.f;
+if (!webm) throw new Error('no new recording found in ' + DIR);
 renameSync(`${DIR}/${webm}`, `${DIR}/gallery.webm`);
 console.log('media/raw/gallery.webm');
