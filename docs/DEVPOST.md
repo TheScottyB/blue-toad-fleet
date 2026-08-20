@@ -103,7 +103,7 @@ Appraisals feed into pure, unit-tested bid math implementing the store's 38% mar
 * **Flawless Google Cloud Deployment:**
   * Serving live traffic with sub-second response times on Cloud Run ([blue-toad-fleet-u5gvrqwvua-uc.a.run.app](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app)).
 * **100% Test Coverage on Core BidMath:**
-  * 160 unit tests passing in 0.07s.
+  * 160 unit tests passing in under 0.1 seconds.
 
 ---
 
