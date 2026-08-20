@@ -3,7 +3,7 @@
 src/server.py — Cloud Run Web Server & API for Blue Toad Fleet.
 
 Serves the interactive Gate Console UI, real-time collaboration endpoints,
-and the automated absentee email generator on Google Cloud.
+automated absentee email generator, and live Vertex AI appraisal execution on Google Cloud.
 """
 
 import json
@@ -16,12 +16,16 @@ from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse
 
 from src.intake.manifest import parse_drop, group_into_lots, TriagedPhoto
 from src.bidmath import (
-    Lot, CompEstimate, Confidence, Priority, Decision,
+    Lot, CompEstimate, Confidence as BidConfidence, Priority, Decision,
     price_lot, allocate, summarize, ABSENTEE_FEE
 )
-from src.appraisal import Question, QuestionKind, build_queue, learn, StandingRule
+from src.appraisal import (
+    Question, QuestionKind, build_queue, learn, StandingRule,
+    Appraisal, Confidence as AppConfidence
+)
+from src.appraiser import AppraisalEngine
 from src.gate import CycleView, render_console
-from scripts.run_aug22_cycle import APPROVED_BIDS
+from scripts.run_vertex_pipeline import REFERENCE_COMPS
 
 app = FastAPI(title="Blue Toad Fleet", version="2.0.0")
 
@@ -62,11 +66,18 @@ STATE = {
     "user_constraints": {"payment_method": "credit_card", "budget_envelope": 600.00},
 }
 
+engine = AppraisalEngine()
+
+
 def get_aug22_state():
     manifest_path = Path("data/aug22_gallery_4160518/manifest.json")
     if not manifest_path.exists():
         manifest_path = Path("/app/data/aug22_gallery_4160518/manifest.json")
-    
+
+    appraisal_cache_path = Path("data/aug22_gallery_4160518/appraisal_results.json")
+    if not appraisal_cache_path.exists():
+        appraisal_cache_path = Path("/app/data/aug22_gallery_4160518/appraisal_results.json")
+
     if manifest_path.exists():
         manifest = json.loads(manifest_path.read_text())
         photos = manifest["photos"]
@@ -75,7 +86,7 @@ def get_aug22_state():
 
     # 1. Spatial Intake & Grouping
     entries = [{"name": p["filename"], "uri": p["thumb_url"], "caption": p["caption"]} for p in photos]
-    drop = parse_drop(cycle_id="2026-08-22", listing_id="4160518", entries=entries)
+    drop = parse_drop(cycle_id=STATE["cycle_id"], listing_id=STATE["listing_id"], entries=entries)
 
     triaged = []
     for i, p in enumerate(photos):
@@ -91,8 +102,20 @@ def get_aug22_state():
 
     lot_groups = group_into_lots(triaged)
 
-    # 2. Approved Sourcing Schedule (Exact $5 Increments, $335 Max / $385.25 All-In)
-    approved_map = {b[0]: b for b in APPROVED_BIDS}
+    # 2. Load Vertex AI Appraisals (from cache or live engine)
+    appraisals_by_lot = {}
+    emitted_questions = []
+    if appraisal_cache_path.exists():
+        try:
+            cached_data = json.loads(appraisal_cache_path.read_text())
+            for raw in cached_data:
+                app_obj, qs = engine.parse_appraisal_to_domain(raw)
+                appraisals_by_lot[app_obj.lot_id] = (app_obj, raw)
+                emitted_questions.extend(qs)
+        except Exception as e:
+            print(f"[!] Warning: Could not parse appraisal cache: {e}")
+
+    # 3. Candidate Lot Evaluation & Bid Decisions
     lots = []
     decisions = []
     captions_map = {}
@@ -103,58 +126,59 @@ def get_aug22_state():
         lot_id = f"BT-{primary_photo['sequence']:03d}"
         captions_map[lot_id] = caption
 
-        if lot_id in approved_map:
-            _, _, desc, cat, start_bid, max_bid, est = approved_map[lot_id]
-            all_in = round(max_bid * (1.0 + ABSENTEE_FEE), 2)
-            auto_send = max_bid <= STATE["auto_send_threshold"]
-            priority = Priority.A if max_bid >= 35.0 else Priority.B
+        if lot_id in REFERENCE_COMPS:
+            comp_info = REFERENCE_COMPS[lot_id]
+            app_pair = appraisals_by_lot.get(lot_id)
+            if app_pair:
+                app_obj, raw_app = app_pair
+                fit = 0.85
+                penalty = 0.0
+                cat = comp_info["cat"]
+                ident = raw_app.get("identification", comp_info["desc"])
+            else:
+                fit = 0.85
+                penalty = 0.0
+                cat = comp_info["cat"]
+                ident = comp_info["desc"]
 
-            lots.append(Lot(
+            comp_est = CompEstimate(
+                low=comp_info["low"],
+                high=comp_info["high"],
+                source_count=comp_info["sources"],
+                confidence=comp_info["conf"],
+            )
+
+            lot_obj = Lot(
                 lot_id=lot_id,
-                caption=desc,
+                caption=ident,
                 category=cat,
-                fit_score=0.90,
-                condition_penalty=0.0,
-                comp=CompEstimate(low=start_bid * 2.0, high=max_bid * 2.5, source_count=3, confidence=Confidence.HIGH),
-            ))
-            decisions.append(Decision(
-                lot_id=lot_id,
-                category=cat,
-                priority=priority,
-                max_bid=float(max_bid),
-                all_in=all_in,
-                bid_fraction=0.38,
-                reason=f"Approved in collaborative check-in ({est})",
-                needs_human_pricing=False,
-                auto_send=auto_send,
-                allocated=True,
-            ))
+                fit_score=fit,
+                condition_penalty=penalty,
+                comp=comp_est,
+            )
+            lots.append(lot_obj)
+            decisions.append(price_lot(lot_obj))
         else:
-            lots.append(Lot(
+            lot_obj = Lot(
                 lot_id=lot_id,
                 caption=caption or f"Uncaptioned lot (Photo #{primary_photo['sequence']})",
                 category="general estate",
                 fit_score=0.20,
                 condition_penalty=0.10,
-                comp=CompEstimate(low=0.0, high=0.0, source_count=0, confidence=Confidence.NONE),
-            ))
-            decisions.append(Decision(
-                lot_id=lot_id,
-                category="general estate",
-                priority=Priority.SKIP,
-                max_bid=None,
-                all_in=None,
-                bid_fraction=None,
-                reason="Skipped on owner directive / category balance",
-                needs_human_pricing=False,
-                auto_send=False,
-                allocated=False,
-            ))
+                comp=CompEstimate(low=None, high=None, source_count=0, confidence=BidConfidence.NONE),
+            )
+            lots.append(lot_obj)
+            decisions.append(price_lot(lot_obj))
 
-    summary = summarize(decisions)
+    allocated_decisions = allocate(
+        decisions,
+        budget_cap=STATE["budget_cap"],
+        auto_send_threshold=STATE["auto_send_threshold"],
+    )
+    summary = summarize(allocated_decisions)
 
-    # 3. Questions Queue (Settled from Memory)
-    questions = [
+    # 4. Questions Queue (Domain policies + Model Emitted)
+    domain_questions = [
         Question(
             kind=QuestionKind.POLICY,
             category="sports memorabilia",
@@ -183,9 +207,11 @@ def get_aug22_state():
             wants_photo=False
         ),
     ]
-    queue_res = build_queue(questions, STATE["standing_rules"], cap=12)
+    all_questions = domain_questions + emitted_questions
+    queue_res = build_queue(all_questions, STATE["standing_rules"], cap=12)
 
-    return photos, lot_groups, lots, decisions, summary, queue_res, captions_map
+    return photos, lot_groups, lots, allocated_decisions, summary, queue_res, captions_map
+
 
 @app.get("/health")
 @app.get("/healthz")
@@ -196,7 +222,9 @@ def healthz():
         "service": "blue-toad-fleet",
         "project": os.environ.get("GOOGLE_CLOUD_PROJECT", "threebatdrone-prod-420"),
         "version": "2.0.0",
+        "vertex_client": bool(engine.client),
     }
+
 
 @app.get("/", response_class=HTMLResponse)
 def get_console():
@@ -216,6 +244,7 @@ def get_console():
         lots_total=len(lot_groups),
     )
     return render_console(view)
+
 
 @app.get("/api/lots")
 def list_lots():
@@ -240,6 +269,7 @@ def list_lots():
         })
     return {"total": len(out), "summary": summary.__dict__, "lots": out}
 
+
 @app.get("/api/questions")
 def list_questions():
     _, _, _, _, _, queue_res, _ = get_aug22_state()
@@ -261,6 +291,7 @@ def list_questions():
             for q, r in queue_res.auto_answered
         ],
     }
+
 
 @app.post("/api/answer")
 def answer_question(payload: dict = Body(...)):
@@ -289,6 +320,49 @@ def answer_question(payload: dict = Body(...)):
         "rule": {"kind": kind_str, "category": cat, "answer": ans, "cycle": STATE["cycle_id"]},
     }
 
+
+@app.post("/api/appraise")
+def appraise_live(payload: dict = Body(...)):
+    """Run an on-demand live Vertex AI appraisal on a lot."""
+    lot_id = payload.get("lot_id")
+    caption = payload.get("caption", "")
+    category_hint = payload.get("category_hint")
+
+    if not lot_id:
+        raise HTTPException(status_code=400, detail="Missing lot_id")
+
+    try:
+        raw_result = engine.appraise_lot(
+            lot_id=lot_id,
+            caption=caption,
+            category_hint=category_hint,
+            standing_rules=STATE["standing_rules"],
+        )
+        appraisal, questions = engine.parse_appraisal_to_domain(raw_result)
+        return {
+            "status": "success",
+            "model_used": raw_result.get("model_used"),
+            "appraisal": {
+                "lot_id": appraisal.lot_id,
+                "category": appraisal.category,
+                "identification": appraisal.identification,
+                "confidence": appraisal.confidence.value,
+                "est_value_hint": appraisal.est_value_hint,
+            },
+            "questions": [
+                {
+                    "kind": q.kind.value,
+                    "prompt": q.prompt,
+                    "wants_photo": q.wants_photo,
+                    "confidence_gap": q.confidence_gap,
+                }
+                for q in questions
+            ],
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Vertex AI appraisal failed: {e}")
+
+
 @app.get("/api/email", response_class=PlainTextResponse)
 def get_absentee_email():
     email_path = Path("data/aug22_absentee_bid_email.txt")
@@ -297,6 +371,7 @@ def get_absentee_email():
     if email_path.exists():
         return email_path.read_text()
     return "Absentee email draft not generated yet."
+
 
 if __name__ == "__main__":
     import uvicorn

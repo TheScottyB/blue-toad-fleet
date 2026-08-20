@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>450 Photos, One Shopkeeper, and a Friday 8 PM Deadline — Blue Toad Fleet</title>
+<meta name="description" content="How a one-person resale shop in Richmond, Illinois built an agent fleet on Google Cloud to prepare absentee bids for a rural estate auction 2.3 miles up the road.">
+<meta property="og:title" content="450 Photos, One Shopkeeper, and a Friday 8 PM Deadline">
+<meta property="og:description" content="Building Blue Toad Fleet — an agent fleet on Google Cloud for a rural estate auction that publishes 450 uncataloged photos every two weeks.">
+<meta property="og:type" content="article">
+<style>
+  :root{
+    --paper:#F5F1E8; --paper-2:#E8E2D5; --rule:#D8D8C5;
+    --ink:#2C2C2C; --ink-2:#3D3D3D; --muted:#6d6656;
+    --brown:#6B4423; --brown-2:#8A5A3B; --gold:#C9A961; --gold-2:#D4B978;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font:17px/1.68 Georgia,"Iowan Old Style","Times New Roman",serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:44rem;margin:0 auto;padding:2.5rem 1.35rem 5rem}
+  .eyebrow{
+    font-family:ui-sans-serif,system-ui,-apple-system,"Helvetica Neue",sans-serif;
+    font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--brown-2);font-weight:700;margin:0 0 .6rem
+  }
+  h1{
+    font-size:clamp(1.85rem,5.2vw,2.7rem);line-height:1.16;
+    margin:0 0 .9rem;color:var(--brown);letter-spacing:-.01em
+  }
+  .standfirst{font-size:1.14rem;color:var(--ink-2);margin:0 0 1.6rem}
+  .byline{
+    font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;
+    font-size:.86rem;color:var(--muted);
+    border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);
+    padding:.75rem 0;margin:0 0 2.2rem
+  }
+  h2{
+    font-size:1.32rem;color:var(--brown);margin:2.6rem 0 .8rem;
+    letter-spacing:-.005em
+  }
+  h3{font-size:1.02rem;color:var(--brown-2);margin:1.7rem 0 .35rem}
+  p{margin:0 0 1.1rem}
+  a{color:var(--brown-2);text-underline-offset:.16em}
+  a:hover{color:var(--brown)}
+  strong{color:var(--brown)}
+  .disclosure{
+    background:var(--paper-2);border-left:4px solid var(--gold);
+    padding:1rem 1.15rem;margin:0 0 2.2rem;border-radius:0 6px 6px 0;
+    font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;
+    font-size:.93rem;line-height:1.6;color:var(--ink-2)
+  }
+  .disclosure strong{color:var(--brown)}
+  blockquote{
+    margin:1.5rem 0;padding:.35rem 0 .35rem 1.15rem;
+    border-left:3px solid var(--gold-2);color:var(--ink-2);font-style:italic
+  }
+  .receipt{
+    width:100%;border-collapse:collapse;margin:1.3rem 0 1.5rem;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.87rem;
+    background:var(--paper-2);border-radius:6px;overflow:hidden
+  }
+  .receipt td{padding:.5rem .85rem;border-bottom:1px solid var(--rule)}
+  .receipt tr:last-child td{border-bottom:0;font-weight:700;color:var(--brown)}
+  .receipt td:last-child{text-align:right}
+  .mechs{margin:1.2rem 0;padding:0;list-style:none}
+  .mechs li{
+    padding:.85rem 0 .85rem 0;border-top:1px solid var(--rule)
+  }
+  .mechs li:last-child{border-bottom:1px solid var(--rule)}
+  .mechs b{color:var(--brown);display:block;margin-bottom:.15rem}
+  code{
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.88em;
+    background:var(--paper-2);padding:.1em .38em;border-radius:3px
+  }
+  .links{
+    background:var(--paper-2);border:1px solid var(--rule);border-radius:8px;
+    padding:1.2rem 1.35rem;margin:2.5rem 0 0;
+    font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;font-size:.95rem
+  }
+  .links h2{margin:0 0 .7rem;font-size:1.05rem}
+  .links ul{margin:0;padding-left:1.1rem}
+  .links li{margin:.35rem 0}
+  .tag{
+    display:inline-block;margin-top:1rem;color:var(--brown-2);font-weight:700;
+    letter-spacing:.01em
+  }
+  footer{
+    margin-top:3rem;padding-top:1.2rem;border-top:1px solid var(--rule);
+    font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;
+    font-size:.83rem;color:var(--muted)
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="eyebrow">Richmond General · Field Notes</p>
+  <h1>450 Photos, One Shopkeeper, and a Friday 8&nbsp;PM Deadline</h1>
+  <p class="standfirst">Building an agent fleet on Google Cloud for a rural estate auction 2.3 miles up the road — one that still publishes its catalog as a wall of unlabelled snapshots.</p>
+
+  <p class="byline">By Scott Beilfuss · Richmond General, Richmond, Illinois</p>
+
+  <div class="disclosure">
+    <strong>Disclosure:</strong> I created this piece of content for the purposes of entering the <strong>All Things Agentic Hackathon</strong>. It describes Blue Toad Fleet, my submission to that hackathon, and it is published publicly for that purpose.
+  </div>
+
+  <h2>The shop and the sale</h2>
+
+  <p>I run Richmond General, a one-person heritage resale shop in Richmond, Illinois. Two and a third miles north, across the Wisconsin line in Genoa City, Blue Toad Auctions runs an estate sale roughly every two weeks. It is a five-minute drive. On a decent day it is a fifty-three minute walk.</p>
+
+  <p>Blue Toad is not a modern online auction. There is no bidding app, no lot-by-lot catalog, no filterable inventory. Every cycle, the sale is published as a single page of somewhere around 450 photographs of a pole barn full of estate goods — unlabelled, unnumbered, in whatever order the auctioneer walked the room — plus a list of SEO keywords. Absentee bids are real and welcome, by email, up to <strong>8:00 PM the Friday night before</strong>. After that the channel closes until the sale is over.</p>
+
+  <p>So the constraint is not access, and it never was capital. The sale is up the road and I go when I can. The constraint is what every cycle costs before a single bid exists: 450 photographs reviewed by hand, obscure makers identified, comps researched, margin math worked, and a priced sheet assembled — every two weeks, by one person who is also running the counter.</p>
+
+  <p>That is the actual reason the published absentee channel has never once been used. Not distance. Preparing it by hand costs more than it returns.</p>
+
+  <h2>The ground truth this is checked against</h2>
+
+  <p>On July 11, 2026 I went to the sale in person. Bidder #31, in the room, nine lots, paid by card. I still have the printed receipt on Blue Toad's own letterhead:</p>
+
+  <table class="receipt">
+    <tr><td>ITEM TOTAL</td><td>$105.00</td></tr>
+    <tr><td>PREMIUM PAID (15%)</td><td>$15.75</td></tr>
+    <tr><td>TAX TOTAL (resale exempt)</td><td>$0.00</td></tr>
+    <tr><td>TOTAL PAYMENTS</td><td>$120.75</td></tr>
+  </table>
+
+  <p>That receipt is why the bid math in this project is not a guess. The repository's <code>all_in_cost(105.0)</code> returns <strong>$120.75</strong> — the receipt total, to the cent, including the fee structure and the resale exemption that zeroes the Wisconsin tax. Four of those nine lots went on to become catalog SKUs at the shop, so I know what they cost, what they listed at, and how long they took to move.</p>
+
+  <p>Anything that produces bids with real money behind it should be reconcilable against paper that already exists. This one is.</p>
+
+  <h2>What the fleet actually does</h2>
+
+  <p>Blue Toad Fleet turns that uncataloged photo wall into a priced, positive-expected-value absentee sheet. Six mechanisms do the work, and each exists because a naive version of this failed in a specific, expensive way:</p>
+
+  <ul class="mechs">
+    <li><b>The Spatial Room Graph</b>Auctioneers don't teleport — they walk a room. The fleet reconstructs the physical showroom from surface textures, border co-visibility, and the photographer's walking order. Ten loose photos of one under-table box collapse into one lot instead of ten separate bids on the same goods.</li>
+    <li><b>Container Lot Decomposition</b>The margin in a rural auction hides in cardboard boxes and plastic tubs. Once a container is spatially isolated from surrounding table clutter, the agent itemizes what's inside it without blending in the neighbors' clocks and lamps.</li>
+    <li><b>The Honest Refusal Rule</b>On an unmarked piece of pottery with no verifiable comp, the fleet emits <code>NO EXTERNAL COMP — human pricing required</code> rather than inventing a number. Refusing to guess is the safety feature, not a gap.</li>
+    <li><b>The Choice-Lot Sniper</b>Country auctioneers sell wall runs and table lines as "choice, times the money." Bid naively on the group and the clerk multiplies it — six posters at $150 becomes $900. The fleet detects choice lots and enforces a hard single-unit ceiling.</li>
+    <li><b>Curator's Pushback</b>When I told it to drop sports cards because of store backlog, it didn't just comply. It came back with liquidity data on one specific photo and argued for a defensive cap. A partner that never disagrees isn't a partner.</li>
+    <li><b>Deterministic Bid Math</b>Model output stops at identification and estimation. Turning an estimate into an authorized number is pure, unit-tested Python — margin target, condition discount, the house's $5 bid increment, the 15% fee. Auditable, and the same every run.</li>
+  </ul>
+
+  <h2>Built on Google Cloud</h2>
+
+  <p>Vision and reasoning run on Vertex AI — Gemini 3.6 Flash for the heavy multimodal passes, lighter models for triage, routed by how much a given photo is worth thinking about. The gate console and the sourcing API serve from Cloud Run. A full cycle costs a couple of dollars in inference, which is the number that makes this worth doing at all: the sheet has to cost less than the margin it protects.</p>
+
+  <p>The repository is public and MIT-licensed, with 170 passing unit tests and a four-command local demo that needs no Google Cloud account, no OAuth, and no keys.</p>
+
+  <h2>What it does not do</h2>
+
+  <p>Worth stating plainly, because a project that only lists its wins is not describing software. The fleet does not fetch the auction site — ingestion is a sanctioned gallery drop, not a scraper pointed at anyone. Comps are not fully built, so real lots still route to human pricing more often than I'd like. And the automated absentee path has not yet sent a bid to a live sale. Reproducing a paid receipt to the cent is evidence the math is right; it is not the same as having transacted through the channel, and I'm not going to blur those two things.</p>
+
+  <blockquote>Velocity to distill the information. Collaboration on the judgment.</blockquote>
+
+  <p>That is the whole thesis. The agent's job is to make 450 photographs comprehensible before Friday at 8. Deciding what is actually worth owning is still mine.</p>
+
+  <div class="links">
+    <h2>Blue Toad Fleet</h2>
+    <ul>
+      <li><a href="https://github.com/TheScottyB/blue-toad-fleet">Source on GitHub</a> — public, MIT, 170 tests</li>
+      <li><a href="https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app">Live gate console on Cloud Run</a></li>
+      <li><a href="https://richmondgeneral.github.io/items/">Richmond General catalog</a> — the shop this was built for</li>
+    </ul>
+    <span class="tag">#AllThingsAgentic</span>
+  </div>
+
+  <footer>
+    Written and published by Scott Beilfuss for entry into the All Things Agentic Hackathon, August 2026. Richmond General, Richmond, Illinois.
+  </footer>
+
+</div>
+</body>
+</html>
