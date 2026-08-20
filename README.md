@@ -44,77 +44,66 @@ make test    # 160 unit tests
 
 ## The problem
 
-Richmond General, a resale shop in Richmond, Illinois, buys inventory from Blue
-Toad Auctions — a Wisconsin auction house a couple of miles over the state
-line, close enough to walk, far enough to be in another state. The July 2026
-cycle, from the shop's own prep:
+Richmond General is a one-person resale shop in Richmond, Illinois. Blue Toad
+Auctions is 2.3 miles north, over the Wisconsin line — five minutes up US-12.
+
+Whether the owner is in the room or behind the counter, the work is the same, and
+it is the work he does not have time for.
+
+**Blue Toad is not a live online auction.** There is no bidding app to keep half
+an eye on between customers, and there are no lot numbers. What the house
+publishes is a long run of numbered photographs and a long list of SEO keywords,
+for goods that are one-off and one-of-a-kind. A live online sale he can follow
+from the counter. This one he cannot.
+
+So the cycle has two outcomes and both cost him.
+
+**When he goes**, he goes at 9:00 AM for the preview — doors open, everyone gets
+their first look, one hour before the start. He comes back with a truckload for
+under $300, and then sorts and sells it across the following year.
+
+**When he cannot go, he misses it.** Not for lack of money. Preparing an absentee
+bid means opening hundreds of unlabelled photographs, working out what each object
+actually is, finding comparables, computing a maximum, and submitting before
+Friday at 8:00 PM. For one person also running a shop, that is not going to
+happen — and it never has. The absentee channel is real, published, and has never
+once been used.
+
+Capital is not the constraint. **Time is.**
+
+And a truckload is not the goal. The goal is five to ten high-velocity items that
+turn in under thirty days at the best margin available.
+
+### The hypothesis this project tests
+
+If the prebids go in on the right set of items, consistently, every two weeks,
+auction after auction, the results should beat ad-hoc buying by a wide margin. And
+if the identification, the comps and the bid math are each done properly, **every
+prebid carries positive expected value — win or lose.**
+
+Losing more often than winning is acceptable. Bidding badly is not. That is the
+claim, and it is the thing the ground-truth columns are there to eventually test.
+
+The July 2026 cycle, from the shop's own prep, is what one round of that work
+costs by hand:
 
 - **428 gallery photos** reviewed by hand
 - **88 lots** worked up on the full bid sheet — 24 A-priority, max bids
   summing to **~$5,945**
-- trimmed to a plan of **~61 candidates / 17 absentee bids / ~$1,820 max
-  (~$2,205 all-in)**
-- Hard cutoff: **Friday 8:00 PM** — the auction house's own listing feed states:
-  *"Please just send us a brief description of the item(s), your start bid, and your max bid by 8:00pm the night before the listed auction date."*
-  (bluetoadauctions.com/morephotos.html, read 2026-08-19).
-- Bid rule: **max ≈ 35–40% of low-mid resale**, all-in = bid × 1.15 absentee
-  fee × tax. Walworth County is 5.5%, but the shop has a resale exemption on
-  file with the auction house, so its own all-in is the fee alone.
-  **The 15% absentee fee is confirmed and published on their listing:**
-  *"15% Buyer Fee on ALL Absentee Bids"* (bluetoadauctions.com, verified 2026-08-19).
+- trimmed to a plan of **~61 candidates / 17 absentee bids / ~$1,820 max**
+- Hard cutoff: **Friday 8:00 PM** — the auction house's own listing states
+  *"send us a brief description of the item(s), your start bid, and your max bid
+  by 8:00pm the night before the listed auction date."*
+- Bid rule: **max ≈ 35–40% of low-mid resale**, all-in = bid × 1.15 absentee fee
+  × tax. The 15% is published (*"15% Buyer Fee on ALL Absentee Bids"*); Walworth
+  County is 5.5%, but the shop has a resale exemption on file, so its own all-in
+  is the fee alone.
 
-The prep was finished. **The absentee submission never ran** — no bid, absentee,
-or confirmation email exists in the shop's mailbox for that window, searched
-2026-08-19 and proven live against controls, and in twelve years no absentee bid
-has ever been sent to this auction house from that address.
-
-**What happened instead: the owner went.** He is Bidder #31 on the July 11
-receipt, in the room, nine lots, paid by card, timestamped 1:51 PM on auction
-day. Blue Toad is 2.3 miles from the store — a five-minute drive, a 53-minute
-walk — so attending is possible when the day allows. The 15% on that receipt is
-the credit-card buyer's premium, not an absentee fee; the two happen to share a
-multiplier.
-
-So July 11 is **not** an example of a sale the owner could not reach — Blue Toad
-is 2.3 miles from the store, five minutes up US-12. It is an example of a
-prepared absentee cycle that went unused.
-
-What the cycle actually costs him is the prep: **~428 gallery photos reviewed by
-hand and an 88-lot priced sheet built manually, every two weeks**, on top of
-running the shop alone. The absentee channel is real, published, and has never
-once been used — preparing it by hand costs more than it returns. That is the
-friction this fleet is built to remove.
-
-Four lots from that sale did reach inventory, by some route other than an
-absentee bid. How — in person, by phone, after the sale — is not recorded
-anywhere this repository can verify, so it is not claimed here. What is recorded
-is the receipt (`ops/receipts/2026-07-11-blue-toad-auctions.jpeg`, in the shop's
-private inventory repo) and four items naming that sale as their source:
-
-| Lot | Item | Hammer |
-|---|---|---|
-| 52 | Airplane compass | $25.00 |
-| 55 | Railroad spikes | $10.00 |
-| 203 | Tobacco sign | $30.00 |
-| 208 | Uncle Sam picture | $5.00 |
-| 289 | Playboys | $10.00 |
-| 326 | Hanging lamp, stained glass | $10.00 |
-| 338 | Kids books | $5.00 |
-| 348 | Jewelry stands | $5.00 |
-| 359 | Lot toys | $5.00 |
-| | **Total** | **$105.00** |
-
-The receipt also settles two numbers this project depends on. The buyer's premium
-line reads $15.75 on a $105 total — exactly 15%. And the bidder is recorded
-`(EXEMPT)` with tax of $0.00 on a Wisconsin purchase, which is why
-`DEFAULT_TAX_RATE` is 0 here. `all_in_cost(105.0)` returns **$120.75**, the exact
-figure on the receipt.
-
-That is worth stating plainly because the July bid sheet carried predictions for
-several of these lots. Nine lots is a sample, not a benchmark, and we are not
-going to dress it up as one — but it is real prediction against real hammer
-prices on real money, and it exists because the cycle was prepped even though the
-absentee bids were never sent.
+That prep was finished for July 11 and the absentee submission never ran. The
+owner attended in person instead — Bidder #31, nine lots, $105 hammer, paid by
+card. Which is the point: **attending is what happens when the prep does not get
+done in time.** Nine lots off the floor, chosen in a preview hour, rather than a
+short list chosen deliberately against comps.
 
 ## What the fleet does
 

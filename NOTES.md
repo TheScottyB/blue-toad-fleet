@@ -127,6 +127,66 @@ operator's account of his own town without verifying first. That agent was
 terminated for it. **Never repeat the figure, and never spend an unverified number
 to doubt a first-hand account.**
 
+## THE SPINE — operator's own words, 2026-08-20. Settled. Build copy on this.
+
+*"whether i'm there or not, i need help. period."*
+
+- The effort is the same for **any** auction. What differs is whether he can be in
+  two places at once.
+- **Blue Toad is NOT a live online auction.** He can manage the store AND
+  participate in a live online sale — bid from the counter between customers. He
+  **cannot** do that for Blue Toad.
+- **Blue Toad's gallery has NO LOT NUMBERS.** It is *"a long set of numbered
+  pictures AND a long list of seo words."* One-off, one-of-a-kind goods.
+  (Verified: 0 of 304 captions in `data/2026-08-22/manifest.json` contain a lot
+  number. See the defect note below — this breaks an assumption in `src/intake`.)
+- **When he misses it:** *"i miss a lot of potential profits, because i dont have
+  the time to look at random pics and try to figure out what it is im looking at
+  then if i can figure it out search for comps, calc a prebid and submit. not
+  going to happen."*
+- **When he goes:** 9:00 AM preview, doors open, everyone's first look, one hour
+  before start. *"everytime i go, i get a truck load of stuff for under 300 that i
+  need to sort thru and sell over the next year."*
+- **What it SHOULD be:** *"5-10 key high velocity items that turn around in less
+  than 30 days for as high a margin as possible."*
+- **THE CHOKE POINT IS TIME, NOT CAPITAL.** State this plainly; it is the whole
+  argument.
+- **THE HYPOTHESIS (this is the thesis — lead with it):** *"every two weeks, my
+  prebids are submit on the proper set of items, consistantly, week after week,
+  auction after auction, the results should be light years better than adhoc
+  buying. even if losing more often than winning, if all this agent work is done
+  correct, every prebid, win or lose, will gen positive ev."*
+
+Losing more often than winning is acceptable. Bidding badly is not. That is what
+the ground-truth columns exist to eventually test.
+
+Note what this reframes: **attending is what happens when the prep does not get
+done in time.** July 11 he went and took nine lots off the floor chosen in a
+preview hour — not a short list chosen deliberately against comps. That is the
+failure mode, not the success case.
+
+## DEFECT — the lot-number assumption does not hold for Blue Toad
+
+`src/intake/manifest.py:19` comments *"Lot numbers as they appear in Blue Toad
+captions: 'Lot 47', '#47', '47.'"* and `_LOT_NO` parses them. **Blue Toad captions
+contain no lot numbers at all** — verified, 0 of 304 in the Aug 22 manifest.
+Captions are plain SEO phrases: "Vintage Topps Baseball Cards", "Estate Costume
+Jewelry", "Michael Jordan Signed Hat".
+
+Consequences:
+1. The explicit-lot-number merge path in `group_into_lots` is **dead code on real
+   Blue Toad input**.
+2. Grouping therefore rests entirely on the model's `same_lot_as_previous`
+   judgment, with **no ground-truth override**.
+3. `tests/test_lot_grouping.py::test_explicit_lot_number_beats_a_wrong_same_lot_flag`
+   — the guard that stops a model slip merging two distinct lots — **never fires on
+   Blue Toad data.** That guard is the duplicate-bid protection. Real money.
+
+The item numbers on the July 11 *receipt* (52, 55, 203, 208, 289, 326, 338, 348,
+359) are assigned at the sale, not published in the gallery. Photo sequence number
+is NOT lot number. Whoever owns intake needs to decide what grouping looks like
+without a numeric key.
+
 **GRAFE #2887 / RED DOGS IS NOT THIS PROJECT'S SPINE.** Operator, directly
 2026-08-20: it was *"a one-off research project on a CLOSED auction."* He saw an
 item inside Red Dogs while visiting, missed the sale, wanted to email and ask who
