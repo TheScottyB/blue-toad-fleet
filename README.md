@@ -39,7 +39,7 @@ split, refused lots, and the allocated sheet against a budget cap. This is the
 same code path that runs in production downstream of the Appraiser.
 
 ```bash
-make test    # 132 unit tests
+make test    # 160 unit tests
 ```
 
 ## The problem
@@ -56,13 +56,34 @@ cycle, from the shop's own prep:
   (~$2,205 all-in)**
 - Hard cutoff: **Friday 8:00 PM**
 - Bid rule: **max ≈ 35–40% of low-mid resale**, all-in = bid × 1.15 absentee
-  fee × tax
+  fee × tax. Walworth County is 5.5%, but the shop has a resale exemption on
+  file with the auction house, so its own all-in is the fee alone.
 
-And that cycle, none of it was submitted. The shop has exactly one operator;
-the auction ran on a Saturday, walking distance from the store, and the store
-had to stay open. The prep was finished — the bids never went out. That last
-mile, one person who cannot be in two places, is the friction this fleet
-removes.
+The prep was finished. **The absentee submission never ran.** No bid, absentee,
+or confirmation email exists in the shop's mailbox for that window — searched
+2026-08-19, proven live against controls. The shop has exactly one operator, the
+sale ran Saturday morning, and the store had to stay open. That last mile — one
+person who cannot be in two places, and an absentee channel that has never once
+been used — is the friction this fleet removes.
+
+Four lots from that sale did reach inventory, by some route other than an
+absentee bid. How — in person, by phone, after the sale — is not recorded
+anywhere this repository can verify, so it is not claimed here. What is recorded
+is the receipt (`ops/receipts/2026-07-11-blue-toad-auctions.jpeg`, in the shop's
+private inventory repo) and four items naming that sale as their source:
+
+| Lot | Item | Paid |
+|---|---|---|
+| 203 | Tobacco sign | $10.00 |
+| 208 | Uncle Sam picture | $5.00 |
+| 55 | Railroad spikes | $30.00 |
+| 326 | Hanging lamp, stained glass | $10.00 |
+
+That is worth stating plainly because the July bid sheet carried predictions for
+three of those four lots. It is a small sample and it is not a benchmark, but it
+is real prediction against real hammer prices on real money — the only such
+evidence this project has, and it exists because the cycle was prepped even
+though the bids were never sent.
 
 ## What the fleet does
 

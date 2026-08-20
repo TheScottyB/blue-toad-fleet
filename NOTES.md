@@ -101,41 +101,90 @@ README, the video, the write-up and the Devpost description — get them right o
 auction house in Genoa City, Wisconsin — close enough to walk, far enough to be in
 another state."
 
-## Real numbers (July 2026 cycle — prepped by hand, not executed)
+## Real numbers (July 2026 cycle — prepped by hand, absentee never sent)
 
 Two sets of figures exist; both are real, and they are different documents.
 The bid sheet (`BlueToad_2026-07-11_BidSheet.xlsx`, committed to the private
 repo 2026-07-04) is the **full prep**: 88 lots (24 A / 43 B / 21 C), a Max Bid
 column summing to ~$5,945, and all 452 gallery photos captioned with
 predictions. The tracker's figures — 61 candidates, 17 A-priority bids,
-~$1,820 max / ~$2,205 all-in — are the **trimmed plan**. Neither was executed:
-no bid, absentee, or confirmation email exists anywhere in the operator's
-mailbox for Jun 20 – Jul 20 2026 (searched 2026-08-19, search proven live
-against controls), and the operator confirms he was keeping the store open
-that Saturday. The sheet's ground-truth columns (Staff ID Correct / Value
-Check / Actual Hammer) are 0/452 — real captions, real predictions, complete
-bid sheet prepared; the cycle was not executed, and Actual Hammer cannot be
-filled for it.
+~$1,820 max / ~$2,205 all-in — are the **trimmed plan**.
+
+**The absentee submission never ran.** No bid, absentee, or confirmation email
+exists anywhere in the operator's mailbox for Jun 20 – Jul 20 2026 (searched
+2026-08-19, search proven live against controls; a second sweep 2026-08-19 by
+the CoS desk found only three incidental Blue Toad mentions, in 2014 and 2017,
+and no absentee bid ever sent to that address in twelve years).
+
+**CORRECTED 2026-08-19 — the cycle was NOT a no-op.** An earlier version of this
+file said "the cycle was not executed" and "Actual Hammer cannot be filled." Both
+were wrong, and the error was mine: absence of an email was allowed to stand for
+absence of a transaction. Four lots from that sale entered inventory, receipt
+filed at `ops/receipts/2026-07-11-blue-toad-auctions.jpeg` in the richmondgeneral
+repo:
+
+| SKU | Lot | Item | Paid | Listed |
+|---|---|---|---|---|
+| RG-0061 | 203 | TOBACCO SIGN | $10.00 | $45.00 |
+| RG-0062 | 208 | UNCLE SAM PIC | $5.00 | $32.00 |
+| RG-0065 | 55 | RAILROAD SPIKES | $30.00 | $3.00 |
+| RG-0066 | 326 | HANGING LAMP STAINED GLASS | $10.00 | (blank) |
+
+By what route those four were bought — in person, by phone, after the sale — is
+not recorded anywhere verifiable from here. **Do not assert a mechanism.** The
+verified statement is: the absentee path never ran, and the lots were acquired
+some other way.
+
+**Ground truth exists.** `BlueToad_2026-07-11_BidSheet.xlsx` carries predictions
+for three of those four lots — "Longhorn tobacco/cigarette sign", "railroad
+spikes", "Stained glass hanging lamp". Prediction against actual hammer, on real
+money. Small sample, not a benchmark, but it is the only such evidence the
+project has and every artifact written before 2026-08-19 21:45 denied it existed.
+
+Note also: that sheet's main tab has no Actual Hammer / Staff ID Correct / Value
+Check columns at all (columns are Priority / Photo # / Item-Lot / Category /
+Photo Link / Est Resale Low / High / Start Bid / Max Bid / All-in Absentee /
+All-in In-Person Cash / Est Profit / Notes). The old "0/452 ground-truth columns"
+line was describing something other than this tab.
+
+**No absentee relationship exists yet.** `docs/BROKER.md:31` hardcodes
+`info@bluetoadauctions.com`. That address has never been written to and has never
+replied. Whether Blue Toad accepts absentee bids by email, in what format, and
+whether a bidder account must exist first are all unverified. Nothing in this
+repo may state or imply the pipeline submits to an established channel.
 
 - ~428 gallery photos per cycle
 - Friday 8:00 PM absentee cutoff
-- Bid rule: max ≈ 35–40% of low-mid resale; all-in = bid × 1.15 fee × tax
+- Bid rule: max ≈ 35–40% of low-mid resale; all-in = bid × 1.15 fee × tax.
+  Walworth County is 5.5%, but the shop has a resale exemption on file with Blue
+  Toad, so `DEFAULT_TAX_RATE = 0.0` and its all-in is the fee alone.
 - Categories: breweriana, railroad, advertising, travel posters, stoneware, Native American, vintage toys, cameras
 
 ## Built so far
 
-- `src/bidmath` — pricing, priority, greedy budget allocation, auto-send threshold. 25 tests.
-- `src/appraisal` — appraisal schema, question generation model, impact ranking, grouping, hard cap, standing rules, cross-cycle learning. 29 tests.
+- `src/bidmath` — pricing, priority, greedy budget allocation, auto-send threshold. 29 tests.
+- `src/appraisal` — appraisal schema, question generation model, impact ranking, grouping, hard cap, standing rules, cross-cycle learning. 36 tests.
 - `demo/run_demo.py` — full decision pipeline on seeded lots. No GCP, no OAuth, no keys.
 - `demo/run_cycles.py` — the learning beat: 12 questions in cycle 1, 7 in cycle 2.
-- `src/appraiser` — two-tier model routing (Flash Lite triage / 3.6 Flash appraisal), Vertex structured-output schemas, and system prompts that forbid inventing a price or inferring an unseen mark. 24 tests.
-- `src/gate` — the Gate console. A pure state-to-HTML renderer, zero dependencies, so the same function serves the credential-free demo, the tests, and the Cloud Run app. 17 tests including XSS escaping and tag balance.
+- `src/appraiser` — two-tier model routing (Flash Lite triage / 3.6 Flash appraisal), Vertex structured-output schemas, and system prompts that forbid inventing a price or inferring an unseen mark. 30 tests.
+- `src/gate` — the Gate console. A pure state-to-HTML renderer, zero dependencies, so the same function serves the credential-free demo, the tests, and the Cloud Run app. 20 tests including XSS escaping and tag balance.
 - `demo/build_console.py` — renders the console from seeded data. `make console`.
 - `src/intake` — gallery drop parsing, fan-out planning, previous-caption context carry so
-  uncaptioned extra angles are recognised rather than invented as new lots. 19 tests.
+  uncaptioned extra angles are recognised rather than invented as new lots, plus
+  collapsing multiple photos of one physical lot into a single bid slot. 32 tests.
+- `src/assemble` — the seam between appraisal and pricing: appraised photos become
+  priceable lots. 13 tests.
 - `docs/BROKER.md` — credential proxy design, written before the code, with an honest bounds table.
 
-**126 tests green.** Verified from a clean extract.
+**Repo is on GitHub as of 2026-08-19**: `git@github.com:TheScottyB/blue-toad-fleet.git`,
+**private**, collaborators = [TheScottyB] only. Devpost requires a private entry repo to
+be shared with `testing@devpost.com` **and** `cloudhackathons@google.com` — that has NOT
+been done, so judges currently cannot see it. Do it only after the corrections above are
+pushed, and only with the operator's explicit OK.
+
+**160 tests green**, from a real run (`.venv/bin/pytest tests/ -q`) on 2026-08-19,
+not a cache read. Per file: appraisal 36, appraiser 30, bidmath 29, intake 21,
+gate 20, lot grouping 11, assemble 13.
 
 ## Next, in order — from the day-2 audit
 
@@ -168,7 +217,7 @@ hashtag post (Aug 28). Stage Three bonus points are scored, not decorative.
 | **Switch AI Studio / API off `gemini-3-flash-preview` to a 3.5+ model** | Scott | **Open — rules compliance** |
 | Confirm 3.5+/3.6 available in Vertex for the chosen region | Scott | Open |
 | Blue Toad auction date — does one fall in window? | Scott | Open (AuctionZip blocks automated checks) |
-| Prior-cycle results / sold prices | Scott | Open — the July 11 bids were never submitted (Gmail searched 2026-08-19), so no invoice exists and that cycle's Actual Hammer column is unfillable. Ground truth needs a future executed cycle |
+| Prior-cycle results / sold prices | Scott | **Partly closed 2026-08-19** — the absentee bids were never sent, but four lots were acquired at that sale (receipt on file) and the bid sheet predicted three of them. That is real prediction-vs-hammer ground truth. Remaining: confirm how those four were bought, and whether more lots came from the same receipt |
 | The four or five recurring intake ambiguities | Scott | Open — highest-value input |
 | ~~Contents of private `rg-auction-pipeline`~~ | Scott | **Done 2026-08-19** — read in full: a working pipeline (42 KB Python, 452-row workbook, scheduled watch task), not notes. Disclosure rewritten; structural comparison supports "no code copied" |
 | Staff hours-per-cycle number | Scott | Open — needed for the video's opening claim |
