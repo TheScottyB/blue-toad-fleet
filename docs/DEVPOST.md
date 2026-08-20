@@ -41,11 +41,23 @@ Unlike generic AI tools that guess a dollar value on every photo, Blue Toad Flee
 ### 4. The "Buyer's Choice" Shelf Sniper
 Country auctioneers sell vertical shelving units as "Buyer's Choice / Times the Money" (e.g. high bidder takes 1, 2, or all 8 lanterns at the hammer price). Naive bots get trapped by taking all 8 ($360 blowout). Blue Toad Fleet detects vertical shelf units, ranks the items by liquidity (Pick #1: Blue Adlake globe), and enforces a strict `max_quantity = 1` absentee directive.
 
-### 5. Cross-Cycle Memory (Collaborative Partner)
+### 5. Cross-Cycle Memory & Proactive Partner Pushback
 Every Friday at 4:00 PM, the fleet surfaces its top clarification questions—ranked strictly by value-at-stake and confidence gap, capped at 12. As the shopkeeper answers, answers are promoted to persistent `StandingRules`. In our July 11 benchmark, Cycle 1 asked 12 questions; Cycle 2 needed only 7.
 
+Crucially, the agent acts as an **expert peer, not a passive chatbot**. When the owner gives broad directives (e.g. *"drop sports cards and tools"*), the fleet provides respectful, data-driven pushback based on real-time eBay velocity:
+> *"Understood on dropping modern sports cards, but heads up on Photo #1: these are 13 Golden Era 1959–1969 Topps cards in hard top-loaders (Mays/Aaron era) with <14 day eBay turnaround at 4x margin. Recommend keeping a $100 defensive cap."*
+
 ### 6. Deterministic Greedy Budget Allocation
-Appraisals feed into pure, unit-tested bid math implementing the store's 38% margin target, condition penalties, and 15% absentee buyer's fee. Bids $\le \$40$ are marked **AUTO-SEND**; high-value lots require one-click human sign-off. The final prebid email is compiled automatically for `info@bluetoadauctions.com`.
+Appraisals feed into pure, unit-tested bid math implementing the store's 38% margin target, condition penalties, and 15% absentee buyer's fee. Bids $\le \$35$ are marked **AUTO-SEND**; high-value lots require one-click human sign-off. The final prebid email is compiled automatically for `info@bluetoadauctions.com`.
+
+---
+
+## Live Google Cloud Deployment (Project: `threebatdrone-prod-420`)
+
+* **Live Gate Console & API:** [https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app)
+* **Live Health Check:** `https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/healthz`
+* **Live Sourcing API:** `https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/api/lots`
+* **Live Absentee Email Generator:** `https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/api/email`
 
 ---
 
