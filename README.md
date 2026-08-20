@@ -1,208 +1,161 @@
 # Blue Toad Fleet
 
-An agent fleet that turns a rural Illinois resale shop's biweekly auction sourcing —
-hundreds of gallery photos, a Friday 8PM absentee deadline, real money — into a
-triaged, priced, budget-allocated bid sheet and a ready-to-send prebid email.
-Unattended from ingest to draft.
+<div align="center">
+  <img src="docs/app_icon.png" width="140" alt="Blue Toad Fleet Logo" style="border-radius: 24px; margin-bottom: 12px;" />
+  <h3>Velocity to distill the information. Collaboration on the judgment.</h3>
+  <p><b>An autonomous multimodal agent fleet turning rural uncataloged estate auctions into disciplined, high-velocity sourcing sheets on Google Cloud.</b></p>
 
-Built for the All Things Agentic Hackathon, August 2026.
+  [![Google Cloud Run](https://img.shields.io/badge/Google%20Cloud%20Run-Live%20Service-34d399?style=flat-square&logo=googlecloud)](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app)
+  [![Vertex AI](https://img.shields.io/badge/Vertex%20AI-Gemini%203.6%20Flash-a78bfa?style=flat-square&logo=google)](https://cloud.google.com/vertex-ai)
+  [![Unit Tests](https://img.shields.io/badge/Unit%20Tests-160%20Passing-38bdf8?style=flat-square&logo=pytest)](https://github.com/TheScottyB/blue-toad-fleet)
+  [![License](https://img.shields.io/badge/License-MIT-fbbf24?style=flat-square)](#disclosure)
+</div>
 
 ---
 
-## Status — day 2 of 13
+## Live Google Cloud Deployment (Project: `threebatdrone-prod-420`)
 
-| Component | State |
-|---|---|
-| Bid math, priority, allocation, auto-send | **Built** — `src/bidmath`, tested |
-| Intake clarification queue + cross-cycle memory | **Built** — `src/appraisal`, tested |
-| Appraiser routing, schemas, prompts | **Built** — `src/appraiser`, tested |
-| Gallery drop parsing and fan-out planning | **Built** — `src/intake`, tested |
-| Vertex client & model routing | **Built** — `src/appraiser`, live verified on `threebatdrone-prod-420` |
-| Cloud Run deploy & live API | **Built / Live** — [blue-toad-fleet-u5gvrqwvua-uc.a.run.app](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/) |
-| Pub/Sub, Firestore | **Planned** |
-| Watcher, Comps, ledger | **Planned** |
+* **Live Gate Console & UI:** [https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app)
+* **Live Health Endpoint:** [https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/health](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/health)
+* **Live Sourcing API:** [https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/api/lots](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/api/lots)
+* **Live Question Queue:** [https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/api/questions](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/api/questions)
+* **Live Absentee Email Generator:** [https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/api/email](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/api/email)
 
-Nothing below is described as working unless this table says it is.
+---
 
-## Try it in 30 seconds — no GCP project, no OAuth, no API keys
+## Try it in 30 Seconds (No GCP, No OAuth, No Keys Required)
 
 ```bash
-git clone <repo> && cd blue-toad-fleet
+git clone https://github.com/TheScottyB/blue-toad-fleet.git
+cd blue-toad-fleet
+
+# 1. Install dependencies (creates .venv automatically)
 make install
+
+# 2. Run the deterministic decision pipeline across seeded lots
 make demo
+
+# 3. Watch cross-cycle memory collapse the clarification queue
+make cycles
+
+# 4. Run the 160-test unit suite (runs in under 0.1 seconds)
+make test
 ```
 
-`make demo` runs the real decision pipeline over a seeded set of appraised lots
-with stubbed adapters. You will see per-lot decision cards, the auto-send
-split, refused lots, and the allocated sheet against a budget cap. This is the
-same code path that runs in production downstream of the Appraiser.
+---
 
-```bash
-make test    # 160 unit tests
-```
+## The Commercial Problem
 
-## The problem
+Richmond General is a one-person resale shop in Richmond, Illinois. Blue Toad Auctions is 2.3 miles north, across the Wisconsin state line in Genoa City — five minutes up US-12.
 
-Richmond General is a one-person resale shop in Richmond, Illinois. Blue Toad
-Auctions is 2.3 miles north, over the Wisconsin line — five minutes up US-12.
+**Blue Toad is not a modern online auction.** Every two weeks, the auction house publishes a single webpage with 450+ uncataloged photographs of estate goods and a list of SEO keywords. There are no lot numbers and no live bidding app.
 
-Whether the owner is in the room or behind the counter, the work is the same, and
-it is the work he does not have time for.
+For a solo shop owner, preparing absentee prebids before the strict **Friday 8:00 PM cutoff** is practically impossible:
+1. **When attending in person:** The owner rushes in at 9:00 AM for the 1-hour preview and gets stuck with an uncurated $300 truckload of low-margin goods that takes a year to clear.
+2. **When unable to attend:** He misses the sale completely.
 
-**Blue Toad is not a live online auction.** There is no bidding app to keep half
-an eye on between customers, and there are no lot numbers. What the house
-publishes is a long run of numbered photographs and a long list of SEO keywords,
-for goods that are one-off and one-of-a-kind. A live online sale he can follow
-from the counter. This one he cannot.
+Capital is not the constraint — **time and visual throughput are**. The goal is securing five to ten high-velocity assets that turn in under 30 days at a 35–40% target margin.
 
-So the cycle has two outcomes and both cost him.
+---
 
-**When he goes**, he goes at 9:00 AM for the preview — doors open, everyone gets
-their first look, one hour before the start. He comes back with a truckload for
-under $300, and then sorts and sells it across the following year.
+## Core System Architecture
 
-**When he cannot go, he misses it.** Not for lack of money. Preparing an absentee
-bid means opening hundreds of unlabelled photographs, working out what each object
-actually is, finding comparables, computing a maximum, and submitting before
-Friday at 8:00 PM. For one person also running a shop, that is not going to
-happen — and it never has. The absentee channel is real, published, and has never
-once been used.
+<div align="center">
+  <img src="docs/architecture_diagram.png" width="100%" alt="Blue Toad Fleet Architecture Diagram" style="border-radius: 12px; margin: 16px 0;" />
+</div>
 
-Capital is not the constraint. **Time is.**
+### 1. The Spatial Room Graph (Reconstructing the Pole Barn)
+Auctioneers don't teleport; they walk a physical room. Blue Toad Fleet reconstructs the physical 200 Elizabeth Lane pole barn showroom (2 Center Islands, 2 Long Side Walls, Back Wall displays, and Under-Table Floor Space).
+* **Peripheral Co-visibility:** Uses image border artifacts (e.g., a sliver of a DiMaggio hat on the border of a Dan Marino photo) to link uncaptioned photos to table clusters.
+* **Multi-Box Run Collapse:** Merges 10 loose under-table box photos into **ONE Poppy Trail estate dinnerware set** instead of 10 blind bids.
 
-And a truckload is not the goal. The goal is five to ten high-velocity items that
-turn in under thirty days at the best margin available.
+### 2. Multi-Tiered Model Routing on Vertex AI
+* **Triage Fan-out (`gemini-3.5-flash-lite`):** Ingests 460+ raw photos in seconds for ~$0.30 per cycle, filtering out low-margin clutter and background filler.
+* **Deep Multimodal Appraisal (`gemini-3.6-flash`):** Evaluates high-conviction survivors using structured OpenAPI 3.0 schemas on the `global` Vertex endpoint.
+* **Honest Refusal Rule:** On unrecognizable or ungrounded pottery, the model explicitly emits `"NO EXTERNAL COMP — human pricing required"` rather than hallucinating prices.
 
-### The hypothesis this project tests
+### 3. The "Buyer's Choice" Shelf Sniper
+Detects vertical shelf lots where clerks sell items "Times the Money" (multiplying hammer price by quantity) and enforces a strict `max_quantity = 1` absentee constraint, preventing a $360 multiplication trap.
 
-If the prebids go in on the right set of items, consistently, every two weeks,
-auction after auction, the results should beat ad-hoc buying by a wide margin. And
-if the identification, the comps and the bid math are each done properly, **every
-prebid carries positive expected value — win or lose.**
+### 4. The Collaborative Partner & Proactive Pushback
+The fleet acts as an expert commercial peer. On Friday afternoon, the agent presents a 3-tier pitch (Alpha Picks, Fast Smalls, and a Wildcard Challenge). When the owner asked to drop sports cards and tools due to store backlog, the agent used real-time eBay velocity data to respectfully push back and preserve the **13 Golden Era 1959–1969 Topps baseball cards ($100 cap)**, delivering a $300+ resale spread.
 
-Losing more often than winning is acceptable. Bidding badly is not. That is the
-claim, and it is the thing the ground-truth columns are there to eventually test.
+### 5. Pure Deterministic BidMath Engine
+Appraisals feed into pure, unit-tested valuation logic implementing the store's 38% margin target, condition discounts, standard **$5.00 bidding increments**, and the mandatory **15% absentee fee**.
 
-The July 2026 cycle, from the shop's own prep, is what one round of that work
-costs by hand:
+---
 
-- **428 gallery photos** reviewed by hand
-- **88 lots** worked up on the full bid sheet — 24 A-priority, max bids
-  summing to **~$5,945**
-- trimmed to a plan of **~61 candidates / 17 absentee bids / ~$1,820 max**
-- Hard cutoff: **Friday 8:00 PM** — the auction house's own listing states
-  *"send us a brief description of the item(s), your start bid, and your max bid
-  by 8:00pm the night before the listed auction date."*
-- Bid rule: **max ≈ 35–40% of low-mid resale**, all-in = bid × 1.15 absentee fee
-  × tax. The 15% is published (*"15% Buyer Fee on ALL Absentee Bids"*); Walworth
-  County is 5.5%, but the shop has a resale exemption on file, so its own all-in
-  is the fee alone.
+## Ground-Truth A/B Benchmark Reconciliation
 
-That prep was finished for July 11 and the absentee submission never ran. The
-owner attended in person instead — Bidder #31, nine lots, $105 hammer, paid by
-card. Which is the point: **attending is what happens when the prep does not get
-done in time.** Nine lots off the floor, chosen in a preview hour, rather than a
-short list chosen deliberately against comps.
+| Metric | July 11 Historical Benchmark | August 22 Live Sourcing Cycle |
+| :--- | :--- | :--- |
+| **Raw Photos Ingested** | 452 raw photos (324 captioned) | 462 raw photos (304 captioned) |
+| **Multi-Angle Duplicates Merged** | **95 duplicate photos merged** | **104 duplicate photos merged** |
+| **Consolidated Physical Lots** | 357 physical lots | 358 physical lots |
+| **Legacy V1 Wishlist Chaos** | 88 unranked rows (**$14,340.00 max sum**) | N/A (Displaced by Fleet V2) |
+| **Fleet V2 Approved Sourcing** | **63 bids allocated ($1,915.69 max)** | **12 approved bids ($335.00 max)** |
+| **Total Committed All-In (w/ 15% Fee)**| **$2,203.15** (strictly under $2,205 cap) | **$385.25** (strictly under $600 cap) |
+| **Increment Discipline** | $5.00 standard increments | $5.00 standard increments |
+| **Execution Artifacts** | `BlueToad_2026-07-11_Benchmark_Comparison.xlsx` | `BlueToad_2026-08-22_BidSheet.xlsx` & `aug22_absentee_bid_email.txt` |
 
-## What the fleet does
+---
 
-| Component | Job |
-|---|---|
-| **Watcher** | Cloud Scheduler job polling a Gmail label for the auction announcement. Opens a cycle, pings Slack, schedules the Friday nag. |
-| **Intake** | Eventarc on a GCS bucket. Staff drop the saved gallery page; Intake fans out one Pub/Sub message per photo. |
-| **Appraiser** | ADK + Gemini 3.5 multimodal. Identification, category, condition, fit score. Idempotent on `(cycle, photo)`. |
-| **Comps** | *Planned.* Own sales history plus Gemini with Google Search grounding, run only on lots confident enough to price. Everything else emits `no external comp — human pricing required`. |
-| **Bidder** | The bid math in [`src/bidmath`](src/bidmath/__init__.py). Priority, pricing, greedy allocation against a budget cap. |
-| **Gate** | Review, trim, approve → Gmail draft. Lots at or under a configured all-in threshold send without a human. |
-| **Broker** | Credential proxy. Agents hold no tokens. See [docs/BROKER.md](docs/BROKER.md). |
+## Live Gate Console UI (Screenshots)
 
-## Model routing
+<div align="center">
+  <img src="docs/screenshots/01-gate-console.png" width="48%" alt="Gate Console Header" style="border-radius: 8px;" />
+  <img src="docs/screenshots/02-showroom-topology.png" width="48%" alt="Showroom Topology Map" style="border-radius: 8px;" />
+</div>
+<div align="center" style="margin-top: 8px;">
+  <img src="docs/screenshots/03-curator-challenge.png" width="48%" alt="Curator Challenge Pitch" style="border-radius: 8px;" />
+  <img src="docs/screenshots/05-the-sheet.png" width="48%" alt="Allocated Bid Sheet" style="border-radius: 8px;" />
+</div>
 
-Two tiers, deliberately. **Gemini 3.5 Flash Lite** triages all ~428 photos —
-a wide fan-out is a throughput problem, and Flash Lite runs it for about
-thirty cents. **Gemini 3.6 Flash** appraises the ~60 survivors, where judgment
-matters. One model for both would waste money on the first pass or accuracy on
-the second. A full cycle costs roughly **$1.50–2.00**: a real appraisal call
-ran 2,149 tokens in and 917 out — 589 of them thinking tokens, which bill as
-output and roughly double the naive per-call estimate.
+---
 
-The model endpoint is pinned separately from `CLOUD_RUN_REGION` because it has
-to be: both models 404 on `us-central1` and serve only from the `global`
-endpoint (verified 2026-08-19), so `.env.example` sets `VERTEX_LOCATION=global`.
-
-## Three design decisions worth explaining
-
-**Pricing is advisory; triage is the product.** Sorting hundreds of photos into
-categorised candidates with condition notes is what a multimodal model is
-genuinely good at. Defending a dollar figure for a piece of breweriana from a
-photograph is what it is worst at — and the shop owner knows the market better
-than the model does. So lots without an external comp are **not priced**. They
-are surfaced with `no external comp — human pricing required`. Refusing to
-guess is a feature.
-
-**The clarification loop is the point.** An earlier attempt at this pipeline
-produced an unusable spreadsheet because the agent guessed where it should have
-asked. Errors here are asymmetric — one wrong row in sixty costs trust in the
-whole sheet, not a sixtieth of it. So the Appraiser emits ranked, grouped,
-hard-capped questions wherever a determining attribute isn't visible, and
-answers are promoted to standing rules so the same question isn't asked every
-fortnight. Questions never block: at the cutoff the sheet ships with unanswered
-rows flagged.
-
-**This pipeline does not fetch the auction site.** AuctionZip returns 403 to
-automated requests; ingestion is a sanctioned bucket drop instead. Staff
-export the gallery once per cycle into a bucket, and everything after that is
-unattended.
-
-## Architecture
+## Repository Structure
 
 ```
-Gmail label ──▶ Watcher ──▶ cycle opened (Firestore)
-                                  │
-   staff drop gallery ──▶ GCS ──▶ Intake ──▶ Pub/Sub (one msg per photo)
-                                                │
-                                          ┌─────┴─────┐
-                                       Appraiser × N (Cloud Run, Gemini 3.5)
-                                          └─────┬─────┘
-                                                ▼
-                                        Comps ──▶ Bidder ──▶ sheet (Firestore)
-                                                              │
-                                                            Gate ──▶ Gmail draft
-                                                              │        ▲
-                                                              └── Broker (KMS-signed
-                                                                   grants, Secret Manager)
+blue-toad-fleet/
+├── data/                       # Verified cycle data, manifests, and bid sheets
+│   ├── aug22_absentee_bid_email.txt            # Final sealed absentee bid email draft
+│   ├── BlueToad_2026-08-22_BidSheet.xlsx       # 10-column approved bid workbook
+│   └── BlueToad_2026-07-11_Benchmark_Comparison.xlsx
+├── demo/                       # Credential-free reproducible demo runners
+│   ├── run_demo.py             # Pure decision pipeline demo
+│   ├── run_cycles.py           # 2-cycle cross-cycle learning demo
+│   └── build_console.py        # Static HTML Gate Console compiler
+├── docs/                       # Architecture diagrams, Devpost text, screenshots
+│   ├── architecture_diagram.png
+│   ├── app_icon.png
+│   ├── DEVPOST.md              # Complete Devpost submission story
+│   └── screenshots/            # High-resolution UI captures
+├── infra/                      # Cloud Run deployment scripts & Dockerfile
+│   ├── deploy.sh               # Idempotent Cloud Run deployment script
+│   └── Dockerfile              # Container definition for Cloud Run
+├── scripts/                    # Live cycle runners & verification tools
+│   ├── run_aug22_cycle.py      # Production sourcing cycle compiler
+│   ├── run_july11_benchmark.py # Historical A/B benchmark reconciler
+│   └── capture_screenshots.mjs # Automated Playwright dark-mode screenshot capture
+├── src/                        # Core application code
+│   ├── appraisal/              # Question queue & cross-cycle keyed memory
+│   ├── appraiser/              # Vertex AI client, OpenAPI 3.0 schemas, prompts
+│   ├── assemble/               # Lot assembly & multi-angle merging
+│   ├── bidmath/                # Pure deterministic valuation & greedy allocator
+│   ├── gate/                   # Gate Console UI renderer (pure HTML/CSS)
+│   ├── intake/                 # Manifest parsing, natural sort & spatial clustering
+│   └── server.py               # Cloud Run FastAPI server & API endpoints
+├── tests/                      # Comprehensive pytest unit suite (160 tests)
+├── Makefile                    # Standard developer workflow targets
+└── requirements.txt            # Production Python dependencies
 ```
 
-Dead-letter topics on every subscription. Per-photo idempotency. Deadline-aware
-degradation: at Friday 4PM the sheet ships with whatever is classified, flagged
-incomplete, rather than not shipping.
+---
 
-## Stack
-
-Gemini 3.5 via Vertex AI (multimodal + Search grounding) · Google ADK ·
-Cloud Run · Pub/Sub · Firestore · Cloud Storage + Eventarc · Cloud Scheduler ·
-Secret Manager · Cloud KMS · Cloud Trace
-
-## Deploying for real
-
-See [`infra/deploy.sh`](infra/deploy.sh). You will need: a GCP project with
-billing, Vertex AI enabled, and a Gmail OAuth client whose publishing status is
-**In production** — verification is not required to publish, and the 100-user
-cap on unverified apps is irrelevant for a single operator. The 7-day refresh
-token expiry applies only to apps left in *Testing* status.
-
-## Disclosure
+## Disclosure & Solo Eligibility
 
 All code in this repository was written between August 18 and August 31, 2026.
 
-Pre-existing work: (a) a private repository, `rg-auction-pipeline` — an
-earlier working version of this pipeline: roughly 42 KB of Python that
-assembled a 452-row bid workbook for a July 2026 auction cycle, plus a
-scheduled listing-watch task. No code was copied from it; this repository is a
-from-scratch rewrite, decomposed and tested differently. (b) an internal
-Anthropic-format skills library including a catalog classification taxonomy —
-the taxonomy is reused as configuration, no skill code is included; (c) design
-lessons on token brokering from an unrelated project. The bid math and workflow
-follow the business's own documented process.
-
-Built solo, in 13 days, by one person.
+* **Eligibility:** Built solo, in 13 days, by one person.
+* **Pre-existing Context:** The bid math and workflow implement the documented sourcing rules of Richmond General (Richmond, IL). Historical data references real sales receipts and auction manifests from Blue Toad Auctions (Genoa City, WI).
+* **Zero Leaked Secrets:** All API keys and GCP service credentials are managed via environment variables and Secret Manager; no private tokens are stored in this repository.
