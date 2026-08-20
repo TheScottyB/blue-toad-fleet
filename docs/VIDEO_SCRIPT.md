@@ -1,92 +1,77 @@
-# Blue Toad Fleet — 4:00 Demo Narration
+# Blue Toad Fleet — 4-Minute Walkthrough Video Script
 
-Voice: the shop owner, not the engineer. Plain, grounded, a little tired of the problem.
-Pace target ~150 wpm. Total ~590 words. Timecodes are targets, not hard cuts.
+**Target Duration:** Exactly 3:45 – 3:55 (Under the 4:00 strict maximum).  
+**Recording Format:** Screen capture of browser tabs + live voiceover.
 
 ---
 
-## BEAT 1 — 0:00–0:45 · The 450-photo problem
-**On screen:** Raw auction gallery page → wall of unlabelled photos → calendar hitting Friday 8:00 PM.
+## 🎬 Beat 1: The Solo Card & The Commercial Problem (0:00 – 0:45)
 
-> I run a one-person resale shop in Richmond, Illinois.
->
-> Two point three miles north, across the Wisconsin line in Genoa City, there's an auction
-> house called Blue Toad. Every two weeks they drop a single web page with four hundred and
-> fifty photographs on it. No lot numbers. No catalog. No descriptions. Just photos of an
-> estate, and a pile of SEO keywords.
->
-> Absentee bids are due Friday at eight. To bid, I have to click through all four hundred
-> and fifty, work out what things are, find comps, do the margin math, and write the email —
-> while I'm running the register.
->
-> So every cycle went one of two ways. I'd drive up Saturday morning for the one-hour
-> preview and come home with a three-hundred-dollar truckload of junk that takes a year to
-> clear. Or I'd miss the sale.
->
-> Money was never the problem. Looking at four hundred and fifty photos was the problem.
+* **Visual on Screen:**
+  1. **(0:00 – 0:03)** Title card: `Blue Toad Fleet — Built solo, in 13 days, by one person.`
+  2. **(0:03 – 0:45)** Open browser tab showing the messy 462-photo AuctionZip gallery (or `data/aug22_gallery_4160518/manifest.json`). Scroll through the uncataloged, unlabelled photos.
+* **Voiceover:**
+  > *"I run Richmond General, a one-person resale shop in Richmond, Illinois. Five minutes up US-12 across the Wisconsin line in Genoa City, Blue Toad Auctions drops 450 uncataloged photos every two weeks for a Saturday estate sale. There are no lot numbers, no online bidding app, and a strict Friday 8:00 PM absentee cutoff.*
+  >
+  > *For a solo shopkeeper running the counter, reviewing 450 photos, identifying obscure makers, and researching comps is impossible. Every two weeks I faced the same dilemma: either rush over at 9:00 AM on Saturday for a 1-hour preview and get stuck with an uncurated $300 truckload of low-margin junk, or freeze from the fear of making an embarrassing $500 pricing blunder and miss the sale completely.*
+  >
+  > *Capital was never the constraint — time, visual throughput, and bidding confidence were."*
 
-## BEAT 2 — 0:45–1:45 · Multimodal distillation
-**On screen:** Terminal running `make demo` → photos collapsing into lots → spatial room graph drawing itself.
+---
 
-> Blue Toad Fleet is the thing I built to look at them for me.
->
-> Every photo goes through two tiers on Vertex AI. Gemini 3.5 Flash Lite triages the gallery
-> cheaply — what is this, is it worth a second look. What survives goes to Gemini 3.6 Flash
-> for real appraisal against a structured schema: maker, period, condition, comps.
->
-> But the part that actually made this work isn't the model. It's the room.
->
-> An auctioneer doesn't teleport. He walks a pole barn, table by table. So the agent reads
-> the background — blue pleated vinyl on the side tables, raw pine on the islands, bare
-> concrete under them — and rebuilds the floor plan from the surfaces. It reads the edge of
-> each frame for slivers of neighboring items, and follows the walking path.
->
-> On the July gallery, that collapsed ninety-five duplicate camera angles into single lots,
-> and merged ten loose under-table box photos into one dinnerware set. Not ten blind bids.
-> One.
+## 🎬 Beat 2: Spatial Room Graph & Container Decomposition (0:45 – 1:45)
 
-## BEAT 3 — 1:45–2:45 · The Gate Console and the pushback
-**On screen:** Live Gate Console → memory rows → curator challenge → the sheet.
+* **Visual on Screen:**
+  1. Switch to the Architecture Diagram ([`docs/architecture_diagram.png`](architecture_diagram.png)) or terminal showing Vertex AI model routing.
+  2. Show Gemini 3.5 Flash-Lite triage logs ($0.30/cycle) and Gemini 3.6 Flash container decomposition on the Edison cylinders (Photo #41) and Topps cards (Photo #1).
+* **Voiceover:**
+  > *"Generic vision models treat an auction gallery as a disconnected bag of 450 photos. But auctioneers don't teleport—they walk a physical room. Blue Toad Fleet reconstructs the physical 200 Elizabeth Lane pole barn showroom.*
+  >
+  > *By classifying table surface invariants—like blue vinyl tablecloths versus raw plywood—and tracking peripheral co-visibility on image borders, the agent maps every lot to its physical location. It collapses 10 loose under-table box photos into ONE Poppy Trail dinnerware set, eliminating 95 duplicate multi-angle bids.*
+  >
+  > *Crucially, spatial isolation enables Container Lot Decomposition: the agent zooms into mystery bins to mine for gold—extracting 11 Edison cylinder records and vintage Topps cards—while explicitly masking out adjacent table clutter to prevent dirty comps. And when an unmarked piece of pottery has no verifiable comps, it enforces our Honest Refusal Rule: 'NO EXTERNAL COMP — human pricing required'."*
 
-> Then it hands the judgment back to me.
->
-> This is the gate console. Four hundred sixty-two photos in. Three hundred fifty-nine lots
-> appraised. Twelve bids out — ten it sends on its own, two it wants me to look at.
->
-> It doesn't ask me everything. Three questions this cycle it answered from memory, because
-> I already told it last time that I've got no room for dishes and a backlog of unlisted
-> tools.
->
-> And when it doesn't know, it says so. On unmarked pottery it writes "no external comp,
-> human pricing required," instead of inventing a number. Refusing to guess is the feature.
->
-> It also argues with me. I told it to drop sports cards. It came back and said: understood
-> on the modern stuff, but photo one is thirteen Golden Era Topps cards in top-loaders,
-> those turn in under two weeks — keep a hundred-dollar defensive cap.
->
-> That's not a chatbot. That's a buyer.
+---
 
-## BEAT 4 — 2:45–3:45 · Running on Google Cloud
-**On screen:** Cloud Run service page → revision + region → Vertex AI request logs → `/health` 200 → `make test`.
+## 🎬 Beat 3: The Gate Console, Choice-Lot Sniper & Proactive Pushback (1:45 – 2:45)
 
-> All of it runs on Google Cloud.
->
-> One container on Cloud Run in us-central-one, serving the console, the sourcing API, and a
-> health endpoint you can hit right now. Vertex AI handles the model routing, with structured
-> output schemas so appraisals come back as data, not prose.
->
-> The bidding math never touches a model. Margin target, condition discounts, five-dollar
-> increments, the fifteen percent absentee fee — that's plain Python, covered by a hundred
-> and sixty unit tests that run in under a tenth of a second.
->
-> On the July gallery, the old unconstrained wishlist came to fourteen thousand three
-> hundred forty dollars. The agent brought that down to nineteen hundred fifteen — inside
-> the cap.
+* **Visual on Screen:**
+  1. Switch to the live Cloud Run Gate Console ([https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app)).
+  2. Hover over the **Interactive 2D Showroom Floor Map**, the **Curator's Negotiation Banner**, and the **Question Queue**.
+* **Voiceover:**
+  > *"On Friday afternoon, the fleet doesn't dump an unconstrained $14,000 wishlist on the owner. It opens the Gate Console—serving serverless on Google Cloud Run in universal dark mode.*
+  >
+  > *The fleet acts as an expert commercial peer. It surfaces our 'Choice-Lot Sniper'—protecting us on wall runs of travel posters and table lines of lanterns by enforcing a strict single-unit limit, preventing a $900 auctioneer multiplication trap.*
+  >
+  > *When I told the agent to drop all sports cards due to store backlog, it didn't act like a passive yes-man. It pushed back using real-time eBay velocity: defending Photo #1—13 Golden Era 1959–69 Topps cards in top-loaders at a $100 cap because of rapid 14-day liquidity at a 4x margin.*
+  >
+  > *And with deterministic keyed memory, answers to house policy questions are learned permanently, shrinking repetitive friction cycle after cycle."*
 
-## BEAT 5 — 3:45–4:00 · Close
-**On screen:** The sheet, then closing card.
+---
 
-> I'm not trying to take myself out of the loop. I'm one person who needs the eyes of five.
->
-> Blue Toad Fleet reads the room, prices what it can, admits what it can't, and hands me ten
-> lots that make money. That's the whole thing.
+## 🎬 Beat 4: Live Google Cloud Proof & Final Sealed Sourcing Draft (2:45 – 4:00)
+
+* **Visual on Screen:**
+  1. Open Google Cloud Console on project `threebatdrone-prod-420` showing Cloud Run revision `blue-toad-fleet-00009-8kb` and Vertex AI metrics.
+  2. Tab to `/api/lots` and open the sealed [`data/aug22_absentee_bid_email.txt`](../data/aug22_absentee_bid_email.txt).
+  3. Show the 160 passing unit tests in terminal (`make test`).
+* **Voiceover:**
+  > *"Everything runs in production on Google Cloud Run and Vertex AI. All 160 unit tests pass in under 0.1 seconds.*
+  >
+  > *Our greedy allocator committed exactly $335.00 across 12 approved high-velocity lots—$385.25 all-in with the mandatory 15% absentee fee, strictly formatted to standard $5.00 auction increments.*
+  >
+  > *The system compiles the final sealed email draft ready for info@bluetoadauctions.com while Richmond General stays open for business.*
+  >
+  > *Blue Toad Fleet: Velocity to distill the information. Collaboration on the judgment."*
+
+---
+
+## Summary Checklist for Recording
+
+- [ ] Opening Title Card shown for 3 seconds (`Built solo, in 13 days, by one person.`).
+- [ ] Messy AuctionZip 450-photo gallery shown.
+- [ ] Architecture diagram & Spatial Room Graph explained.
+- [ ] Live Cloud Run Gate Console demonstrated ([https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app)).
+- [ ] Choice-Lot Sniper & Proactive Pushback on 1959–69 Topps cards highlighted.
+- [ ] Google Cloud Console (`threebatdrone-prod-420`) and unit tests displayed.
+- [ ] Total time: Under 4 minutes.
