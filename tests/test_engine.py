@@ -143,3 +143,53 @@ class TestTheAppraiseEndpointSuppliesAPhoto:
         assert is_appraisal_grade(seen["bytes"]), (
             "the endpoint appraised without an appraisal-grade photo"
         )
+
+
+class TestCacheReporting:
+    """
+    The pipeline printed "(cached: True)" after a --live run because it was
+    reporting whether the cache *file existed*, not whether it had been used.
+    A run that quietly reused stale results while claiming to be live is how
+    you spend an afternoon comparing a file against itself.
+    """
+
+    def test_a_populated_cache_is_used_when_not_forcing(self, tmp_path):
+        cache = tmp_path / "appraisal_results.json"
+        cache.write_text('[{"lot_id": "BT-001"}]')
+        assert AppraisalEngine.will_use_cache(cache, force_refresh=False)
+
+    def test_forcing_a_refresh_bypasses_a_populated_cache(self, tmp_path):
+        cache = tmp_path / "appraisal_results.json"
+        cache.write_text('[{"lot_id": "BT-001"}]')
+        assert not AppraisalEngine.will_use_cache(cache, force_refresh=True)
+
+    def test_an_empty_cache_is_not_usable(self):
+        """An empty list is a file, not results; the batch falls through to live."""
+        import tempfile, pathlib as _pl
+        with tempfile.TemporaryDirectory() as d:
+            cache = _pl.Path(d) / "appraisal_results.json"
+            cache.write_text("[]")
+            assert not AppraisalEngine.will_use_cache(cache, force_refresh=False)
+
+    def test_an_unparseable_cache_is_not_usable(self, tmp_path):
+        cache = tmp_path / "appraisal_results.json"
+        cache.write_text("{ not json")
+        assert not AppraisalEngine.will_use_cache(cache, force_refresh=False)
+
+    def test_a_missing_cache_is_never_used(self, tmp_path):
+        assert not AppraisalEngine.will_use_cache(tmp_path / "nope.json", force_refresh=False)
+
+    def test_no_cache_path_is_never_used(self):
+        assert not AppraisalEngine.will_use_cache(None, force_refresh=False)
+
+    def test_the_batch_serves_the_cache_it_says_it_will(self, tmp_path):
+        """The reporting helper and the batch must agree, or the print lies again."""
+        cache = tmp_path / "appraisal_results.json"
+        cache.write_text('[{"lot_id": "BT-001", "questions": []}]')
+
+        engine = AppraisalEngine()
+        engine._client = None  # no credentials: only the cache path can succeed
+
+        assert AppraisalEngine.will_use_cache(cache, force_refresh=False)
+        served = engine.run_appraisal_batch(candidates=[], cache_path=cache)
+        assert served == [{"lot_id": "BT-001", "questions": []}]

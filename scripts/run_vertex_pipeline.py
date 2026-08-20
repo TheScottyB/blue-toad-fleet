@@ -136,7 +136,9 @@ def run_pipeline(
                 "local_path": photo["local_path"],
             })
 
-    print(f"\n[*] Stage 2 Appraisal: Running Vertex AI (gemini-3.6-flash) on {len(candidate_items)} candidate lots...")
+    from_cache = engine.will_use_cache(appraisal_cache, force_live_vertex)
+    source = "cached results" if from_cache else "LIVE Vertex AI (gemini-3.6-flash)"
+    print(f"\n[*] Stage 2 Appraisal: {len(candidate_items)} candidate lots from {source}...")
     raw_appraisals = engine.run_appraisal_batch(
         candidates=candidate_items,
         standing_rules=DEFAULT_STANDING_RULES,
@@ -144,7 +146,9 @@ def run_pipeline(
         force_refresh=force_live_vertex,
         max_workers=4,
     )
-    print(f"[✓] Retrieved {len(raw_appraisals)} structured appraisals (cached: {appraisal_cache.exists()}).")
+    print(f"[{'~' if from_cache else '✓'}] Retrieved {len(raw_appraisals)} structured "
+          f"appraisals from {source}."
+          + ("" if from_cache else f" Written to {appraisal_cache}."))
 
     # 3. Parse Appraisals & Questions
     appraisal_by_lot = {}

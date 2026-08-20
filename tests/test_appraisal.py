@@ -1,7 +1,7 @@
 import pytest
 from src.appraisal import (
     Appraisal, Confidence, Question, QuestionKind, StandingRule,
-    build_queue, group, learn,
+    build_queue, group, learn, DESK_ANSWERABLE,
 )
 
 
@@ -80,26 +80,29 @@ class TestGroup:
 
 class TestBuildQueue:
     def test_hard_cap_is_respected(self):
-        qs = [q(cat=f"cat{i}") for i in range(30)]
+        qs = [q(kind=QuestionKind.APPETITE, cat=f"cat{i}") for i in range(30)]
         r = build_queue(qs, cap=12)
         assert len(r.asked) == 12
         assert len(r.dropped) == 18
 
     def test_naive_forty_questions_becomes_a_bounded_queue(self):
-        qs = [q(cat="stoneware", lots=(f"L{i}",)) for i in range(40)]
+        qs = [q(kind=QuestionKind.APPETITE, cat="stoneware", lots=(f"L{i}",))
+              for i in range(40)]
         r = build_queue(qs, cap=12)
         assert len(r.asked) == 1, "same question about 40 lots is one question"
         assert set(r.asked[0].lot_ids) == {f"L{i}" for i in range(40)}
 
     def test_asked_are_ordered_by_impact(self):
-        r = build_queue([q(cat=f"c{i}", lots=tuple(f"L{i}{j}" for j in range(i + 1)))
+        r = build_queue([q(kind=QuestionKind.APPETITE, cat=f"c{i}",
+                           lots=tuple(f"L{i}{j}" for j in range(i + 1)))
                          for i in range(5)], cap=10)
         impacts = [x.impact for x in r.asked]
         assert impacts == sorted(impacts, reverse=True)
 
     def test_highest_impact_survives_the_cap(self):
-        big = q(cat="big", lots=tuple(f"B{i}" for i in range(9)))
-        smalls = [q(cat=f"s{i}") for i in range(20)]
+        big = q(kind=QuestionKind.APPETITE, cat="big",
+                lots=tuple(f"B{i}" for i in range(9)))
+        smalls = [q(kind=QuestionKind.APPETITE, cat=f"s{i}") for i in range(20)]
         r = build_queue(smalls + [big], cap=3)
         assert big.rule_key in {x.rule_key for x in r.asked}
 
@@ -118,12 +121,13 @@ class TestBuildQueue:
         assert len(r.asked) == 1
 
     def test_dropped_lots_are_flagged_not_lost(self):
-        qs = [q(cat=f"c{i}", lots=(f"L{i}",)) for i in range(5)]
+        qs = [q(kind=QuestionKind.APPETITE, cat=f"c{i}", lots=(f"L{i}",))
+              for i in range(5)]
         r = build_queue(qs, cap=2)
         assert len(r.flagged_lot_ids) == 3
 
     def test_every_question_is_accounted_for(self):
-        qs = [q(cat=f"c{i}") for i in range(20)]
+        qs = [q(kind=QuestionKind.APPETITE, cat=f"c{i}") for i in range(20)]
         r = build_queue(qs, cap=7)
         assert len(r.asked) + len(r.dropped) + len(r.auto_answered) == 20
 
@@ -174,11 +178,16 @@ class TestTwoCycleDecay:
         assert len(c2.asked) < len(c1.asked)
         assert len(c2.auto_answered) == 3  # grouping, scope, appetite
 
-    def test_object_specific_questions_still_asked_next_cycle(self):
+    def test_object_specific_questions_are_never_memoised_away(self):
+        """
+        A maker's mark on a new object is a new question every cycle. Memory
+        must not learn it away — it surfaces as deferred, since it needs the
+        object in hand, but it never silently disappears.
+        """
         c1 = build_queue(self._cycle_questions())
         rules = learn([(x, "a") for x in c1.asked], cycle="c1")
         c2 = build_queue(self._cycle_questions(), rules)
-        kinds = {x.kind for x in c2.asked}
+        kinds = {x.kind for x in c2.deferred}
         assert QuestionKind.MARK in kinds and QuestionKind.CONDITION in kinds
 
     def test_decay_converges_not_collapses(self):
@@ -189,7 +198,24 @@ class TestTwoCycleDecay:
             counts.append(len(r.asked))
             rules += learn([(x, "a") for x in r.asked], cycle=f"c{i}")
         assert counts[0] > counts[1]
-        assert counts[1] == counts[2] == counts[3], "should settle, not hit zero"
+        assert counts[1] == counts[2] == counts[3], "should settle, not oscillate"
+
+    def test_the_desk_queue_empties_but_the_work_does_not_disappear(self):
+        """
+        Once the conventions are learned the desk has nothing left to answer,
+        which is the point — "needs you less every cycle". What must not happen
+        is the object-specific work evaporating with it: those lots keep
+        surfacing as deferred, and keep shipping flagged.
+        """
+        rules: list = []
+        for i in range(3):
+            r = build_queue(self._cycle_questions(), rules)
+            rules += learn([(x, "a") for x in r.asked], cycle=f"c{i}")
+
+        settled = build_queue(self._cycle_questions(), rules)
+        assert settled.asked == []
+        assert len(settled.deferred) == 2
+        assert settled.flagged_lot_ids == {"G", "H"}
 
 
 class TestMergeKeyVsRuleKey:
@@ -247,3 +273,60 @@ class TestMergeKeyVsRuleKey:
     def test_single_lot_keeps_the_bare_prompt(self):
         out = group([self._cluster("A", ["a1"])])
         assert "lots)" not in out[0].prompt
+
+
+class TestDeskAnswerable:
+    """
+    The Friday queue is worked at a desk, from the same gallery photos the model
+    saw. A hallmark on a clasp or a hairline on a reverse needs the object in
+    hand at Saturday's preview — asking before the cutoff produces a queue
+    nobody can clear, and buries the conventions that *can* be settled.
+    """
+
+    def test_mark_questions_are_deferred_not_asked(self):
+        r = build_queue([q(kind=QuestionKind.MARK)])
+        assert r.asked == []
+        assert len(r.deferred) == 1
+
+    def test_condition_questions_are_deferred_not_asked(self):
+        r = build_queue([q(kind=QuestionKind.CONDITION)])
+        assert r.asked == [] and len(r.deferred) == 1
+
+    @pytest.mark.parametrize("kind", [
+        QuestionKind.POLICY, QuestionKind.LOT_GROUPING,
+        QuestionKind.SCOPE, QuestionKind.APPETITE,
+    ])
+    def test_convention_and_policy_questions_are_asked(self, kind):
+        r = build_queue([q(kind=kind)])
+        assert len(r.asked) == 1 and r.deferred == []
+
+    def test_deferred_lots_ship_flagged_rather_than_vanishing(self):
+        r = build_queue([q(kind=QuestionKind.MARK, lots=("L7",))])
+        assert "L7" in r.flagged_lot_ids
+
+    def test_every_question_is_still_accounted_for(self):
+        qs = ([q(kind=QuestionKind.MARK, cat=f"m{i}") for i in range(6)]
+              + [q(kind=QuestionKind.SCOPE, cat=f"s{i}") for i in range(6)])
+        r = build_queue(qs, cap=3)
+        assert len(r.asked) + len(r.dropped) + len(r.auto_answered) + len(r.deferred) == 12
+
+    def test_deferred_questions_do_not_consume_the_cap(self):
+        qs = ([q(kind=QuestionKind.MARK, cat=f"m{i}") for i in range(10)]
+              + [q(kind=QuestionKind.SCOPE, cat=f"s{i}") for i in range(4)])
+        r = build_queue(qs, cap=4)
+        assert len(r.asked) == 4, "object-specific questions ate the desk queue"
+
+    def test_a_standing_rule_answers_before_the_kind_check(self):
+        rule = StandingRule(kind=QuestionKind.MARK, category="stoneware",
+                            answer="assume unmarked", learned_cycle="2026-07-11")
+        r = build_queue([q(kind=QuestionKind.MARK, cat="stoneware")], [rule])
+        assert len(r.auto_answered) == 1 and r.deferred == []
+
+    def test_the_policy_is_overridable_for_a_desk_that_works_differently(self):
+        r = build_queue([q(kind=QuestionKind.MARK)],
+                        desk_answerable=frozenset({QuestionKind.MARK}))
+        assert len(r.asked) == 1 and r.deferred == []
+
+    def test_deferring_everything_leaves_an_honest_empty_queue(self):
+        r = build_queue([q(kind=QuestionKind.MARK), q(kind=QuestionKind.CONDITION)])
+        assert r.asked == [] and len(r.deferred) == 2

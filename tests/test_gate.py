@@ -51,12 +51,13 @@ class TestRenderContract:
 
 class TestQuestionQueue:
     def test_questions_appear(self):
-        h = render_console(_view(questions=[_q()]))
+        h = render_console(_view(questions=[_q(kind=QuestionKind.APPETITE)]))
         assert "Is there a mark on the base?" in h
         assert "Needs your eye" in h
 
     def test_photo_requests_are_marked(self):
-        assert ">photo<" in render_console(_view(questions=[_q(photo=True)]))
+        h = render_console(_view(questions=[_q(kind=QuestionKind.SCOPE, photo=True)]))
+        assert ">photo<" in h
 
     def test_memory_answers_render_separately(self):
         rule = StandingRule(kind=QuestionKind.SCOPE, category="stoneware",
@@ -68,8 +69,17 @@ class TestQuestionQueue:
     def test_empty_queue_says_so(self):
         assert "Nothing ambiguous" in render_console(_view())
 
+    def test_does_not_claim_nothing_is_ambiguous_while_deferring_work(self):
+        """
+        "Nothing ambiguous this cycle" is the most confident line the console
+        has. It must not appear above a list of questions nobody could answer.
+        """
+        h = render_console(_view(questions=[_q(kind=QuestionKind.MARK)]))
+        assert "Nothing ambiguous" not in h
+
     def test_dropped_questions_are_disclosed_not_hidden(self):
-        qs = [_q(cat=f"c{i}", lots=(f"BT-{i:03d}",)) for i in range(20)]
+        qs = [_q(kind=QuestionKind.APPETITE, cat=f"c{i}", lots=(f"BT-{i:03d}",))
+              for i in range(20)]
         h = render_console(_view(questions=qs))
         assert "over the cap" in h and "flagged low-confidence" in h
 
@@ -109,7 +119,7 @@ class TestSafety:
         assert "&lt;script&gt;" in h
 
     def test_question_prompts_are_escaped(self):
-        q = Question(kind=QuestionKind.MARK, category="stoneware",
+        q = Question(kind=QuestionKind.APPETITE, category="stoneware",
                      prompt="<img onerror=x>", lot_ids=("BT-000",),
                      value_at_stake=1.0, confidence_gap=0.5, wants_photo=False)
         h = render_console(_view(questions=[q]))
@@ -138,3 +148,35 @@ class TestIllustrativeBanner:
     def test_partial_lot_count_is_disclosed(self):
         v = _view(); v.lots_total = 61
         assert "of 61 lots appraised" in render_console(v)
+
+
+class TestDeferredQuestions:
+    """
+    A question the desk cannot answer must still be visible. Filtering it out
+    of the queue is right; making it disappear is how nine questions and their
+    lots go missing without anyone noticing.
+    """
+
+    def test_deferred_questions_are_disclosed_not_hidden(self):
+        h = render_console(_view(questions=[_q(kind=QuestionKind.MARK)]))
+        assert "1" in h
+        assert "preview" in h.lower() or "in hand" in h.lower()
+
+    def test_the_deferred_prompt_itself_is_shown(self):
+        h = render_console(_view(questions=[_q(kind=QuestionKind.CONDITION)]))
+        assert "Is there a mark on the base?" in h
+
+    def test_deferred_prompts_are_escaped(self):
+        q = Question(kind=QuestionKind.MARK, category="stoneware",
+                     prompt="<img onerror=x>", lot_ids=("BT-000",),
+                     value_at_stake=1.0, confidence_gap=0.5, wants_photo=False)
+        h = render_console(_view(questions=[q]))
+        assert "<img onerror=x>" not in h and "&lt;img" in h
+
+    def test_no_deferred_section_when_nothing_is_deferred(self):
+        h = render_console(_view(questions=[_q(kind=QuestionKind.APPETITE)]))
+        assert "needs the item in hand" not in h.lower()
+
+    def test_deferred_lots_are_named_as_shipping_flagged(self):
+        h = render_console(_view(questions=[_q(kind=QuestionKind.MARK, lots=("BT-042",))]))
+        assert "BT-042" in h

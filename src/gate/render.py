@@ -66,6 +66,10 @@ border:1px solid var(--line);background:var(--card2);color:var(--ink2);cursor:po
 padding:2px 7px;border-radius:5px;border:1px solid var(--line);color:var(--ink3);white-space:nowrap}
 .tag.photo{border-color:var(--cyan);color:var(--cyan)}
 .tag.mem{border-color:var(--green);color:var(--green)}
+.defer{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--ink3);
+border-radius:0 11px 11px 0;padding:11px 16px;margin:7px 0;opacity:.72}
+.defer .txt{color:var(--ink2);font-size:13.5px}
+.defer .meta{font-size:11.5px;color:var(--ink3);margin-top:5px}
 .mem{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--green);
 border-radius:0 11px 11px 0;padding:11px 16px;margin:7px 0;font-size:13.5px;color:var(--ink2)}
 .mem b{color:var(--ink)}
@@ -174,7 +178,12 @@ def _question_block(v: CycleView) -> str:
 
     out.append(f"<h2>Needs your eye &mdash; {len(q.asked)} question(s)</h2>")
     if not q.asked:
-        out.append('<p style="color:var(--ink2)">Nothing ambiguous this cycle.</p>')
+        # Only say it when it is true. With work still deferred to the preview,
+        # "nothing ambiguous" is the console overclaiming on the operator's behalf.
+        out.append('<p style="color:var(--ink2)">'
+                   + ("Nothing left for the desk &mdash; see below."
+                      if q.deferred else "Nothing ambiguous this cycle.")
+                   + '</p>')
     for i, question in enumerate(q.asked, 1):
         photo = _tag("photo", "photo") if question.wants_photo else ""
         lots = ", ".join(question.lot_ids[:6])
@@ -189,6 +198,26 @@ def _question_block(v: CycleView) -> str:
             f'<button class="btn">Applies to all {escape(question.category)}</button>'
             f'<button class="btn">Skip</button></div></div>'
         )
+
+    if q.deferred:
+        out.append(
+            f"<h2>Needs the item in hand &mdash; not asked before the cutoff "
+            f"({len(q.deferred)})</h2>"
+        )
+        out.append(
+            '<p style="color:var(--ink3);font-size:13px;margin:-4px 0 10px">'
+            'Marks and condition cannot be settled from a gallery photo at any '
+            'resolution. These wait for Saturday&rsquo;s preview; their lots ship '
+            'flagged rather than blocking the sheet.</p>'
+        )
+        for question in q.deferred:
+            lots = ", ".join(question.lot_ids[:6])
+            more = f" +{len(question.lot_ids) - 6}" if len(question.lot_ids) > 6 else ""
+            out.append(
+                f'<div class="defer"><div class="txt">{escape(question.prompt)}</div>'
+                f'<div class="meta">{escape(question.kind.value)} &middot; '
+                f'{escape(question.category)} &middot; {escape(lots)}{more}</div></div>'
+            )
 
     if q.dropped:
         out.append(

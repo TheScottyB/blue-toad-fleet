@@ -83,6 +83,25 @@ class Appraisal:
 _CLUSTER_SCOPED = frozenset({QuestionKind.LOT_GROUPING, QuestionKind.SCOPE})
 
 
+# What a person can actually answer at a desk on Friday night, holding nothing
+# but the same gallery photos the model saw.
+#
+# House convention and shop policy live in the owner's head: whether trays 12,
+# 14 and 16 sell as one lot, whether the shop wants costume jewellery at all.
+# A hallmark on a clasp or a hairline on a reverse does not — that needs the
+# object in hand at Saturday's preview, which is after the cutoff.
+#
+# Asking those anyway is what makes a queue look like an AI reciting a
+# checklist. The questions are not wrong; they are addressed to the wrong
+# person at the wrong hour. They defer, and their lots ship flagged.
+DESK_ANSWERABLE = frozenset({
+    QuestionKind.POLICY,
+    QuestionKind.LOT_GROUPING,
+    QuestionKind.SCOPE,
+    QuestionKind.APPETITE,
+})
+
+
 @dataclass(frozen=True)
 class Question:
     kind: QuestionKind
@@ -151,12 +170,19 @@ class QueueResult:
     asked: list[Question] = field(default_factory=list)
     auto_answered: list[tuple[Question, StandingRule]] = field(default_factory=list)
     dropped: list[Question] = field(default_factory=list)
+    deferred: list[Question] = field(default_factory=list)
 
     @property
     def flagged_lot_ids(self) -> set[str]:
-        """Lots whose question was dropped ship flagged low-confidence."""
+        """
+        Lots that ship flagged low-confidence.
+
+        Two ways to get here, and the distinction matters to the operator:
+        dropped means the queue ran out of room, deferred means nobody at a
+        desk could have answered it before the cutoff. Neither blocks the sheet.
+        """
         out: set[str] = set()
-        for q in self.dropped:
+        for q in (*self.dropped, *self.deferred):
             out.update(q.lot_ids)
         return out
 
@@ -194,11 +220,16 @@ def build_queue(
     questions: Iterable[Question],
     standing_rules: Iterable[StandingRule] = (),
     cap: int = MAX_QUESTIONS_PER_CYCLE,
+    desk_answerable: frozenset[QuestionKind] = DESK_ANSWERABLE,
 ) -> QueueResult:
     """
-    Group, suppress anything a standing rule already answers, rank by impact,
-    and hard-cap. Everything past the cap is dropped, not asked later — its
-    lots ship flagged rather than blocking the sheet.
+    Group, suppress anything a standing rule already answers, set aside what the
+    desk cannot answer, rank the rest by impact, and hard-cap.
+
+    Order matters. A standing rule wins first: if the owner has already ruled on
+    it, the kind is beside the point. Deferral comes next, and deliberately does
+    not consume the cap — otherwise a dozen hallmark questions crowd out the
+    grouping question that actually decides how the sheet is built.
     """
     rules = {r.rule_key: r for r in standing_rules}
     result = QueueResult()
@@ -207,6 +238,8 @@ def build_queue(
         rule = rules.get(q.rule_key)
         if rule is not None:
             result.auto_answered.append((q, rule))
+        elif q.kind not in desk_answerable:
+            result.deferred.append(q)
         elif len(result.asked) < cap:
             result.asked.append(q)
         else:

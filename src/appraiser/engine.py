@@ -64,6 +64,26 @@ class AppraisalEngine:
                 self._client = None
         return self._client
 
+    @staticmethod
+    def will_use_cache(cache_path: Optional[Path | str], force_refresh: bool) -> bool:
+        """
+        Whether a batch with these arguments will serve from cache.
+
+        Exists so callers can report what actually happened instead of guessing
+        from whether the file is on disk — those are different questions, and
+        conflating them made a --live run announce itself as cached.
+        """
+        if not cache_path or force_refresh:
+            return False
+        p = Path(cache_path)
+        if not p.exists():
+            return False
+        try:
+            cached = json.loads(p.read_text())
+        except Exception:
+            return False
+        return isinstance(cached, list) and len(cached) > 0
+
     def triage_photo(
         self,
         photo_id: str,
@@ -173,15 +193,8 @@ class AppraisalEngine:
         Batch triage across a photo drop.
         Loads from cache_path if present unless force_refresh is True.
         """
-        if cache_path:
-            p = Path(cache_path)
-            if p.exists() and not force_refresh:
-                try:
-                    cached = json.loads(p.read_text())
-                    if isinstance(cached, list) and len(cached) > 0:
-                        return cached
-                except Exception:
-                    pass
+        if self.will_use_cache(cache_path, force_refresh):
+            return json.loads(Path(cache_path).read_text())
 
         results = []
         if not self.client:
@@ -241,15 +254,8 @@ class AppraisalEngine:
         Batch appraisal on survivor candidate lots.
         Loads from cache_path if present unless force_refresh is True.
         """
-        if cache_path:
-            p = Path(cache_path)
-            if p.exists() and not force_refresh:
-                try:
-                    cached = json.loads(p.read_text())
-                    if isinstance(cached, list) and len(cached) > 0:
-                        return cached
-                except Exception:
-                    pass
+        if self.will_use_cache(cache_path, force_refresh):
+            return json.loads(Path(cache_path).read_text())
 
         results = []
         if not self.client:
