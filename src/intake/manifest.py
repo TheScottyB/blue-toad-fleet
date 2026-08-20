@@ -61,7 +61,9 @@ class WorkItem:
 
 
 def clean_caption(raw: str) -> str:
-    return _PREVIEW.sub("", (raw or "").strip()).strip()
+    cleaned = _PREVIEW.sub("", (raw or "").strip()).strip()
+    cleaned = re.sub(r"\bnon-spoprt\b", "non-sport", cleaned, flags=re.IGNORECASE)
+    return cleaned
 
 
 def lot_number_from(caption: str) -> str | None:

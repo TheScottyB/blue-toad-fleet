@@ -34,10 +34,8 @@ class CycleView:
 _CSS = """
 :root{--bg:#0f1115;--card:#171a21;--card2:#1d212a;--line:#2b313d;
 --ink:#e8eaf0;--ink2:#a7b0c0;--ink3:#78829a;
---violet:#a78bfa;--green:#34d399;--amber:#fbbf24;--red:#f87171;--cyan:#38bdf8}
-@media(prefers-color-scheme:light){:root{--bg:#f6f7f9;--card:#fff;--card2:#f1f3f7;
---line:#dfe3ea;--ink:#12151c;--ink2:#4a5364;--ink3:#6b7488;
---violet:#7c3aed;--green:#059669;--amber:#b45309;--red:#dc2626;--cyan:#0891b2}}
+--violet:#a78bfa;--green:#34d399;--amber:#fbbf24;--red:#f87171;--cyan:#38bdf8;
+color-scheme: dark}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);
 font:15px/1.6 ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
