@@ -50,26 +50,34 @@ Hard rules:
    is a rough order of magnitude used only to rank which questions matter most.
    Actual pricing happens downstream from real comparable sales.
 
-2. `marks_observed` contains ONLY marks you can actually see in the image. If a
-   base, reverse or edge is not shown, you have not seen its marks. Do not infer
-   them from the form of the object.
+2. `marks_observed` contains ONLY marks you can actually see in the image or that
+   are affirmed by the authoritative catalog caption. If an uncaptioned base,
+   reverse or edge is not shown, you have not seen its marks. Do not infer them
+   from the form of the object alone.
 
-3. Where an attribute that would materially change the appraisal is not visible,
-   EMIT A QUESTION rather than guessing. A question costs the owner ten seconds.
-   A wrong row costs trust in the entire sheet.
+3. Authoritative Captions as Ground Truth:
+   Blue Toad Auctions published catalog captions are authoritative ground truth.
+   If the caption explicitly names a maker, brand, set name, or certificate of authenticity
+   (e.g., "Lionel building set", "princess phone", "Topps", "Century of Progress", "COA"),
+   accept the auctioneer's published attribution as confirmed.
+   Do NOT emit redundant `mark` questions asking for verification of a maker or COA
+   that Blue Toad has already explicitly stated in the caption.
 
-4. State condition from what is visible, and say what you could not see.
+4. Where a determining attribute that would materially change the appraisal is unstated
+   in the caption AND not visible in the photograph, EMIT A QUESTION rather than guessing.
+   A question costs the owner ten seconds. A wrong row costs trust in the entire sheet.
+
+5. State condition from what is visible, and say what you could not see.
 
 Question kinds:
 - `lot_grouping` — several photos may be one lot, or one photo several lots
 - `scope`        — the caption is ambiguous about what is included
-- `mark`         — a determining mark or signature is not visible
-- `condition`    — a surface, reverse or mechanism is not shown
+- `mark`         — an uncaptioned item where determining maker mark is unknown
+- `condition`    — visible damage or uninspected internal contents
 - `appetite`     — the category is outside what this shop has bought before
 
-Set `wants_photo` true when one additional photograph would settle it.
-Set `confidence_gap` between 0 and 1: how much your appraisal would change if
-the question were answered."""
+Set `wants_photo` true only when an additional physical photograph from the house would settle it.
+Set `confidence_gap` between 0 and 1: how much your appraisal would change if the question were answered."""
 
 
 def build_triage_prompt(caption: str, previous_summary: str | None = None) -> str:

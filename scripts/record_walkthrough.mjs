@@ -42,14 +42,16 @@ const glide = (y, ms) =>
     })(performance.now());
   }), [y, ms]);
 
+// Scaled ~1.31x from the original teaser timings so the full walkthrough
+// (hero -> end) totals ~57.8s, matching the current beat3.mp3 narration length.
 const BEATS = [
-  ['hero',      null,                          0,    4200],
-  ['topology',  'POLE BARN SHOWROOM TOPOLOGY',  1600, 5200],
-  ['curator',   "Curator's Negotiation",        1300, 5000],
-  ['memory',    'ANSWERED FROM MEMORY',         1300, 5200],
-  ['sheet',     'BT-001',                       1600, 6000],
-  ['bids',      'BT-021',                       3000, 3500],
-  ['skips',     'BT-003',                       1800, 4200],
+  ['hero',      null,                          0,    5500],
+  ['topology',  'POLE BARN SHOWROOM TOPOLOGY',  2100, 6800],
+  ['curator',   "Curator's Negotiation",        1700, 6600],
+  ['memory',    'ANSWERED FROM MEMORY',         1700, 6800],
+  ['sheet',     'BT-001',                       2100, 7900],
+  ['bids',      'BT-021',                       3900, 4600],
+  ['skips',     'BT-003',                       2400, 5500],
 ];
 
 for (const [label, anchor, glideMs, hold] of BEATS) {
