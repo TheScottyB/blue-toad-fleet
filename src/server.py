@@ -157,7 +157,9 @@ def get_aug22_state():
 
     return photos, lot_groups, lots, decisions, summary, queue_res, captions_map
 
+@app.get("/health")
 @app.get("/healthz")
+@app.get("/healthz/")
 def healthz():
     return {
         "status": "healthy",

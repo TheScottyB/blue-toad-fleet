@@ -55,7 +55,7 @@ Appraisals feed into pure, unit-tested bid math implementing the store's 38% mar
 ## Live Google Cloud Deployment (Project: `threebatdrone-prod-420`)
 
 * **Live Gate Console & API:** [https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app)
-* **Live Health Check:** `https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/healthz`
+* **Live Health Check:** `https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/health`
 * **Live Sourcing API:** `https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/api/lots`
 * **Live Absentee Email Generator:** `https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/api/email`
 
