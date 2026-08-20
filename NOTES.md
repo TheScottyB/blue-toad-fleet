@@ -464,7 +464,7 @@ rules-compliance risk (API still on `gemini-3-flash-preview`) is still open.
 | By | Must be true |
 |---|---|
 | **Aug 20** | **PASSED (2026-08-20 09:22 CDT)** — Live Vertex call executed on `threebatdrone-prod-420` (`global` endpoint) with real photo payload (`001_838421457.jpg`). Both `gemini-3.6-flash` (appraisal) and `gemini-3.5-flash-lite` (triage) returned valid structured outputs conforming to `APPRAISAL_SCHEMA` and `TRIAGE_SCHEMA` with 2 structured questions emitted. Script: `scripts/test_vertex_live.py`. |
-| Aug 21 | Photos in a GCS bucket; one Cloud Run service deployed and invoked. |
+| **Aug 21** | **PASSED AHEAD OF SCHEDULE (2026-08-20 09:58 CDT)** — Containerized web service and Gate Console deployed to Google Cloud Run (`us-central1`) on project `threebatdrone-prod-420`. Live public URL serving August 22 cycle: `https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/`. |
 | Aug 22 | Pub/Sub topic + subscription + dead-letter; Appraiser consuming; Firestore writes; idempotency proven by replaying a message. |
 | Aug 23 | Full fan-out over a real gallery at real scale — quota, concurrency, timeouts and cost surprises only appear at hundreds of photos. |
 | Aug 24 | **Mid-gate.** Gate console served from Cloud Run against real Firestore; one Gmail draft created for real. |

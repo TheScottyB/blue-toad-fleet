@@ -17,11 +17,9 @@ Built for the All Things Agentic Hackathon, August 2026.
 | Intake clarification queue + cross-cycle memory | **Built** — `src/appraisal`, tested |
 | Appraiser routing, schemas, prompts | **Built** — `src/appraiser`, tested |
 | Gallery drop parsing and fan-out planning | **Built** — `src/intake`, tested |
-| Gate console renderer | **Built** — `src/gate`, tested |
-| Credential-free demos | **Built** — `make demo`, `make cycles`, `make console` |
-| Credential broker | **Designed** — [docs/BROKER.md](docs/BROKER.md), not implemented |
 | Vertex client & model routing | **Built** — `src/appraiser`, live verified on `threebatdrone-prod-420` |
-| Cloud Run deploy, Pub/Sub, Firestore | **Planned** |
+| Cloud Run deploy & live API | **Built / Live** — [blue-toad-fleet-u5gvrqwvua-uc.a.run.app](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/) |
+| Pub/Sub, Firestore | **Planned** |
 | Watcher, Comps, ledger | **Planned** |
 
 Nothing below is described as working unless this table says it is.
