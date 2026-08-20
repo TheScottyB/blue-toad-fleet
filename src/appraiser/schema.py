@@ -27,8 +27,8 @@ def to_vertex(node):
     too. Returns a new structure; the input is never mutated.
 
     Verified against the live endpoint 2026-08-19: one real photo through
-    ``gemini-3.6-flash`` on ``threebatdrone-prod-420`` (global), schema-valid,
-    9.87s, 2149 in / 373 out. Re-run ``scripts/test_vertex_live.py`` to confirm.
+    ``gemini-3.6-flash`` on ``threebatdrone-prod-420`` (global), returned
+    schema-valid structured output in 9.87s, 2149 in / 373 out.
     """
     if not isinstance(node, dict):
         return node
