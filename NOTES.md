@@ -165,6 +165,66 @@ done in time.** July 11 he went and took nine lots off the floor chosen in a
 preview hour — not a short list chosen deliberately against comps. That is the
 failure mode, not the success case.
 
+## VELOCITY — the definition behind `fit_score`. Operator, 2026-08-20.
+
+`fit_score` has been doing the selection work with nothing behind it. This is the
+target function. Three layers.
+
+**1. Time-to-cash.** *Velocity is the speed at which deployed capital converts back
+into liquid cash plus margin.* Margin without velocity is a trap.
+
+    velocity = gross margin $ / holding period (days on market)
+
+- **The truckload trap:** 40 uncurated items for $300. 400% on paper, 14 months of
+  floor space, dusting, photographing and haggling to realise. Capital and square
+  footage dead.
+- **High velocity:** a 1960s Pabst lighted sign at $40, lists $140, sells in 12 days.
+- $100 cycled through four 30-day flips returns $400+ gross in a year. The same
+  $100 in a slow cabinet returns $150 once.
+
+**CAVEAT WORTH ENCODING:** he has said the choke point is TIME, not capital. So
+days-on-market is only half of it — the other half is **touches per item**. The
+truckload trap is described in labour ("dusting, photographing, haggling"), not
+just calendar. Two lots with equal $/day are not equal if one needs research,
+restoration or freight. The bid math should eventually penalise handling burden,
+not only holding period. Not yet modelled anywhere.
+
+**2. Sourcing — this is the A/B/SKIP rule.**
+
+| | |
+|---|---|
+| **Priority A — high velocity** | Well-defined, authentic, deep and active buyer pools. Red Wing salt-glaze stoneware, vintage railroad builder plates, graded sports cards, classic breweriana. Sell predictably within 30 days of listing. |
+| **Priority B / SKIP — zero velocity** | Unmarked brown pottery, generic glassware, heavy furniture, box lots of kitchen utensils. Even at a cheap hammer, holding cost and listing friction destroy EV. |
+
+**THE ALIGNMENT WORTH PUTTING IN THE WRITE-UP:** the items that are high-velocity
+are very nearly the same items a multimodal model can identify with confidence.
+Both properties come from the same root — a recognised maker, mark or category.
+"Unmarked brown pottery" is simultaneously the lowest-velocity inventory AND the
+exact case where the appraiser is required to emit `no external comp — human
+pricing required`. The refusal-to-guess rule and the velocity rule point the same
+direction. That is not a coincidence and it is a strong argument that the
+architecture matches the business.
+
+**3. Speed vs velocity — scalar vs vector.**
+
+- **High speed, zero velocity:** six hours opening 428 raw photos, getting
+  overwhelmed, buying an unplanned truckload at preview because the clock ran out.
+  Motion without displacement.
+- **High velocity:** 428 photos filtered to the 9 best candidates, exact max bids
+  computed, submitted before Friday 8:00 PM. Direct movement toward positive EV.
+
+**DO NOT PUT "3 MINUTES" IN ANY ARTIFACT.** The only measured figure is the Aug 20
+gate: **9.87s for one `gemini-3.6-flash` appraisal call**. Full-cycle wall clock,
+assuming ~1.5s triage (ASSUMED, never measured):
+
+    serial            ~21 min
+    10-way concurrent  ~2 min
+    20-way concurrent  ~1 min
+
+So a few minutes is plausible — and entirely unmeasured. Concurrency limits, quota
+and Cloud Run scaling are all untested. Say "minutes, not an evening" if a claim is
+needed, or measure it at fan-out on Aug 23 and quote the real number.
+
 ## THE OPERATING CADENCE — operator, 2026-08-20. This is the product.
 
 Not a time-saver. **An enabler.** *"its not 'saving' time, this is the case where
