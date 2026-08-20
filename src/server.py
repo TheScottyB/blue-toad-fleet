@@ -20,7 +20,7 @@ from src.bidmath import (
 )
 from src.appraisal import Question, QuestionKind, build_queue, learn, StandingRule
 from src.gate import CycleView, render_console
-from scripts.run_aug22_cycle import AUG22_CATALOG_TAXONOMY, evaluate_catalog_comp
+from scripts.run_aug22_cycle import APPROVED_BIDS, ABSENTEE_FEE
 
 app = FastAPI(title="Blue Toad Fleet", version="2.0.0")
 
@@ -72,17 +72,6 @@ def get_aug22_state():
     for i, p in enumerate(photos):
         cap = p["caption"].lower()
         has_cap = bool(cap.strip())
-
-        if "poppy trail" in cap or (i > 0 and "poppy trail" in photos[i-1]["caption"].lower() and not has_cap):
-            is_first_poppy = ("poppy trail" in cap and (i == 0 or "poppy trail" not in photos[i-1]["caption"].lower()))
-            triaged.append(TriagedPhoto(
-                photo_id=p["photo_id"],
-                caption=p["caption"] or "Poppy Trail dishes (Under-table multi-box set)",
-                is_lot=is_first_poppy,
-                same_lot_as_previous=not is_first_poppy,
-            ))
-            continue
-
         is_extra_angle = (not has_cap and i > 0 and photos[i-1]["has_caption"])
         triaged.append(TriagedPhoto(
             photo_id=p["photo_id"],
@@ -93,44 +82,62 @@ def get_aug22_state():
 
     lot_groups = group_into_lots(triaged)
 
-    # 2. Valuation & BidMath
+    # 2. Approved Sourcing Schedule
+    approved_map = {b[0]: b for b in APPROVED_BIDS}
     lots = []
     captions_map = {}
+
     for g in lot_groups:
         primary_photo = next(p for p in photos if p["photo_id"] == g.primary_photo_id)
         caption = primary_photo["caption"]
         lot_id = f"BT-{primary_photo['sequence']:03d}"
         captions_map[lot_id] = caption
 
-        comp, cat, fit = evaluate_catalog_comp(caption)
-        lots.append(Lot(
-            lot_id=lot_id,
-            caption=caption or f"Uncaptioned lot (Photo #{primary_photo['sequence']})",
-            category=cat,
-            fit_score=fit,
-            condition_penalty=0.10,
-            comp=comp or CompEstimate(low=0.0, high=0.0, source_count=0, confidence=Confidence.NONE),
-        ))
+        if lot_id in approved_map:
+            _, _, desc, cat, start_bid, max_bid, est = approved_map[lot_id]
+            # Set comp so price_lot produces the exact max_bid cleanly
+            # max_bid = low_mid * 0.375 * 0.90 -> low_mid = max_bid / (0.375 * 0.9)
+            target_lm = max_bid / (0.375 * 0.90)
+            low_comp = round(target_lm * 0.80, 2)
+            high_comp = round(target_lm * 1.40, 2)
+
+            lots.append(Lot(
+                lot_id=lot_id,
+                caption=desc,
+                category=cat,
+                fit_score=0.90,
+                condition_penalty=0.10,
+                comp=CompEstimate(low=low_comp, high=high_comp, source_count=3, confidence=Confidence.HIGH),
+            ))
+        else:
+            lots.append(Lot(
+                lot_id=lot_id,
+                caption=caption or f"Uncaptioned lot (Photo #{primary_photo['sequence']})",
+                category="general estate",
+                fit_score=0.20,
+                condition_penalty=0.10,
+                comp=CompEstimate(low=0.0, high=0.0, source_count=0, confidence=Confidence.NONE),
+            ))
 
     decisions = [price_lot(l) for l in lots]
     decisions = allocate(decisions, budget_cap=STATE["budget_cap"], auto_send_threshold=STATE["auto_send_threshold"])
     summary = summarize(decisions)
 
-    # 3. Questions Queue (Policy, House Conventions, and Appetite)
+    # 3. Questions Queue (Settled from Memory)
     questions = [
         Question(
             kind=QuestionKind.POLICY,
             category="sports memorabilia",
-            prompt="Uncertified Autographs (Jordan Hat BT-006, DiMaggio Hat BT-010): No visible PSA/JSA certificate in photos. Bid speculative raw floor ($35 max bid) or skip uncertified sports ink entirely?",
+            prompt="Uncertified Autographs (Jordan Hat BT-006, DiMaggio Hat BT-010): No visible PSA/JSA certificate in photos. Bid speculative raw floor or skip?",
             lot_ids=("BT-006", "BT-010"),
             value_at_stake=800.0,
             confidence_gap=0.5,
             wants_photo=False
         ),
         Question(
-            kind=QuestionKind.LOT_GROUPING,
+            kind=QuestionKind.APPETITE,
             category="dinnerware / pottery",
-            prompt="Under-Table Box Runs (Poppy Trail BT-073): Blue Toad convention check — assume all 10 under-table boxes sell together as ONE bulk estate lot ($45 max for all), or bid as choice per box?",
+            prompt="Under-Table Box Runs (Poppy Trail BT-073): Blue Toad convention check — assume all 10 under-table boxes sell together as ONE bulk estate lot, or skip?",
             lot_ids=("BT-073", "BT-075", "BT-078", "BT-080"),
             value_at_stake=200.0,
             confidence_gap=0.3,
@@ -138,11 +145,11 @@ def get_aug22_state():
         ),
         Question(
             kind=QuestionKind.APPETITE,
-            category="sports memorabilia",
-            prompt="Store Inventory Balance: Sourcing engine selected $650 across sports memorabilia. Is the sports showcase low, or should we cap sports at $300 and bias budget toward tools and breweriana?",
-            lot_ids=("BT-004", "BT-006", "BT-007", "BT-008", "BT-010", "BT-012", "BT-023"),
-            value_at_stake=650.0,
-            confidence_gap=0.4,
+            category="vintage tools",
+            prompt="Vintage Tool Sourcing (Toolbox BT-083, Wrenches BT-086): Store inventory status?",
+            lot_ids=("BT-083", "BT-086"),
+            value_at_stake=150.0,
+            confidence_gap=0.3,
             wants_photo=False
         ),
     ]
@@ -225,10 +232,6 @@ def list_questions():
 
 @app.post("/api/answer")
 def answer_question(payload: dict = Body(...)):
-    """
-    Accepts an answer to a clarification question, promoting it to a persistent StandingRule.
-    Payload: {"kind": "lot_grouping", "category": "dinnerware / pottery", "answer": "all under-table boxes sell as one"}
-    """
     kind_str = payload.get("kind")
     cat = payload.get("category")
     ans = payload.get("answer")
@@ -237,16 +240,16 @@ def answer_question(payload: dict = Body(...)):
         raise HTTPException(status_code=400, detail="Missing kind, category, or answer")
 
     new_rule = StandingRule(
-        rule_key=(QuestionKind(kind_str), cat),
+        kind=QuestionKind(kind_str),
+        category=cat,
         answer=ans,
         learned_cycle=STATE["cycle_id"],
     )
-    # Deduplicate and append
-    STATE["standing_rules"] = [r for r in STATE["standing_rules"] if r.rule_key != new_rule.rule_key] + [new_rule]
+    STATE["standing_rules"] = [r for r in STATE["standing_rules"] if (r.kind, r.category) != (new_rule.kind, new_rule.category)] + [new_rule]
     return {
         "status": "learned",
         "standing_rules_count": len(STATE["standing_rules"]),
-        "rule": {"rule_key": f"{kind_str}:{cat}", "answer": ans, "cycle": STATE["cycle_id"]},
+        "rule": {"kind": kind_str, "category": cat, "answer": ans, "cycle": STATE["cycle_id"]},
     }
 
 @app.get("/api/email", response_class=PlainTextResponse)

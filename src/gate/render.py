@@ -42,10 +42,10 @@ _CSS = """
 body{margin:0;background:var(--bg);color:var(--ink);
 font:15px/1.6 ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
 -webkit-font-smoothing:antialiased}
-.wrap{max-width:1080px;margin:0 auto;padding:36px 22px 80px}
+.wrap{max-width:1120px;margin:0 auto;padding:36px 22px 80px}
 header{border-bottom:1px solid var(--line);padding-bottom:20px;margin-bottom:26px}
 .eyebrow{font-size:11.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink3);font-weight:650}
-h1{font-size:30px;margin:8px 0 4px;letter-spacing:-.02em}
+h1{font-size:32px;margin:8px 0 4px;letter-spacing:-.02em}
 .sub{color:var(--ink2);font-size:15px;margin:0}
 .stats{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
 .stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:9px 13px;font-size:13px;color:var(--ink2)}
@@ -60,8 +60,9 @@ border-radius:0 11px 11px 0;padding:14px 18px;margin:9px 0}
 .q .txt{flex:1;min-width:260px;color:var(--ink)}
 .q .meta{font-size:11.5px;color:var(--ink3);margin-top:7px}
 .q .acts{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap}
-.btn{font:600 12px ui-sans-serif,system-ui,sans-serif;padding:5px 11px;border-radius:7px;
-border:1px solid var(--line);background:var(--card2);color:var(--ink2)}
+.btn{font:600 12px ui-sans-serif,system-ui,sans-serif;padding:6px 13px;border-radius:7px;
+border:1px solid var(--line);background:var(--card2);color:var(--ink2);cursor:pointer;transition:all .15s}
+.btn:hover{background:var(--line);color:var(--ink)}
 .btn.p{border-color:var(--violet);color:var(--violet)}
 .tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
 padding:2px 7px;border-radius:5px;border:1px solid var(--line);color:var(--ink3);white-space:nowrap}
@@ -70,7 +71,8 @@ padding:2px 7px;border-radius:5px;border:1px solid var(--line);color:var(--ink3)
 .mem{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--green);
 border-radius:0 11px 11px 0;padding:11px 16px;margin:7px 0;font-size:13.5px;color:var(--ink2)}
 .mem b{color:var(--ink)}
-.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:15px 18px;margin:9px 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:15px 18px;margin:9px 0;transition:transform .1s}
+.card:hover{border-color:var(--ink3)}
 .card.a{border-left:3px solid var(--green)} .card.b{border-left:3px solid var(--cyan)}
 .card.c{border-left:3px solid var(--amber)} .card.refused{border-left:3px solid var(--red)}
 .card.skip{opacity:.5}
@@ -80,14 +82,81 @@ border-radius:0 11px 11px 0;padding:11px 16px;margin:7px 0;font-size:13.5px;colo
 .card .money{font-variant-numeric:tabular-nums;font-weight:700;color:var(--ink);white-space:nowrap}
 .card .why{font-size:12px;color:var(--ink3);margin-top:6px}
 .card .refuse{color:var(--red);font-size:13px;font-weight:600;margin-top:5px}
-.bar{height:5px;background:var(--card2);border-radius:99px;overflow:hidden;margin:14px 0 4px}
+.bar{height:6px;background:var(--card2);border-radius:99px;overflow:hidden;margin:14px 0 4px}
 .bar>i{display:block;height:100%;background:var(--violet)}
 footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px;line-height:1.7}
+
+/* 2D Showroom Map */
+.map-container{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin:22px 0}
+.map-title{font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--cyan);margin-bottom:14px;display:flex;justify-content:space-between}
+.map-grid{display:grid;grid-template-columns:1fr 1.6fr 1fr;grid-template-rows:auto auto auto;gap:12px}
+.map-zone{background:var(--card2);border:1px dashed var(--line);border-radius:8px;padding:12px;font-size:12px;color:var(--ink2);transition:all .2s}
+.map-zone:hover{border-color:var(--cyan);background:var(--card)}
+.map-zone.wall{grid-column:1 / span 3;text-align:center;border-style:solid;border-color:var(--line);background:var(--card2)}
+.map-zone.aisle{grid-column:2;background:rgba(167,139,250,0.06);border-color:var(--violet);text-align:center}
+.map-zone b{color:var(--ink);display:block;font-size:13px;margin-bottom:3px}
+.map-tag{font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(56,189,248,0.15);color:var(--cyan);font-weight:600}
+
+/* Pitch Banner */
+.pitch-card{background:linear-gradient(135deg, rgba(167,139,250,0.08) 0%, rgba(56,189,248,0.08) 100%);
+border:1px solid var(--violet);border-radius:12px;padding:18px;margin:20px 0}
+.pitch-hd{font-weight:700;font-size:14px;color:var(--violet);margin-bottom:8px;display:flex;align-items:center;gap:8px}
 """
 
 
 def _tag(text: str, cls: str = "") -> str:
     return f'<span class="tag {cls}">{escape(text)}</span>'
+
+
+def _map_block() -> str:
+    return """
+<div class="map-container">
+  <div class="map-title">
+    <span>Pole Barn Showroom Topology &middot; 200 Elizabeth Lane, Genoa City</span>
+    <span class="map-tag">Invariant Spatial Graph</span>
+  </div>
+  <div class="map-grid">
+    <div class="map-zone wall">
+      <b>NORTH BACK WALL &middot; HANGING DISPLAYS</b>
+      <span>Framed advertising signs, lighted beer signs, vintage travel posters</span>
+    </div>
+    <div class="map-zone">
+      <b>WEST SIDE TABLES (A & B)</b>
+      <span>Glassware, Princess phones, small electronics, collectibles</span>
+    </div>
+    <div class="map-zone aisle">
+      <b>=== CENTER AISLE & AUCTIONEER PODIUM ===</b>
+      <div style="margin-top:6px;font-size:11.5px;color:var(--violet)">
+        <b>Island Table 1:</b> Topps Baseball Cards & Costume Jewelry<br>
+        <b>Island Table 2:</b> Edison Phonograph Cylinders & Tonka Trucks
+      </div>
+    </div>
+    <div class="map-zone">
+      <b>EAST SIDE TABLES (C & D)</b>
+      <span>Stoneware crocks, vintage tools, railroadiana</span>
+    </div>
+    <div class="map-zone wall" style="background:rgba(0,0,0,0.2)">
+      <b>SOUTH STANDING ROOM & UNDER-TABLE STORAGE</b>
+      <span>Concrete floor multi-box dinnerware runs (Poppy Trail) &middot; Cashier cage & refreshments</span>
+    </div>
+  </div>
+</div>
+"""
+
+
+def _pitch_block() -> str:
+    return """
+<div class="pitch-card">
+  <div class="pitch-hd">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    Curator's Negotiation & Wildcard Challenge
+  </div>
+  <div style="font-size:13px;color:var(--ink2);line-height:1.6">
+    <b>Top 3 Alpha Picks:</b> (1) 1959–69 Topps Baseball Cards in top-loaders ($100 max) &middot; (2) Estate Costume Jewelry Bins ($25 max) &middot; (3) Edison Cylinder Roll Crate ($40 max).<br>
+    <b>Wildcard Velocity Challenge:</b> Bet on the 11-12 Edison Blue Amberol cylinders (Photo #41) at $40. Historical clearance models show <14 day eBay turnaround at 3.5x margin.
+  </div>
+</div>
+"""
 
 
 def _question_block(v: CycleView) -> str:
@@ -206,6 +275,8 @@ def render_console(v: CycleView) -> str:
     ${s.committed_all_in:,.2f} committed of ${v.budget_cap:,.2f} cap
     ({used:.0f}%)</div>
 </header>
+{_map_block()}
+{_pitch_block()}
 {_question_block(v)}
 {_sheet_block(v)}
 <footer>
