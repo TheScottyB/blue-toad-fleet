@@ -110,6 +110,18 @@ column summing to ~$5,945, and all 452 gallery photos captioned with
 predictions. The tracker's figures — 61 candidates, 17 A-priority bids,
 ~$1,820 max / ~$2,205 all-in — are the **trimmed plan**.
 
+**HE ATTENDED JULY 11 IN PERSON. Corrected 2026-08-20 on the operator's own word,
+relayed via antigravity and backed by the receipt.** He is "Bidder #31", in-room,
+nine lots, tendered by credit card, receipt timestamped 1:51 PM on auction day.
+The 15% he paid is the **credit-card buyer's premium** (in-person cash is 10%,
+in-person card is 15%, absentee is 15% — same multiplier, different fee). **Do not
+cite the July 11 receipt as evidence of an absentee execution, and do not write
+copy saying he could not attend that sale.** He could and did.
+
+Blue Toad is **2.3 miles** from the store — 5-minute drive, 53-minute walk. An
+"eight miles / not walking distance" figure circulated on the bus 2026-08-20 and
+was retracted by its author as fabricated. Never repeat it.
+
 **The absentee submission never ran.** No bid, absentee, or confirmation email
 exists anywhere in the operator's mailbox for Jun 20 – Jul 20 2026 (searched
 2026-08-19, search proven live against controls; a second sweep 2026-08-19 by

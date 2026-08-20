@@ -63,12 +63,22 @@ cycle, from the shop's own prep:
   **The 15% absentee fee is confirmed and published on their listing:**
   *"15% Buyer Fee on ALL Absentee Bids"* (bluetoadauctions.com, verified 2026-08-19).
 
-The prep was finished. **The absentee submission never ran.** No bid, absentee,
-or confirmation email exists in the shop's mailbox for that window — searched
-2026-08-19, proven live against controls. The shop has exactly one operator, the
-sale ran Saturday morning, and the store had to stay open. That last mile — one
-person who cannot be in two places, and an absentee channel that has never once
-been used — is the friction this fleet removes.
+The prep was finished. **The absentee submission never ran** — no bid, absentee,
+or confirmation email exists in the shop's mailbox for that window, searched
+2026-08-19 and proven live against controls, and in twelve years no absentee bid
+has ever been sent to this auction house from that address.
+
+**What happened instead: the owner went.** He is Bidder #31 on the July 11
+receipt, in the room, nine lots, paid by card, timestamped 1:51 PM on auction
+day. Blue Toad is 2.3 miles from the store — a five-minute drive, a 53-minute
+walk — so attending is possible when the day allows. The 15% on that receipt is
+the credit-card buyer's premium, not an absentee fee; the two happen to share a
+multiplier.
+
+So July 11 is **not** an example of a sale the owner could not reach. It is an
+example of a prepared absentee cycle that went unused because he was able to
+attend. The driving example — a sale he genuinely could not attend — is being
+re-sourced from the shop's own records rather than asserted here.
 
 Four lots from that sale did reach inventory, by some route other than an
 absentee bid. How — in person, by phone, after the sale — is not recorded
