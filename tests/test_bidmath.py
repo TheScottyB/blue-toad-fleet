@@ -2,7 +2,8 @@ import pytest
 from src.bidmath import (
     ABSENTEE_FEE, DEFAULT_TAX_RATE, WI_SALES_TAX_RATE,
     CompEstimate, Confidence, Decision, Lot, Priority,
-    all_in_cost, allocate, bid_fraction_for, price_lot, summarize,
+    all_in_cost, allocate, bid_fraction_for, price_lot, snap_to_increment,
+    summarize,
 )
 
 
@@ -66,8 +67,8 @@ class TestBidFraction:
 class TestPriceLot:
     def test_prices_a_good_lot(self):
         d = price_lot(lot(c=comp(low=100, high=200)))
-        # low_mid 125 * 0.375 = 46.88
-        assert d.max_bid == pytest.approx(46.88, abs=0.01)
+        # low_mid 125 * 0.375 = 46.88, snapped down to the $5 grid
+        assert d.max_bid == pytest.approx(45.00, abs=0.01)
         assert d.all_in == all_in_cost(d.max_bid)
         assert d.priority is Priority.A
         assert not d.needs_human_pricing
@@ -75,7 +76,11 @@ class TestPriceLot:
     def test_condition_penalty_reduces_bid(self):
         clean = price_lot(lot(cond=0.0, c=comp(low=100, high=200)))
         worn = price_lot(lot(cond=0.30, c=comp(low=100, high=200)))
-        assert worn.max_bid == pytest.approx(clean.max_bid * 0.7, abs=0.01)
+        assert worn.max_bid < clean.max_bid
+        # The penalty applies to the raw ceiling, which is THEN snapped to the
+        # grid — so the drop is quantised and is not a clean 0.7x of the
+        # snapped clean bid. 125 * 0.375 * 0.7 = 32.81 -> $30, not $31.50.
+        assert worn.max_bid == pytest.approx(snap_to_increment(125 * 0.375 * 0.7), abs=0.01)
 
     def test_no_external_comp_refuses_to_guess(self):
         d = price_lot(lot(c=comp(low=None, high=None, n=0, conf=Confidence.NONE)))
@@ -101,7 +106,7 @@ class TestPriceLot:
     def test_trivial_value_is_skipped(self):
         d = price_lot(lot(c=comp(low=1, high=2)))
         assert d.priority is Priority.SKIP
-        assert "below $1" in d.reason
+        assert "below one $5 bidding increment" in d.reason
 
     def test_calibration_flows_through(self):
         base = price_lot(lot(c=comp(low=100, high=200)))
@@ -203,3 +208,30 @@ class TestConditionPenaltyIsClamped:
         clean = price_lot(lot(cond=0.0))
         worn = price_lot(lot(cond=0.30))
         assert worn.max_bid < clean.max_bid
+
+
+class TestBidIncrement:
+    """Blue Toad calls bids in standard $5.00 increments.
+
+    A max bid is a CEILING, so it snaps DOWN to the highest callable bid at or
+    below the computed number. Snapping up would authorise spending above what
+    the margin math allowed, and can breach the budget cap the allocator just
+    checked against.
+    """
+
+    def test_max_bid_lands_on_a_five_dollar_increment(self):
+        # low-mid 125.0 x 0.38 = 47.50 -> not callable at a $5-increment house
+        d = price_lot(lot(cat="unknown-category", c=comp(low=100, high=200)))
+        assert d.max_bid is not None
+        assert d.max_bid % 5 == 0, f"{d.max_bid} is not on the $5 grid"
+
+    def test_snaps_down_never_up(self):
+        d = price_lot(lot(cat="unknown-category", c=comp(low=100, high=200)))
+        assert d.max_bid == 45.00  # 47.50 floored, not 50.00 rounded up
+
+    def test_ceiling_below_one_increment_is_not_biddable(self):
+        # low-mid 10.0 x 0.38 = 3.80 -> below the smallest callable bid
+        d = price_lot(lot(cat="unknown-category", c=comp(low=8, high=12)))
+        assert d.max_bid is None
+        assert d.priority is Priority.SKIP
+        assert "increment" in d.reason

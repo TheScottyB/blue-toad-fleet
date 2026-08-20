@@ -22,6 +22,12 @@ from typing import Iterable
 # Blue Toad absentee terms.
 ABSENTEE_FEE = 0.15
 
+# Blue Toad calls bids in standard $5.00 increments. A max bid is a CEILING, so
+# it snaps DOWN to the highest callable bid at or below the computed number:
+# snapping up would authorise spending above what the margin math allowed, and
+# could breach the budget cap the allocator just checked against.
+BID_INCREMENT = 5.0
+
 # Walworth County, WI: 5.0% state + 0.5% county. Richmond General has a resale
 # exemption on file with Blue Toad, so its purchases are not taxed. The nominal
 # rate is kept beside the default so the exemption is visible rather than
@@ -120,6 +126,11 @@ def _priority_for(lot: Lot) -> Priority:
     return Priority.C
 
 
+def snap_to_increment(amount: float, increment: float = BID_INCREMENT) -> float:
+    """Floor a bid ceiling onto the house's bidding grid."""
+    return round((amount // increment) * increment, 2)
+
+
 def price_lot(
     lot: Lot,
     calibration: dict[str, float] | None = None,
@@ -157,13 +168,16 @@ def price_lot(
     # INCREASE — a model slip of -0.5 raised a $41.25 max to $61.88. Values >1
     # would go negative. Neither is a bid we would ever intend to place.
     penalty = min(max(lot.condition_penalty, 0.0), 1.0)
-    max_bid = round(base * (1 - penalty), 2)
+    max_bid = snap_to_increment(round(base * (1 - penalty), 2))
 
-    if max_bid < 1:
+    if max_bid < BID_INCREMENT:
         return Decision(
             lot_id=lot.lot_id, category=lot.category, priority=Priority.SKIP,
             max_bid=None, all_in=None, bid_fraction=fraction,
-            reason="computed max below $1 — not worth an absentee slot",
+            reason=(
+                f"computed max below one ${BID_INCREMENT:.0f} bidding increment "
+                "— not worth an absentee slot"
+            ),
             needs_human_pricing=False,
         )
 
