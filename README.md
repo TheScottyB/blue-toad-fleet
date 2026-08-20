@@ -7,7 +7,7 @@
 
   [![Google Cloud Run](https://img.shields.io/badge/Google%20Cloud%20Run-Live%20Service-34d399?style=flat-square&logo=googlecloud)](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app)
   [![Vertex AI](https://img.shields.io/badge/Vertex%20AI-Gemini%203.6%20Flash-a78bfa?style=flat-square&logo=google)](https://cloud.google.com/vertex-ai)
-  [![Unit Tests](https://img.shields.io/badge/Unit%20Tests-170%20Passing-38bdf8?style=flat-square&logo=pytest)](https://github.com/TheScottyB/blue-toad-fleet)
+  [![Unit Tests](https://img.shields.io/badge/Unit%20Tests-173%20Passing-38bdf8?style=flat-square&logo=pytest)](https://github.com/TheScottyB/blue-toad-fleet)
   [![License: MIT](https://img.shields.io/badge/License-MIT-fbbf24?style=flat-square)](LICENSE)
 </div>
 
@@ -20,6 +20,12 @@
 * **Live Sourcing API:** [https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/api/lots](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/api/lots)
 * **Live Question Queue:** [https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/api/questions](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/api/questions)
 * **Live Absentee Email Generator:** [https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/api/email](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/api/email)
+
+---
+
+## Demo Video
+
+[`media/blue_toad_fleet_demo.mp4`](media/blue_toad_fleet_demo.mp4) — a narrated, 4-beat walkthrough (~3:48) covering the commercial problem, the Spatial Room Graph on the real Aug-22 gallery, the live Gate Console's Curator's Negotiation, and the live Cloud Run / test-suite proof. Recorded end to end from the real manifest, the real deployed console, and a real terminal session — see `docs/VIDEO_SCRIPT.md` for the shot-by-shot script.
 
 ---
 

@@ -15,6 +15,7 @@
 * **"Try it out" links:**  
   * `https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app` (Live Cloud Run Gate Console)
   * `https://github.com/TheScottyB/blue-toad-fleet` (Public GitHub Repository)
+  * `https://github.com/TheScottyB/blue-toad-fleet/blob/master/media/blue_toad_fleet_demo.mp4` (4-beat narrated walkthrough, ~3:48)
 * **What date did you start this project?** `08-18-2026`
 * **Did you add Reproducible Testing instructions to your README?** `Yes` (`make install`, `make demo`, `make cycles`, `make test`)
 * **Hosted project URL:** `https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app`
