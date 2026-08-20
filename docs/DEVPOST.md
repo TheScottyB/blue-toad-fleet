@@ -11,13 +11,14 @@
 ## Form Fields Quick Reference
 
 * **Built with (Tags):**  
-  `Google Cloud Run`, `Vertex AI`, `Gemini 3.6 Flash`, `Gemini 3.5 Flash Lite`, `Python`, `FastAPI`, `Docker`, `OpenPyXL`, `Pytest`, `Computer Vision`, `Multimodal AI`, `Auction Logistics`, `Retail Tech`
+  `Google Cloud Run`, `Vertex AI`, `Gemini 3.6 Flash`, `Gemini 3.5 Flash Lite`, `Gemini 2.5 Flash`, `Python`, `FastAPI`, `Docker`, `OpenPyXL`, `Pytest`, `Computer Vision`, `Multimodal AI`, `Auction Logistics`, `Retail Tech`
 * **"Try it out" links:**  
   * `https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app` (Live Cloud Run Gate Console)
   * `https://github.com/TheScottyB/blue-toad-fleet` (Public GitHub Repository)
 * **What date did you start this project?** `08-18-2026`
-* **Did you add Reproducible Testing instructions to your README?** `Yes` (`make demo`, `make cycles`, `uv run pytest`)
+* **Did you add Reproducible Testing instructions to your README?** `Yes` (`make install`, `make demo`, `make cycles`, `make test`)
 * **Hosted project URL:** `https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app`
+* **Which Google AI Models did you use?** `Gemini 3.6 Flash, Gemini 3.5 Flash Lite, Gemini 2.5 Flash`
 * **Submitter Type:** `Individual`
 * **Country of residence:** `United States`
 * **Which Category are you submitting to?** `The Collaborative Partner`
@@ -79,7 +80,7 @@ Appraisals feed into pure, unit-tested bid math implementing the store's 38% mar
   * Pure, decoupled Python backend with zero framework lock-in.
   * Deterministic keyed memory `(QuestionKind, Category)` that generalises house conventions without vector drift.
   * Automated Excel bid sheet generator (`openpyxl`) and formatted absentee email draft generator.
-  * 160 unit tests running in 0.07 seconds.
+  * 160 unit tests running in under 0.1 seconds.
 
 ---
 

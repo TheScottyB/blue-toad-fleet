@@ -1,23 +1,27 @@
-.PHONY: demo test install clean deploy
+.PHONY: demo test install clean deploy cycles console
 
-install:          ## Install dev dependencies
-	python3 -m pip install -r requirements-dev.txt
+VENV ?= .venv
+PYTHON = $(if $(wildcard $(VENV)/bin/python),$(VENV)/bin/python,python3)
+PYTEST = $(if $(wildcard $(VENV)/bin/pytest),$(VENV)/bin/pytest,python3 -m pytest)
+
+install:          ## Install dev dependencies into virtual environment
+	python3 -m venv $(VENV) && $(VENV)/bin/pip install -r requirements.txt -r requirements-dev.txt
 
 demo:             ## Run the full decision pipeline on seeded data. No GCP, no OAuth, no keys.
-	python3 demo/run_demo.py
+	$(PYTHON) demo/run_demo.py
+
+cycles:           ## Show the intake clarification loop learning across two cycles
+	$(PYTHON) demo/run_cycles.py
+
+console:          ## Render the Gate console to demo/out/console.html
+	$(PYTHON) demo/build_console.py
 
 test:             ## Run the unit suite
-	python3 -m pytest tests/ -q
+	$(PYTEST) tests/ -q
 
 clean:
 	find . -name __pycache__ -type d -exec rm -rf {} + 2>/dev/null || true
-	rm -rf .pytest_cache
+	rm -rf .pytest_cache demo/out
 
 deploy:           ## Deploy to Cloud Run (requires gcloud auth + PROJECT_ID)
 	./infra/deploy.sh
-
-cycles:           ## Show the intake clarification loop learning across two cycles
-	python3 demo/run_cycles.py
-
-console:          ## Render the Gate console to demo/out/console.html
-	python3 demo/build_console.py
