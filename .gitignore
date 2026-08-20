@@ -5,3 +5,8 @@ __pycache__/
 .venv/
 demo/out/
 data/**/images/
+media/raw/
+media/main.mp4
+media/open.mp4
+media/close.mp4
+media/list.txt
