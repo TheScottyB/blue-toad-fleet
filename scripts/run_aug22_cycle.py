@@ -1,89 +1,75 @@
 #!/usr/bin/env python3
 """
-scripts/run_aug22_cycle.py — August 22, 2026 Sourcing Run with Owner Directives.
+scripts/run_aug22_cycle.py — August 22, 2026 Sourcing Run (Refined Owner Directives).
 
-Applies the owner's strategic collaborative directives from Friday 8/20 review:
-- Budget Limit: Strict $1,000.00 credit card cap (down from $2,205)
-- Standing Rule 1: SKIP dishes/dinnerware (Poppy Trail) — no store floor space
-- Standing Rule 2: SKIP uncertified sports autographs (Jordan, DiMaggio, Marino photos) — store inventory heavy
-- Standing Rule 3: KEEP Edison cylinder crate (fast eBay liquidity + great store anchor)
-- Standing Rule 4: BIAS heavily toward Breweriana/Beer items and Vintage Tools
-- Portfolio Mix: 60% fast-turning cash flips / 40% visual store showpieces
+Final fine-tuning based on multimodal inspection:
+- Costume Jewelry: KEEP (50-70 pieces per tray, $15-$20 defensive bids for 5x gross)
+- Handheld Games (BT-066): REDUCED to $15.00 (5 units: Radica/LCD mix, not vintage Mattel)
+- Vintage Topps Cards (BT-001, BT-284): HIGH PRIORITY ($71.72 max for 13 Golden Era 1959-1969 cards)
+- Edison Cylinders (BT-041): HIGH PRIORITY ($50.00 max for 11-12 canisters + 1 exposed roll)
+- Tonka Trucks/Crane: DEFENSIVE LOWBALL ($25.00 max)
+- Advertising / Bottles (Coca-Cola): KEEP ($18.56 max)
+- Princess Phone & ET Nightlight: KEEP ($18.56 max)
+- Tools (Toolbox, Wrenches): SKIPPED (store backlog)
+- Beer Pitchers & Bears Glasses: SKIPPED
+- Bobbleheads & Games: SKIPPED
+- Dishes & Uncertified Autographs: SKIPPED
+- Credit Card Hard Budget Cap: $600 - $800 total
 """
 
 import json
-import os
-import sys
 from pathlib import Path
 import openpyxl
-from openpyxl.styles import Font, PatternFill, Alignment
+from openpyxl.styles import Font, PatternFill
 from openpyxl.utils import get_column_letter
 
 from src.intake.manifest import parse_drop, group_into_lots, TriagedPhoto
 from src.bidmath import (
-    Lot, CompEstimate, Confidence, Priority,
-    price_lot, allocate, summarize, ABSENTEE_FEE
+    Lot, CompEstimate, Confidence,
+    price_lot, allocate, summarize
 )
-from src.appraisal import Question, QuestionKind, build_queue, StandingRule, learn
 
-# Standing Rules learned from owner collaboration
-STANDING_RULES = [
-    StandingRule(
-        kind=QuestionKind.APPETITE,
-        category="dinnerware / pottery",
-        answer="SKIP — store has zero room for dishes or box sets",
-        learned_cycle="2026-08-22",
-    ),
-    StandingRule(
-        kind=QuestionKind.POLICY,
-        category="sports memorabilia",
-        answer="SKIP raw uncertified autographs — store currently overstocked",
-        learned_cycle="2026-08-22",
-    ),
-    StandingRule(
-        kind=QuestionKind.APPETITE,
-        category="phonograph / records",
-        answer="KEEP — fast eBay turn + attractive in-store visual anchor",
-        learned_cycle="2026-08-22",
-    ),
-]
-
-# Targeted catalog taxonomy aligned with owner directives
+# Targeted catalog taxonomy aligned with refined owner directives
 AUG22_CATALOG_TAXONOMY = [
-    # Top Priority Sourcing: Vintage Tools & Breweriana / Barware
-    (["toolbox"], (50, 120), "vintage tools", 0.95),
-    (["wrenches"], (30, 80), "vintage tools", 0.90),
-    (["beer pitchers"], (30, 80), "breweriana", 0.85),
-    (["chicago bears glasses"], (30, 80), "breweriana / sports bar", 0.85),
-    (["coca-cola bottles"], (40, 100), "advertising", 0.85),
+    # Golden Era Cards & Core Showpieces
+    (["topps", "baseball cards"], (250, 500), "vintage cards", 0.95),
+    (["edison"], (100, 160), "phonograph / records", 0.95),
 
-    # Store Centerpieces & High-Velocity Collectibles
-    (["edison"], (140, 220), "phonograph / records", 0.95),
-    (["topps", "baseball cards"], (150, 400), "vintage toys", 0.90),
-    (["lionel building set"], (60, 150), "vintage toys", 0.90),
-    (["tonka"], (60, 180), "vintage toys", 0.85),
-    (["hand held video games"], (120, 200), "vintage toys", 0.85),
-    (["et nightlight"], (40, 100), "vintage toys", 0.80),
+    # Fast-Turning Smalls & Gold Mining Box Lots
+    (["costume jewelry"], (80, 160), "jewelry", 0.85),
+    (["estate costume jewelry"], (80, 160), "jewelry", 0.85),
+    (["coca-cola bottles"], (40, 100), "advertising / bottles", 0.85),
+    (["coca-cola collectibles"], (40, 100), "advertising / bottles", 0.80),
+    (["century progress bottle"], (30, 80), "advertising / bottles", 0.80),
     (["princess phone"], (40, 100), "vintage electronics", 0.80),
-    (["waterford crystal"], (80, 200), "glassware", 0.80),
-    (["mahjong"], (50, 150), "games / vintage", 0.75),
+    (["et nightlight"], (40, 100), "vintage smalls", 0.80),
     (["marilyn monroe plates"], (40, 120), "collectibles", 0.75),
-    (["costume jewelry"], (40, 120), "jewelry", 0.75),
-    (["mini hope chest"], (30, 80), "furniture / smalls", 0.70),
-    (["trading cards"], (30, 100), "vintage toys", 0.70),
-    (["baseball cards"], (50, 180), "vintage toys", 0.70),
-    (["bobble heads"], (30, 90), "collectibles", 0.65),
-    (["matchbooks"], (25, 75), "ephemera", 0.65),
+    (["lionel building set"], (50, 120), "vintage toys", 0.75),
 
-    # Filtered / Excluded by Owner Directives
-    (["jordan", "hat"], (0, 0), "uncertified autographs / skip", 0.0),
-    (["dimaggio", "hat"], (0, 0), "uncertified autographs / skip", 0.0),
-    (["manning", "jersey"], (0, 0), "uncertified autographs / skip", 0.0),
-    (["marino", "photo"], (0, 0), "uncertified autographs / skip", 0.0),
-    (["reggie bush", "jersey"], (0, 0), "uncertified autographs / skip", 0.0),
-    (["rusty wallace", "helmet"], (0, 0), "uncertified autographs / skip", 0.0),
-    (["signed sports photos"], (0, 0), "uncertified autographs / skip", 0.0),
+    # Defensive Lowball Allocations
+    (["tonka"], (50, 120), "vintage toys", 0.70),
+    (["hand held video games"], (25, 45), "vintage toys / electronics", 0.65),
+
+    # Trading Cards
+    (["trading cards"], (30, 80), "vintage cards", 0.65),
+    (["vintage baseball cards"], (40, 100), "vintage cards", 0.70),
+
+    # Explicit Exclusions / Skips by Owner Directive
+    (["toolbox"], (0, 0), "tools / skip backlog", 0.0),
+    (["wrenches"], (0, 0), "tools / skip backlog", 0.0),
+    (["beer pitchers"], (0, 0), "barware / skip", 0.0),
+    (["chicago bears glasses"], (0, 0), "barware / skip", 0.0),
+    (["bobble heads"], (0, 0), "collectibles / skip", 0.0),
+    (["board games"], (0, 0), "games / skip", 0.0),
+    (["mahjong"], (0, 0), "games / skip", 0.0),
     (["poppy trail"], (0, 0), "dishes / skip", 0.0),
+    (["jordan"], (0, 0), "uncertified autographs / skip", 0.0),
+    (["dimaggio"], (0, 0), "uncertified autographs / skip", 0.0),
+    (["manning"], (0, 0), "uncertified autographs / skip", 0.0),
+    (["marino"], (0, 0), "uncertified autographs / skip", 0.0),
+    (["reggie bush"], (0, 0), "uncertified autographs / skip", 0.0),
+    (["rusty wallace"], (0, 0), "uncertified autographs / skip", 0.0),
+    (["signed sports photos"], (0, 0), "uncertified autographs / skip", 0.0),
     (["hp printer"], (0, 0), "modern tech / skip", 0.0),
     (["battery chargers"], (0, 0), "modern tech / skip", 0.0),
     (["hardware"], (0, 0), "general hardware / skip", 0.0),
@@ -105,10 +91,6 @@ def main():
     photos = manifest["photos"]
     print(f"[+] Loaded {len(photos)} photos.")
 
-    # 1. Spatial Intake & Grouping
-    entries = [{"name": p["filename"], "uri": p["thumb_url"], "caption": p["caption"]} for p in photos]
-    drop = parse_drop(cycle_id="2026-08-22", listing_id="4160518", entries=entries)
-
     triaged = []
     for i, p in enumerate(photos):
         cap = p["caption"].lower()
@@ -123,7 +105,6 @@ def main():
 
     lot_groups = group_into_lots(triaged)
 
-    # 2. Valuation & BidMath Execution under Owner Constraints
     lots = []
     for g in lot_groups:
         primary_photo = next(p for p in photos if p["photo_id"] == g.primary_photo_id)
@@ -139,58 +120,34 @@ def main():
             comp=comp or CompEstimate(low=0.0, high=0.0, source_count=0, confidence=Confidence.NONE),
         ))
 
-    # Strict Owner Constraints for August 22:
-    budget_cap = 980.00        # Tightened to under $1,000 credit card limit
-    auto_send_thresh = 40.00
+    # Refined Owner Budget Cap: $600 credit card envelope
+    budget_cap = 600.00
+    auto_send_thresh = 35.00
     decisions = [price_lot(l) for l in lots]
     decisions = allocate(decisions, budget_cap=budget_cap, auto_send_threshold=auto_send_thresh)
     s = summarize(decisions)
 
     print("\n" + "=" * 75)
-    print("BLUE TOAD FLEET — RE-DISTILLED AUGUST 22 BID SHEET (OWNER CONSTRAINTS)")
+    print("BLUE TOAD FLEET — FINAL REFINED AUGUST 22 BID SHEET")
     print("=" * 75)
     print(f"Total Raw Photos:             {len(photos)}")
     print(f"Consolidated Physical Lots:   {len(lot_groups)}")
-    print(f"Bids Allocated:               {s.allocated} lots")
-    print(f"  • Auto-Send (<= $40):       {s.auto_send} lots  (Tools, breweriana, fast smalls)")
-    print(f"  • Needs Operator Sign-Off:  {s.needs_approval} lots  (Edison crate, Topps cards, hand held games)")
-    print(f"Skipped on Fit/Directive:     {s.skipped} lots  (Skipped dishes, skipped uncertified autographs)")
+    print(f"Bids Allocated:               {s.allocated} targeted lots")
+    print(f"  • Auto-Send (<= $35):       {s.auto_send} lots  (Costume jewelry bins, bottles, phone, nightlight)")
+    print(f"  • Operator Sign-Off:        {s.needs_approval} lots  (Edison rolls, 1959-69 Topps baseball cards)")
+    print(f"Skipped on Directive:         {s.skipped} lots  (Tools, beer glassware, dishes, autographs)")
     print(f"Committed Max Bids:           ${s.committed_max:,.2f}")
-    print(f"Committed All-In (w/ 15% fee):${s.committed_all_in:,.2f} of ${budget_cap:,.2f} credit card limit")
+    print(f"Committed All-In (w/ 15% fee):${s.committed_all_in:,.2f} of ${budget_cap:,.2f} budget cap")
     print("=" * 75)
 
-    print("\n[★] Final Allocated Bids (Balanced between Fast Flips & Store Centerpieces):")
+    print("\n[★] Final Allocated Bids for August 22:")
     allocated_decisions = [d for d in decisions if d.allocated]
     for d in allocated_decisions:
         lot_obj = next(l for l in lots if l.lot_id == d.lot_id)
         tag = "[AUTO-SEND]" if d.auto_send else "[NEEDS APPROVAL]"
         print(f"  {d.lot_id} | {tag:<16} | {lot_obj.caption:<38} | Est: ${lot_obj.comp.low:.0f}-${lot_obj.comp.high:.0f} | Max Bid: ${d.max_bid:.2f} (All-in: ${d.all_in:.2f})")
 
-    # 3. Questions Queue Settled from Memory
-    questions = [
-        Question(
-            kind=QuestionKind.POLICY,
-            category="sports memorabilia",
-            prompt="Uncertified Autographs: Bid speculative raw floor or skip?",
-            lot_ids=("BT-006", "BT-010"),
-            value_at_stake=800.0,
-            confidence_gap=0.5,
-        ),
-        Question(
-            kind=QuestionKind.APPETITE,
-            category="dinnerware / pottery",
-            prompt="Poppy Trail Under-Table Dishes: Bid as bulk estate lot or skip?",
-            lot_ids=("BT-073",),
-            value_at_stake=200.0,
-            confidence_gap=0.3,
-        ),
-    ]
-    q_queue = build_queue(questions, STANDING_RULES, cap=12)
-    print(f"\n[✓] Clarification Queue Settled: {len(q_queue.auto_answered)} Questions Auto-Answered From Memory!")
-    for q, rule in q_queue.auto_answered:
-        print(f"  ✓ [{q.kind.value.upper()}] {q.prompt} -> {rule.answer}")
-
-    # 4. Generate Final Sealed Absentee Bid Email Draft
+    # Generate Final Sealed Absentee Bid Email Draft
     email_draft_path = Path("data/aug22_absentee_bid_email.txt")
     email_lines = [
         "TO: info@bluetoadauctions.com",
@@ -205,7 +162,7 @@ def main():
         "Bidder Info:",
         "  Name: Richmond General (Scott)",
         "  Resale Certificate: On file (Wisconsin Tax-Exempt)",
-        "  Terms: 15% Absentee Buyer Fee acknowledged",
+        "  Terms: 15% Absentee Buyer Fee acknowledged (Credit Card on File)",
         "",
         "-----------------------------------------------------------------------------------------",
         "ITEM DESCRIPTION                                     PHOTO REF     START ($)  MAX BID ($)",
@@ -231,7 +188,7 @@ def main():
     email_draft_path.write_text("\n".join(email_lines))
     print(f"\n[✓] Generated Final Sealed Absentee Bid Email: {email_draft_path}")
 
-    # 5. Generate Excel Sourcing Sheet
+    # Generate Excel Sourcing Sheet
     out_excel = Path("data/BlueToad_2026-08-22_BidSheet.xlsx")
     wb = openpyxl.Workbook()
     ws = wb.active
