@@ -463,7 +463,7 @@ rules-compliance risk (API still on `gemini-3-flash-preview`) is still open.
 
 | By | Must be true |
 |---|---|
-| **Aug 20** | One real Vertex call from `threebatdrone-prod-420` on a 3.5+ model returning valid structured output against `APPRAISAL_SCHEMA` for one real photo. Until this exists nothing else is real. |
+| **Aug 20** | **PASSED (2026-08-20 09:22 CDT)** — Live Vertex call executed on `threebatdrone-prod-420` (`global` endpoint) with real photo payload (`001_838421457.jpg`). Both `gemini-3.6-flash` (appraisal) and `gemini-3.5-flash-lite` (triage) returned valid structured outputs conforming to `APPRAISAL_SCHEMA` and `TRIAGE_SCHEMA` with 2 structured questions emitted. Script: `scripts/test_vertex_live.py`. |
 | Aug 21 | Photos in a GCS bucket; one Cloud Run service deployed and invoked. |
 | Aug 22 | Pub/Sub topic + subscription + dead-letter; Appraiser consuming; Firestore writes; idempotency proven by replaying a message. |
 | Aug 23 | Full fan-out over a real gallery at real scale — quota, concurrency, timeouts and cost surprises only appear at hundreds of photos. |

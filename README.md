@@ -20,7 +20,8 @@ Built for the All Things Agentic Hackathon, August 2026.
 | Gate console renderer | **Built** — `src/gate`, tested |
 | Credential-free demos | **Built** — `make demo`, `make cycles`, `make console` |
 | Credential broker | **Designed** — [docs/BROKER.md](docs/BROKER.md), not implemented |
-| Vertex client, Cloud Run deploy, Pub/Sub, Firestore | **Planned** |
+| Vertex client & model routing | **Built** — `src/appraiser`, live verified on `threebatdrone-prod-420` |
+| Cloud Run deploy, Pub/Sub, Firestore | **Planned** |
 | Watcher, Comps, ledger | **Planned** |
 
 Nothing below is described as working unless this table says it is.
