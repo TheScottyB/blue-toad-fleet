@@ -28,10 +28,29 @@ app = FastAPI(title="Blue Toad Fleet", version="2.0.0")
 STATE = {
     "cycle_id": "2026-08-22",
     "listing_id": "4160518",
-    "budget_cap": 2205.00,
+    "budget_cap": 980.00,
     "auto_send_threshold": 40.00,
-    "standing_rules": [],
-    "user_constraints": {},
+    "standing_rules": [
+        StandingRule(
+            kind=QuestionKind.APPETITE,
+            category="dinnerware / pottery",
+            answer="SKIP — store has zero room for dishes or box sets",
+            learned_cycle="2026-08-22",
+        ),
+        StandingRule(
+            kind=QuestionKind.POLICY,
+            category="sports memorabilia",
+            answer="SKIP raw uncertified autographs — store currently overstocked",
+            learned_cycle="2026-08-22",
+        ),
+        StandingRule(
+            kind=QuestionKind.APPETITE,
+            category="phonograph / records",
+            answer="KEEP — fast eBay turn + attractive in-store visual anchor",
+            learned_cycle="2026-08-22",
+        ),
+    ],
+    "user_constraints": {"payment_method": "credit_card", "bias": "breweriana_and_tools"},
 }
 
 def get_aug22_state():
