@@ -14,7 +14,9 @@ from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse
 
+from dataclasses import replace
 from src.intake.manifest import parse_drop, group_into_lots, TriagedPhoto
+from src.assemble import AppraisedPhoto, assemble_lots, NO_COMP
 from src.bidmath import (
     Lot, CompEstimate, Confidence as BidConfidence, Priority, Decision,
     price_lot, allocate, summarize, ABSENTEE_FEE
@@ -74,6 +76,10 @@ def get_aug22_state():
     if not manifest_path.exists():
         manifest_path = Path("/app/data/aug22_gallery_4160518/manifest.json")
 
+    triage_cache_path = Path("data/aug22_gallery_4160518/triage_results.json")
+    if not triage_cache_path.exists():
+        triage_cache_path = Path("/app/data/aug22_gallery_4160518/triage_results.json")
+
     appraisal_cache_path = Path("data/aug22_gallery_4160518/appraisal_results.json")
     if not appraisal_cache_path.exists():
         appraisal_cache_path = Path("/app/data/aug22_gallery_4160518/appraisal_results.json")
@@ -84,25 +90,7 @@ def get_aug22_state():
     else:
         photos = []
 
-    # 1. Spatial Intake & Grouping
-    entries = [{"name": p["filename"], "uri": p["thumb_url"], "caption": p["caption"]} for p in photos]
-    drop = parse_drop(cycle_id=STATE["cycle_id"], listing_id=STATE["listing_id"], entries=entries)
-
-    triaged = []
-    for i, p in enumerate(photos):
-        cap = p["caption"].lower()
-        has_cap = bool(cap.strip())
-        is_extra_angle = (not has_cap and i > 0 and photos[i-1]["has_caption"])
-        triaged.append(TriagedPhoto(
-            photo_id=p["photo_id"],
-            caption=p["caption"],
-            is_lot=not is_extra_angle,
-            same_lot_as_previous=is_extra_angle,
-        ))
-
-    lot_groups = group_into_lots(triaged)
-
-    # 2. Load Vertex AI Appraisals (from cache or live engine)
+    # 1. Load Vertex AI Appraisals (from cache or live engine)
     appraisals_by_lot = {}
     emitted_questions = []
     if appraisal_cache_path.exists():
@@ -115,61 +103,93 @@ def get_aug22_state():
         except Exception as e:
             print(f"[!] Warning: Could not parse appraisal cache: {e}")
 
-    # 3. Candidate Lot Evaluation & Bid Decisions
-    lots = []
-    decisions = []
-    captions_map = {}
+    # Optional Triage Cache
+    triage_by_photo = {}
+    if triage_cache_path.exists():
+        try:
+            cached_triage = json.loads(triage_cache_path.read_text())
+            for item in cached_triage:
+                triage_by_photo[item.get("photo_id")] = item
+        except Exception as e:
+            print(f"[!] Warning: Could not parse triage cache: {e}")
 
-    for g in lot_groups:
-        primary_photo = next(p for p in photos if p["photo_id"] == g.primary_photo_id)
-        caption = primary_photo["caption"]
-        lot_id = f"BT-{primary_photo['sequence']:03d}"
-        captions_map[lot_id] = caption
+    # 2. Build AppraisedPhoto instances for each photo (Triage Fanout & Per-Photo Appraisals)
+    appraised_photos = []
+    for i, p in enumerate(photos):
+        seq_num = p.get("sequence", i + 1)
+        lot_tag = f"BT-{seq_num:03d}"
+        pid = p.get("photo_id", f"fp_{seq_num:03d}")
+        cap = p.get("caption", "")
+        has_cap = bool(cap.strip())
 
-        if lot_id in REFERENCE_COMPS:
-            comp_info = REFERENCE_COMPS[lot_id]
-            app_pair = appraisals_by_lot.get(lot_id)
-            if app_pair:
-                app_obj, raw_app = app_pair
-                fit = 0.85
-                penalty = 0.0
-                cat = comp_info["cat"]
-                ident = raw_app.get("identification", comp_info["desc"])
-            else:
-                fit = 0.85
-                penalty = 0.0
-                cat = comp_info["cat"]
-                ident = comp_info["desc"]
-
-            comp_est = CompEstimate(
-                low=comp_info["low"],
-                high=comp_info["high"],
-                source_count=comp_info["sources"],
-                confidence=comp_info["conf"],
-            )
-
-            lot_obj = Lot(
-                lot_id=lot_id,
-                caption=ident,
-                category=cat,
-                fit_score=fit,
-                condition_penalty=penalty,
-                comp=comp_est,
-            )
-            lots.append(lot_obj)
-            decisions.append(price_lot(lot_obj))
+        # Determine triage flags (from triage cache if present, else previous context heuristic)
+        triage_item = triage_by_photo.get(pid)
+        if triage_item:
+            is_lot = bool(triage_item.get("is_lot", True))
+            same_lot = bool(triage_item.get("same_lot_as_previous", False))
         else:
-            lot_obj = Lot(
-                lot_id=lot_id,
-                caption=caption or f"Uncaptioned lot (Photo #{primary_photo['sequence']})",
-                category="general estate",
-                fit_score=0.20,
-                condition_penalty=0.10,
-                comp=CompEstimate(low=None, high=None, source_count=0, confidence=BidConfidence.NONE),
-            )
-            lots.append(lot_obj)
-            decisions.append(price_lot(lot_obj))
+            is_extra_angle = (not has_cap and i > 0 and photos[i - 1]["has_caption"])
+            is_lot = not is_extra_angle
+            same_lot = is_extra_angle
 
+        # Determine appraisal attributes
+        app_pair = appraisals_by_lot.get(lot_tag)
+        if lot_tag in REFERENCE_COMPS:
+            comp_info = REFERENCE_COMPS[lot_tag]
+            ident = app_pair[1].get("identification", comp_info["desc"]) if app_pair else comp_info["desc"]
+            cat = comp_info["cat"]
+            fit = 0.90
+            penalty = 0.0
+            conf = AppConfidence.HIGH
+        elif app_pair:
+            app_obj, raw_app = app_pair
+            ident = raw_app.get("identification", cap)
+            cat = raw_app.get("category", "general estate")
+            fit = float(raw_app.get("fit_score", 0.50))
+            penalty = float(raw_app.get("condition_penalty", 0.0))
+            conf_str = raw_app.get("confidence", "low").lower()
+            conf = AppConfidence(conf_str) if conf_str in AppConfidence._value2member_map_ else AppConfidence.LOW
+        else:
+            ident = cap
+            cat = "general estate"
+            fit = 0.20
+            penalty = 0.0
+            conf = AppConfidence.NONE
+
+        appraised_photos.append(AppraisedPhoto(
+            photo_id=lot_tag,
+            caption=cap,
+            is_lot=is_lot,
+            same_lot_as_previous=same_lot,
+            identification=ident,
+            category=cat,
+            condition_penalty=penalty,
+            fit_score=fit,
+            confidence=conf,
+        ))
+
+    # 3. Comps Mapping & Seam Assembly (assemble_lots)
+    comps = {}
+    for k, v in REFERENCE_COMPS.items():
+        comp_est = CompEstimate(
+            low=v["low"],
+            high=v["high"],
+            source_count=v["sources"],
+            confidence=v["conf"],
+        )
+        comps[k] = comp_est
+        comps[f"seq:{k}"] = comp_est
+
+    assembled_raw = assemble_lots(appraised_photos, comps=comps)
+    lots = [
+        replace(l, lot_id=l.lot_id.removeprefix("seq:")) if l.lot_id.startswith("seq:") else l
+        for l in assembled_raw
+    ]
+
+    captions_map = {l.lot_id: l.caption for l in lots}
+
+    # 4. BidMath Pricing & Allocation
+    decisions = [price_lot(l) for l in lots]
     allocated_decisions = allocate(
         decisions,
         budget_cap=STATE["budget_cap"],
@@ -177,7 +197,7 @@ def get_aug22_state():
     )
     summary = summarize(allocated_decisions)
 
-    # 4. Questions Queue (Domain policies + Model Emitted)
+    # 5. Questions Queue (Domain Policies + Model-Emitted)
     domain_questions = [
         Question(
             kind=QuestionKind.POLICY,
@@ -186,7 +206,7 @@ def get_aug22_state():
             lot_ids=("BT-006", "BT-010"),
             value_at_stake=800.0,
             confidence_gap=0.5,
-            wants_photo=False
+            wants_photo=False,
         ),
         Question(
             kind=QuestionKind.APPETITE,
@@ -195,7 +215,7 @@ def get_aug22_state():
             lot_ids=("BT-073", "BT-075", "BT-078", "BT-080"),
             value_at_stake=200.0,
             confidence_gap=0.3,
-            wants_photo=False
+            wants_photo=False,
         ),
         Question(
             kind=QuestionKind.APPETITE,
@@ -204,13 +224,13 @@ def get_aug22_state():
             lot_ids=("BT-083", "BT-086"),
             value_at_stake=150.0,
             confidence_gap=0.3,
-            wants_photo=False
+            wants_photo=False,
         ),
     ]
     all_questions = domain_questions + emitted_questions
     queue_res = build_queue(all_questions, STATE["standing_rules"], cap=12)
 
-    return photos, lot_groups, lots, allocated_decisions, summary, queue_res, captions_map
+    return photos, lots, lots, allocated_decisions, summary, queue_res, captions_map
 
 
 @app.get("/health")
@@ -228,7 +248,7 @@ def healthz():
 
 @app.get("/", response_class=HTMLResponse)
 def get_console():
-    photos, lot_groups, lots, decisions, summary, queue_res, captions_map = get_aug22_state()
+    photos, _, lots, decisions, summary, queue_res, captions_map = get_aug22_state()
     view = CycleView(
         cycle_id=STATE["cycle_id"],
         auction_date="Saturday, August 22, 2026",
@@ -241,7 +261,7 @@ def get_console():
         captions=captions_map,
         deadline="Friday August 21, 8:00 PM CDT",
         illustrative=False,
-        lots_total=len(lot_groups),
+        lots_total=len(lots),
     )
     return render_console(view)
 
@@ -307,17 +327,32 @@ def answer_question(payload: dict = Body(...)):
     except ValueError:
         raise HTTPException(status_code=400, detail=f"Invalid question kind: {kind_str}")
 
-    new_rule = StandingRule(
+    # Promote through domain learn() mechanism
+    temp_question = Question(
         kind=kind,
         category=cat,
-        answer=ans,
-        learned_cycle=STATE["cycle_id"],
+        prompt=f"Clarification for {cat}",
+        lot_ids=(),
     )
-    STATE["standing_rules"] = [r for r in STATE["standing_rules"] if (r.kind, r.category) != (new_rule.kind, new_rule.category)] + [new_rule]
+    promoted = learn([(temp_question, ans)], cycle=STATE["cycle_id"])
+    if promoted:
+        new_rule = promoted[0]
+    else:
+        new_rule = StandingRule(
+            kind=kind,
+            category=cat,
+            answer=ans,
+            learned_cycle=STATE["cycle_id"],
+        )
+
+    STATE["standing_rules"] = [
+        r for r in STATE["standing_rules"] if (r.kind, r.category) != (new_rule.kind, new_rule.category)
+    ] + [new_rule]
+
     return {
         "status": "learned",
         "standing_rules_count": len(STATE["standing_rules"]),
-        "rule": {"kind": kind_str, "category": cat, "answer": ans, "cycle": STATE["cycle_id"]},
+        "rule": {"kind": kind.value, "category": cat, "answer": ans, "cycle": STATE["cycle_id"]},
     }
 
 
