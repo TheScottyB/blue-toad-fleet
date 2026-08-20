@@ -7,7 +7,7 @@
 
   [![Google Cloud Run](https://img.shields.io/badge/Google%20Cloud%20Run-Live%20Service-34d399?style=flat-square&logo=googlecloud)](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app)
   [![Vertex AI](https://img.shields.io/badge/Vertex%20AI-Gemini%203.6%20Flash-a78bfa?style=flat-square&logo=google)](https://cloud.google.com/vertex-ai)
-  [![Unit Tests](https://img.shields.io/badge/Unit%20Tests-167%20Passing-38bdf8?style=flat-square&logo=pytest)](https://github.com/TheScottyB/blue-toad-fleet)
+  [![Unit Tests](https://img.shields.io/badge/Unit%20Tests-170%20Passing-38bdf8?style=flat-square&logo=pytest)](https://github.com/TheScottyB/blue-toad-fleet)
   [![License: MIT](https://img.shields.io/badge/License-MIT-fbbf24?style=flat-square)](LICENSE)
 </div>
 
@@ -38,7 +38,7 @@ make demo
 # 3. Watch cross-cycle memory collapse the clarification queue
 make cycles
 
-# 4. Run the 160-test unit suite (runs in under 0.1 seconds)
+# 4. Run the 170-test unit suite (runs in ~0.3 seconds)
 make test
 ```
 
@@ -99,8 +99,8 @@ Appraisals feed into pure, unit-tested valuation logic implementing the store's 
 | **Multi-Angle Duplicates Merged** | **95 duplicate photos merged** | **104 duplicate photos merged** |
 | **Consolidated Physical Lots** | 357 physical lots | 358 physical lots |
 | **Legacy V1 Wishlist Chaos** | 88 unranked rows (**$14,340.00 max sum**) | N/A (Displaced by Fleet V2) |
-| **Fleet V2 Approved Sourcing** | **63 bids allocated ($1,915.69 max)** | **12 approved bids ($335.00 max)** |
-| **Total Committed All-In (w/ 15% Fee)**| **$2,203.15** (strictly under $2,205 cap) | **$385.25** (strictly under $600 cap) |
+| **Fleet V2 Approved Sourcing** | **67 bids allocated ($1,910.00 max)** | **12 approved bids ($335.00 max)** |
+| **Total Committed All-In (w/ 15% Fee)**| **$2,196.50** (strictly under $2,205 cap) | **$385.25** (strictly under $600 cap) |
 | **Increment Discipline** | $5.00 standard increments | $5.00 standard increments |
 | **Execution Artifacts** | `BlueToad_2026-07-11_Benchmark_Comparison.xlsx` | `BlueToad_2026-08-22_BidSheet.xlsx` & `aug22_absentee_bid_email.txt` |
 

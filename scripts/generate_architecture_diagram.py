@@ -46,7 +46,7 @@ def generate_diagram():
 
     # Pillar 3: Deterministic BidMath
     draw_box(8.6, 3.8, 3.2, 2.6, "3. PURE BIDMATH ENGINE", 
-             "• 38% Gross Margin Target\n• Condition Penalty Clamping\n• 'Buyer's Choice' Shelf Sniper (1-Unit)\n• Greedy Allocation vs Budget Cap\n• 160 Unit Tests (0.07s runtime)", 
+             "• 38% Gross Margin Target\n• Condition Penalty Clamping\n• 'Buyer's Choice' Shelf Sniper (1-Unit)\n• Greedy Allocation vs Budget Cap\n• 170 Unit Tests (0.3s runtime)", 
              '#fbbf24')
 
     # Pillar 4: Gate Console & Collaborative Partner

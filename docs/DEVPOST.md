@@ -86,7 +86,7 @@ Appraisals feed into pure, unit-tested bid math implementing the store's 38% mar
   * Pure, decoupled Python backend with zero framework lock-in.
   * Deterministic keyed memory `(QuestionKind, Category)` that generalises house conventions without vector drift.
   * Automated Excel bid sheet generator (`openpyxl`) and formatted absentee email draft generator.
-  * 160 unit tests running in under 0.1 seconds.
+  * 170 unit tests running in ~0.3 seconds.
 
 ---
 
@@ -103,13 +103,13 @@ Appraisals feed into pure, unit-tested bid math implementing the store's 38% mar
 
 * **Ground-Truth A/B Benchmark (July 11 Dataset):**
   * Ingested 452 raw photos and merged **95 multi-angle duplicate photos** into single lots.
-  * Slashed legacy unconstrained wishlist spending from **$14,340.00 down to $1,915.69 max ($2,203.15 all-in)**, fitting precisely inside the store's $2,205.00 budget cap.
+  * Slashed legacy unconstrained wishlist spending from **$14,340.00 down to $1,910.00 max ($2,196.50 all-in)**, fitting precisely inside the store's $2,205.00 budget cap.
 * **Live August 22 Production Run:**
   * Filtered 462 photos into **12 laser-targeted bids ($335 max / $385.25 all-in)** within a strict $600 credit card cap, formatted to $5 bidding increments.
 * **Flawless Google Cloud Deployment:**
   * Serving live traffic with sub-second response times on Cloud Run ([blue-toad-fleet-u5gvrqwvua-uc.a.run.app](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app)).
 * **100% Test Coverage on Core BidMath:**
-  * 160 unit tests passing in under 0.1 seconds.
+  * 170 unit tests passing in ~0.3 seconds.
 
 ---
 

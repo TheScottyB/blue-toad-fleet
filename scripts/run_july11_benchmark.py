@@ -97,8 +97,12 @@ def evaluate_lot_comp(desc: str) -> tuple[CompEstimate | None, str, float]:
     return None, "unsorted", 0.20
 
 def main():
+    manifest_path = REPO / "data/july11_gallery_4136050/manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    photos = manifest["photos"]
+
     # 1. Parse legacy workbook (with standalone fallback)
-    legacy_wb_path = Path("data/BlueToad_2026-07-11_Benchmark_Comparison.xlsx")
+    legacy_wb_path = REPO / "data/BlueToad_2026-07-11_Benchmark_Comparison.xlsx"
     if not legacy_wb_path.exists():
         legacy_wb_path = Path("/Users/scottybe/Downloads/btf-vertex-probe/rg-auction-pipeline/BlueToad_2026-07-11_BidSheet.xlsx")
 

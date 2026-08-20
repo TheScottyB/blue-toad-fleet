@@ -61,7 +61,7 @@ An immutable record of operational principles, domain discoveries, architecture 
   $$\text{Target Max Bid} = \text{Low-Mid Comp} \times 0.375 \times (1.0 - \text{Condition Penalty})$$
   $$\text{All-In Cost} = \text{Max Bid} \times (1.0 + \text{Absentee Fee})$$
   * Enforces standard **$5.00 bidding increments** (up to $100) and the mandatory **15% absentee buyer fee**.
-  * Backed by 160 unit tests executing in under 0.1 seconds.
+  * Backed by 170 unit tests executing in under a third of a second.
 
 ---
 
@@ -74,8 +74,8 @@ An immutable record of operational principles, domain discoveries, architecture 
 * **Fleet V2 Sourcing Schedule:**
   * Hard Budget Cap: **$2,205.00**
   * Auto-Send Threshold: **$40.00**
-  * Committed Max Bids: **$1,915.69**
-  * Committed All-In (w/ 15% fee): **$2,203.15** (strictly fitted within $2,205 cap).
+  * Committed Max Bids: **$1,910.00**
+  * Committed All-In (w/ 15% fee): **$2,196.50** (strictly fitted within $2,205 cap).
   * Output: `data/BlueToad_2026-07-11_Benchmark_Comparison.xlsx`.
 
 ### August 22, 2026 Live Sourcing Cycle Reconciliation

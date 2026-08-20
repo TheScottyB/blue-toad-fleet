@@ -1,17 +1,20 @@
 import { chromium } from 'playwright';
+import { execSync } from 'child_process';
+import { existsSync } from 'fs';
 
 async function capture() {
+  if (!existsSync('/tmp/gallery_local.html')) {
+    console.log('Generating /tmp/gallery_local.html...');
+    execSync('python3 scripts/build_local_gallery.py', { stdio: 'inherit' });
+  }
+
   const b = await chromium.launch({ channel: 'chrome', headless: true });
   const p = await b.newPage({ viewport: { width: 1600, height: 1000 }, deviceScaleFactor: 2 });
-  const url = 'https://www.auctionzip.com/cgi-bin/photopanel.cgi?listingid=4160518&feed=129&gid=0&category=0&zip=&kwd=';
+  const url = process.env.BTF_GALLERY || 'file:///tmp/gallery_local.html';
 
   console.log(`Navigating to ${url}...`);
-  try {
-    await p.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 });
-    await p.waitForTimeout(6000); // allow photo grid to load
-  } catch (e) {
-    console.log('Navigation notice:', e.message);
-  }
+  await p.goto(url, { waitUntil: 'domcontentloaded' });
+  await p.waitForTimeout(3000); // allow photo grid to load
 
   const outPath = 'docs/screenshots/00-raw-auction-gallery.png';
   await p.screenshot({ path: outPath, fullPage: false });
@@ -21,3 +24,4 @@ async function capture() {
 }
 
 capture().catch(console.error);
+
