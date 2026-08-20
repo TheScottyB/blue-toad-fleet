@@ -56,9 +56,9 @@
 * **Visual on Screen:**
   1. Open Google Cloud Console on project `threebatdrone-prod-420` showing Cloud Run revision `blue-toad-fleet-00009-8kb` and Vertex AI metrics.
   2. Tab to `/api/lots` and open the sealed [`data/aug22_absentee_bid_email.txt`](../data/aug22_absentee_bid_email.txt).
-  3. Show the 170 passing unit tests in terminal (`make test`).
+  3. Show the 173 passing unit tests in terminal (`make test`).
 * **Voiceover:**
-  > *"Everything runs in production on Google Cloud Run and Vertex AI. All 170 unit tests pass in under a third of a second.*
+  > *"Everything runs in production on Google Cloud Run and Vertex AI. All 173 unit tests pass in under half a second.*
   >
   > *Our greedy allocator committed exactly $335.00 across 12 approved high-velocity lots—$385.25 all-in with the mandatory 15% absentee fee, strictly formatted to standard $5.00 auction increments.*
   >
