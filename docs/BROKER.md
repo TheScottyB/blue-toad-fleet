@@ -28,7 +28,7 @@ the Broker performs the outbound call on their behalf.
    {
      "agent":  "bidder@<project>.iam.gserviceaccount.com",
      "action": "gmail.draft",
-     "target": "to=info@bluetoadauctions.com",
+     "target": "to=BlueToadAuctions@aol.com",
      "cycle":  "2026-08-22",
      "exp":    "<= issue + 10 minutes>",
      "jti":    "<uuid>"

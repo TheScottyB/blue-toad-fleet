@@ -26,7 +26,7 @@ class CycleView:
     budget_cap: float
     auto_send_threshold: float
     captions: dict[str, str] = field(default_factory=dict)
-    deadline: str = "Friday 8:00 PM"
+    deadline: str = "Friday 5:00 PM"
     illustrative: bool = False
     lots_total: int | None = None
 

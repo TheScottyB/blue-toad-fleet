@@ -94,7 +94,7 @@ README, the video, the write-up and the Devpost description — get them right o
 |---|---|
 | **The shop** | Richmond General, in **Richmond, Illinois** (McHenry County) |
 | **The owner** | lives in **unincorporated Harvard, Illinois** — a different town. Do not describe the shop as being in Harvard. |
-| **The auction house** | Blue Toad Auctions, **Genoa City, Wisconsin** (AuctionZip WI listing, auctioneer ID 10568) |
+| **The auction house** | Blue Toad Auctions, **200 Elizabeth Lane, Genoa City, WI 53128** · BlueToadAuctions@aol.com · 847-707-9446. Cited to their own site (bluetoadauctions.com, read 2026-08-19) — recited 2026-08-19 from the AuctionZip listing (auctioneer ID 10568) so no artifact rests on the banned source. |
 | **Why that fits** | Genoa City WI and Richmond IL sit a couple of miles apart across the state line — near walking distance. The state border is an administrative fact, not a distance. **Use this in the write-up**: it makes the sourcing loop concrete and local rather than abstract. |
 
 **Phrasing that is accurate:** "a resale shop in Richmond, Illinois, sourcing from an
@@ -147,14 +147,32 @@ Photo Link / Est Resale Low / High / Start Bid / Max Bid / All-in Absentee /
 All-in In-Person Cash / Est Profit / Notes). The old "0/452 ground-truth columns"
 line was describing something other than this tab.
 
-**No absentee relationship exists yet.** `docs/BROKER.md:31` hardcodes
-`info@bluetoadauctions.com`. That address has never been written to and has never
-replied. Whether Blue Toad accepts absentee bids by email, in what format, and
-whether a bidder account must exist first are all unverified. Nothing in this
-repo may state or imply the pipeline submits to an established channel.
+**Absentee bidding is a real channel — but this shop has never used it.**
+Confirmed (bluetoadauctions.com, read 2026-08-19): "We are unable to answer questions or take absentee
+bids on Saturday auction day," which is the house saying it takes them before
+Saturday. That is the first external evidence the project's premise is sound, and
+it is quotable.
+
+What is still NOT confirmed: whether they take absentee bids **by email** (the
+site is phone-first — "just call Carolyn or Bill or Gina"), in what format, what
+the buyer's premium is, and whether a bidder account must exist first. The
+operator has never bid absentee with Blue Toad — no account, no prior contact.
+
+**The address in `docs/BROKER.md` was wrong.** It hardcoded
+`info@bluetoadauctions.com`, which appears nowhere on the site. The real contact
+is **BlueToadAuctions@aol.com**. Corrected 2026-08-19.
+
+Nothing in this repo may state or imply the pipeline submits to an *established*
+channel — the channel exists; this shop's relationship to it does not, yet.
 
 - ~428 gallery photos per cycle
-- Friday 8:00 PM absentee cutoff
+- **Friday 5:00 PM** absentee cutoff. Sourced (bluetoadauctions.com, read 2026-08-19): "Please call for
+  information on upcoming auctions prior to the close of business on Friday
+  5:00PM" and "We are unable to answer questions or take absentee bids on
+  Saturday auction day." NOTE: the site states 5:00 PM as close of business for
+  CALLS and separately excludes Saturday for absentee — it does not publish an
+  explicit absentee deadline. 5:00 PM is the safe read. This file previously said
+  8:00 PM, unsourced.
 - Bid rule: max ≈ 35–40% of low-mid resale; all-in = bid × 1.15 fee × tax.
   Walworth County is 5.5%, but the shop has a resale exemption on file with Blue
   Toad, so `DEFAULT_TAX_RATE = 0.0` and its all-in is the fee alone.

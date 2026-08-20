@@ -1,7 +1,7 @@
 # Blue Toad Fleet
 
 An agent fleet that turns a rural Illinois resale shop's biweekly auction sourcing —
-hundreds of gallery photos, a Friday 8PM absentee deadline, real money — into a
+hundreds of gallery photos, a Friday 5PM absentee deadline, real money — into a
 triaged, priced, budget-allocated bid sheet and a ready-to-send prebid email.
 Unattended from ingest to draft.
 
@@ -54,10 +54,18 @@ cycle, from the shop's own prep:
   summing to **~$5,945**
 - trimmed to a plan of **~61 candidates / 17 absentee bids / ~$1,820 max
   (~$2,205 all-in)**
-- Hard cutoff: **Friday 8:00 PM**
+- Hard cutoff: **Friday 5:00 PM** — the auction house's own site says to call
+  "prior to the close of business on Friday 5:00PM" and that they are "unable to
+  answer questions or take absentee bids on Saturday auction day"
+  (bluetoadauctions.com, read 2026-08-19). An earlier version of this file said 8:00 PM; that figure was
+  unsourced.
 - Bid rule: **max ≈ 35–40% of low-mid resale**, all-in = bid × 1.15 absentee
   fee × tax. Walworth County is 5.5%, but the shop has a resale exemption on
   file with the auction house, so its own all-in is the fee alone.
+  **The 15% is the shop's working figure, not a published one.** The auction
+  house states no buyer's premium, no absentee fee and no terms anywhere on its
+  site (bluetoadauctions.com, read 2026-08-19), so treat it as unconfirmed until the operator confirms it
+  with the house directly.
 
 The prep was finished. **The absentee submission never ran.** No bid, absentee,
 or confirmation email exists in the shop's mailbox for that window — searched
