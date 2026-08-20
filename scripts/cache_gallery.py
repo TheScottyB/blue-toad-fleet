@@ -5,6 +5,11 @@ scripts/cache_gallery.py — Offline Cacher for AuctionZip Gallery Drops.
 Fetches the complete photopanel manifest and images once, saving them locally
 so the full spatial clustering, triage fan-out, and lot decomposition test loops
 can execute 100% offline without hitting AuctionZip repeatedly.
+
+The photopanel markup only ever names the `_th` thumbnail — 140x105, ~5KB. That
+is a contact sheet, not something an appraiser can read a hallmark off, so what
+lands on disk is the `_fl` variant at 560x420. The thumbnail URL is still kept
+in the manifest because it is what the page actually published.
 """
 
 import argparse
@@ -17,6 +22,12 @@ import time
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from src.appraiser.images import full_size_url
 
 _PREVIEW_PREFIX = re.compile(r"^\s*preview image for\s+", re.IGNORECASE)
 _PHOTO_PATTERN = re.compile(
@@ -110,6 +121,7 @@ def cache_gallery(listing_id: str, output_dir: str, max_workers: int = 8, downlo
             "caption": clean_cap,
             "has_caption": bool(clean_cap),
             "thumb_url": thumb_url,
+            "full_url": full_size_url(thumb_url),
             "local_path": str(img_dest),
         })
 
@@ -127,7 +139,7 @@ def cache_gallery(listing_id: str, output_dir: str, max_workers: int = 8, downlo
         success = 0
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             future_to_entry = {
-                executor.submit(download_image, e["thumb_url"], Path(e["local_path"])): e
+                executor.submit(download_image, e["full_url"], Path(e["local_path"])): e
                 for e in manifest_entries
             }
             for future in as_completed(future_to_entry):
