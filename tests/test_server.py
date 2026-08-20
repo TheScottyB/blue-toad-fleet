@@ -68,3 +68,43 @@ def test_api_email_draft(client):
     text = r.text
     assert "info@bluetoadauctions.com" in text
     assert "$335.00" in text or "Richmond General" in text
+
+
+class TestTheModelReachesTheQueue:
+    """
+    Nothing caught it when the Vertex questions were unhooked from build_queue —
+    the console rendered three hand-written prompts, all of them absorbed by
+    standing rules, and reported an empty queue as if the cycle were clean.
+    A console that cannot show what the model asked is a console showing a demo.
+    """
+
+    def test_model_emitted_questions_reach_the_console_queue(self):
+        from src.server import get_aug22_state
+
+        _, _, _, _, _, queue, _ = get_aug22_state()
+        surfaced = queue.asked + [q for q, _ in queue.auto_answered] + queue.dropped
+
+        hand_written = {
+            "sports memorabilia", "dinnerware / pottery", "vintage tools",
+        }
+        from_model = [q for q in surfaced if q.category not in hand_written]
+
+        assert from_model, (
+            "the queue contains only the hard-coded domain questions; "
+            "nothing the appraiser emitted reached it"
+        )
+
+    def test_the_queue_is_not_empty_while_lots_carry_questions(self):
+        import json
+        from pathlib import Path
+        from src.server import get_aug22_state
+
+        cache = Path("data/aug22_gallery_4160518/appraisal_results.json")
+        emitted = sum(len(lot.get("questions", []))
+                      for lot in json.loads(cache.read_text()))
+        assert emitted, "fixture has no questions; this test proves nothing"
+
+        _, _, _, _, _, queue, _ = get_aug22_state()
+        assert queue.asked, (
+            f"the appraiser emitted {emitted} question(s) and the console asks none"
+        )

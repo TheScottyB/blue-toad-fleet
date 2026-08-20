@@ -154,7 +154,7 @@ def run_pipeline(
         cat_hint = REFERENCE_COMPS.get(lot_id, {}).get("cat")
         app, qs = engine.parse_appraisal_to_domain(raw, category_override=cat_hint)
         appraisal_by_lot[app.lot_id] = (app, raw)
-        emitted_questions.extend([q for q in qs if not q.wants_photo])
+        emitted_questions.extend(qs)
 
     # 4. Question Queue & Memory Resolution
     domain_questions = [
