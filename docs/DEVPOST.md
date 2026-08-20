@@ -62,8 +62,11 @@ Blue Toad Fleet transforms an uncataloged 450-photo gallery drop into an actiona
 ### 3. The Honest Refusal Rule & Uncertainty Budget
 Unlike generic AI tools that hallucinate a price on every photo, Blue Toad Fleet enforces an explicit **uncertainty budget**. On recognizable items (e.g., 1960s Pabst lighted sign), it extracts maker, period, and comps. On unmarked, low-velocity pottery, it explicitly emits `"NO EXTERNAL COMP — human pricing required"`. Refusing to guess is a production safety feature.
 
-### 4. The "Buyer's Choice" Shelf Sniper
-Country auctioneers sell vertical shelving units as "Buyer's Choice / Times the Money" (where the winning bidder chooses 1, 2, or all 8 lanterns at the hammer price). Naive bots get trapped by bidding on the group, causing the clerk to multiply $8 \times \$45 = \$360$. Blue Toad Fleet detects vertical shelves, ranks items by liquidity, and enforces a strict `max_quantity = 1` absentee directive.
+### 4. The "Choice-Lot Sniper" (Walls, Table Lines & Shelving Units)
+Country auctioneers frequently sell grouped assets as "Buyer's Choice / Times the Money" across multiple room zones:
+* **The Back Wall:** *"Choice of the framed travel posters! $200 times the money!"*
+* **Table Lines & Shelves:** *"Choice of the lantern line!"* or *"Choice of the shelf!"*
+Naive automated agents bid on the group, causing the auction clerk to multiply $N \times \text{bid}$ (e.g. 6 posters $\times \$150 = \$900$). Blue Toad Fleet detects choice lots across walls, tables, and shelves, uses liquidity comps to select the single highest-value alpha item (e.g. the 1960s Northwest Airlines Japan poster), and enforces a strict `max_quantity = 1` absentee constraint.
 
 ### 5. Proactive Velocity Pushback & The Curator's Negotiation
 The fleet acts as an **expert commercial partner, not a passive yes-man**. On Friday afternoon, the agent presents a 3-tier pitch (Top 3 Alpha Picks, Fast Smalls, and a Wildcard Challenge). When the owner asked to drop sports cards and tools due to store backlog, the agent used real-time eBay velocity data to respectfully push back:

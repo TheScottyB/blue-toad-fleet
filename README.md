@@ -80,8 +80,8 @@ Capital is not the constraint — **time and visual throughput are**. The goal i
 * **Deep Multimodal Appraisal (`gemini-3.6-flash`):** Evaluates high-conviction survivors using structured OpenAPI 3.0 schemas on the `global` Vertex endpoint.
 * **Honest Refusal Rule:** On unrecognizable or ungrounded pottery, the model explicitly emits `"NO EXTERNAL COMP — human pricing required"` rather than hallucinating prices.
 
-### 4. The "Buyer's Choice" Shelf Sniper
-Detects vertical shelf lots where clerks sell items "Times the Money" (multiplying hammer price by quantity) and enforces a strict `max_quantity = 1` absentee constraint, preventing a $360 multiplication trap.
+### 4. The "Choice-Lot Sniper" (Walls, Table Lines & Shelves)
+Detects grouped assets sold "Choice / Times the Money" across multiple room zones (such as a wall run of vintage travel posters or a table line of railroad lanterns) and enforces a strict `max_quantity = 1` absentee constraint, preventing a $900 clerk multiplication blowout while securing the highest-comp alpha piece.
 
 ### 5. The Collaborative Partner & Proactive Pushback
 The fleet acts as an expert commercial peer. On Friday afternoon, the agent presents a 3-tier pitch (Alpha Picks, Fast Smalls, and a Wildcard Challenge). When the owner asked to drop sports cards and tools due to store backlog, the agent used real-time eBay velocity data to respectfully push back and preserve the **13 Golden Era 1959–1969 Topps baseball cards ($100 cap)**, delivering a $300+ resale spread.
