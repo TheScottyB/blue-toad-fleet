@@ -157,7 +157,7 @@ blue-toad-fleet/
 │   ├── gate/                   # Gate Console UI renderer (pure HTML/CSS)
 │   ├── intake/                 # Manifest parsing, natural sort & spatial clustering
 │   └── server.py               # Cloud Run FastAPI server & API endpoints
-├── tests/                      # Comprehensive pytest unit suite (167 tests)
+├── tests/                      # Comprehensive pytest unit suite (170 tests)
 ├── Dockerfile                  # Container definition for Google Cloud Run
 ├── LICENSE                     # MIT License
 ├── Makefile                    # Standard developer workflow targets

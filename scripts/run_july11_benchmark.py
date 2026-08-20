@@ -101,24 +101,41 @@ def main():
     manifest = json.loads(manifest_path.read_text())
     photos = manifest["photos"]
 
-    # 1. Parse legacy workbook (with standalone fallback)
-    legacy_wb_path = REPO / "data/BlueToad_2026-07-11_Benchmark_Comparison.xlsx"
-    if not legacy_wb_path.exists():
-        legacy_wb_path = Path("/Users/scottybe/Downloads/btf-vertex-probe/rg-auction-pipeline/BlueToad_2026-07-11_BidSheet.xlsx")
+    # 1. Parse the legacy V1 bid sheet.
+    #
+    # This must be the ORIGINAL V1 workbook, which lives outside the repo. The
+    # in-repo Benchmark_Comparison.xlsx is this script's OWN OUTPUT: pointing
+    # "legacy" at it made the benchmark read its own 6-row scorecard, reporting
+    # 5 lots / $0.00 against itself. Only a workbook with a real "Bid Sheet" tab
+    # is accepted; a fresh clone without it falls back to the documented totals.
+    LEGACY_BIDS_FALLBACK, LEGACY_MAX_FALLBACK = 88, 14340.00
+    legacy_wb_path = Path(
+        os.environ.get(
+            "BTF_LEGACY_BIDSHEET",
+            "/Users/scottybe/Downloads/btf-vertex-probe/rg-auction-pipeline/"
+            "BlueToad_2026-07-11_BidSheet.xlsx",
+        )
+    )
 
+    legacy_bids_count, legacy_requested_max = LEGACY_BIDS_FALLBACK, LEGACY_MAX_FALLBACK
     if legacy_wb_path.exists():
         try:
             legacy_wb = openpyxl.load_workbook(legacy_wb_path, data_only=True)
-            sheet_name = "Bid Sheet" if "Bid Sheet" in legacy_wb.sheetnames else legacy_wb.sheetnames[0]
-            ws_legacy_bids = legacy_wb[sheet_name]
-            legacy_bids_count = ws_legacy_bids.max_row - 1
-            legacy_requested_max = sum(float(ws_legacy_bids.cell(r, 9).value or 0) for r in range(2, ws_legacy_bids.max_row + 1))
-        except Exception:
-            legacy_bids_count = 88
-            legacy_requested_max = 14340.00
-    else:
-        legacy_bids_count = 88
-        legacy_requested_max = 14340.00
+            if "Bid Sheet" not in legacy_wb.sheetnames:
+                raise ValueError(f"{legacy_wb_path.name} has no 'Bid Sheet' tab")
+            ws_legacy_bids = legacy_wb["Bid Sheet"]
+            rows = range(2, ws_legacy_bids.max_row + 1)
+            # Count described lots, not max_row: the sheet carries 4 trailing
+            # blank rows, which is how the count drifted to 92.
+            legacy_bids_count = sum(
+                1 for r in rows if ws_legacy_bids.cell(r, 1).value not in (None, "")
+            )
+            legacy_requested_max = sum(
+                float(ws_legacy_bids.cell(r, 9).value or 0) for r in rows
+            )
+        except Exception as exc:
+            print(f"[!] legacy workbook unreadable ({exc}); using documented totals")
+            legacy_bids_count, legacy_requested_max = LEGACY_BIDS_FALLBACK, LEGACY_MAX_FALLBACK
 
     # 2. Ingest through Fleet V2
     entries = [{"name": p["filename"], "uri": p["thumb_url"], "caption": p["caption"]} for p in photos]
