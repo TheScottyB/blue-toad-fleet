@@ -1,6 +1,7 @@
 import pytest
 from src.bidmath import (
-    ABSENTEE_FEE, CompEstimate, Confidence, Decision, Lot, Priority,
+    ABSENTEE_FEE, DEFAULT_TAX_RATE, WI_SALES_TAX_RATE,
+    CompEstimate, Confidence, Decision, Lot, Priority,
     all_in_cost, allocate, bid_fraction_for, price_lot, summarize,
 )
 
@@ -18,8 +19,18 @@ def lot(lot_id="L1", cat="breweriana", fit=0.85, cond=0.0, c=None):
 
 class TestAllInCost:
     def test_applies_absentee_fee_and_tax(self):
-        # $100 hammer -> 15% absentee -> 7% tax
-        assert all_in_cost(100.0, 0.07) == pytest.approx(123.05, abs=0.01)
+        # $100 hammer -> 15% absentee -> 5.5% Walworth County tax
+        assert all_in_cost(100.0, WI_SALES_TAX_RATE) == pytest.approx(121.32, abs=0.01)
+
+    def test_default_is_untaxed_because_of_the_resale_exemption(self):
+        """Richmond General has a resale exemption on file with Blue Toad.
+
+        The default must be 0, not the county rate: an unexempt default silently
+        overstates all-in on every lot, and the allocator then under-fills the
+        budget cap against a cost the shop never pays.
+        """
+        assert DEFAULT_TAX_RATE == 0.0
+        assert all_in_cost(100.0) == pytest.approx(115.00, abs=0.01)
 
     def test_zero_tax(self):
         assert all_in_cost(100.0, 0.0) == pytest.approx(100 * (1 + ABSENTEE_FEE))

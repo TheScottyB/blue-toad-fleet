@@ -21,7 +21,13 @@ from typing import Iterable
 
 # Blue Toad absentee terms.
 ABSENTEE_FEE = 0.15
-DEFAULT_TAX_RATE = 0.07
+
+# Walworth County, WI: 5.0% state + 0.5% county. Richmond General has a resale
+# exemption on file with Blue Toad, so its purchases are not taxed. The nominal
+# rate is kept beside the default so the exemption is visible rather than
+# implied by a bare zero — and so a buyer without one can pass it explicitly.
+WI_SALES_TAX_RATE = 0.055
+DEFAULT_TAX_RATE = 0.0
 
 # Documented base rule: 35-40% of low-mid resale. We take the midpoint of that
 # band as the base and let calibration move it per category.
