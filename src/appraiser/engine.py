@@ -65,13 +65,20 @@ class AppraisalEngine:
         return self._client
 
     @staticmethod
-    def will_use_cache(cache_path: Optional[Path | str], force_refresh: bool) -> bool:
+    def will_use_cache(cache_path: Optional[Path | str], force_refresh: bool,
+                       required_ids: Optional[set[str]] = None) -> bool:
         """
         Whether a batch with these arguments will serve from cache.
 
         Exists so callers can report what actually happened instead of guessing
         from whether the file is on disk — those are different questions, and
         conflating them made a --live run announce itself as cached.
+
+        `required_ids` is the coverage check. "Non-empty list" is not the same
+        as "has what I asked for": when the candidate set grew from 214 to 228
+        the cache answered yes and fourteen lots were never appraised, one of
+        them carrying a live bid. A cache that is missing anything requested is
+        not a cache, it is a partial run wearing one.
         """
         if not cache_path or force_refresh:
             return False
@@ -82,7 +89,14 @@ class AppraisalEngine:
             cached = json.loads(p.read_text())
         except Exception:
             return False
-        return isinstance(cached, list) and len(cached) > 0
+        if not isinstance(cached, list) or not cached:
+            return False
+        if required_ids:
+            have = {r.get("lot_id") or r.get("photo_id") for r in cached
+                    if isinstance(r, dict)}
+            if required_ids - have:
+                return False
+        return True
 
     def triage_photo(
         self,
@@ -273,12 +287,15 @@ class AppraisalEngine:
         Batch appraisal on survivor candidate lots.
         Loads from cache_path if present unless force_refresh is True.
         """
-        if self.will_use_cache(cache_path, force_refresh):
+        required = {c["lot_id"] for c in candidates if c.get("lot_id")}
+        if self.will_use_cache(cache_path, force_refresh, required_ids=required):
             return json.loads(Path(cache_path).read_text())
 
         results = []
         if not self.client:
-            raise RuntimeError("Vertex AI client not available and no valid cache found.")
+            raise RuntimeError(
+                "Vertex AI client not available and no cache covering all "
+                f"{len(required)} requested lot(s).")
 
         total = len(candidates)
         completed = 0

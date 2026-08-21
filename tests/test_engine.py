@@ -193,3 +193,51 @@ class TestCacheReporting:
         assert AppraisalEngine.will_use_cache(cache, force_refresh=False)
         served = engine.run_appraisal_batch(candidates=[], cache_path=cache)
         assert served == [{"lot_id": "BT-001", "questions": []}]
+
+
+class TestTheCacheMustCoverWhatWasAsked:
+    """
+    will_use_cache asked "is this a non-empty list" and nothing more. When the
+    candidate set grew from 214 to 228 the cache answered yes and 14 lots were
+    never appraised — including one carrying a $25 bid on the sheet. Nothing
+    errored, the run reported success, and the count was in the log where nobody
+    was subtracting.
+    """
+
+    def test_a_cache_missing_requested_lots_is_not_used(self, tmp_path):
+        cache = tmp_path / "appraisal_results.json"
+        cache.write_text('[{"lot_id": "BT-001"}]')
+        assert not AppraisalEngine.will_use_cache(
+            cache, force_refresh=False, required_ids={"BT-001", "BT-002"})
+
+    def test_a_cache_covering_every_requested_lot_is_used(self, tmp_path):
+        cache = tmp_path / "appraisal_results.json"
+        cache.write_text('[{"lot_id": "BT-001"}, {"lot_id": "BT-002"}]')
+        assert AppraisalEngine.will_use_cache(
+            cache, force_refresh=False, required_ids={"BT-001", "BT-002"})
+
+    def test_extra_lots_in_the_cache_are_harmless(self, tmp_path):
+        cache = tmp_path / "appraisal_results.json"
+        cache.write_text('[{"lot_id": "BT-001"}, {"lot_id": "BT-999"}]')
+        assert AppraisalEngine.will_use_cache(
+            cache, force_refresh=False, required_ids={"BT-001"})
+
+    def test_with_no_requirement_stated_the_old_behaviour_stands(self, tmp_path):
+        cache = tmp_path / "appraisal_results.json"
+        cache.write_text('[{"lot_id": "BT-001"}]')
+        assert AppraisalEngine.will_use_cache(cache, force_refresh=False)
+
+    def test_the_batch_refuses_a_short_cache_rather_than_serving_it(self, monkeypatch, tmp_path):
+        """
+        A partial cache must not look like a completed run. With no credentials
+        the batch has only the cache to fall back on, so a short one has to
+        raise rather than quietly return fewer lots than were asked for.
+        """
+        cache = tmp_path / "appraisal_results.json"
+        cache.write_text('[{"lot_id": "BT-001", "questions": []}]')
+        monkeypatch.setattr(AppraisalEngine, "client", property(lambda self: None))
+        with pytest.raises(RuntimeError, match="2 requested"):
+            AppraisalEngine().run_appraisal_batch(
+                candidates=[{"lot_id": "BT-001", "local_path": ""},
+                            {"lot_id": "BT-002", "local_path": ""}],
+                cache_path=cache)
