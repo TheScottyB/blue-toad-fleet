@@ -11,6 +11,7 @@ APPRAISAL_MODEL = "gemini-3.6-flash"      # $1.50 / $7.50 per 1M tokens
 # phrase it. Serves from the `global` endpoint only; us-central1 answers
 # FAILED_PRECONDITION for this one, same quirk as the Gemini tiers.
 CURATOR_MODEL = "gemma-4-26b-a4b-it-maas"
+GEMMA_MODEL = CURATOR_MODEL  # alias: structured PitchVoice uses this name
 
 # Rough token accounting per photo, used for cost estimates and budget guards.
 EST_INPUT_TOKENS_PER_PHOTO = 1_500
