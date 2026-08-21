@@ -27,6 +27,10 @@ except ImportError:
 from src.appraisal import Appraisal, Confidence, Question, QuestionKind, StandingRule
 from src.appraiser.images import assert_appraisal_grade, read_local_image
 from src.appraiser.routing import TRIAGE_MODEL, APPRAISAL_MODEL, CURATOR_MODEL
+from src.appraiser.pricing import (
+    PRICE_SCHEMA, PRICING_SYSTEM, build_pricing_prompt,
+    sources_from_response, parse_price_payload,
+)
 from src.appraiser.schema import TRIAGE_SCHEMA, APPRAISAL_SCHEMA, to_vertex
 from src.appraiser.prompts import (
     TRIAGE_SYSTEM,
@@ -213,6 +217,55 @@ class AppraisalEngine:
         resp = self.client.models.generate_content(
             model=CURATOR_MODEL, contents=[prompt], config=cfg)
         return (resp.text or "").strip()
+
+    def price_lot_grounded(self, identification: str, category: str = ""):
+        """
+        One grounded price. Two calls, because Vertex will not give both at once.
+
+        With a response_schema attached, grounding_metadata comes back with zero
+        grounding_chunks — the search still runs and the queries are recorded,
+        but the retrieved pages are not returned. Drop the schema and the same
+        call yields six. Verified on the live endpoint both ways.
+
+        Citations are not optional here: an uncited price is the model's opinion,
+        and opinions are what this system exists not to bid on. So the grounded
+        call runs free-text and keeps its chunks, and a second call — cheap, no
+        tools, no search — reads the numbers out of that text into the schema.
+        The second call sees only the first's prose, so it cannot introduce a
+        figure the grounded pass did not find.
+        """
+        if not self.client:
+            raise RuntimeError("Vertex AI client is not available.")
+
+        grounded = self.client.models.generate_content(
+            model=self.appraisal_model,
+            contents=[build_pricing_prompt(identification, category)],
+            config=types.GenerateContentConfig(
+                system_instruction=PRICING_SYSTEM,
+                tools=[types.Tool(google_search=types.GoogleSearch())],
+                temperature=0.2,
+            ),
+        )
+        prose = (grounded.text or "").strip()
+        sources = sources_from_response(grounded)
+        if not prose:
+            return None
+
+        extracted = self.client.models.generate_content(
+            model=self.appraisal_model,
+            contents=["Read the completed-sale figures out of this research note. "
+                      "Report only what it states; invent nothing.\n\n" + prose],
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=to_vertex(PRICE_SCHEMA),
+                temperature=0.0,
+            ),
+        )
+        try:
+            payload = json.loads(extracted.text)
+        except Exception:
+            return None
+        return parse_price_payload(payload, sources)
 
     def run_triage_batch(
         self,

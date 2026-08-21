@@ -111,3 +111,88 @@ def price_is_usable(results) -> bool:
     if min(highs) <= 0 or max(highs) / min(highs) > MAX_SPREAD_RATIO:
         return False
     return True
+
+
+PRICE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "low": {"type": "number",
+                "description": "Lowest realised SOLD price found. Not an asking price."},
+        "high": {"type": "number",
+                 "description": "Highest realised SOLD price found. Not an asking price."},
+        "sold_comp_count": {"type": "integer",
+                            "description": "How many completed sales this range is drawn from."},
+        "asking_prices_only": {
+            "type": "boolean",
+            "description": "True if only active listings were found, no completed sales."},
+    },
+    "required": ["low", "high", "sold_comp_count", "asking_prices_only"],
+}
+
+PRICING_SYSTEM = """You are pricing one lot for a resale buyer's absentee bid.
+
+Search for COMPLETED SALES of comparable items — realised hammer prices, eBay \
+sold listings, auction results. An active listing is what somebody hopes to get, \
+not what the thing is worth, and bidding against hope loses money.
+
+Report the low and high of what actually sold, and how many completed sales you \
+based that on. If you can only find active listings, say so with \
+asking_prices_only and report what you found anyway — the caller will discard it.
+
+Do not guess. A range drawn from one sale is one sale; say so in the count \
+rather than padding it."""
+
+
+def build_pricing_prompt(identification: str, category: str = "") -> str:
+    parts = [f"Lot: {identification}"]
+    if category:
+        parts.append(f"Category: {category}")
+    parts.append(
+        "\nFind completed sales of comparable items and report the realised "
+        "price range. Sold prices only — not asking prices.")
+    return "\n".join(parts)
+
+
+def sources_from_response(response) -> list[str]:
+    """
+    Citations, taken from where the model cannot write them.
+
+    grounding_metadata is populated by the search tool, not the generation, so a
+    URL here corresponds to a page that was actually retrieved. Everything about
+    this function is defensive: a missing attribute anywhere means no citations,
+    which downstream means the price is refused.
+    """
+    try:
+        candidates = getattr(response, "candidates", None) or []
+        out = []
+        for cand in candidates:
+            meta = getattr(cand, "grounding_metadata", None)
+            for chunk in (getattr(meta, "grounding_chunks", None) or []):
+                web = getattr(chunk, "web", None)
+                uri = getattr(web, "uri", None)
+                if uri:
+                    out.append(uri)
+        return out
+    except Exception:
+        return []
+
+
+def parse_price_payload(payload: dict, grounded_sources: list[str]) -> GroundedPrice | None:
+    """
+    A structured pricing response into a GroundedPrice, or None if it is not one.
+
+    The payload's own `sources` field is ignored even when present. Only
+    grounded_sources — read from grounding_metadata — reaches the result.
+    """
+    if not isinstance(payload, dict):
+        return None
+    if payload.get("asking_prices_only"):
+        return None
+    try:
+        low = float(payload["low"])
+        high = float(payload["high"])
+        count = int(payload.get("sold_comp_count", 0))
+    except (KeyError, TypeError, ValueError):
+        return None
+    return GroundedPrice(low=low, high=high, sold_comp_count=count,
+                         sources=usable_sources(grounded_sources))

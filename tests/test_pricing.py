@@ -100,3 +100,56 @@ class TestCitations:
     def test_junk_is_dropped(self):
         from src.appraiser.pricing import usable_sources
         assert usable_sources(["", None, "not a url"]) == []
+
+
+class TestReadingAGroundedResponse:
+    """
+    Citations come from grounding_metadata, not from a field the model fills in.
+    Asked to self-report sources it wrote "https://www.bssauction.com" — true,
+    uncheckable, and indistinguishable from evidence at a glance.
+    """
+
+    def test_sources_are_read_from_the_grounding_metadata(self):
+        from src.appraiser.pricing import sources_from_response
+
+        class Web:
+            uri = "https://www.ebay.com/itm/99"
+        class Chunk:
+            web = Web()
+        class GM:
+            grounding_chunks = [Chunk()]
+        class Cand:
+            grounding_metadata = GM()
+        class Resp:
+            candidates = [Cand()]
+
+        assert sources_from_response(Resp()) == ["https://www.ebay.com/itm/99"]
+
+    def test_a_response_with_no_grounding_yields_no_sources(self):
+        from src.appraiser.pricing import sources_from_response
+
+        class Cand:
+            grounding_metadata = None
+        class Resp:
+            candidates = [Cand()]
+
+        assert sources_from_response(Resp()) == []
+
+    def test_a_malformed_response_does_not_explode(self):
+        from src.appraiser.pricing import sources_from_response
+        assert sources_from_response(None) == []
+        assert sources_from_response(object()) == []
+
+    def test_the_models_own_source_field_is_ignored_entirely(self):
+        """Even if the payload claims sources, only grounding_metadata counts."""
+        from src.appraiser.pricing import parse_price_payload
+        p = parse_price_payload(
+            {"low": 40, "high": 60, "sold_comp_count": 3,
+             "sources": ["https://www.bssauction.com"]},
+            grounded_sources=["https://www.invaluable.com/lot/7"])
+        assert p.sources == ["https://www.invaluable.com/lot/7"]
+
+    def test_a_payload_missing_fields_is_not_a_price(self):
+        from src.appraiser.pricing import parse_price_payload
+        assert parse_price_payload({}, grounded_sources=[]) is None
+        assert parse_price_payload({"low": 40}, grounded_sources=[]) is None
