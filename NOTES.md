@@ -112,3 +112,31 @@ An immutable record of operational principles, domain discoveries, architecture 
   * `GET /api/questions`: Active clarification queue & cross-cycle memory rules.
   * `POST /api/answer`: Promotes operator answers to standing rules and reallocates sheet.
   * `GET /api/email`: Formatted absentee bid email draft for `info@bluetoadauctions.com`.
+
+---
+
+## 5. Cycle Amendment — August 22, 2026 (post-cutoff revision, 16:5X CDT 8/21)
+
+### House Rule Resolved: `(lot_grouping, jewelry_trays)` → TIMES THE MONEY
+* **Open question:** BT-002 appraisal emitted `lot_grouping` — "single tray or all trays together?" (confidence_gap 0.40).
+* **Ground truth:** Bill Theesfield (Blue Toad), email 2026-08-21 21:43 UTC — *"Yes, that is a x3 bid."*
+* **Standing rule promoted:** Estate jewelry display trays sold as a labelled run (12/14/16) are **times-the-money**, not one-of-choice. ADR-004's blanket `max_quantity = 1` is **not** universal — it applies to vertical shelving choice lots, not labelled tray runs.
+
+### DEFECT: ADR-001 dedup miss — BT-181 was a duplicate of BT-002
+* **Observed:** BT-181 (photo 181, "estate costume jewelry") is a **close-up of trays 12 and 14** already captured in BT-002 (photo 002). Matching invariants: gold-tone flat-link necklace, gold coin charm bracelet, green enamel Christmas tree brooch, blue lapis-glass round pendant, blue-edged black velvet tray on concrete slab.
+* **Root cause:** Trajectory clustering merges *sequence-adjacent* photos. These sit **179 frames apart** — the auctioneer returned to the same table later in the shoot. Co-visibility margin scan did not fire because the close-up crops out all peripheral goods.
+* **Impact if unfixed:** $28.75 all-in paid twice for the same trays, plus a self-competing absentee bid at the block.
+* **Fix owed:** add a **non-adjacent perceptual-hash pass** over accepted lots within a category before the sheet is emitted. Sequence distance must not gate dedup.
+
+### Comp Coverage Gap
+* BT-002 / BT-087 / BT-181 carried **no entries in `grounded_prices.json`** (46 grounded lots, none of them). Their $25 maxes derived from `value_magnitude_hint` alone — a model prior, not sold comps. This is ADR-003 behaving correctly (honest refusal) but the **bid sheet did not surface the distinction**, so ungrounded guesses sat next to grounded comps at identical confidence.
+* **Fix owed:** flag ungrounded lots explicitly on the sheet (`NO EXTERNAL COMP`) and require operator sign-off above a $20 max.
+
+### Revised Sheet (SENT 2026-08-21, replaces original)
+* BT-002: $25.00 **per tray x 3 = $75.00** — taking all three (was $25 / qty 1).
+* BT-087: $25.00 → **$15.00** — 38% recheck; bulk unsorted tote at 0.20 penalty ceilings at $22.80 all-in.
+* BT-181: **REMOVED** — duplicate of BT-002.
+* BT-016 / BT-030: not carried onto the sent sheet (absent from the original absentee email as well).
+* **Total Committed Max: $275.00** | **All-In (15%): $316.25** (prior sheet: $260.00 / $299.00).
+* Benchmark used: 0.38 resale factor (operator-specified this cycle; ADR-006 codifies 0.375).
+* Artifacts: `data/aug22_absentee_bid_email_REVISED.txt`.
