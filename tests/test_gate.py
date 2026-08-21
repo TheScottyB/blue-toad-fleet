@@ -14,7 +14,7 @@ def _lot(i, fit=0.85, low=100.0, high=140.0, n=3, conf=Confidence.HIGH):
 
 
 def _view(lots=None, questions=(), rules=(), cap=2205.0, thresh=40.0):
-    lots = lots or [_lot(i) for i in range(4)]
+    lots = lots if lots is not None else [_lot(i) for i in range(4)]
     ds = allocate([price_lot(l) for l in lots], cap, thresh)
     return CycleView(
         cycle_id="2026-08-22", auction_date="Sat 2026-08-22", photos_ingested=428,
