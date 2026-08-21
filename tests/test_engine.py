@@ -241,3 +241,23 @@ class TestTheCacheMustCoverWhatWasAsked:
                 candidates=[{"lot_id": "BT-001", "local_path": ""},
                             {"lot_id": "BT-002", "local_path": ""}],
                 cache_path=cache)
+
+
+def test_appraisal_error_stub_includes_container_fields():
+    """The except stub must satisfy APPRAISAL_SCHEMA required keys."""
+    engine = AppraisalEngine()
+    engine._client = object()
+
+    def boom(*args, **kwargs):
+        raise RuntimeError("vertex down")
+
+    engine.appraise_lot = boom
+    results = engine.run_appraisal_batch(
+        candidates=[{"lot_id": "BT-999", "caption": "x"}],
+        force_refresh=True,
+    )
+    stub = results[0]
+    assert stub["lot_id"] == "BT-999"
+    assert stub["is_container"] is False
+    assert stub["contents"] == []
+

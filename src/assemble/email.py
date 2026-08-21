@@ -36,7 +36,7 @@ def compile_absentee_email(
         "Bidder Info:",
         f"  Name: {bidder}",
         "  Resale Certificate: On file (Wisconsin Tax-Exempt)",
-        "  Terms: 15% Absentee Buyer Fee acknowledged (Credit Card on File)",
+        f"  Terms: {int(ABSENTEE_FEE * 100)}% Absentee Buyer Fee acknowledged (Credit Card on File)",
         "",
         "-" * 89,
     ]
@@ -80,7 +80,7 @@ def compile_absentee_email(
     lines.extend([
         "-" * 89,
         f"TOTAL COMMITTED PROXY BIDS: ${summary.committed_max:,.2f} "
-        f"(${summary.committed_all_in:,.2f} all-in w/ 15% fee)",
+        f"(${summary.committed_all_in:,.2f} all-in w/ {int(ABSENTEE_FEE * 100)}% fee)",
         "",
         "Special Instructions:",
     ])

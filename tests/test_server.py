@@ -72,7 +72,50 @@ def test_api_email_draft(client):
     assert r.status_code == 200
     text = r.text
     assert "info@bluetoadauctions.com" in text
-    assert "$335.00" in text or "Richmond General" in text
+    assert "$335.00" in text
+    assert "ITEM DESCRIPTION" not in text
+    # Cached BT-016 identification, not the truncated on-disk table row.
+    ident = (
+        "Cardboard multi-row storage box containing bulk sports trading cards "
+        "including hockey, football, and baseball, produced by various manufacturers "
+        "such as Score and Fleer Ultra, c. late 1980s to 2000s."
+    )
+    assert ident in " ".join(text.split())
+
+
+def test_photo_from_raw_maps_container_fields_into_assemble():
+    from src.assemble import assemble_lots
+    from src.bidmath import Confidence
+    from src.server import photo_from_raw
+
+    photo = photo_from_raw(
+        {
+            "identification": "Edison crate",
+            "is_container": True,
+            "contents": ["Blue Amberol"],
+        },
+        photo_id="p1",
+        caption="Lot 41 box",
+        identification="Edison crate",
+        category="phonograph / records",
+        fit_score=0.9,
+        confidence=Confidence.HIGH,
+    )
+    lots = assemble_lots([photo])
+    assert "Blue Amberol" in lots[0].caption
+
+
+def test_photo_from_raw_defaults_when_cache_omits_container_keys():
+    from src.server import photo_from_raw
+
+    photo = photo_from_raw(
+        {"identification": "Red Wing crock"},
+        photo_id="p1",
+        caption="Lot 5",
+        identification="Red Wing crock",
+    )
+    assert photo.is_container is False
+    assert photo.contents == ()
 
 
 class TestTheModelReachesTheQueue:

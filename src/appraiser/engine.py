@@ -392,6 +392,8 @@ class AppraisalEngine:
                         "confidence": "low",
                         "value_magnitude_hint": 0.0,
                         "questions": [],
+                        "is_container": False,
+                        "contents": [],
                         "error": str(e),
                     }
                 results.append(res)

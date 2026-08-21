@@ -16,7 +16,7 @@ from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse
 
 from dataclasses import replace
 from src.intake.manifest import parse_drop, group_into_lots, TriagedPhoto
-from src.assemble import AppraisedPhoto, assemble_lots, NO_COMP
+from src.assemble import AppraisedPhoto, assemble_lots, NO_COMP, compile_absentee_email
 from src.bidmath import (
     Lot, CompEstimate, Confidence as BidConfidence, Priority, Decision,
     price_lot, allocate, summarize, ABSENTEE_FEE, mechanic_from_ruling
@@ -85,6 +85,16 @@ STATE = {
 }
 
 engine = AppraisalEngine()
+
+
+def photo_from_raw(raw_app: dict | None = None, **base) -> AppraisedPhoto:
+    """Map a cached appraisal dict onto AppraisedPhoto, including container fields."""
+    raw = raw_app or {}
+    return AppraisedPhoto(
+        is_container=bool(raw.get("is_container", False)),
+        contents=tuple(raw.get("contents") or ()),
+        **base,
+    )
 
 
 def cached_photo_bytes(lot_id: str) -> bytes | None:
@@ -225,7 +235,8 @@ def get_aug22_state():
             penalty = 0.0
             conf = AppConfidence.NONE
 
-        appraised_photos.append(AppraisedPhoto(
+        appraised_photos.append(photo_from_raw(
+            app_pair[1] if app_pair else None,
             photo_id=lot_tag,
             caption=cap,
             is_lot=is_lot,
@@ -492,12 +503,15 @@ def appraise_live(payload: dict = Body(...)):
 
 @app.get("/api/email", response_class=PlainTextResponse)
 def get_absentee_email():
-    email_path = Path("data/aug22_absentee_bid_email.txt")
-    if not email_path.exists():
-        email_path = Path("/app/data/aug22_absentee_bid_email.txt")
-    if email_path.exists():
-        return email_path.read_text()
-    return "Absentee email draft not generated yet."
+    _, _, lots, decisions, _, _, _ = get_aug22_state()
+    return compile_absentee_email(
+        to="info@bluetoadauctions.com",
+        subject="Absentee Bids - August 22 Antique & Estate Auction (Bidder: Richmond General)",
+        auction_date="Saturday, August 22, 2026",
+        venue="200 Elizabeth Lane, Genoa City, WI",
+        lots=lots,
+        decisions=decisions,
+    )
 
 
 if __name__ == "__main__":

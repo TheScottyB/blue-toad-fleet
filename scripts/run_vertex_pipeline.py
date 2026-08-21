@@ -38,7 +38,7 @@ from src.assemble.email import compile_absentee_email
 from src.bidmath import (
     Lot, CompEstimate, Confidence as BidConfidence, Priority, Decision,
     price_lot, allocate, summarize, ABSENTEE_FEE, snap_to_increment,
-    mechanic_from_ruling, BidMechanic, units_committed
+    mechanic_from_ruling, BidMechanic, units_committed, is_choice_lot,
 )
 
 # Reference valuation comps for approved candidate categories (matching shop pricing bands)
@@ -407,6 +407,7 @@ def run_pipeline(
         if lot_id in REFERENCE_COMPS:
             comp_info = REFERENCE_COMPS[lot_id]
             app_pair = appraisal_by_lot.get(lot_id)
+            raw_app = app_pair[1] if app_pair else {}
             if app_pair:
                 _, raw_app = app_pair
             else:
@@ -415,6 +416,11 @@ def run_pipeline(
             cat = comp_info["cat"]
             ident = raw_app.get("identification", comp_info["desc"])
 
+            per_unit = is_choice_lot(ident, caption)
+            contents = raw_app.get("contents")
+            if raw_app.get("is_container") and contents:
+                ident = f"{ident}: {', '.join(contents)}"
+
             comp_est = CompEstimate(
                 low=comp_info["low"],
                 high=comp_info["high"],
@@ -422,14 +428,17 @@ def run_pipeline(
                 confidence=comp_info["conf"],
             )
 
-            # No ruling on file and no ruling asked for is a plain single lot;
-            # only a ruling that EXISTS and cannot be read is UNKNOWN. Passing
-            # None straight through would flag all 415 lots as needing a ruling
-            # nobody ever requested.
+            # A ruling on file settles the mechanic. Caption detection only
+            # supplies the standing default (CHOICE, take 1) when nobody ruled.
+            # No ruling and no detection is a plain single lot — passing None
+            # through mechanic_from_ruling would flag all 415 lots as UNKNOWN.
             ruling = OPERATOR_APPROVED.get(lot_id, {}).get("ruling")
-            mech, units, wanted = (
-                mechanic_from_ruling(ruling) if ruling
-                else (BidMechanic.STRAIGHT, 1, None))
+            if ruling:
+                mech, units, wanted = mechanic_from_ruling(ruling)
+            elif per_unit:
+                mech, units, wanted = BidMechanic.CHOICE, 1, 1
+            else:
+                mech, units, wanted = BidMechanic.STRAIGHT, 1, None
             lot_obj = Lot(
                 lot_id=lot_id,
                 caption=ident,
@@ -442,13 +451,20 @@ def run_pipeline(
             lots.append(lot_obj)
             decisions.append(apply_operator_cap(price_lot(lot_obj)))
         else:
+            ident = caption or f"Uncaptioned lot (Photo #{primary_photo['sequence']})"
+            per_unit = is_choice_lot(ident, caption)
+            if per_unit:
+                mech, units, wanted = BidMechanic.CHOICE, 1, 1
+            else:
+                mech, units, wanted = BidMechanic.STRAIGHT, 1, None
             lot_obj = Lot(
                 lot_id=lot_id,
-                caption=caption or f"Uncaptioned lot (Photo #{primary_photo['sequence']})",
+                caption=ident,
                 category="general estate",
                 fit_score=0.20,
                 condition_penalty=0.10,
                 comp=CompEstimate(low=None, high=None, source_count=0, confidence=BidConfidence.NONE),
+                mechanic=mech, unit_count=units, units_wanted=wanted,
             )
             lots.append(lot_obj)
             decisions.append(price_lot(lot_obj))
