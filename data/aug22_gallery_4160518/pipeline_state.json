@@ -4,20 +4,20 @@
   "budget_cap": 600.0,
   "auto_send_threshold": 35.0,
   "summary": {
-    "total_lots": 359,
+    "total_lots": 415,
     "allocated": 10,
     "auto_send": 9,
     "needs_approval": 1,
     "needs_human_pricing": 0,
-    "skipped": 349,
+    "skipped": 405,
     "committed_max": 260.0,
     "committed_all_in": 299.0,
     "by_priority": {
       "A": 10,
-      "SKIP": 349
+      "SKIP": 405
     }
   },
   "approved_lots_count": 10,
-  "total_lots_count": 359,
+  "total_lots_count": 415,
   "photos_count": 462
 }

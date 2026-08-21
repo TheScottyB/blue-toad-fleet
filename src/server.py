@@ -29,6 +29,7 @@ from src.appraiser import AppraisalEngine
 from src.gate import CycleView, render_console
 from scripts.run_vertex_pipeline import (
     REFERENCE_COMPS, OPERATOR_APPROVED, operator_lot_inputs, apply_operator_cap,
+    trusted_lot_flags,
 )
 
 app = FastAPI(title="Blue Toad Fleet", version="2.0.0")
@@ -155,15 +156,15 @@ def get_aug22_state():
         cap = p.get("caption", "")
         has_cap = bool(cap.strip())
 
-        # Determine triage flags (from triage cache if present, else previous context heuristic)
-        triage_item = triage_by_photo.get(pid)
-        if triage_item:
-            is_lot = bool(triage_item.get("is_lot", True))
-            same_lot = bool(triage_item.get("same_lot_as_previous", False))
-        else:
-            is_extra_angle = (not has_cap and i > 0 and photos[i - 1]["has_caption"])
-            is_lot = not is_extra_angle
-            same_lot = is_extra_angle
+        # How far Stage 1 is believed about lot boundaries — one implementation,
+        # shared with the pipeline. The console had its own copy and merged a
+        # captioned $25 lot away that the pipeline kept.
+        is_lot, same_lot = trusted_lot_flags(
+            triage_by_photo.get(pid),
+            caption=cap,
+            previous_captioned=bool(i > 0 and photos[i - 1]["has_caption"]),
+            index=i,
+        )
 
         # Determine appraisal attributes
         app_pair = appraisals_by_lot.get(lot_tag)

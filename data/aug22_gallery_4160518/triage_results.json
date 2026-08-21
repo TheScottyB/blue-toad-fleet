@@ -1,0 +1,4622 @@
+[
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Vintage Topps baseball and football cards",
+    "fit_score": 0.5,
+    "worth_appraising": true,
+    "photo_id": "838421457",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Estate costume jewelry trays and necklaces",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838421481",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Box of vintage Hollywood photos",
+    "fit_score": 0.3,
+    "worth_appraising": false,
+    "photo_id": "838421477",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Peyton Manning signed football jersey",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838421497",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Vintage yearbook or book",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838421491",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Michael Jordan signed hat",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838421518",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Dan Marino signed framed photo",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838421527",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Rusty Wallace signed mini helmet",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838421529",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Signed NFL mini helmet",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838421533",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Joe DiMaggio signed baseball hat",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838421537",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Signed sports jerseys and memorabilia",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838421572",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "other",
+    "summary": "Joe Flacco signed jersey",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838421575",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "other",
+    "summary": "Assorted sports hats and jerseys",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838421565",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "vintage toys",
+    "summary": "Box of vintage baseballs and mitts",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838421566",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "breweriana",
+    "summary": "Sports and breweriana collectibles bin",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838421601",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "vintage toys",
+    "summary": "Large box of trading cards",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838421603",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Miniature wooden hope chest",
+    "fit_score": 0.3,
+    "worth_appraising": true,
+    "photo_id": "838421613",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Scrapbook with trade cards",
+    "fit_score": 0.6,
+    "worth_appraising": true,
+    "photo_id": "838421620",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Collector spoons in wooden box",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838421629",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Box of assorted baseball cards",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838421627",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Pink Princess phone with box",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838421663",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Harry Potter postcard books",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838421674",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Reggie Bush signed USC jersey",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838421653",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Pope John Paul II figure",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838421683",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Vintage Mahjong game set in case",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838421703",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Waterford crystal bowl",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838421723",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Porcelain butterfly bowl with pewter rim",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838421737",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Assorted animal and character figurines lot",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838421749",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "breweriana",
+    "summary": "Chicago Bears glassware set in box",
+    "fit_score": 0.6,
+    "worth_appraising": true,
+    "photo_id": "838421766",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Assorted non-sport trading cards lot",
+    "fit_score": 0.3,
+    "worth_appraising": true,
+    "photo_id": "838421778",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "breweriana",
+    "summary": "Vintage beer advertising glass pitchers",
+    "fit_score": 0.9,
+    "worth_appraising": true,
+    "photo_id": "838421788",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Assorted vintage metal trucks and parts",
+    "fit_score": 0.9,
+    "worth_appraising": true,
+    "photo_id": "838421906",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Box of vintage small advertising goods",
+    "fit_score": 0.7,
+    "worth_appraising": true,
+    "photo_id": "838421924",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Box of assorted vintage glassware",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838421935",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Stack of vintage Playboy magazines",
+    "fit_score": 0.3,
+    "worth_appraising": false,
+    "photo_id": "838421939",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Box of mixed vintage smalls and patches",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838421955",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Box of vintage hardware and iron",
+    "fit_score": 0.3,
+    "worth_appraising": false,
+    "photo_id": "838421989",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Vintage Tinkertoy construction sets",
+    "fit_score": 0.9,
+    "worth_appraising": true,
+    "photo_id": "838421983",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Tinkertoy set and miscellaneous items",
+    "fit_score": 0.7,
+    "worth_appraising": true,
+    "photo_id": "838421992",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Box of mixed vintage toys and collectibles",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838421994",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Collection of Edison phonograph cylinder records",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838421998",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "HP OfficeJet Pro 8025e printer",
+    "fit_score": 0.0,
+    "worth_appraising": false,
+    "photo_id": "838422002",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Box of miniature dollhouse furniture",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838422036",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Wooden wall clock with pendulum window",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838422039",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Glass gazing balls or ornaments",
+    "fit_score": 0.3,
+    "worth_appraising": false,
+    "photo_id": "838422051",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Schumacher PRO 8A battery chargers",
+    "fit_score": 0.0,
+    "worth_appraising": false,
+    "photo_id": "838422076",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Box of mixed ceramics and trinkets",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838422042",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "ET ceramic nightlight figure",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838422082",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Beachball lamp shade",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838422047",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Lionel structural building set",
+    "fit_score": 0.9,
+    "worth_appraising": true,
+    "photo_id": "838422109",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Disneyland tickets and vintage ephemera",
+    "fit_score": 0.5,
+    "worth_appraising": true,
+    "photo_id": "838422112",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "travel posters",
+    "summary": "Vintage travel ephemera and postcards",
+    "fit_score": 0.5,
+    "worth_appraising": true,
+    "photo_id": "838422100",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Vintage silver trumpet instrument",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838422119",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "cameras",
+    "summary": "Minolta 35mm camera in leather case",
+    "fit_score": 1.0,
+    "worth_appraising": true,
+    "photo_id": "838422131",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "cameras",
+    "summary": "Fujica 35mm camera in leather case",
+    "fit_score": 0.9,
+    "worth_appraising": true,
+    "photo_id": "838422157",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Box of wheat cent pennies",
+    "fit_score": 0.2,
+    "worth_appraising": true,
+    "photo_id": "838422163",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "signed sports photos",
+    "fit_score": 0.0,
+    "worth_appraising": false,
+    "photo_id": "838422146",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "other",
+    "summary": "Joe DiMaggio signed photo",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838422166",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Framed signed Walter Payton photo",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838422170",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Signed multi-player baseball photo",
+    "fit_score": 0.2,
+    "worth_appraising": true,
+    "photo_id": "838422174",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Signed Michael Jordan framed photo",
+    "fit_score": 0.2,
+    "worth_appraising": true,
+    "photo_id": "838422175",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Framed signed Jim Brown photo",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838422195",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Graded 1977 Topps Star Wars card",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838422178",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Graded sports trading cards lot",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838422180",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "vintage toys",
+    "summary": "Graded sports trading cards close-up",
+    "fit_score": 0.3,
+    "worth_appraising": false,
+    "photo_id": "838422181",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Assorted vintage handheld electronic games",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838422230",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Bridal collector doll in display case",
+    "fit_score": 0.4,
+    "worth_appraising": false,
+    "photo_id": "838422243",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Box of vintage glassware",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838422227",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Box of mixed small collectibles",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838422258",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "breweriana",
+    "summary": "Box of mixed beer steins and glasses",
+    "fit_score": 0.9,
+    "worth_appraising": true,
+    "photo_id": "838422248",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Marilyn Monroe collector plates",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838422254",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "unsorted",
+    "summary": "Boxes of mixed smalls and ceramics",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838422240",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Poppy Trail dishes in plastic tote",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838422241",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Boxes of assorted vintage china",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838422293",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Poppy Trail ceramic dishes in boxes",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838422309",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "other",
+    "summary": "Poppy Trail ceramic dishes in boxes",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838422298",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "other",
+    "summary": "Poppy Trail ceramic dishes in boxes",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838422285",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "other",
+    "summary": "Poppy Trail ceramic dishes in boxes",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838422321",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "other",
+    "summary": "Poppy Trail ceramic dishes in boxes",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838422349",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "other",
+    "summary": "Poppy Trail ceramic dishes in boxes",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838422356",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Vintage matchbooks in advertising box",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838422366",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Miniature Coca-Cola glass bottles",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838422361",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Blue metal cantilever toolbox with tools",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838422384",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Box of mixed vintage smalls and advertising",
+    "fit_score": 0.6,
+    "worth_appraising": true,
+    "photo_id": "838422416",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Box of assorted vintage wrenches",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838422456",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Plastic bin of costume jewelry",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838422448",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Stamp collection in box",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838422495",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Mlay skin care device",
+    "fit_score": 0.0,
+    "worth_appraising": false,
+    "photo_id": "838422509",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "other",
+    "summary": "Mlay skin care device case",
+    "fit_score": 0.0,
+    "worth_appraising": false,
+    "photo_id": "838422512",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Box of polished rocks and minerals",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838422546",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Remington iLight skin care system",
+    "fit_score": 0.0,
+    "worth_appraising": false,
+    "photo_id": "838422559",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Pontiac accessory kit bag",
+    "fit_score": 0.5,
+    "worth_appraising": true,
+    "photo_id": "838422552",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "1977 commemorative stamp album",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838422556",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Foreign coin collection in binder",
+    "fit_score": 0.3,
+    "worth_appraising": true,
+    "photo_id": "838422570",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Chicago Bulls Michael Jordan memorabilia lot",
+    "fit_score": 0.3,
+    "worth_appraising": false,
+    "photo_id": "838422589",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Box of vintage sports programs photos",
+    "fit_score": 0.3,
+    "worth_appraising": true,
+    "photo_id": "838422592",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "advertising",
+    "summary": "Dragnet signed framed photo",
+    "fit_score": 0.5,
+    "worth_appraising": true,
+    "photo_id": "838422635",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Assorted White Sox collectibles and toys",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838422622",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Jordan and Pippen championship photo",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838422623",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Box of assorted sports trading cards",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838422615",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "1994 World Series Baseball",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838422646",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Don Mattingly signed baseball",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838422630",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Chicago Cubs signed baseball display case",
+    "fit_score": 0.3,
+    "worth_appraising": true,
+    "photo_id": "838422680",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Billy Martin signed baseball in case",
+    "fit_score": 0.2,
+    "worth_appraising": true,
+    "photo_id": "838422657",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Ryan Theriot signed baseball in case",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838422683",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "unsorted",
+    "summary": "Greg Maddux signed baseball in case",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838422695",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Bud Selig signed baseball in case",
+    "fit_score": 0.3,
+    "worth_appraising": true,
+    "photo_id": "838422687",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "USA baseball training program brochure",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838422756",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Nintendo Game Boy games and case",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838422761",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Assorted vintage baseball cards",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838422814",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "vintage toys",
+    "summary": "Assorted vintage baseball cards",
+    "fit_score": 0.3,
+    "worth_appraising": false,
+    "photo_id": "838422869",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "vintage toys",
+    "summary": "Nolan Ryan Tom Seaver rookie card",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838422827",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "1970 US Mint proof coin set",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838422893",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Nellie Fox baseball cards in holder",
+    "fit_score": 0.3,
+    "worth_appraising": true,
+    "photo_id": "838422898",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Sports bobble head boxes",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838422902",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Signed sports photos in protectors",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838422925",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "other",
+    "summary": "Signed sports photos in top loaders",
+    "fit_score": 0.3,
+    "worth_appraising": false,
+    "photo_id": "838422928",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "advertising",
+    "summary": "Vintage signed sports ephemera and programs",
+    "fit_score": 0.3,
+    "worth_appraising": false,
+    "photo_id": "838422957",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "other",
+    "summary": "1929 White Sox baseball scorecard program",
+    "fit_score": 0.3,
+    "worth_appraising": false,
+    "photo_id": "838422969",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Elvis poster and vintage baseball ephemera",
+    "fit_score": 0.2,
+    "worth_appraising": true,
+    "photo_id": "838423016",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "advertising",
+    "summary": "Great Moments in Cubs Baseball vinyl",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838423054",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Signed vintage sports photos and cards",
+    "fit_score": 0.5,
+    "worth_appraising": true,
+    "photo_id": "838423059",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Topps micro baseball card set",
+    "fit_score": 0.4,
+    "worth_appraising": false,
+    "photo_id": "838423067",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "vintage toys",
+    "summary": "Assorted Topps Traded baseball card sets",
+    "fit_score": 0.5,
+    "worth_appraising": true,
+    "photo_id": "838423084",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Framed cut signatures",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838423176",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Signed baseball bats lot",
+    "fit_score": 0.3,
+    "worth_appraising": true,
+    "photo_id": "838423181",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "vintage toys",
+    "summary": "Louisville Slugger signature baseball bat",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838423187",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Frank Thomas signed framed photo",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838423221",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Signed vintage baseball framed photo",
+    "fit_score": 0.2,
+    "worth_appraising": true,
+    "photo_id": "838423223",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Framed Michael Jordan and sports photos",
+    "fit_score": 0.3,
+    "worth_appraising": true,
+    "photo_id": "838423251",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Justin Timberlake signed promo photo",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838423231",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Jim Carrey signed promo photo",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838423269",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Assorted factory sealed baseball card sets",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838423285",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Assorted Squishmallows plush toys",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838423371",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Live animal cage trap",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838423361",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Vintage laundry wringer",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838423389",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Vintage Carrom Commando skittles game",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838423382",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "New boxed shower head faucet",
+    "fit_score": 0.0,
+    "worth_appraising": false,
+    "photo_id": "838423405",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Tarzan movie standee display",
+    "fit_score": 0.5,
+    "worth_appraising": true,
+    "photo_id": "838423421",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Madame Alexander Snow White doll",
+    "fit_score": 0.7,
+    "worth_appraising": true,
+    "photo_id": "838423432",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Assorted vintage toys in crate",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838423427",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Anchor Hocking wheat snack set",
+    "fit_score": 0.3,
+    "worth_appraising": false,
+    "photo_id": "838423437",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Vintage white roller skates in box",
+    "fit_score": 0.6,
+    "worth_appraising": true,
+    "photo_id": "838423489",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": false,
+    "same_lot_as_previous": true,
+    "category": "vintage toys",
+    "summary": "Roller skates box edge visible",
+    "fit_score": 0.8,
+    "worth_appraising": false,
+    "photo_id": "838423492",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Glass piggy bank and pencil sharpener",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838423481",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "vintage toys",
+    "summary": "Glass piggy bank and pencil sharpener",
+    "fit_score": 0.4,
+    "worth_appraising": false,
+    "photo_id": "838423485",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "stoneware",
+    "summary": "Blue Fiesta Ware dishes set",
+    "fit_score": 0.5,
+    "worth_appraising": true,
+    "photo_id": "838423533",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Vintage french fry cutter box",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838423499",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "cameras",
+    "summary": "Vintage brass and leather binoculars",
+    "fit_score": 0.5,
+    "worth_appraising": true,
+    "photo_id": "838423502",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Vintage manual coffee grinder",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838423553",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "native american",
+    "summary": "Native American style pottery vessels",
+    "fit_score": 0.7,
+    "worth_appraising": true,
+    "photo_id": "838423567",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Pyrex mixing bowls nested",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838423583",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "cameras",
+    "summary": "Yashica FX-D Quartz camera",
+    "fit_score": 1.0,
+    "worth_appraising": true,
+    "photo_id": "838423561",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Vintage rhinestone pendant necklace in box",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838423610",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": false,
+    "same_lot_as_previous": true,
+    "category": "vintage toys",
+    "summary": "Table of mixed items",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838423631",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Milk glass punch cups on box",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838423620",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Lego building blocks set",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838423645",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Top Contender black boxing gloves",
+    "fit_score": 0.3,
+    "worth_appraising": false,
+    "photo_id": "838423649",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "cameras",
+    "summary": "Polaroid Automatic 250 Land Camera",
+    "fit_score": 0.9,
+    "worth_appraising": true,
+    "photo_id": "838423718",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Vintage Tonka toy crane truck",
+    "fit_score": 0.9,
+    "worth_appraising": true,
+    "photo_id": "838423740",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Assorted vintage and character bobbleheads",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838423764",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "vintage toys",
+    "summary": "Assorted vintage and character bobbleheads",
+    "fit_score": 0.5,
+    "worth_appraising": true,
+    "photo_id": "838423785",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "vintage toys",
+    "summary": "Assorted character bobbleheads",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838423791",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "vintage toys",
+    "summary": "Assorted character bobbleheads",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838423836",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "vintage toys",
+    "summary": "Assorted character bobbleheads",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838423867",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Bob Ross Toonies vinyl figure",
+    "fit_score": 0.6,
+    "worth_appraising": true,
+    "photo_id": "838423967",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Assorted vintage bobblehead figures",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838423980",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Vintage Wahl Eversharp pen set",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838424018",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Antique bone handled flatware forks",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838424046",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Bone handled steak knives",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838424051",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Box of bone handled flatware",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838424087",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Beatles special issue magazine",
+    "fit_score": 0.5,
+    "worth_appraising": true,
+    "photo_id": "838424138",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Man From U.N.C.L.E. vintage magazine",
+    "fit_score": 0.4,
+    "worth_appraising": false,
+    "photo_id": "838424142",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Vintage pens and pencils set",
+    "fit_score": 0.3,
+    "worth_appraising": false,
+    "photo_id": "838424181",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Assorted vintage wrist and pocket watches",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838424197",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "other",
+    "summary": "Assorted vintage wrist watches and jewelry",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838424210",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Assorted vintage costume jewelry necklaces",
+    "fit_score": 0.3,
+    "worth_appraising": false,
+    "photo_id": "838424232",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "other",
+    "summary": "Assorted vintage costume jewelry necklaces",
+    "fit_score": 0.0,
+    "worth_appraising": false,
+    "photo_id": "838424264",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "other",
+    "summary": "Assorted vintage costume jewelry and pins",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838424282",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "other",
+    "summary": "Assorted vintage costume jewelry and pins",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838424323",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "other",
+    "summary": "Vintage costume jewelry and pins",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838424308",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Wonder Woman shield prop",
+    "fit_score": 0.5,
+    "worth_appraising": true,
+    "photo_id": "838424370",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Hummingbird stained glass panel",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838424439",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Metal sun wall art sculptures",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838424447",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Chicago Cubs sports pennants",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838424481",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Framed Searle Grain wheat prices chart",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838424493",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "travel posters",
+    "summary": "Pink Floyd concert poster",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838424496",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Jurassic Park 3-D lenticular panels",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838424487",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Canada Dry tonic water sign",
+    "fit_score": 0.85,
+    "worth_appraising": true,
+    "photo_id": "838424517",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Signed Packers quarterback legends poster",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838424544",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "railroad",
+    "summary": "Waukegan vs Milwaukee safety contest board",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838424596",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Big Chief fish meal feed bag",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838424633",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Modern collage picture frames",
+    "fit_score": 0.0,
+    "worth_appraising": false,
+    "photo_id": "838424627",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Framed Green Bay Packers plaques",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838424661",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "other",
+    "summary": "Green Bay Packers framed plaques",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838424654",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Framed Saturday Evening Post cover",
+    "fit_score": 0.4,
+    "worth_appraising": false,
+    "photo_id": "838424686",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Framed Terry Bradshaw autographed photo",
+    "fit_score": 0.3,
+    "worth_appraising": false,
+    "photo_id": "838424692",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Ron Harper signed photo",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838424705",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Ryne Sandberg signed photo",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838424731",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Duke's Mixture tobacco framed advertising poster",
+    "fit_score": 0.9,
+    "worth_appraising": true,
+    "photo_id": "838424746",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Planters Peanuts tin sign",
+    "fit_score": 0.9,
+    "worth_appraising": true,
+    "photo_id": "838424774",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Framed Michael Jordan signed photos",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838424788",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Framed hockey signed memorabilia display",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838424874",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Framed vintage beaded purse display",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838424881",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "other",
+    "summary": "Framed vintage beaded purse display",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838424900",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "other",
+    "summary": "Framed beaded purse display",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838424895",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Mattel store displays",
+    "fit_score": 0.9,
+    "worth_appraising": true,
+    "photo_id": "838424980",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Boy Scout Fun Fair poster sign",
+    "fit_score": 0.6,
+    "worth_appraising": true,
+    "photo_id": "838424981",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Framed embroidered prayer sampler",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838425052",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Wooden baseball display case",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838425094",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Star Wars posters lot",
+    "fit_score": 0.5,
+    "worth_appraising": true,
+    "photo_id": "838425086",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Framed vintage hockey player poster",
+    "fit_score": 0.4,
+    "worth_appraising": false,
+    "photo_id": "838425089",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Carved lion head walking stick",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838425100",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Wooden display case and boxed doll",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838425101",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "vintage toys",
+    "summary": "Bob Hope record set and doll",
+    "fit_score": 0.3,
+    "worth_appraising": false,
+    "photo_id": "838425090",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Vintage khaki trench coat",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838425091",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "other",
+    "summary": "Willis & Geiger jacket label",
+    "fit_score": 0.3,
+    "worth_appraising": false,
+    "photo_id": "838425112",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Box of assorted sports books",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838425092",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "unsorted",
+    "summary": "Box of assorted sports books",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838425123",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Vintage Simpsons poster",
+    "fit_score": 0.5,
+    "worth_appraising": true,
+    "photo_id": "838425103",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Vintage Firestone outboard motor",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838425104",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Large heavy duty gear chest",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838425106",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Sherwood hockey gloves in plastic bin",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838425140",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Ken Griffey Jr Nike banner",
+    "fit_score": 0.5,
+    "worth_appraising": true,
+    "photo_id": "838425126",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Seraphim Classics angel figures in boxes",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838425128",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Precious Moments figurines in boxes",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838425147",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Box of assorted glass animal figurines",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838425252",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Art glass paperweights and figurines",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838425240",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "stoneware",
+    "summary": "Assorted pottery and ceramic vessels",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838425265",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Ball jars filled with seashells",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838425283",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Drift RC racing car box",
+    "fit_score": 0.6,
+    "worth_appraising": true,
+    "photo_id": "838425305",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Box of mini wooden nutcrackers",
+    "fit_score": 0.5,
+    "worth_appraising": true,
+    "photo_id": "838425311",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Century of Progress glass bottle",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838425392",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Red glass bowl",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838425431",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Amber glass handled bowl",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838425469",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "US Air Force military uniforms box",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838425474",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Chicago Bears fan cave wooden plaques",
+    "fit_score": 0.3,
+    "worth_appraising": false,
+    "photo_id": "838425485",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Assorted Funko Pop figures",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838425490",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "MSI 24 inch curved gaming monitor",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838425544",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Vintage glass Christmas ornaments in boxes",
+    "fit_score": 0.3,
+    "worth_appraising": false,
+    "photo_id": "838425542",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Framed Peanuts Snoopy comic strip",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838425605",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Vintage brass squeeze bulb horn",
+    "fit_score": 0.6,
+    "worth_appraising": true,
+    "photo_id": "838425587",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Batman wallet in gift bag",
+    "fit_score": 0.3,
+    "worth_appraising": false,
+    "photo_id": "838425653",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Scottie dog glass pitcher and cups",
+    "fit_score": 0.3,
+    "worth_appraising": false,
+    "photo_id": "838425656",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "breweriana",
+    "summary": "Vintage Schlitz Pop Topper straw hat",
+    "fit_score": 0.95,
+    "worth_appraising": true,
+    "photo_id": "838425661",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Assorted circus collectibles and programs",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838425631",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Splat Bear toy and hat",
+    "fit_score": 0.3,
+    "worth_appraising": false,
+    "photo_id": "838425644",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "vintage toys",
+    "summary": "Seal Bear toy box and photo",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838425632",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Box of assorted Coca-Cola collectibles",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838425666",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "advertising",
+    "summary": "Assorted Coca-Cola pillows and collectibles",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838425693",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "advertising",
+    "summary": "Assorted Coca-Cola collectibles box",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838425667",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Vintage Hasbro Lite Brite toy",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838425669",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Box of assorted dog figurines",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838425695",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Scarlett O'Hara Barbie doll",
+    "fit_score": 0.5,
+    "worth_appraising": true,
+    "photo_id": "838425670",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Assorted boxed NASCAR diecast toys",
+    "fit_score": 0.5,
+    "worth_appraising": true,
+    "photo_id": "838425671",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Box of assorted vintage ceramics",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838425696",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Framed vintage boxing newspaper headlines",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838425672",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Tubs of assorted sports shoes",
+    "fit_score": 0.0,
+    "worth_appraising": false,
+    "photo_id": "838425673",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Tub of assorted sports apparel",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838425682",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "other",
+    "summary": "Another angle of sports apparel tubs",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838425699",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Box of 1983 catalogs and ephemera",
+    "fit_score": 0.3,
+    "worth_appraising": false,
+    "photo_id": "838425683",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Box of sports ephemera and magazines",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838425675",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Ringling Brothers circus programs and magazines",
+    "fit_score": 0.3,
+    "worth_appraising": true,
+    "photo_id": "838425690",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "blue baseball catchers gear",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838425677",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "vintage toys",
+    "summary": "Baseball gear and magazine lot",
+    "fit_score": 0.3,
+    "worth_appraising": false,
+    "photo_id": "838425724",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "other",
+    "summary": "Pope John Paul records and magazines",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838425725",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "unsorted",
+    "summary": "Rock and roll stamp collection",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838425716",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "breweriana",
+    "summary": "Milwaukee Brewers sports memorabilia collection",
+    "fit_score": 0.3,
+    "worth_appraising": false,
+    "photo_id": "838425718",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "unsorted",
+    "summary": "Box of sports autographs and memorabilia",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838425744",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Marquette basketball memorabilia and toys",
+    "fit_score": 0.3,
+    "worth_appraising": false,
+    "photo_id": "838425733",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "breweriana",
+    "summary": "Budweiser frozen egg products tin",
+    "fit_score": 0.9,
+    "worth_appraising": true,
+    "photo_id": "838425770",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Vintage coffee cans and tins",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838425775",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Ernie Banks signed shirt",
+    "fit_score": 0.3,
+    "worth_appraising": true,
+    "photo_id": "838425794",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Box of mixed small vintage items",
+    "fit_score": 0.3,
+    "worth_appraising": true,
+    "photo_id": "838425803",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "advertising",
+    "summary": "Box of mixed small vintage items",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838425824",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "cameras",
+    "summary": "Box of vintage stereoview cards",
+    "fit_score": 0.5,
+    "worth_appraising": true,
+    "photo_id": "838425876",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Assorted vintage toys and advertising items",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838425903",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Coca-Cola collectible airplane musical bank",
+    "fit_score": 0.85,
+    "worth_appraising": true,
+    "photo_id": "838425902",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Handmade glass ornament and diecast cars",
+    "fit_score": 0.3,
+    "worth_appraising": false,
+    "photo_id": "838425916",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Vintage Shooting Times magazine September 1962",
+    "fit_score": 0.4,
+    "worth_appraising": false,
+    "photo_id": "838425957",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "NFL Saints diecast toy cars",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838425962",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Vintage Topps baseball and football cards",
+    "fit_score": 0.7,
+    "worth_appraising": true,
+    "photo_id": "838425982",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "vintage toys",
+    "summary": "Vintage Topps football trading cards",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838426043",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "vintage toys",
+    "summary": "Vintage Roberto Clemente trading card",
+    "fit_score": 0.3,
+    "worth_appraising": true,
+    "photo_id": "838426067",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Vintage Yogi Berra trading cards",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838426131",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Vintage Roger Maris baseball card",
+    "fit_score": 0.5,
+    "worth_appraising": true,
+    "photo_id": "838426151",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Vintage Sandy Koufax baseball card",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838426165",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Vintage Bart Starr football card",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838426198",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Vintage Paul Hornung football card",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838426222",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Vintage Willie Mays baseball card",
+    "fit_score": 0.3,
+    "worth_appraising": true,
+    "photo_id": "838426238",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Vintage Yogi Berra baseball card",
+    "fit_score": 0.3,
+    "worth_appraising": true,
+    "photo_id": "838426246",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "1960 Topps Home Run Leaders card",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838426256",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Roger Maris 1958 Topps baseball card",
+    "fit_score": 0.5,
+    "worth_appraising": true,
+    "photo_id": "838426305",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "1958 Topps Mickey Mantle card",
+    "fit_score": 0.5,
+    "worth_appraising": true,
+    "photo_id": "838426317",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "1958 Willie Mays baseball card",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838426369",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "German silver and gemstone jewelry",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838426388",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "other",
+    "summary": "German silver and gemstone jewelry",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838426395",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "native american",
+    "summary": "German silver and gemstone necklaces",
+    "fit_score": 0.5,
+    "worth_appraising": true,
+    "photo_id": "838426445",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Chicago Bears number 17 jersey",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838426435",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "1963 Packers Bears game program",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838426475",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": false,
+    "same_lot_as_previous": false,
+    "category": "unsorted",
+    "summary": "Empty display case",
+    "fit_score": 0.0,
+    "worth_appraising": false,
+    "photo_id": "838426511",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "unsorted",
+    "summary": "Box of mixed hats and items",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838426495",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "vintage toys",
+    "summary": "Wonder Woman action figure box",
+    "fit_score": 0.5,
+    "worth_appraising": true,
+    "photo_id": "838426500",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Shure microphone with case",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838426534",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Box of trading cards",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838426537",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Jenkins signed jersey",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838426530",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "unsorted",
+    "summary": "Box of signed sports memorabilia",
+    "fit_score": 0.2,
+    "worth_appraising": true,
+    "photo_id": "838426539",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Hand tools in wooden box",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838426552",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Ceramic fruit wall plaques",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838426544",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Box of vintage sewing supplies advertising",
+    "fit_score": 0.5,
+    "worth_appraising": true,
+    "photo_id": "838426547",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Vintage children records and books",
+    "fit_score": 0.3,
+    "worth_appraising": false,
+    "photo_id": "838426555",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Box of mixed vintage smalls and print",
+    "fit_score": 0.5,
+    "worth_appraising": true,
+    "photo_id": "838426566",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "cameras",
+    "summary": "Vintage Bell and Howell movie projectors",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838426558",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "cameras",
+    "summary": "Vintage camera and projector gear",
+    "fit_score": 0.9,
+    "worth_appraising": true,
+    "photo_id": "838426561",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Box of vintage linens and handkerchiefs",
+    "fit_score": 0.0,
+    "worth_appraising": false,
+    "photo_id": "838426569",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Moon walk completed Chicago Tribune newspaper",
+    "fit_score": 0.5,
+    "worth_appraising": true,
+    "photo_id": "838426595",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Vintage children books lot",
+    "fit_score": 0.3,
+    "worth_appraising": false,
+    "photo_id": "838426625",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Paintball gun and mask set",
+    "fit_score": 0.3,
+    "worth_appraising": false,
+    "photo_id": "838426600",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Box of assorted trading cards",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838426634",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "vintage toys",
+    "summary": "Box of sports trading cards",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838426604",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "cameras",
+    "summary": "Vintage Kodak camera with flashbulbs",
+    "fit_score": 0.9,
+    "worth_appraising": true,
+    "photo_id": "838426687",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "stoneware",
+    "summary": "Van Briggle glazed ceramic ashtray",
+    "fit_score": 0.5,
+    "worth_appraising": true,
+    "photo_id": "838426700",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Collection of boxed NASCAR diecast cars",
+    "fit_score": 0.6,
+    "worth_appraising": true,
+    "photo_id": "838426704",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "vintage toys",
+    "summary": "More boxed NASCAR diecast cars",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838426714",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "SCX slot car track accessories",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838426711",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Vintage carved wooden bottle stoppers",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838426731",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Tiny Golden Library vintage book set",
+    "fit_score": 0.6,
+    "worth_appraising": true,
+    "photo_id": "838426725",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Vintage wooden jigsaw puzzle in box",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838426756",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Assorted autographed baseballs in cases",
+    "fit_score": 0.2,
+    "worth_appraising": true,
+    "photo_id": "838426737",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "railroad",
+    "summary": "Dietz railroad or inspectors lantern",
+    "fit_score": 0.9,
+    "worth_appraising": true,
+    "photo_id": "838426767",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "railroad",
+    "summary": "Dietz lantern and pharaoh statue",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838426777",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "other",
+    "summary": "Ammo and brass cartridge cases",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838426803",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Assorted sports trading cards collection",
+    "fit_score": 0.3,
+    "worth_appraising": true,
+    "photo_id": "838426798",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "breweriana",
+    "summary": "Box of assorted vintage belt buckles",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838426851",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Box of vintage cigarette lighters",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838426863",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Stauer wristwatch in box",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838426880",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Bradford Exchange chronograph watch in box",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838426883",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Two boxed wristwatches",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838426898",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Morgan dollar pocket watch in box",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838426905",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "breweriana",
+    "summary": "Jim Beam decanter bells in boxes",
+    "fit_score": 0.7,
+    "worth_appraising": true,
+    "photo_id": "838426914",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Box of Louis L'Amour paperbacks",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838426938",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "SpecCast diecast metal tractor replica",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838426943",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Gas pump shaped pocket knives collection",
+    "fit_score": 0.9,
+    "worth_appraising": true,
+    "photo_id": "838426953",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "vintage toys",
+    "summary": "Vintage toy cars and knives collection",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838426958",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Typewriter, gargoyle figurine, and toy cars",
+    "fit_score": 0.3,
+    "worth_appraising": true,
+    "photo_id": "838426979",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Figurines and miniature gas pump knives",
+    "fit_score": 0.5,
+    "worth_appraising": true,
+    "photo_id": "838427006",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "breweriana",
+    "summary": "Budweiser collectible belt buckles",
+    "fit_score": 1.0,
+    "worth_appraising": true,
+    "photo_id": "838427017",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Vintage Royal Quiet De Luxe typewriter",
+    "fit_score": 0.3,
+    "worth_appraising": true,
+    "photo_id": "838427032",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Carved wooden cuckoo clock",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838427036",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Vintage X-Men comic books",
+    "fit_score": 0.4,
+    "worth_appraising": false,
+    "photo_id": "838427024",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Vintage Sands 2200 Pong console",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838427069",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Harley Davidson pocket watches and collectibles",
+    "fit_score": 0.6,
+    "worth_appraising": true,
+    "photo_id": "838427118",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Box of figurines and trinket boxes",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838427122",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "John Wayne collectibles and clock",
+    "fit_score": 0.3,
+    "worth_appraising": false,
+    "photo_id": "838427114",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Thomas Kinkade Christmas train set",
+    "fit_score": 0.6,
+    "worth_appraising": true,
+    "photo_id": "838427163",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Gone with the Wind boxed dolls",
+    "fit_score": 0.4,
+    "worth_appraising": false,
+    "photo_id": "838427162",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Vintage trophy cup and boxing gloves",
+    "fit_score": 0.3,
+    "worth_appraising": false,
+    "photo_id": "838427187",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "vintage toys",
+    "summary": "Muhammad Ali signed boxing gloves",
+    "fit_score": 0.5,
+    "worth_appraising": true,
+    "photo_id": "838427176",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Replica Packers championship rings set",
+    "fit_score": 0.3,
+    "worth_appraising": false,
+    "photo_id": "838427228",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "1991 Topps Traded Baseball Cards Set",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838427236",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Vintage Babe Ruth postcards",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838427262",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Mickey Mantle Post Cereal panel",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838427283",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Framed 1988 McDonald Olympic pin set",
+    "fit_score": 0.6,
+    "worth_appraising": true,
+    "photo_id": "838427289",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Mickey Mouse Zippo lighter",
+    "fit_score": 0.5,
+    "worth_appraising": true,
+    "photo_id": "838427299",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Engraved brass Zippo lighter",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838427280",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Arnold Palmer signed framed photo",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838427297",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Box of vintage Hollywood publicity photos",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838427315",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Assorted sports jerseys in a bin",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838427318",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Vans jacket and hat",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838427312",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Trading cards and action figure parts",
+    "fit_score": 0.6,
+    "worth_appraising": true,
+    "photo_id": "838427338",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "vintage toys",
+    "summary": "Box of sports trading cards",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838427321",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Vince Lombardi era Green Bay Packers booklet",
+    "fit_score": 0.3,
+    "worth_appraising": false,
+    "photo_id": "838427358",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Box of assorted trading gaming cards",
+    "fit_score": 0.3,
+    "worth_appraising": true,
+    "photo_id": "838427374",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "vintage toys",
+    "summary": "Garbage Pail Kids trading cards",
+    "fit_score": 0.5,
+    "worth_appraising": true,
+    "photo_id": "838427367",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Box of sports trading cards",
+    "fit_score": 0.3,
+    "worth_appraising": true,
+    "photo_id": "838427376",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Action figures and military toy accessories",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838427390",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "vintage toys",
+    "summary": "GI Joe action figures in box",
+    "fit_score": 0.9,
+    "worth_appraising": true,
+    "photo_id": "838427396",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "vintage toys",
+    "summary": "Group of loose vintage GI Joe figures",
+    "fit_score": 0.9,
+    "worth_appraising": true,
+    "photo_id": "838427401",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Vintage GI Joe figures and cards",
+    "fit_score": 0.9,
+    "worth_appraising": true,
+    "photo_id": "838427382",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "unsorted",
+    "summary": "Box of vintage postcards",
+    "fit_score": 0.3,
+    "worth_appraising": false,
+    "photo_id": "838427384",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Box of baseball cards and memorabilia",
+    "fit_score": 0.3,
+    "worth_appraising": true,
+    "photo_id": "838427411",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Box of vintage pins and tokens",
+    "fit_score": 0.5,
+    "worth_appraising": true,
+    "photo_id": "838427419",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Vintage Hot Wheels Gear Box carrying case",
+    "fit_score": 0.9,
+    "worth_appraising": true,
+    "photo_id": "838427421",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Vintage Kentucky Rifle toy in box",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838427416",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Cast iron Route 66 sign",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838427417",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Cast iron figural advertising plaque",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838427449",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Daisy BB pistol in box",
+    "fit_score": 0.9,
+    "worth_appraising": true,
+    "photo_id": "838427442",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Vintage toy sword and guns",
+    "fit_score": 0.7,
+    "worth_appraising": true,
+    "photo_id": "838427457",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "vintage toys",
+    "summary": "Vintage toy rifle and Zorro set",
+    "fit_score": 0.9,
+    "worth_appraising": true,
+    "photo_id": "838427445",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "vintage toys",
+    "summary": "Zorro toy weapon set",
+    "fit_score": 0.9,
+    "worth_appraising": true,
+    "photo_id": "838427478",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Cast iron cherub boot scraper",
+    "fit_score": 0.3,
+    "worth_appraising": true,
+    "photo_id": "838427494",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Box of assorted vintage toys",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838427469",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "vintage toys",
+    "summary": "Vintage Barbie and Ken dolls",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838427498",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": false,
+    "same_lot_as_previous": true,
+    "category": "vintage toys",
+    "summary": "Vintage Barbie and Ken dolls",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838427504",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Box of vintage toys and accessories",
+    "fit_score": 0.6,
+    "worth_appraising": true,
+    "photo_id": "838427492",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Box of vintage paper ephemera",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838427511",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Box of vintage cap guns",
+    "fit_score": 0.9,
+    "worth_appraising": true,
+    "photo_id": "838427516",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Box of vintage novelty items",
+    "fit_score": 0.7,
+    "worth_appraising": true,
+    "photo_id": "838427535",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "unsorted",
+    "summary": "Box of mixed tools and gadgets",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838427554",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "other",
+    "summary": "Box of mixed tools and gadgets",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838427544",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Face Off hockey board game",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838427550",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Box of assorted sports collectibles",
+    "fit_score": 0.6,
+    "worth_appraising": true,
+    "photo_id": "838427590",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "vintage toys",
+    "summary": "Sports videodiscs and collectibles box",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838427596",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "N scale model train set box",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838427575",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Box of assorted costume jewelry",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838427614",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Marigold carnival glass ruffled bowl",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838427579",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Asian bronze Buddha face door knocker",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838427623",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Box of miscellaneous home decor items",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838427644",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Mini folding table and picnic caddy",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838427660",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "stoneware",
+    "summary": "Stoneware bowl and mixed table items",
+    "fit_score": 0.4,
+    "worth_appraising": true,
+    "photo_id": "838427652",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Box of assorted purses and wallets",
+    "fit_score": 0.0,
+    "worth_appraising": false,
+    "photo_id": "838427679",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "stoneware",
+    "summary": "Blue stripe stoneware batter bowl",
+    "fit_score": 0.9,
+    "worth_appraising": true,
+    "photo_id": "838427671",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "New M&M's fleece blanket",
+    "fit_score": 0.4,
+    "worth_appraising": false,
+    "photo_id": "838427689",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Book shelf speakers with accessories",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838427692",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Box of vintage birthday figurines",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838427707",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "vintage table lighter",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838427711",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Brentwood multi-function hot pot in box",
+    "fit_score": 0.0,
+    "worth_appraising": false,
+    "photo_id": "838427742",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Neat Sheet picnic blanket combo pack",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838427698",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "New electric citrus juicer",
+    "fit_score": 0.0,
+    "worth_appraising": false,
+    "photo_id": "838427756",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Blue Hydroflex swim fins",
+    "fit_score": 0.0,
+    "worth_appraising": false,
+    "photo_id": "838427714",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Delta canister and spice jar sets",
+    "fit_score": 0.0,
+    "worth_appraising": false,
+    "photo_id": "838427717",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Assorted jigsaw puzzles stack",
+    "fit_score": 0.3,
+    "worth_appraising": false,
+    "photo_id": "838427771",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Vintage aluminum cake caddy",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838427810",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Art supplies and display stand",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838427802",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Trivial Pursuit 20th Anniversary Edition",
+    "fit_score": 0.3,
+    "worth_appraising": false,
+    "photo_id": "838427777",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Brookstone cordless sander and polisher",
+    "fit_score": 0.0,
+    "worth_appraising": false,
+    "photo_id": "838427839",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Mid-century modern metal sculpture desk item",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838427831",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "cameras",
+    "summary": "Sealife Eco Shot digital camera box",
+    "fit_score": 0.9,
+    "worth_appraising": true,
+    "photo_id": "838427857",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Box of mini military toys",
+    "fit_score": 0.9,
+    "worth_appraising": true,
+    "photo_id": "838427836",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Box of Pokemon toys and figures",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838427875",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "vintage toys",
+    "summary": "2-XL robot and Pokemon toys",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838427865",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Vintage Lincoln Logs and Tinkertoys",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838427900",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Vintage toys and table lamps",
+    "fit_score": 0.6,
+    "worth_appraising": true,
+    "photo_id": "838427892",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "breweriana",
+    "summary": "Hamm's beer keg",
+    "fit_score": 1.0,
+    "worth_appraising": true,
+    "photo_id": "838427893",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "cameras",
+    "summary": "Box of 35mm cameras",
+    "fit_score": 0.9,
+    "worth_appraising": true,
+    "photo_id": "838427895",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Fisher Price little people circus train",
+    "fit_score": 0.85,
+    "worth_appraising": true,
+    "photo_id": "838427930",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Box of vintage alarm clocks",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838427961",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Large lidded woven straw basket",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838427936",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Barbie doll and Hallmark books lot",
+    "fit_score": 0.7,
+    "worth_appraising": true,
+    "photo_id": "838427951",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Mid century lamp and toy assortment",
+    "fit_score": 0.5,
+    "worth_appraising": true,
+    "photo_id": "838427980",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "vintage toys",
+    "summary": "Vintage board games and toys",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838427989",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Horn handled carving set and toys",
+    "fit_score": 0.3,
+    "worth_appraising": true,
+    "photo_id": "838427994",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "advertising",
+    "summary": "Box of vintage advertising belt buckles",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838427955",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "cameras",
+    "summary": "Vintage Exa camera with leather case",
+    "fit_score": 1.0,
+    "worth_appraising": true,
+    "photo_id": "838428033",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "cameras",
+    "summary": "Vintage rangefinder camera in leather case",
+    "fit_score": 0.9,
+    "worth_appraising": true,
+    "photo_id": "838428032",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Vintage audio headphones in box",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838428040",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "cameras",
+    "summary": "Nikon camera and camera gear lot",
+    "fit_score": 1.0,
+    "worth_appraising": true,
+    "photo_id": "838428056",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Assorted vintage toys and games",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838428061",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "vintage toys",
+    "summary": "Assorted Marvel action figures",
+    "fit_score": 0.9,
+    "worth_appraising": true,
+    "photo_id": "838428083",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Box of vintage clown figurines",
+    "fit_score": 0.6,
+    "worth_appraising": true,
+    "photo_id": "838428073",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Box of mixed vintage smalls",
+    "fit_score": 0.3,
+    "worth_appraising": true,
+    "photo_id": "838428093",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Art Line terra cotta birdbath",
+    "fit_score": 0.1,
+    "worth_appraising": false,
+    "photo_id": "838428092",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "Waterford crystal salad bowl in box",
+    "fit_score": 0.2,
+    "worth_appraising": false,
+    "photo_id": "838428113",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "cameras",
+    "summary": "Vintage movie camera in box",
+    "fit_score": 1.0,
+    "worth_appraising": true,
+    "photo_id": "838428103",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "cameras",
+    "summary": "Vintage cameras in leather case",
+    "fit_score": 0.9,
+    "worth_appraising": true,
+    "photo_id": "838428126",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "breweriana",
+    "summary": "Assorted beer tap handles and knobs",
+    "fit_score": 1.0,
+    "worth_appraising": true,
+    "photo_id": "838428127",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "cameras",
+    "summary": "Vintage movie camera in case",
+    "fit_score": 0.9,
+    "worth_appraising": true,
+    "photo_id": "838428149",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "other",
+    "summary": "antique telephone",
+    "fit_score": 0.3,
+    "worth_appraising": true,
+    "photo_id": "838428163",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "cameras",
+    "summary": "Box of cameras and lenses",
+    "fit_score": 1.0,
+    "worth_appraising": true,
+    "photo_id": "838428130",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "boxed collectible barbie dolls",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838428186",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": true,
+    "category": "vintage toys",
+    "summary": "Hallmark Special Edition Barbie doll",
+    "fit_score": 0.8,
+    "worth_appraising": true,
+    "photo_id": "838428190",
+    "model_used": "gemini-3.5-flash-lite"
+  },
+  {
+    "is_lot": true,
+    "same_lot_as_previous": false,
+    "category": "vintage toys",
+    "summary": "Two boxed Holiday Barbie dolls",
+    "fit_score": 0.5,
+    "worth_appraising": true,
+    "photo_id": "838428204",
+    "model_used": "gemini-3.5-flash-lite"
+  }
+]

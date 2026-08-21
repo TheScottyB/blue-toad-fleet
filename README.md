@@ -82,7 +82,13 @@ Capital is not the constraint — **time and visual throughput are**. The goal i
 * **Why Spatial Isolation is Required:** High-margin gold in rural auctions (e.g., 11–12 Edison Blue Amberol cylinders, 1959–69 Topps baseball cards, estate costume jewelry trays) is dumped into cardboard boxes or plastic tubs on crowded utility tables. Without spatial mapping to isolate the container and mask out surrounding room noise, vision models blend the box with adjacent table clutter (clocks, lamps, tools) and generate dirty, hallucinated comps.
 * **How It Works:** Relying directly on the Spatial Room Graph, the agent isolates the container boundary, suppresses background table noise, and itemizes the individual high-velocity assets inside the bin. It separates genuine alpha from filler, unlocking hidden margin while maintaining clean pricing boundaries.
 
-### 3. Multi-Tiered Model Routing on Vertex AI
+### 3. Multi-Tiered Model Routing on Vertex AI (Google GenAI SDK)
+Every call to a model goes through the **Google GenAI SDK** (`google-genai`) in
+[`src/appraiser/engine.py`](src/appraiser/engine.py) — `genai.Client(vertexai=True, ...)`
+for application-default-credential auth that runs unchanged on a laptop and inside
+Cloud Run, `types.Part.from_bytes` to assemble the photo alongside the prompt, and
+`types.GenerateContentConfig(response_schema=...)` for constrained decoding.
+
 * **Triage Fan-out (`gemini-3.5-flash-lite`):** Ingests 460+ raw photos in seconds for ~$0.30 per cycle, filtering out low-margin clutter and background filler.
 * **Deep Multimodal Appraisal (`gemini-3.6-flash`):** Evaluates high-conviction survivors using structured OpenAPI 3.0 schemas on the `global` Vertex endpoint.
 * **Honest Refusal Rule:** On unrecognizable or ungrounded pottery, the model explicitly emits `"NO EXTERNAL COMP — human pricing required"` rather than hallucinating prices.
@@ -103,8 +109,9 @@ Appraisals feed into pure, unit-tested valuation logic implementing the store's 
 | Metric | July 11 Historical Benchmark | August 22 Live Sourcing Cycle |
 | :--- | :--- | :--- |
 | **Raw Photos Ingested** | 452 raw photos (324 captioned) | 462 raw photos (304 captioned) |
-| **Multi-Angle Duplicates Merged** | **95 duplicate photos merged** | **103 duplicate photos merged** |
-| **Consolidated Physical Lots** | 357 physical lots | 359 physical lots |
+| **Lots Appraised on Vertex AI** | — | **228 of 415** (Stage 1 triage filtered the rest) |
+| **Multi-Angle Duplicates Merged** | **95 duplicate photos merged** | **47 duplicate photos merged** |
+| **Consolidated Physical Lots** | 357 physical lots | 415 physical lots |
 | **Legacy V1 Wishlist Chaos** | 88 unranked rows (**$14,340.00 max sum**) | N/A (Displaced by Fleet V2) |
 | **Fleet V2 Approved Sourcing** | **67 bids allocated ($1,910.00 max)** | **10 approved bids ($260.00 max)** |
 | **Total Committed All-In (w/ 15% Fee)**| **$2,196.50** (strictly under $2,205 cap) | **$299.00** (strictly under $600 cap) |

@@ -33,6 +33,7 @@ from src.appraisal import (
     StandingRule, build_queue
 )
 from src.appraiser import AppraisalEngine
+from src.appraiser.routing import TRIAGE_MODEL, estimate_cost_usd
 from src.bidmath import (
     Lot, CompEstimate, Confidence as BidConfidence, Priority, Decision,
     price_lot, allocate, summarize, ABSENTEE_FEE, snap_to_increment
@@ -99,6 +100,75 @@ OPERATOR_APPROVED = {
     "BT-066": {"fit": 0.90, "why": "collab: handheld electronic games approved"},
     "BT-235": {"fit": 0.90, "why": "collab: Century of Progress bottle approved"},
 }
+
+def trusted_lot_flags(verdict, caption: str, previous_captioned: bool,
+                      index: int) -> tuple[bool, bool]:
+    """
+    (is_lot, same_lot_as_previous) — how far Stage 1 is believed about boundaries.
+
+    Triage is a cheap model looking at one photograph. It is good at "is this
+    worth a slow look" and unreliable about where one lot ends and the next
+    begins. On the first live corpus run it marked BT-181 — captioned "estate
+    costume jewelry" by the house — as another angle of the necklaces two photos
+    earlier. It was merged away, stopped being a lot, and a bid the owner had
+    capped at $25 left the sheet without anything erroring.
+
+    So a caption the auctioneer wrote outranks a merge the model guessed. This
+    gallery publishes no lot numbers, which makes the caption the only boundary
+    signal there is. Overriding a merge is not overriding everything: a triage
+    verdict that says these are separate is left alone.
+
+    With no verdict at all, the caption heuristic stands — an uncaptioned photo
+    following a captioned one is another angle of it.
+    """
+    if verdict is None:
+        is_extra_angle = (not caption.strip()) and index > 0 and previous_captioned
+        return (not is_extra_angle), is_extra_angle
+
+    is_lot = bool(verdict.get("is_lot", True))
+    same = bool(verdict.get("same_lot_as_previous", False))
+    if same and caption.strip():
+        same = False
+    return is_lot, same
+
+
+def select_appraisal_candidates(
+    triage_results: list[dict],
+    photos: list[dict],
+    always_include: set[str],
+) -> list[dict]:
+    """
+    Which lots earn a slow, expensive look.
+
+    Stage 1 runs a cheap model over every photograph and says whether each is
+    worth appraising. Two rules sit on top of it:
+
+    A photo with no triage verdict is appraised anyway. An untriaged photo is
+    unknown, not junk, and silently dropping it would make the coverage claim a
+    lie in exactly the cases nobody checks.
+
+    A lot the owner selected is appraised whatever triage thought. The costume
+    jewellery he buys for the storefront triages at 0.1 — he overrules that
+    knowingly, and a cheaper model upstream must not undo his decision.
+    """
+    verdicts = {t.get("photo_id"): t for t in triage_results}
+    out = []
+    for p in sorted(photos, key=lambda x: x.get("sequence", 0)):
+        lot_id = f"BT-{p.get('sequence', 0):03d}"
+        verdict = verdicts.get(p.get("photo_id"))
+        if verdict is not None and not verdict.get("worth_appraising", True):
+            if lot_id not in always_include:
+                continue
+        summary = (verdict or {}).get("summary", "")
+        out.append({
+            "lot_id": lot_id,
+            "caption": p.get("caption") or summary or "(uncaptioned)",
+            "category_hint": (REFERENCE_COMPS.get(lot_id, {}).get("cat")
+                              or (verdict or {}).get("category")),
+            "local_path": p.get("local_path"),
+        })
+    return out
+
 
 def operator_lot_inputs(lot_id: str, raw_appraisal: dict) -> tuple[float, float]:
     """
@@ -195,41 +265,53 @@ def run_pipeline(
     entries = [{"name": p["filename"], "uri": p["thumb_url"], "caption": p["caption"]} for p in photos]
     drop = parse_drop(cycle_id=cycle_id, listing_id=listing_id, entries=entries)
 
+    # 1b. Stage 1 triage across the whole drop. Cached, so a re-run is free.
+    engine = AppraisalEngine()
+    triage_cache = Path(data_dir) / "triage_results.json"
+    from_triage_cache = engine.will_use_cache(triage_cache, force_live_vertex)
+    print(f"[*] Stage 1 Triage: {len(photos)} photos from "
+          f"{'cached results' if from_triage_cache else 'LIVE Vertex AI (' + TRIAGE_MODEL + ')'}...")
+    try:
+        triage_results = engine.run_triage_batch(
+            photos=photos, cache_path=triage_cache,
+            force_refresh=force_live_vertex, max_workers=8,
+            progress_callback=lambda done, total: (
+                print(f"    triaged {done}/{total}", end="\r") if done % 25 == 0 else None),
+        )
+    except Exception as e:
+        print(f"\n[!] Triage unavailable ({e}); falling back to the caption heuristic.")
+        triage_results = []
+    verdicts = {t.get("photo_id"): t for t in triage_results}
+    kept = sum(1 for t in triage_results if t.get("worth_appraising"))
+    if triage_results:
+        print(f"[+] Triaged {len(triage_results)} photos; {kept} worth a closer look.")
+
     triaged_photos = []
     for i, p in enumerate(photos):
-        cap = p["caption"].lower()
-        has_cap = bool(cap.strip())
-        is_extra_angle = (not has_cap and i > 0 and photos[i-1]["has_caption"])
+        is_lot, same_lot = trusted_lot_flags(
+            verdicts.get(p["photo_id"]),
+            caption=p["caption"],
+            previous_captioned=bool(i > 0 and photos[i - 1]["has_caption"]),
+            index=i,
+        )
         triaged_photos.append(TriagedPhoto(
             photo_id=p["photo_id"],
             caption=p["caption"],
-            is_lot=not is_extra_angle,
-            same_lot_as_previous=is_extra_angle,
+            is_lot=is_lot,
+            same_lot_as_previous=same_lot,
         ))
 
     lot_groups = group_into_lots(triaged_photos)
     print(f"[+] Grouped {len(photos)} photos into {len(lot_groups)} distinct lots.")
 
     # 2. Vertex AI Engine Setup
-    engine = AppraisalEngine()
-    triage_cache = Path(data_dir) / "triage_results.json"
     appraisal_cache = Path(data_dir) / "appraisal_results.json"
 
     # Identify candidate lots for detailed Stage 2 appraisal
-    candidate_lot_ids = set(REFERENCE_COMPS.keys())
-    candidate_items = []
-    for g in lot_groups:
-        photo = next((p for p in photos if p["photo_id"] == g.primary_photo_id), None)
-        if not photo:
-            continue
-        lot_id = f"BT-{photo['sequence']:03d}"
-        if lot_id in candidate_lot_ids:
-            candidate_items.append({
-                "lot_id": lot_id,
-                "caption": photo["caption"] or REFERENCE_COMPS[lot_id]["desc"],
-                "category_hint": REFERENCE_COMPS[lot_id]["cat"],
-                "local_path": photo["local_path"],
-            })
+    primary_ids = {g.primary_photo_id for g in lot_groups}
+    lot_photos = [p for p in photos if p["photo_id"] in primary_ids]
+    candidate_items = select_appraisal_candidates(
+        triage_results, lot_photos, always_include=set(REFERENCE_COMPS))
 
     from_cache = engine.will_use_cache(appraisal_cache, force_live_vertex)
     source = "cached results" if from_cache else "LIVE Vertex AI (gemini-3.6-flash)"

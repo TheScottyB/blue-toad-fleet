@@ -80,6 +80,10 @@ Appraisals feed into pure, unit-tested bid math implementing the store's 38% mar
 
 ## How we built it
 
+* **Required Stack — what satisfies each requirement:**
+  * **Gemini 3.5 or newer:** `gemini-3.6-flash` (multimodal appraisal) and `gemini-3.5-flash-lite` (triage fan-out), both on Vertex AI's `global` endpoint.
+  * **Google agent framework — the Google GenAI SDK (`google-genai`):** the entire model layer. `genai.Client(vertexai=True, ...)` for application-default-credential auth that runs unchanged locally and inside Cloud Run, `types.Part.from_bytes` for multimodal request assembly, and `types.GenerateContentConfig(response_schema=...)` for constrained decoding — which is what makes a missing maker's mark come back as `null` plus a question instead of a confident invention. See [`src/appraiser/engine.py`](../src/appraiser/engine.py).
+  * **Google Cloud infrastructure — Cloud Run:** single-container serverless hosting on project `threebatdrone-prod-420`.
 * **Google Cloud Infrastructure:**
   * **Vertex AI:** Multi-tiered model routing utilizing `gemini-3.5-flash-lite` for high-speed, cost-effective triage ($0.30/1M tokens) and `gemini-3.6-flash` for deep multimodal appraisal with structured OpenAPI 3.0 schemas on the `global` endpoint.
   * **Google Cloud Run:** Single-container serverless hosting (`us-central1` on project `threebatdrone-prod-420`) serving the Gate Console UI, Sourcing API, and health endpoints.

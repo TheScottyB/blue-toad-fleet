@@ -66,9 +66,12 @@ class TestDescriptionsSurvive:
             f"{len(set(numbered))} distinct lot id(s) — these must match"
         )
 
-    def test_the_full_identification_text_is_present(self, email):
-        """Spot-check the two lots that were previously cut off."""
-        assert "sports trading cards" in email, "BT-016 lost what is in the box"
+    def test_a_long_description_survives_the_wrap(self, email):
+        """
+        BT-235's name was cut at "A Century of Pro" by the old fixed-width
+        table. Spot-checked on a lot the owner has not declined, so the test
+        fails on truncation rather than on him changing his mind about a lot.
+        """
         assert "Century of Progress" in email, "BT-235 lost the fair name"
 
 
