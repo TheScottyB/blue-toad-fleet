@@ -313,7 +313,9 @@ def run_pipeline(
     candidate_items = select_appraisal_candidates(
         triage_results, lot_photos, always_include=set(REFERENCE_COMPS))
 
-    from_cache = engine.will_use_cache(appraisal_cache, force_live_vertex)
+    from_cache = engine.will_use_cache(
+        appraisal_cache, force_live_vertex,
+        required_ids={c["lot_id"] for c in candidate_items})
     source = "cached results" if from_cache else "LIVE Vertex AI (gemini-3.6-flash)"
     print(f"\n[*] Stage 2 Appraisal: {len(candidate_items)} candidate lots from {source}...")
     raw_appraisals = engine.run_appraisal_batch(
