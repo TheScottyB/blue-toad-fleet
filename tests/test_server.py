@@ -26,7 +26,7 @@ def test_root_console_renders(client):
     assert "text/html" in r.headers["content-type"]
     assert "Blue Toad Fleet" in r.text
     assert "Pole Barn Showroom Topology" in r.text
-    assert "Curator's Negotiation" in r.text
+    assert "Curator" in r.text and "Gemma 4" in r.text
 
 def test_api_lots_summary_and_bids(client):
     r = client.get("/api/lots")

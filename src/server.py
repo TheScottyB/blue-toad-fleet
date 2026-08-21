@@ -27,6 +27,7 @@ from src.appraisal import (
 )
 from src.appraiser import AppraisalEngine
 from src.gate import CycleView, render_console
+from src.gate.pitch import build_pitch, curator_voice, _CURATOR_SYSTEM
 from scripts.run_vertex_pipeline import (
     REFERENCE_COMPS, OPERATOR_APPROVED, operator_lot_inputs, apply_operator_cap,
     trusted_lot_flags,
@@ -101,6 +102,36 @@ def cached_photo_bytes(lot_id: str) -> bytes | None:
         path = Path(photo.get("local_path") or "")
         return path.read_bytes() if path.is_file() else None
     return None
+
+
+def curator_pitch(decisions, captions) -> str:
+    """
+    The curator's read for the console banner.
+
+    Served from disk where a previous run wrote one, so a page load does not
+    call a model. With no cache it writes one live and keeps it. If Gemma is
+    unreachable, curator_voice returns the deterministic line and the console
+    renders normally — the banner is commentary, and commentary must never be
+    the reason a bid sheet fails to load.
+    """
+    cache = Path("data/aug22_gallery_4160518/curator_voice.txt")
+    if not cache.exists():
+        alt = Path("/app/data/aug22_gallery_4160518/curator_voice.txt")
+        cache = alt if alt.exists() else cache
+    if cache.exists():
+        cached = cache.read_text().strip()
+        if cached:
+            return cached
+
+    facts = build_pitch(decisions, captions, STATE["standing_rules"])
+    text = curator_voice(
+        facts, writer=lambda pr: engine.write_curator_voice(pr, _CURATOR_SYSTEM))
+    try:
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        cache.write_text(text + "\n")
+    except OSError:
+        pass          # read-only filesystem is fine; the text is already in hand
+    return text
 
 
 def get_aug22_state():
@@ -301,7 +332,7 @@ def get_console():
         illustrative=False,
         lots_total=len(lots),
     )
-    return render_console(view)
+    return render_console(view, pitch_text=curator_pitch(decisions, captions_map))
 
 
 @app.get("/api/lots")

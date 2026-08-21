@@ -7,7 +7,7 @@
 
   [![Google Cloud Run](https://img.shields.io/badge/Google%20Cloud%20Run-Live%20Service-34d399?style=flat-square&logo=googlecloud)](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app)
   [![Vertex AI](https://img.shields.io/badge/Vertex%20AI-Gemini%203.6%20Flash-a78bfa?style=flat-square&logo=google)](https://cloud.google.com/vertex-ai)
-  [![Unit Tests](https://img.shields.io/badge/Unit%20Tests-262%20Passing-38bdf8?style=flat-square&logo=pytest)](https://github.com/TheScottyB/blue-toad-fleet)
+  [![Unit Tests](https://img.shields.io/badge/Unit%20Tests-298%20Passing-38bdf8?style=flat-square&logo=pytest)](https://github.com/TheScottyB/blue-toad-fleet)
   [![License: MIT](https://img.shields.io/badge/License-MIT-fbbf24?style=flat-square)](LICENSE)
 </div>
 
@@ -45,7 +45,7 @@ make demo
 # 3. Watch cross-cycle memory collapse the clarification queue
 make cycles
 
-# 4. Run the 262-test unit suite (runs in under half a second)
+# 4. Run the 298-test unit suite (runs in under half a second)
 make test
 ```
 
@@ -92,6 +92,19 @@ Cloud Run, `types.Part.from_bytes` to assemble the photo alongside the prompt, a
 * **Triage Fan-out (`gemini-3.5-flash-lite`):** Ingests 460+ raw photos in seconds for ~$0.30 per cycle, filtering out low-margin clutter and background filler.
 * **Deep Multimodal Appraisal (`gemini-3.6-flash`):** Evaluates high-conviction survivors using structured OpenAPI 3.0 schemas on the `global` Vertex endpoint.
 * **Honest Refusal Rule:** On unrecognizable or ungrounded pottery, the model explicitly emits `"NO EXTERNAL COMP — human pricing required"` rather than hallucinating prices.
+
+### 3b. The Curator's Read (Gemma 4 on Vertex AI)
+The Gate console's pitch banner is written by **Gemma 4** (`gemma-4-26b-a4b-it-maas`),
+and it is the only call in the system with no response schema — because it is the
+only one whose output is not a decision. `build_pitch` in
+[`src/gate/pitch.py`](src/gate/pitch.py) selects the tiers deterministically from
+the allocated sheet; Gemma is handed lot ids, captions and the bids the math
+already set, and asked to phrase them. It never sees a comparable sale.
+
+Telling a model not to invent a figure is not the same as it not inventing one, so
+`invented_amounts` checks the prose against the sheet's own numbers before display.
+A figure the system did not compute means the sentence is discarded and the
+deterministic line renders instead — as it does if Gemma is unreachable.
 
 ### 4. The "Choice-Lot Sniper" (Walls, Table Lines & Shelves)
 Detects grouped assets sold "Choice / Times the Money" across multiple room zones (such as a wall run of vintage travel posters or a table line of railroad lanterns) and enforces a strict `max_quantity = 1` absentee constraint, preventing a $900 clerk multiplication blowout while securing the highest-comp alpha piece.
@@ -171,7 +184,7 @@ blue-toad-fleet/
 │   ├── gate/                   # Gate Console UI renderer (pure HTML/CSS)
 │   ├── intake/                 # Manifest parsing, natural sort & spatial clustering
 │   └── server.py               # Cloud Run FastAPI server & API endpoints
-├── tests/                      # Comprehensive pytest unit suite (262 tests)
+├── tests/                      # Comprehensive pytest unit suite (298 tests)
 ├── Dockerfile                  # Container definition for Google Cloud Run
 ├── LICENSE                     # MIT License
 ├── Makefile                    # Standard developer workflow targets

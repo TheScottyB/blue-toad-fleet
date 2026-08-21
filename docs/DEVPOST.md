@@ -91,7 +91,7 @@ Appraisals feed into pure, unit-tested bid math implementing the store's 38% mar
   * Pure, decoupled Python backend with zero framework lock-in.
   * Deterministic keyed memory `(QuestionKind, Category)` that generalises house conventions without vector drift.
   * Automated Excel bid sheet generator (`openpyxl`) and formatted absentee email draft generator.
-  * 262 unit tests running in under half a second.
+  * 298 unit tests running in under half a second.
 
 ---
 
@@ -114,7 +114,7 @@ Appraisals feed into pure, unit-tested bid math implementing the store's 38% mar
 * **Flawless Google Cloud Deployment:**
   * Serving live traffic with sub-second response times on Cloud Run ([blue-toad-fleet-u5gvrqwvua-uc.a.run.app](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app)).
 * **100% Test Coverage on Core BidMath:**
-  * 262 unit tests passing in under half a second.
+  * 298 unit tests passing in under half a second.
 
 ---
 

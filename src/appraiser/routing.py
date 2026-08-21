@@ -6,6 +6,12 @@ from enum import Enum
 TRIAGE_MODEL = "gemini-3.5-flash-lite"    # $0.30 / $2.50 per 1M tokens, ~350 tok/s
 APPRAISAL_MODEL = "gemini-3.6-flash"      # $1.50 / $7.50 per 1M tokens
 
+# The curator's voice. An open model, and the only tier here that writes prose
+# rather than deciding anything — it is handed a finished sheet and asked to
+# phrase it. Serves from the `global` endpoint only; us-central1 answers
+# FAILED_PRECONDITION for this one, same quirk as the Gemini tiers.
+CURATOR_MODEL = "gemma-4-26b-a4b-it-maas"
+
 # Rough token accounting per photo, used for cost estimates and budget guards.
 EST_INPUT_TOKENS_PER_PHOTO = 1_500
 EST_OUTPUT_TOKENS_TRIAGE = 120

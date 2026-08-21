@@ -146,16 +146,30 @@ def _map_block() -> str:
 """
 
 
-def _pitch_block() -> str:
-    return """
+def _pitch_block(pitch_text: str) -> str:
+    """
+    The curator's read on the sheet, in prose.
+
+    Written by Gemma from the finished allocation — it is handed lot ids,
+    captions and the bids the shop's own math already set, and asked to phrase
+    them. It never sees a comparable sale and never picks a lot. Every figure it
+    uses is checked against the sheet before this renders; see src/gate/pitch.py.
+
+    Attributed on the face of the banner, because a reader should be able to
+    tell at a glance which parts of this console are computed and which are
+    written.
+    """
+    return f"""
 <div class="pitch-card">
   <div class="pitch-hd">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-    Curator's Negotiation & Wildcard Challenge
+    Curator&rsquo;s read
+    <span class="tag" style="margin-left:auto;border-color:var(--violet);color:var(--violet)">Gemma 4 &middot; Vertex AI</span>
   </div>
-  <div style="font-size:13px;color:var(--ink2);line-height:1.6">
-    <b>Top 3 Alpha Picks:</b> (1) 1959–69 Topps Baseball Cards in top-loaders ($100 max) &middot; (2) Estate Costume Jewelry Bins ($25 max) &middot; (3) Edison Cylinder Roll Crate ($40 max).<br>
-    <b>Wildcard Velocity Challenge:</b> Bet on the 11-12 Edison Blue Amberol cylinders (Photo #41) at $40. Historical clearance models show <14 day eBay turnaround at 3.5x margin.
+  <div style="font-size:13.5px;color:var(--ink2);line-height:1.65">{escape(pitch_text)}</div>
+  <div style="font-size:11px;color:var(--ink3);margin-top:9px">
+    Prose only. Lots and bids are set by the deterministic sheet above; figures
+    are validated against it before display.
   </div>
 </div>
 """
@@ -260,7 +274,7 @@ def _sheet_block(v: CycleView) -> str:
     return "\n".join(out)
 
 
-def render_console(v: CycleView) -> str:
+def render_console(v: CycleView, pitch_text: str = "") -> str:
     s = v.summary
     of_total = f" of {v.lots_total}" if v.lots_total else ""
     used = (s.committed_all_in / v.budget_cap * 100) if v.budget_cap else 0
@@ -303,7 +317,7 @@ def render_console(v: CycleView) -> str:
     ({used:.0f}%)</div>
 </header>
 {_map_block()}
-{_pitch_block()}
+{_pitch_block(pitch_text) if pitch_text else ''}
 {_question_block(v)}
 {_sheet_block(v)}
 <footer>

@@ -180,3 +180,22 @@ class TestDeferredQuestions:
     def test_deferred_lots_are_named_as_shipping_flagged(self):
         h = render_console(_view(questions=[_q(kind=QuestionKind.MARK, lots=("BT-042",))]))
         assert "BT-042" in h
+
+
+class TestTheCuratorBanner:
+    def test_the_pitch_text_is_rendered(self):
+        h = render_console(_view(), pitch_text="Hold BT-001; the rest can ride.")
+        assert "Hold BT-001; the rest can ride." in h
+
+    def test_the_pitch_text_is_escaped(self):
+        h = render_console(_view(), pitch_text="<img onerror=x>")
+        assert "<img onerror=x>" not in h and "&lt;img" in h
+
+    def test_the_banner_names_the_model_that_wrote_it(self):
+        """A reader should be able to tell prose from computation at a glance."""
+        h = render_console(_view(), pitch_text="Anything.")
+        assert "gemma" in h.lower()
+
+    def test_without_pitch_text_the_banner_is_omitted_rather_than_faked(self):
+        h = render_console(_view())
+        assert "Curator" not in h

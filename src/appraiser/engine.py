@@ -26,7 +26,7 @@ except ImportError:
 
 from src.appraisal import Appraisal, Confidence, Question, QuestionKind, StandingRule
 from src.appraiser.images import assert_appraisal_grade, read_local_image
-from src.appraiser.routing import TRIAGE_MODEL, APPRAISAL_MODEL
+from src.appraiser.routing import TRIAGE_MODEL, APPRAISAL_MODEL, CURATOR_MODEL
 from src.appraiser.schema import TRIAGE_SCHEMA, APPRAISAL_SCHEMA, to_vertex
 from src.appraiser.prompts import (
     TRIAGE_SYSTEM,
@@ -180,6 +180,25 @@ class AppraisalEngine:
                 continue
 
         raise RuntimeError(f"Appraisal failed for lot {lot_id}: {last_err}")
+
+    def write_curator_voice(self, prompt: str, system: str = "") -> str:
+        """
+        Prose for the Gate console's pitch banner, written by Gemma.
+
+        Free text on purpose — this is the one call in the system with no
+        response schema, because it is the one call whose output is not a
+        decision. Anything it says is checked against the sheet's own figures
+        before it reaches the owner; see src/gate/pitch.py.
+        """
+        if not self.client:
+            raise RuntimeError("Vertex AI client is not available.")
+
+        cfg = types.GenerateContentConfig(temperature=0.4, max_output_tokens=300)
+        if system:
+            cfg.system_instruction = system
+        resp = self.client.models.generate_content(
+            model=CURATOR_MODEL, contents=[prompt], config=cfg)
+        return (resp.text or "").strip()
 
     def run_triage_batch(
         self,
