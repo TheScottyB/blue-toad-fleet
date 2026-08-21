@@ -72,6 +72,16 @@ class TestSchemas:
             assert key in TRIAGE_SCHEMA["properties"]
             assert key in TRIAGE_SCHEMA["required"]
 
+    def test_appraisal_schema_itemizes_containers(self):
+        assert "is_container" in APPRAISAL_SCHEMA["properties"]
+        assert "contents" in APPRAISAL_SCHEMA["properties"]
+        assert APPRAISAL_SCHEMA["properties"]["contents"]["type"] == "array"
+
+    def test_appraisal_system_isolates_container_from_table_clutter(self):
+        from src.appraiser.prompts import APPRAISAL_SYSTEM
+        assert "container" in APPRAISAL_SYSTEM.lower()
+        assert "clutter" in APPRAISAL_SYSTEM.lower() or "background" in APPRAISAL_SYSTEM.lower()
+
 
 class TestToVertex:
     # Vertex responseSchema is an OpenAPI 3.0 subset: it rejects union types

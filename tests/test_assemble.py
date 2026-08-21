@@ -141,3 +141,44 @@ class TestTheWholePoint:
         # All four carry the SAME explicit lot number, so they must still collapse.
         lots = assemble_lots(appraised, comps={"3": comp()})
         assert len(lots) == 1
+
+
+class TestContainerDecomposition:
+    def test_container_contents_reach_the_lot_caption(self):
+        lots = assemble_lots([
+            ap("p1", "Lot 41 box of cylinders",
+               identification="Edison cylinder crate",
+               is_container=True,
+               contents=("11 Blue Amberol cylinders", "1 Gold Moulded cylinder"),
+               category="phonograph / records", fit_score=0.9,
+               confidence=Confidence.HIGH),
+        ])
+        caption = lots[0].caption
+        assert "Blue Amberol" in caption
+        assert "Gold Moulded" in caption
+
+    def test_table_clutter_on_a_weaker_angle_does_not_replace_contents(self):
+        lots = assemble_lots([
+            ap("p1", "Lot 41 crate",
+               identification="Edison cylinder crate",
+               is_container=True,
+               contents=("11 Blue Amberol cylinders",),
+               category="phonograph / records", fit_score=0.9,
+               confidence=Confidence.HIGH),
+            ap("p2", "wider table shot",
+               identification="crate next to a clock and a lamp",
+               same_lot_as_previous=True,
+               is_container=False,
+               contents=(),
+               category="unsorted", fit_score=0.2,
+               confidence=Confidence.LOW),
+        ])
+        assert "clock" not in lots[0].caption
+        assert "Blue Amberol" in lots[0].caption
+
+    def test_non_container_caption_stays_the_identification(self):
+        lots = assemble_lots([
+            ap("p1", "Lot 5 crock", identification="Red Wing 5 gallon",
+               category="stoneware", fit_score=0.9, confidence=Confidence.HIGH),
+        ])
+        assert lots[0].caption == "Red Wing 5 gallon"

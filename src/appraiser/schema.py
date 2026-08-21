@@ -146,8 +146,19 @@ APPRAISAL_SCHEMA = {
                 "required": ["kind", "prompt", "wants_photo", "confidence_gap"],
             },
         },
+        "is_container": {
+            "type": "boolean",
+            "description": "True if the lot is a box, bin, tray, or tub whose contents "
+                           "should be itemized separately from surrounding table clutter.",
+        },
+        "contents": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "High-velocity assets inside the container. Empty when "
+                           "is_container is false. Never list neighboring table items.",
+        },
     },
     "required": ["identification", "maker", "period", "marks_observed", "category",
                  "condition_notes", "condition_penalty", "fit_score", "confidence",
-                 "value_magnitude_hint", "questions"],
+                 "value_magnitude_hint", "questions", "is_container", "contents"],
 }

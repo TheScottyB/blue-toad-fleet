@@ -64,6 +64,8 @@ class AppraisedPhoto:
     condition_penalty: float = 0.0
     fit_score: float = 0.0
     confidence: Confidence = Confidence.NONE
+    is_container: bool = False
+    contents: tuple[str, ...] = ()
 
 
 def assemble_lots(
@@ -106,6 +108,8 @@ def assemble_lots(
         ident = best.identification or primary.caption
         # Detection before contents append so "choice beads" cannot flip mechanic.
         per_unit = is_choice_lot(best.identification, primary.caption, best.category)
+        if best.is_container and best.contents:
+            ident = f"{ident}: {', '.join(best.contents)}"
         lots.append(Lot(
             lot_id=group.lot_key,
             caption=ident,
