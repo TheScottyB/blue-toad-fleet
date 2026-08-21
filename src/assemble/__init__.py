@@ -31,7 +31,7 @@ from dataclasses import dataclass
 from typing import Iterable, Mapping
 
 from src.assemble.email import compile_absentee_email
-from src.bidmath import CompEstimate, Confidence, Lot
+from src.bidmath import BidMechanic, CompEstimate, Confidence, Lot, is_choice_lot
 from src.intake.manifest import TriagedPhoto, group_into_lots
 
 _CONFIDENCE_RANK = {
@@ -103,13 +103,19 @@ def assemble_lots(
         worst = max(m.condition_penalty for m in members)
         penalty = min(max(worst, 0.0), 1.0)
 
+        ident = best.identification or primary.caption
+        # Detection before contents append so "choice beads" cannot flip mechanic.
+        per_unit = is_choice_lot(best.identification, primary.caption, best.category)
         lots.append(Lot(
             lot_id=group.lot_key,
-            caption=best.identification or primary.caption,
+            caption=ident,
             category=best.category,
             fit_score=best.fit_score,
             condition_penalty=penalty,
             comp=comps.get(group.lot_key, NO_COMP),
+            mechanic=BidMechanic.CHOICE if per_unit else BidMechanic.STRAIGHT,
+            unit_count=1,
+            units_wanted=1 if per_unit else None,
         ))
 
     return lots

@@ -81,6 +81,21 @@ class BidMechanic(str, Enum):
     """Not established. Never silently treated as STRAIGHT: see units_committed."""
 
 
+# Caption detector only. It does not elect k and does not distinguish CHOICE
+# from TIMES_THE_MONEY — mechanic_from_ruling is what settles those. When this
+# is True and nobody has ruled, the standing absentee default is CHOICE with
+# units_wanted=1 (take one; remainder goes back to the floor).
+_CAPTION_PER_UNIT_RE = re.compile(
+    r"buyer's choice|buyers choice|times the money|\bttm\b|\bchoice of\b",
+    re.IGNORECASE,
+)
+
+
+def is_choice_lot(*texts: str) -> bool:
+    blob = " ".join(t for t in texts if t)
+    return bool(_CAPTION_PER_UNIT_RE.search(blob))
+
+
 @dataclass(frozen=True)
 class CompEstimate:
     """What the Comps agent produced for one lot. Advisory by design."""
