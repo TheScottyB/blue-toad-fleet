@@ -13,6 +13,7 @@ from html import escape
 
 from src.appraisal import QueueResult
 from src.bidmath import Decision, Priority, SheetSummary
+from src.gate.voice import PitchVoice
 
 
 @dataclass
@@ -30,6 +31,7 @@ class CycleView:
     illustrative: bool = False
     lots_total: int | None = None
     zone_occupancy: dict[str, list[str]] = field(default_factory=dict)
+    voice: PitchVoice | None = None
 
 
 _CSS = """
@@ -160,19 +162,40 @@ def _map_block(v: CycleView | None = None) -> str:
 """
 
 
-def _pitch_block(pitch_text: str) -> str:
+def _pitch_block(pitch_text: str = "", voice: PitchVoice | None = None) -> str:
     """
     The curator's read on the sheet, in prose.
 
-    Written by Gemma from the finished allocation — it is handed lot ids,
-    captions and the bids the shop's own math already set, and asked to phrase
-    them. It never sees a comparable sale and never picks a lot. Every figure it
-    uses is checked against the sheet before this renders; see src/gate/pitch.py.
-
-    Attributed on the face of the banner, because a reader should be able to
-    tell at a glance which parts of this console are computed and which are
-    written.
+    Structured PitchVoice (preferred) badges whether Gemma or the template
+    wrote it. A free-text pitch_text is the master's single-paragraph fallback.
+    Invented figures never reach here — write_pitch_voice / curator_voice
+    already discarded them.
     """
+    if voice is not None:
+        badge = "template fallback" if voice.fallback else "Gemma 4 · Vertex AI"
+        push = (f"<br><b>Pushback:</b> {escape(voice.pushback)}"
+                if voice.pushback else "")
+        body = (
+            f"<b>Top 3 Alpha Picks:</b> {escape(voice.alpha)}<br>"
+            f"<b>Fast Smalls:</b> {escape(voice.fast_smalls)}<br>"
+            f"<b>Wildcard / ruled out:</b> {escape(voice.wildcard)}"
+            f"{push}"
+        )
+        return f"""
+<div class="pitch-card">
+  <div class="pitch-hd">
+    Curator&rsquo;s read
+    <span class="tag" style="margin-left:auto;border-color:var(--violet);color:var(--violet)">{escape(badge)}</span>
+  </div>
+  <div style="font-size:13.5px;color:var(--ink2);line-height:1.65">{body}</div>
+  <div style="font-size:11px;color:var(--ink3);margin-top:9px">
+    Prose only. Lots and bids are set by the deterministic sheet; figures
+    are validated against it before display.
+  </div>
+</div>
+"""
+    if not pitch_text:
+        return ""
     return f"""
 <div class="pitch-card">
   <div class="pitch-hd">
@@ -187,6 +210,7 @@ def _pitch_block(pitch_text: str) -> str:
   </div>
 </div>
 """
+
 
 
 def _question_block(v: CycleView) -> str:
@@ -331,7 +355,7 @@ def render_console(v: CycleView, pitch_text: str = "") -> str:
     ({used:.0f}%)</div>
 </header>
 {_map_block(v)}
-{_pitch_block(pitch_text) if pitch_text else ''}
+{_pitch_block(pitch_text, v.voice)}
 {_question_block(v)}
 {_sheet_block(v)}
 <footer>

@@ -212,3 +212,21 @@ class TestShowroomMap:
         assert "BT-001" in h
         assert "BT-041" in h
 
+
+class TestStructuredVoiceBanner:
+    def test_renders_gemma_voice_prose_when_present(self):
+        from src.gate.voice import PitchVoice
+        v = _view()
+        v.voice = PitchVoice(
+            alpha="Keep the Topps at the defensive cap.",
+            fast_smalls="Handheld games turn fast.",
+            wildcard="Bet the games as the wildcard.",
+            pushback="Understood on dropping sports, but keep BT-001.",
+        )
+
+        h = render_console(v)
+        assert "Keep the Topps at the defensive cap." in h
+        assert "Handheld games turn fast." in h
+        assert "Understood on dropping sports, but keep BT-001." in h
+        assert "Gemma 4" in h
+

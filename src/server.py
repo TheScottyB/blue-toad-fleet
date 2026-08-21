@@ -26,8 +26,10 @@ from src.appraisal import (
     Appraisal, Confidence as AppConfidence
 )
 from src.appraiser import AppraisalEngine
+from src.appraiser.routing import GEMMA_MODEL
 from src.gate import CycleView, render_console
 from src.gate.pitch import build_pitch, curator_voice, _CURATOR_SYSTEM
+from src.gate.voice import write_pitch_voice
 from scripts.run_vertex_pipeline import (
     REFERENCE_COMPS, OPERATOR_APPROVED, operator_lot_inputs, apply_operator_cap,
     trusted_lot_flags,
@@ -338,12 +340,22 @@ def healthz():
         "project": os.environ.get("GOOGLE_CLOUD_PROJECT", "threebatdrone-prod-420"),
         "version": "2.0.0",
         "vertex_client": bool(engine.client),
+        "gemma_model": GEMMA_MODEL,
+        "gemma_ok": bool(engine.client) and "gemma" in GEMMA_MODEL.lower(),
     }
 
 
 @app.get("/", response_class=HTMLResponse)
 def get_console():
     photos, _, lots, decisions, summary, queue_res, captions_map = get_aug22_state()
+    pitch = build_pitch(decisions, captions_map, STATE["standing_rules"])
+    # Unit tests must stay credential-free and fast. Cloud Run has no
+    # PYTEST_CURRENT_TEST, so Gemma runs there (then caches).
+    live_client = None if os.environ.get("PYTEST_CURRENT_TEST") else engine.client
+    cache = Path("/tmp/btf_gemma_voice.json")
+    voice = write_pitch_voice(
+        pitch, client=live_client, cache_path=cache,
+    )
     view = CycleView(
         cycle_id=STATE["cycle_id"],
         auction_date="Saturday, August 22, 2026",
@@ -357,6 +369,7 @@ def get_console():
         deadline="Friday August 21, 8:00 PM CDT",
         illustrative=False,
         lots_total=len(lots),
+        voice=voice,
     )
     return render_console(view, pitch_text=curator_pitch(decisions, captions_map))
 

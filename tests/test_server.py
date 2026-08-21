@@ -20,6 +20,13 @@ def test_health_endpoints(client):
     assert r2.status_code == 200
     assert r2.json()["status"] == "healthy"
 
+
+def test_health_names_the_gemma_bonus_model(client):
+    data = client.get("/health").json()
+    assert "gemma" in data["gemma_model"].lower()
+    assert not data["gemma_model"].startswith("gemini-")
+    assert "gemma_ok" in data
+
 def test_root_console_renders(client):
     r = client.get("/")
     assert r.status_code == 200
