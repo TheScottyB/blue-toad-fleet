@@ -1,0 +1,1376 @@
+{
+  "az_listing_id": "4160518",
+  "es_sale_id": 5042877,
+  "method": "dhash8 nearest, threshold<=6",
+  "matched": 171,
+  "links": [
+    {
+      "es_order": 0,
+      "az_sequence": 1,
+      "hamming": 0,
+      "caption": "Vintage Topps Baseball Cards",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/d1fd6c17-dc65-4ff4-9a8e-bfbc5a991923.jpg",
+      "lot_id": "BT-001"
+    },
+    {
+      "es_order": 1,
+      "az_sequence": 2,
+      "hamming": 1,
+      "caption": "Estate Costume Jewelry",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/ece067d6-1e57-4f82-a4b4-8a21cf2cd2f6.jpg",
+      "lot_id": "BT-002"
+    },
+    {
+      "es_order": 2,
+      "az_sequence": 3,
+      "hamming": 0,
+      "caption": "Hollywood Photos",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/ffb41dfa-86a0-4bd9-9dd3-5c8708c18650.jpg",
+      "lot_id": "BT-003"
+    },
+    {
+      "es_order": 3,
+      "az_sequence": 4,
+      "hamming": 0,
+      "caption": "Peyton Manning Signed Jersey",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/cf9bb49c-0b53-4da6-9872-ade2bc763e91.jpg",
+      "lot_id": "BT-004"
+    },
+    {
+      "es_order": 4,
+      "az_sequence": 5,
+      "hamming": 0,
+      "caption": "Yearbooks",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/3d36f681-4a24-406d-bcf8-5481983999b6.jpg",
+      "lot_id": "BT-005"
+    },
+    {
+      "es_order": 5,
+      "az_sequence": 6,
+      "hamming": 1,
+      "caption": "Michael Jordan Signed Hat",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/7f7752d8-42a8-4c01-9078-de185497718e.jpg",
+      "lot_id": "BT-006"
+    },
+    {
+      "es_order": 6,
+      "az_sequence": 7,
+      "hamming": 0,
+      "caption": "Dan Marino signed Photo",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/3c749005-767c-4b42-9159-1a2c5511e595.jpg",
+      "lot_id": "BT-007"
+    },
+    {
+      "es_order": 7,
+      "az_sequence": 8,
+      "hamming": 0,
+      "caption": "Rusty Wallace signed helmet",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/25183601-3c5d-4f6b-be23-3dad007f0478.jpg",
+      "lot_id": "BT-008"
+    },
+    {
+      "es_order": 8,
+      "az_sequence": 9,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/03227fd9-84a1-44e2-aa8c-ddc840c85c0e.jpg",
+      "lot_id": "BT-009"
+    },
+    {
+      "es_order": 9,
+      "az_sequence": 10,
+      "hamming": 0,
+      "caption": "Joe DiMaggio signed hat",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/832d7b7d-e2a8-4f51-a259-8d47492a4e4e.jpg",
+      "lot_id": "BT-010"
+    },
+    {
+      "es_order": 10,
+      "az_sequence": 11,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/b1c06d9a-9d39-4091-88fe-932206cd8f14.jpg",
+      "lot_id": "BT-011"
+    },
+    {
+      "es_order": 11,
+      "az_sequence": 12,
+      "hamming": 0,
+      "caption": "Joe Flacco signed jersey",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/fa8c1de6-e4cb-48cb-8ccb-e042346cc2d9.jpg",
+      "lot_id": "BT-012"
+    },
+    {
+      "es_order": 12,
+      "az_sequence": 13,
+      "hamming": 0,
+      "caption": "sports apparel",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/f99fa02e-15da-43e8-a2c0-2230718d985f.jpg",
+      "lot_id": "BT-013"
+    },
+    {
+      "es_order": 13,
+      "az_sequence": 14,
+      "hamming": 0,
+      "caption": "baseballs",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/58feff16-dae3-4025-960d-d72fb3ce93a2.jpg",
+      "lot_id": "BT-014"
+    },
+    {
+      "es_order": 14,
+      "az_sequence": 16,
+      "hamming": 0,
+      "caption": "trading cards",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/2650a2c0-62ab-433a-8008-bdfd1a5291c2.jpg",
+      "lot_id": "BT-016"
+    },
+    {
+      "es_order": 15,
+      "az_sequence": 18,
+      "hamming": 0,
+      "caption": "scrapbook",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/99786c95-0c92-4aac-a20a-26e9b9ca5193.jpg",
+      "lot_id": "BT-018"
+    },
+    {
+      "es_order": 16,
+      "az_sequence": 20,
+      "hamming": 0,
+      "caption": "baseball cards",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/b598191c-d59f-4ab2-a3e4-2ef22e038f07.jpg",
+      "lot_id": "BT-020"
+    },
+    {
+      "es_order": 17,
+      "az_sequence": 21,
+      "hamming": 0,
+      "caption": "princess phone",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/95196a93-2fbb-45ab-9cd7-7f619adcccd8.jpg",
+      "lot_id": "BT-021"
+    },
+    {
+      "es_order": 18,
+      "az_sequence": 23,
+      "hamming": 1,
+      "caption": "Reggie Bush signed jersey",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/5e742e7f-6c48-4056-b395-4c73c9fc065a.jpg",
+      "lot_id": "BT-023"
+    },
+    {
+      "es_order": 19,
+      "az_sequence": 27,
+      "hamming": 0,
+      "caption": "butterfly bowl",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/6fe88d09-d6e6-40b0-92e9-efbda17f3b29.jpg",
+      "lot_id": "BT-027"
+    },
+    {
+      "es_order": 20,
+      "az_sequence": 30,
+      "hamming": 0,
+      "caption": "non-spoprt trading cards",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/1af97225-ef8a-4c71-a0a4-76f4d79d947a.jpg",
+      "lot_id": "BT-030"
+    },
+    {
+      "es_order": 21,
+      "az_sequence": 33,
+      "hamming": 0,
+      "caption": "smalls",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/9ade0ebb-5254-4e37-9f39-200803e82959.jpg",
+      "lot_id": "BT-033"
+    },
+    {
+      "es_order": 22,
+      "az_sequence": 35,
+      "hamming": 0,
+      "caption": "Playboy magazines",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/faa8af67-fa85-44ae-a633-51833faab813.jpg",
+      "lot_id": "BT-035"
+    },
+    {
+      "es_order": 23,
+      "az_sequence": 38,
+      "hamming": 0,
+      "caption": "vintage toys",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/1ce6a927-a4f8-4651-b750-7aa35c32477e.jpg",
+      "lot_id": "BT-038"
+    },
+    {
+      "es_order": 24,
+      "az_sequence": 40,
+      "hamming": 0,
+      "caption": "collectibles",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/fcad6bce-68c3-4ad5-87be-c7031a654a3a.jpg",
+      "lot_id": "BT-040"
+    },
+    {
+      "es_order": 25,
+      "az_sequence": 44,
+      "hamming": 0,
+      "caption": "wall clock",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/e5aa0132-265e-4b9d-93fd-0e3b13e34189.jpg",
+      "lot_id": "BT-044"
+    },
+    {
+      "es_order": 26,
+      "az_sequence": 48,
+      "hamming": 0,
+      "caption": "ET nightlight",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/e4cafb05-b69a-4cd1-a104-bfa942045afc.jpg",
+      "lot_id": "BT-048"
+    },
+    {
+      "es_order": 27,
+      "az_sequence": 49,
+      "hamming": 0,
+      "caption": "beachball lamp shade",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/2f08c901-4775-42f7-832a-c75a80d1a573.jpg",
+      "lot_id": "BT-049"
+    },
+    {
+      "es_order": 28,
+      "az_sequence": 50,
+      "hamming": 0,
+      "caption": "Lionel building set",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/8e244ab2-36ab-438a-8c83-ad462bbe7374.jpg",
+      "lot_id": "BT-050"
+    },
+    {
+      "es_order": 29,
+      "az_sequence": 53,
+      "hamming": 1,
+      "caption": "vintage trumpet",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/3de53951-2995-47d5-b7aa-a7375b267a95.jpg",
+      "lot_id": "BT-053"
+    },
+    {
+      "es_order": 30,
+      "az_sequence": 54,
+      "hamming": 1,
+      "caption": "35mm camera",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/b8fcebee-32bf-44d9-99c3-b783b9722406.jpg",
+      "lot_id": "BT-054"
+    },
+    {
+      "es_order": 31,
+      "az_sequence": 55,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/4916eb99-a580-4c7e-b454-b58bec75f6ab.jpg",
+      "lot_id": "BT-055"
+    },
+    {
+      "es_order": 32,
+      "az_sequence": 57,
+      "hamming": 0,
+      "caption": "signed sports photos",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/c30a02aa-7e5e-4337-8817-2f6905f1be8c.jpg",
+      "lot_id": "BT-057"
+    },
+    {
+      "es_order": 33,
+      "az_sequence": 58,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/f81ab162-582b-46ca-97b9-e02eee21f0de.jpg",
+      "lot_id": "BT-058"
+    },
+    {
+      "es_order": 34,
+      "az_sequence": 59,
+      "hamming": 0,
+      "caption": "Walter Payton",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/a0469b1b-b343-42e1-a056-887e2349915e.jpg",
+      "lot_id": "BT-059"
+    },
+    {
+      "es_order": 35,
+      "az_sequence": 61,
+      "hamming": 0,
+      "caption": "Michael Jordan",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/37ad8354-a277-4187-a309-dbbd3c11d053.jpg",
+      "lot_id": "BT-061"
+    },
+    {
+      "es_order": 36,
+      "az_sequence": 62,
+      "hamming": 0,
+      "caption": "Jim Brown",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/1f06707d-6477-4bc2-b76e-1923378a6b0b.jpg",
+      "lot_id": "BT-062"
+    },
+    {
+      "es_order": 37,
+      "az_sequence": 63,
+      "hamming": 0,
+      "caption": "graded Star Wars card",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/686de5d8-983b-42cb-a7b8-38c53aad979a.jpg",
+      "lot_id": "BT-063"
+    },
+    {
+      "es_order": 38,
+      "az_sequence": 64,
+      "hamming": 0,
+      "caption": "graded sports cards",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/5ba48f96-4ba7-4c9d-a8f0-9a81b7305323.jpg",
+      "lot_id": "BT-064"
+    },
+    {
+      "es_order": 39,
+      "az_sequence": 65,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/996a5c90-d0a6-4ac5-bcbf-9432179e6882.jpg",
+      "lot_id": "BT-065"
+    },
+    {
+      "es_order": 40,
+      "az_sequence": 66,
+      "hamming": 1,
+      "caption": "hand held video games",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/c590fb1b-297e-40f9-aa81-9a764723fb81.jpg",
+      "lot_id": "BT-066"
+    },
+    {
+      "es_order": 41,
+      "az_sequence": 73,
+      "hamming": 0,
+      "caption": "Poppy Trail dishes",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/367b3fa9-9f44-4652-b0ae-35a279650e86.jpg",
+      "lot_id": "BT-073"
+    },
+    {
+      "es_order": 42,
+      "az_sequence": 74,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/2d0fb1ef-c791-44a5-8875-34c2dc473234.jpg",
+      "lot_id": "BT-074"
+    },
+    {
+      "es_order": 43,
+      "az_sequence": 79,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/e7977d95-6725-462c-8a79-d24e86a8807c.jpg",
+      "lot_id": "BT-079"
+    },
+    {
+      "es_order": 44,
+      "az_sequence": 82,
+      "hamming": 0,
+      "caption": "mini Coca-Cola bottles",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/73bd230d-60ff-4911-9a25-742dcc2f4a83.jpg",
+      "lot_id": "BT-082"
+    },
+    {
+      "es_order": 45,
+      "az_sequence": 83,
+      "hamming": 0,
+      "caption": "toolbox",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/3cfddba8-1b4e-4001-bf5c-1a74b6e6b02d.jpg",
+      "lot_id": "BT-083"
+    },
+    {
+      "es_order": 46,
+      "az_sequence": 88,
+      "hamming": 0,
+      "caption": "stamp collection",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/3f427e09-18c1-4f6f-add1-ba1af6a733c8.jpg",
+      "lot_id": "BT-088"
+    },
+    {
+      "es_order": 47,
+      "az_sequence": 89,
+      "hamming": 0,
+      "caption": "Mlay skin care",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/43dbf873-687e-49a4-b479-60ca8950bef8.jpg",
+      "lot_id": "BT-089"
+    },
+    {
+      "es_order": 48,
+      "az_sequence": 94,
+      "hamming": 0,
+      "caption": "stamp album",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/0e639053-4d1c-4373-8cd8-26a7642374f3.jpg",
+      "lot_id": "BT-094"
+    },
+    {
+      "es_order": 49,
+      "az_sequence": 95,
+      "hamming": 0,
+      "caption": "foreign coin collection",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/1aa014ed-286c-4f3e-87b1-760b16a2bb0f.jpg",
+      "lot_id": "BT-095"
+    },
+    {
+      "es_order": 50,
+      "az_sequence": 96,
+      "hamming": 0,
+      "caption": "Bulls collectibles",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/b8963e38-38d1-427c-a443-6c769b987f07.jpg",
+      "lot_id": "BT-096"
+    },
+    {
+      "es_order": 51,
+      "az_sequence": 97,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/707e04ba-8fc1-4e53-b73d-9660a2aef852.jpg",
+      "lot_id": "BT-097"
+    },
+    {
+      "es_order": 52,
+      "az_sequence": 98,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/af71f3ba-68ed-4261-8c3b-51fb5573915d.jpg",
+      "lot_id": "BT-098"
+    },
+    {
+      "es_order": 53,
+      "az_sequence": 99,
+      "hamming": 0,
+      "caption": "White Sox collectibles",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/eb68613a-6bc7-46bd-ba9a-4996f3e5c4b2.jpg",
+      "lot_id": "BT-099"
+    },
+    {
+      "es_order": 54,
+      "az_sequence": 101,
+      "hamming": 0,
+      "caption": "trading cards",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/d1df7dd6-19a8-4c12-a02a-978e271aa72d.jpg",
+      "lot_id": "BT-101"
+    },
+    {
+      "es_order": 55,
+      "az_sequence": 102,
+      "hamming": 0,
+      "caption": "1994 World Series Ball",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/2d88c48e-2a56-413a-ad88-0a18d0aefe5f.jpg",
+      "lot_id": "BT-102"
+    },
+    {
+      "es_order": 56,
+      "az_sequence": 104,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/d35ac43f-1988-4d49-901f-7aa2ab788530.jpg",
+      "lot_id": "BT-104"
+    },
+    {
+      "es_order": 57,
+      "az_sequence": 105,
+      "hamming": 0,
+      "caption": "Billy Martin signed ball",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/95152ba1-fd6d-44c7-ac10-fe217da6277a.jpg",
+      "lot_id": "BT-105"
+    },
+    {
+      "es_order": 58,
+      "az_sequence": 115,
+      "hamming": 0,
+      "caption": "1970 proof set",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/05284d24-3cdd-4b3b-8f2d-6c6a4a7eed88.jpg",
+      "lot_id": "BT-115"
+    },
+    {
+      "es_order": 59,
+      "az_sequence": 116,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/940afa62-7053-4027-853e-727078c19760.jpg",
+      "lot_id": "BT-116"
+    },
+    {
+      "es_order": 60,
+      "az_sequence": 119,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/b3ca8607-72dd-4559-acd4-0dfe176a7689.jpg",
+      "lot_id": "BT-119"
+    },
+    {
+      "es_order": 61,
+      "az_sequence": 120,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/e19fde96-88ea-4b73-98c3-0f46e8f29925.jpg",
+      "lot_id": "BT-120"
+    },
+    {
+      "es_order": 62,
+      "az_sequence": 121,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/01c9958b-c9e3-44f6-9ba2-79779d2ada49.jpg",
+      "lot_id": "BT-121"
+    },
+    {
+      "es_order": 63,
+      "az_sequence": 122,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/a6faa2ae-5597-418e-8a1c-b69bd40b3d31.jpg",
+      "lot_id": "BT-122"
+    },
+    {
+      "es_order": 64,
+      "az_sequence": 124,
+      "hamming": 0,
+      "caption": "signed sports photos",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/3d78a63e-066a-4bf6-ae62-d0c86fc8b19c.jpg",
+      "lot_id": "BT-124"
+    },
+    {
+      "es_order": 65,
+      "az_sequence": 128,
+      "hamming": 0,
+      "caption": "roberto Clemente bat",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/71a420a0-6943-4b1c-9e5e-0e9b6a560176.jpg",
+      "lot_id": "BT-128"
+    },
+    {
+      "es_order": 66,
+      "az_sequence": 129,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/b6495bcb-846d-42da-ab70-48ad161f4308.jpg",
+      "lot_id": "BT-129"
+    },
+    {
+      "es_order": 67,
+      "az_sequence": 130,
+      "hamming": 0,
+      "caption": "Frank Thomas signed photo",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/e220708c-3c3f-4807-bb09-f1dd72f16f8d.jpg",
+      "lot_id": "BT-130"
+    },
+    {
+      "es_order": 68,
+      "az_sequence": 131,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/3cfed422-3154-4b89-ab99-6afe4b217f05.jpg",
+      "lot_id": "BT-131"
+    },
+    {
+      "es_order": 69,
+      "az_sequence": 132,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/5f1fff14-3b3e-424f-95b0-61451892970f.jpg",
+      "lot_id": "BT-132"
+    },
+    {
+      "es_order": 70,
+      "az_sequence": 133,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/67c960e0-9e35-4bcc-bf6d-3d660b8eddcc.jpg",
+      "lot_id": "BT-133"
+    },
+    {
+      "es_order": 71,
+      "az_sequence": 134,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/ba848e11-61b7-4065-bef6-7af0972d98b4.jpg",
+      "lot_id": "BT-134"
+    },
+    {
+      "es_order": 72,
+      "az_sequence": 135,
+      "hamming": 1,
+      "caption": "factory baseball sets",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/90c409f3-a886-4ade-91e3-908bbcae0789.jpg",
+      "lot_id": "BT-135"
+    },
+    {
+      "es_order": 73,
+      "az_sequence": 136,
+      "hamming": 0,
+      "caption": "squuish mellows",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/2ed6ed36-c3f2-416b-933c-e5d1230ac9a4.jpg",
+      "lot_id": "BT-136"
+    },
+    {
+      "es_order": 74,
+      "az_sequence": 137,
+      "hamming": 0,
+      "caption": "animal trap",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/6004a885-9615-4633-9993-59ceeb4baf10.jpg",
+      "lot_id": "BT-137"
+    },
+    {
+      "es_order": 75,
+      "az_sequence": 141,
+      "hamming": 0,
+      "caption": "Tarzan movie display",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/1c0f0c7a-697d-4c7f-85aa-4f9c5ce83867.jpg",
+      "lot_id": "BT-141"
+    },
+    {
+      "es_order": 76,
+      "az_sequence": 144,
+      "hamming": 1,
+      "caption": "Snack Sets",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/61c6f7b8-ee60-44b2-962c-09ffdc8751d3.jpg",
+      "lot_id": "BT-144"
+    },
+    {
+      "es_order": 77,
+      "az_sequence": 146,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/14794ba4-a040-4e70-b76e-232cdff4c6d0.jpg",
+      "lot_id": "BT-146"
+    },
+    {
+      "es_order": 78,
+      "az_sequence": 151,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/089809f3-7215-4ef6-9d3f-17aa6ffe9cee.jpg",
+      "lot_id": "BT-151"
+    },
+    {
+      "es_order": 79,
+      "az_sequence": 152,
+      "hamming": 0,
+      "caption": "coffee grinder",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/2fd5e0e8-ab80-4887-b6d0-233acb7c676f.jpg",
+      "lot_id": "BT-152"
+    },
+    {
+      "es_order": 80,
+      "az_sequence": 155,
+      "hamming": 0,
+      "caption": "Yashica",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/43a55274-5467-44ea-84ad-76469d1462ec.jpg",
+      "lot_id": "BT-155"
+    },
+    {
+      "es_order": 81,
+      "az_sequence": 156,
+      "hamming": 0,
+      "caption": "necklace",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/b061967f-be9a-42dc-a849-542962706529.jpg",
+      "lot_id": "BT-156"
+    },
+    {
+      "es_order": 82,
+      "az_sequence": 159,
+      "hamming": 0,
+      "caption": "Lego building blocks",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/bb10b530-72ec-47db-a5d1-2ba6f8c55e62.jpg",
+      "lot_id": "BT-159"
+    },
+    {
+      "es_order": 83,
+      "az_sequence": 160,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/56ba6c78-682e-42dc-a934-b4822b37e043.jpg",
+      "lot_id": "BT-160"
+    },
+    {
+      "es_order": 84,
+      "az_sequence": 161,
+      "hamming": 0,
+      "caption": "Polaroid camera",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/ec23427b-fa94-446d-b31b-49ad5dffea5d.jpg",
+      "lot_id": "BT-161"
+    },
+    {
+      "es_order": 85,
+      "az_sequence": 163,
+      "hamming": 1,
+      "caption": "bobble heads",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/7576614e-47e8-4882-bcc4-0a0bc973e2f4.jpg",
+      "lot_id": "BT-163"
+    },
+    {
+      "es_order": 86,
+      "az_sequence": 165,
+      "hamming": 0,
+      "caption": "bobble heads",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/afd05cb9-7b11-49a6-a0ea-be9e24e87627.jpg",
+      "lot_id": "BT-165"
+    },
+    {
+      "es_order": 87,
+      "az_sequence": 167,
+      "hamming": 0,
+      "caption": "bobble heads",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/d3975855-101d-4ced-8283-2a100ca4b213.jpg",
+      "lot_id": "BT-167"
+    },
+    {
+      "es_order": 88,
+      "az_sequence": 169,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/1cd041b4-124c-4fb0-9b7a-8dbbabbddf66.jpg",
+      "lot_id": "BT-169"
+    },
+    {
+      "es_order": 89,
+      "az_sequence": 170,
+      "hamming": 0,
+      "caption": "Wahl pens",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/15b25cf7-cbde-4415-ab9a-aceb2ff10a0e.jpg",
+      "lot_id": "BT-170"
+    },
+    {
+      "es_order": 90,
+      "az_sequence": 174,
+      "hamming": 0,
+      "caption": "the Beatles magazine",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/6903bd2a-a44a-4651-9986-f2827a5cb000.jpg",
+      "lot_id": "BT-174"
+    },
+    {
+      "es_order": 91,
+      "az_sequence": 175,
+      "hamming": 0,
+      "caption": "UNCLE magazine",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/9c0a97ac-745e-4ace-abf6-e98dcb7943da.jpg",
+      "lot_id": "BT-175"
+    },
+    {
+      "es_order": 92,
+      "az_sequence": 176,
+      "hamming": 0,
+      "caption": "vintage Pens &amp; pencils",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/1a18b728-89a7-41b9-a366-b9023d8ea4df.jpg",
+      "lot_id": "BT-176"
+    },
+    {
+      "es_order": 93,
+      "az_sequence": 177,
+      "hamming": 0,
+      "caption": "watches",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/6dbb9a24-7508-47bd-b165-81c3e035d2b8.jpg",
+      "lot_id": "BT-177"
+    },
+    {
+      "es_order": 94,
+      "az_sequence": 179,
+      "hamming": 0,
+      "caption": "necklaces",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/89b0028f-75f9-4292-b088-133d7892d82a.jpg",
+      "lot_id": "BT-179"
+    },
+    {
+      "es_order": 95,
+      "az_sequence": 181,
+      "hamming": 0,
+      "caption": "estate costume jewelry",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/12b726e7-d5ff-45a9-b635-ab483199864e.jpg",
+      "lot_id": "BT-181"
+    },
+    {
+      "es_order": 96,
+      "az_sequence": 184,
+      "hamming": 0,
+      "caption": "Wonder Woman shield",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/cb5cd1a7-e594-49d8-9eb9-77af0cf1059a.jpg",
+      "lot_id": "BT-184"
+    },
+    {
+      "es_order": 97,
+      "az_sequence": 185,
+      "hamming": 1,
+      "caption": "hummingbird window",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/ede82abc-1d8f-48a2-8543-947596d9e303.jpg",
+      "lot_id": "BT-185"
+    },
+    {
+      "es_order": 98,
+      "az_sequence": 189,
+      "hamming": 0,
+      "caption": "Pink Floyd concert poster",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/2d9d18ac-89a2-477d-b004-62eee78d7066.jpg",
+      "lot_id": "BT-189"
+    },
+    {
+      "es_order": 99,
+      "az_sequence": 192,
+      "hamming": 0,
+      "caption": "signed Packers poster",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/d163a5a4-089d-45f9-8414-7f19822ce1e9.jpg",
+      "lot_id": "BT-192"
+    },
+    {
+      "es_order": 100,
+      "az_sequence": 193,
+      "hamming": 0,
+      "caption": "Safety score board",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/2b33a236-4d16-45b8-afd1-52bba63fe67a.jpg",
+      "lot_id": "BT-193"
+    },
+    {
+      "es_order": 101,
+      "az_sequence": 195,
+      "hamming": 1,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/b8370ac1-740f-429b-8f62-c517f093c41c.jpg",
+      "lot_id": "BT-195"
+    },
+    {
+      "es_order": 102,
+      "az_sequence": 196,
+      "hamming": 0,
+      "caption": "Packers plaques",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/51f95b7f-1abc-4a44-ac2a-8222518f3f2f.jpg",
+      "lot_id": "BT-196"
+    },
+    {
+      "es_order": 103,
+      "az_sequence": 198,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/eb655f1b-4460-4cfa-99aa-2c997ff2d8d9.jpg",
+      "lot_id": "BT-198"
+    },
+    {
+      "es_order": 104,
+      "az_sequence": 200,
+      "hamming": 0,
+      "caption": "Ronnie Harper signed photo",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/be6fb907-60f7-4307-a9c1-4fd123d73b2f.jpg",
+      "lot_id": "BT-200"
+    },
+    {
+      "es_order": 105,
+      "az_sequence": 201,
+      "hamming": 0,
+      "caption": "Ryne Sandberg signed photo",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/5d61a7f4-f7e8-4ff1-a94a-a739d58085be.jpg",
+      "lot_id": "BT-201"
+    },
+    {
+      "es_order": 106,
+      "az_sequence": 203,
+      "hamming": 0,
+      "caption": "Planters Peanuts display",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/f8bfaf0d-ada3-40cf-a8e1-a6affb820b3b.jpg",
+      "lot_id": "BT-203"
+    },
+    {
+      "es_order": 107,
+      "az_sequence": 205,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/af9cee8e-f63f-48fa-8a0e-53d5472b5b63.jpg",
+      "lot_id": "BT-205"
+    },
+    {
+      "es_order": 108,
+      "az_sequence": 206,
+      "hamming": 0,
+      "caption": "framed beaded purse",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/bd583cd3-ef57-48b7-91d3-01f6df39cd4f.jpg",
+      "lot_id": "BT-206"
+    },
+    {
+      "es_order": 109,
+      "az_sequence": 207,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/d78a167f-e1ef-46a6-a9dd-7c1f3e3f1490.jpg",
+      "lot_id": "BT-207"
+    },
+    {
+      "es_order": 110,
+      "az_sequence": 208,
+      "hamming": 0,
+      "caption": "framed beaded purse",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/a318f615-3a38-47e4-8a7f-e29f09edb679.jpg",
+      "lot_id": "BT-208"
+    },
+    {
+      "es_order": 111,
+      "az_sequence": 209,
+      "hamming": 0,
+      "caption": "Mattel store displays",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/6eb6b2ca-e37e-40e3-8ffa-9b75bd9ce38d.jpg",
+      "lot_id": "BT-209"
+    },
+    {
+      "es_order": 112,
+      "az_sequence": 212,
+      "hamming": 0,
+      "caption": "baseball display case",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/90c25a7c-f6bd-4918-8611-db50a0a591bb.jpg",
+      "lot_id": "BT-212"
+    },
+    {
+      "es_order": 113,
+      "az_sequence": 214,
+      "hamming": 1,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/fc6c2d2a-9452-4027-ac74-e6d865e25106.jpg",
+      "lot_id": "BT-214"
+    },
+    {
+      "es_order": 114,
+      "az_sequence": 220,
+      "hamming": 0,
+      "caption": "sports books",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/8f2f38ac-12f9-4d6b-b700-25bf410f8d5e.jpg",
+      "lot_id": "BT-220"
+    },
+    {
+      "es_order": 115,
+      "az_sequence": 223,
+      "hamming": 0,
+      "caption": "Firestone outboard motor",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/96352281-95bd-4e3b-834f-79beb4fff22a.jpg",
+      "lot_id": "BT-223"
+    },
+    {
+      "es_order": 116,
+      "az_sequence": 230,
+      "hamming": 0,
+      "caption": "art glass paper weights",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/15ce6f81-70a2-41bc-8abc-90b2b559e8f5.jpg",
+      "lot_id": "BT-230"
+    },
+    {
+      "es_order": 117,
+      "az_sequence": 233,
+      "hamming": 0,
+      "caption": "RC car",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/da9e7654-8902-45b3-acb2-04f1a8bae00d.jpg",
+      "lot_id": "BT-233"
+    },
+    {
+      "es_order": 118,
+      "az_sequence": 235,
+      "hamming": 0,
+      "caption": "Century Progress bottle",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/fa3b639b-3fc9-4efc-a6f3-d2f4f70ab4b1.jpg",
+      "lot_id": "BT-235"
+    },
+    {
+      "es_order": 119,
+      "az_sequence": 239,
+      "hamming": 0,
+      "caption": "sports wall plaques",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/b01b501c-6427-494c-98ec-660db59c4638.jpg",
+      "lot_id": "BT-239"
+    },
+    {
+      "es_order": 120,
+      "az_sequence": 240,
+      "hamming": 0,
+      "caption": "Funko Pop figs",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/3528260e-c07e-4166-9f66-7fe5c4a087bf.jpg",
+      "lot_id": "BT-240"
+    },
+    {
+      "es_order": 121,
+      "az_sequence": 242,
+      "hamming": 0,
+      "caption": "glass Christmas ornaments",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/9f7411a7-6612-458c-8b43-32fc24685c75.jpg",
+      "lot_id": "BT-242"
+    },
+    {
+      "es_order": 122,
+      "az_sequence": 244,
+      "hamming": 0,
+      "caption": "brass horn",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/78bad6e4-7e66-43db-938c-765b11ddb8ed.jpg",
+      "lot_id": "BT-244"
+    },
+    {
+      "es_order": 123,
+      "az_sequence": 245,
+      "hamming": 0,
+      "caption": "Batman wallet",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/10e6849a-53dd-4e8e-a082-9d37ad4738cf.jpg",
+      "lot_id": "BT-245"
+    },
+    {
+      "es_order": 124,
+      "az_sequence": 248,
+      "hamming": 0,
+      "caption": "Circus collectibles",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/8bdead80-064b-43e5-9e26-53e05b3e49b3.jpg",
+      "lot_id": "BT-248"
+    },
+    {
+      "es_order": 125,
+      "az_sequence": 249,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/5c5c36ea-e52c-432a-bb03-be146dc222cb.jpg",
+      "lot_id": "BT-249"
+    },
+    {
+      "es_order": 126,
+      "az_sequence": 257,
+      "hamming": 0,
+      "caption": "NASCAR collectibles",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/2d66a2c4-b92c-46d2-b737-ac29b36525c8.jpg",
+      "lot_id": "BT-257"
+    },
+    {
+      "es_order": 127,
+      "az_sequence": 259,
+      "hamming": 0,
+      "caption": "boxing headlines",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/83098269-ba39-4342-b358-ec7f6e5f7ad8.jpg",
+      "lot_id": "BT-259"
+    },
+    {
+      "es_order": 128,
+      "az_sequence": 262,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/9799a398-5bb9-4cc4-a55c-933d0ff62ce7.jpg",
+      "lot_id": "BT-262"
+    },
+    {
+      "es_order": 129,
+      "az_sequence": 264,
+      "hamming": 1,
+      "caption": "sports ephemera",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/0d529d1b-ecac-49b8-820a-febd7d4b26ae.jpg",
+      "lot_id": "BT-264"
+    },
+    {
+      "es_order": 130,
+      "az_sequence": 269,
+      "hamming": 0,
+      "caption": "stamp collection",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/b981ada6-8b0f-45bf-bd25-b422179e4fe0.jpg",
+      "lot_id": "BT-269"
+    },
+    {
+      "es_order": 131,
+      "az_sequence": 271,
+      "hamming": 0,
+      "caption": "sports autographs",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/7a18956e-c221-401b-9bf4-b6ac780e0282.jpg",
+      "lot_id": "BT-271"
+    },
+    {
+      "es_order": 132,
+      "az_sequence": 273,
+      "hamming": 0,
+      "caption": "Budweiser egg can",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/30cceab5-d790-476c-8288-81c632dacdfe.jpg",
+      "lot_id": "BT-273"
+    },
+    {
+      "es_order": 133,
+      "az_sequence": 284,
+      "hamming": 0,
+      "caption": "vintage topps baseball cards",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/fbfbc364-c15f-452f-9c55-8403ebc53562.jpg",
+      "lot_id": "BT-284"
+    },
+    {
+      "es_order": 134,
+      "az_sequence": 285,
+      "hamming": 0,
+      "caption": "vintage Topps football cards",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/f0184b9f-2746-450f-8456-42d39776a55b.jpg",
+      "lot_id": "BT-285"
+    },
+    {
+      "es_order": 135,
+      "az_sequence": 287,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/ba926bf0-42c7-4484-9ad9-106784962878.jpg",
+      "lot_id": "BT-287"
+    },
+    {
+      "es_order": 136,
+      "az_sequence": 288,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/5802f8a9-50ae-47b0-bb30-684413fb2a5b.jpg",
+      "lot_id": "BT-288"
+    },
+    {
+      "es_order": 137,
+      "az_sequence": 289,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/c532328c-0fb7-4700-ad7e-e28a34add41a.jpg",
+      "lot_id": "BT-289"
+    },
+    {
+      "es_order": 138,
+      "az_sequence": 291,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/7370785d-39a7-4b1b-9f54-4dae5d3afad6.jpg",
+      "lot_id": "BT-291"
+    },
+    {
+      "es_order": 139,
+      "az_sequence": 293,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/3449020a-f723-4ae1-811b-d951e2446dad.jpg",
+      "lot_id": "BT-293"
+    },
+    {
+      "es_order": 140,
+      "az_sequence": 294,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/a7f4ea80-37d7-4141-bebf-e757309e9556.jpg",
+      "lot_id": "BT-294"
+    },
+    {
+      "es_order": 141,
+      "az_sequence": 295,
+      "hamming": 1,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/a81b05da-3c3d-4dfb-a780-aebcfdb61354.jpg",
+      "lot_id": "BT-295"
+    },
+    {
+      "es_order": 142,
+      "az_sequence": 296,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/6eea4bb7-ee99-4a57-88b5-45e421027006.jpg",
+      "lot_id": "BT-296"
+    },
+    {
+      "es_order": 143,
+      "az_sequence": 297,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/427ba2f0-4342-4c16-a343-601799102444.jpg",
+      "lot_id": "BT-297"
+    },
+    {
+      "es_order": 144,
+      "az_sequence": 313,
+      "hamming": 0,
+      "caption": "children's records",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/0afaf316-3b4d-4cda-93a2-bdcb3dd3c493.jpg",
+      "lot_id": "BT-313"
+    },
+    {
+      "es_order": 145,
+      "az_sequence": 319,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/824b1be4-fed8-4106-bbb1-154678813f65.jpg",
+      "lot_id": "BT-319"
+    },
+    {
+      "es_order": 146,
+      "az_sequence": 321,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/79b1835d-52cd-42d9-a6c7-cb70fddc315e.jpg",
+      "lot_id": "BT-321"
+    },
+    {
+      "es_order": 147,
+      "az_sequence": 323,
+      "hamming": 0,
+      "caption": "Kodak camera",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/15fc1da2-380d-4307-ad24-c5c79e758c17.jpg",
+      "lot_id": "BT-323"
+    },
+    {
+      "es_order": 148,
+      "az_sequence": 326,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/2aebeb42-6aad-4a44-81db-cb56aee67bc1.jpg",
+      "lot_id": "BT-326"
+    },
+    {
+      "es_order": 149,
+      "az_sequence": 327,
+      "hamming": 0,
+      "caption": "new slot car track",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/a7f2e325-93ad-46ef-ac3f-7f5829288826.jpg",
+      "lot_id": "BT-327"
+    },
+    {
+      "es_order": 150,
+      "az_sequence": 345,
+      "hamming": 0,
+      "caption": "gas pump pocket knives",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/f2d9bc86-7c40-4ed8-8721-406ee819f5dd.jpg",
+      "lot_id": "BT-345"
+    },
+    {
+      "es_order": 151,
+      "az_sequence": 354,
+      "hamming": 0,
+      "caption": "Harley Davidson pocket watches",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/8c067565-5495-4a4c-8bf7-4da6067c5a28.jpg",
+      "lot_id": "BT-354"
+    },
+    {
+      "es_order": 152,
+      "az_sequence": 355,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/cbc54fb8-77ce-4d8f-ac2b-2aea5153062e.jpg",
+      "lot_id": "BT-355"
+    },
+    {
+      "es_order": 153,
+      "az_sequence": 358,
+      "hamming": 0,
+      "caption": "Gone with Wind dolls",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/7e1c6a55-5c4c-4d3d-9fe9-4893b4a3b4e7.jpg",
+      "lot_id": "BT-358"
+    },
+    {
+      "es_order": 154,
+      "az_sequence": 365,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/5011e6f2-5fd3-443a-b36e-04ad599ef766.jpg",
+      "lot_id": "BT-365"
+    },
+    {
+      "es_order": 155,
+      "az_sequence": 366,
+      "hamming": 1,
+      "caption": "Mickey Mouse Zippo lighter",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/fabff6c3-60fb-402f-838b-306090baa731.jpg",
+      "lot_id": "BT-366"
+    },
+    {
+      "es_order": 156,
+      "az_sequence": 374,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/c9885de2-841b-4ce0-abcc-78fad31a9f7b.jpg",
+      "lot_id": "BT-374"
+    },
+    {
+      "es_order": 157,
+      "az_sequence": 376,
+      "hamming": 0,
+      "caption": "Garbage Pail Kids cards",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/131847da-7848-4487-8dfa-5521bfe12edc.jpg",
+      "lot_id": "BT-376"
+    },
+    {
+      "es_order": 158,
+      "az_sequence": 379,
+      "hamming": 0,
+      "caption": "GI Joe action figures",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/df8cf61f-5930-4d2f-b836-4326b601f93a.jpg",
+      "lot_id": "BT-379"
+    },
+    {
+      "es_order": 159,
+      "az_sequence": 389,
+      "hamming": 0,
+      "caption": "Daisy bb gun",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/f9168d6b-6b4b-4bb2-b50c-1c44a359b549.jpg",
+      "lot_id": "BT-389"
+    },
+    {
+      "es_order": 160,
+      "az_sequence": 391,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/7f1c58ef-6b68-4353-b17e-7736d5b212c1.jpg",
+      "lot_id": "BT-391"
+    },
+    {
+      "es_order": 161,
+      "az_sequence": 408,
+      "hamming": 0,
+      "caption": "carnival glass",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/38ab637e-6a89-4b95-818f-0ce09b9fe177.jpg",
+      "lot_id": "BT-408"
+    },
+    {
+      "es_order": 162,
+      "az_sequence": 409,
+      "hamming": 0,
+      "caption": "door knocker",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/7e88313d-cf1e-4c67-8f1d-fa61b3bfaba0.jpg",
+      "lot_id": "BT-409"
+    },
+    {
+      "es_order": 163,
+      "az_sequence": 432,
+      "hamming": 1,
+      "caption": "Pokemon collectibles",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/33690e23-a09e-4253-9aac-80cad3c6547b.jpg",
+      "lot_id": "BT-432"
+    },
+    {
+      "es_order": 164,
+      "az_sequence": 437,
+      "hamming": 0,
+      "caption": "35mm cameras",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/8a5b1d7f-ce95-48cb-bce3-131250c686b6.jpg",
+      "lot_id": "BT-437"
+    },
+    {
+      "es_order": 165,
+      "az_sequence": 444,
+      "hamming": 0,
+      "caption": "carving set",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/cef62de2-e672-4ac5-bb8d-2df03232a832.jpg",
+      "lot_id": "BT-444"
+    },
+    {
+      "es_order": 166,
+      "az_sequence": 446,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/e63c9f9b-e223-4242-a305-b4110f5f1ecd.jpg",
+      "lot_id": "BT-446"
+    },
+    {
+      "es_order": 167,
+      "az_sequence": 451,
+      "hamming": 0,
+      "caption": "action figures",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/9684e265-4e13-4896-8cd0-17df87d391b8.jpg",
+      "lot_id": "BT-451"
+    },
+    {
+      "es_order": 168,
+      "az_sequence": 455,
+      "hamming": 1,
+      "caption": "Waterford crystal bowl",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/df95008b-ebeb-46bb-b8f9-8d3e4d473ba0.jpg",
+      "lot_id": "BT-455"
+    },
+    {
+      "es_order": 169,
+      "az_sequence": 461,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/7f7d50f4-cbea-4d17-9aa6-cd59799584f5.jpg",
+      "lot_id": "BT-461"
+    },
+    {
+      "es_order": 170,
+      "az_sequence": 463,
+      "hamming": 0,
+      "caption": "",
+      "es_url": "https://picturescdn.estatesales.net/5042877/1-1/a18ba1d1-ca78-4fc1-9bd1-f6b52f5d55bb.jpg",
+      "lot_id": "BT-463"
+    }
+  ]
+}

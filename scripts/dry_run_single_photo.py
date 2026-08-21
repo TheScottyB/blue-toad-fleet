@@ -37,6 +37,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from scripts.cache_gallery import _PHOTO_PATTERN
+from scripts.run_vertex_pipeline import DEFAULT_STANDING_RULES, REFERENCE_COMPS
 from src.appraisal import build_queue
 from src.appraiser import AppraisalEngine
 from src.appraiser.images import assert_appraisal_grade, image_dimensions
@@ -105,7 +106,38 @@ def row_for_sequence(panel_html, seq):
     return None, None
 
 
-def resolve_photo(listing, seq, data_dir, offline=False):
+def estatesales_image(seq, data_dir):
+    """
+    (bytes, url) for the estatesales copy of an AuctionZip sequence, or None.
+
+    Blue Toad cross-lists the same sale on estatesales.net at 1200x900 JPEG —
+    five times the pixels of AuctionZip's 560x420, and no WAF. It publishes only
+    a subset (171 of 462) with no captions, so this is a source for PIXELS only;
+    the caption still comes from AuctionZip. `estatesales_link.json` carries the
+    correspondence, established by perceptual hash: order-preserving, but not
+    contiguous, so the sequence cannot be computed by an offset.
+    """
+    link_path = Path(data_dir) / "estatesales_link.json"
+    if not link_path.is_file():
+        return None
+    links = json.loads(link_path.read_text())["links"]
+    row = next((r for r in links if r["az_sequence"] == int(seq)), None)
+    if row is None:
+        return None
+
+    cache = Path(data_dir) / "estatesales_images" / f"order{row['es_order']:03d}.jpg"
+    if cache.is_file() and cache.stat().st_size > 0:
+        return cache.read_bytes(), row["es_url"]
+    ctx = ssl.create_default_context()
+    req = urllib.request.Request(row["es_url"], headers={"User-Agent": UA})
+    with urllib.request.urlopen(req, context=ctx, timeout=60) as resp:
+        data = resp.read()
+    cache.parent.mkdir(parents=True, exist_ok=True)
+    cache.write_bytes(data)
+    return data, row["es_url"]
+
+
+def resolve_photo(listing, seq, data_dir, offline=False, source="auctionzip"):
     """Caption and full-size bytes for one photo, live if the WAF allows it."""
     panel_src = img_src = "CACHED (offline requested)"
     panel_html = None
@@ -140,6 +172,19 @@ def resolve_photo(listing, seq, data_dir, offline=False):
 
     img = None
     img_url = f"https://www.auctionzip.com/Full-Image/{listing}/fi{seq}.cgi"
+
+    if source == "estatesales":
+        got = estatesales_image(seq, data_dir)
+        if got is None:
+            raise SystemExit(
+                f"[FATAL] seq {seq} has no estatesales counterpart — it is one of the "
+                f"291 photos AuctionZip carries and estatesales does not. "
+                f"Re-run with --source auctionzip.")
+        img, img_url = got
+        img_src = "ESTATESALES 1200x900 JPEG (pixels), caption from AuctionZip"
+        return _photo_result(photo_id, caption, img, img_url, panel_src, img_src,
+                             total, manifest, seq)
+
     if not offline:
         try:
             frame = fetch(frame_url(listing, seq)).decode("utf-8", "ignore")
@@ -164,6 +209,14 @@ def resolve_photo(listing, seq, data_dir, offline=False):
         img = cached_path.read_bytes()
         img_src = f"CACHED {cached_path.name} (live image unavailable)"
 
+    return _photo_result(photo_id, caption, img, img_url, panel_src, img_src,
+                         total, manifest, seq)
+
+
+def _photo_result(photo_id, caption, img, img_url, panel_src, img_src, total,
+                  manifest, seq):
+    entry = manifest.get(int(seq)) if manifest else None
+    cached_path = ROOT / entry["local_path"] if entry else None
     return {
         "photo_id": photo_id, "caption": caption, "image": img,
         "image_url": img_url, "panel_source": panel_src, "image_source": img_src,
@@ -172,7 +225,20 @@ def resolve_photo(listing, seq, data_dir, offline=False):
 
 
 def run(listing, seq, data_dir, out_dir, force_appraise=False,
-        do_pricing=True, offline=False, budget_cap=600.0, auto_send_threshold=0.0):
+        do_pricing=True, offline=False, budget_cap=600.0, auto_send_threshold=0.0,
+        source="auctionzip", standing_rules=None):
+    """
+    `standing_rules` defaults to the corpus runner's DEFAULT_STANDING_RULES, and
+    that default is load-bearing rather than cosmetic. Passing an empty list —
+    which this script originally did — drops fit_score on a bulk costume jewelry
+    tray from 0.85 to 0.2 and flips the bidmath gate from BID to SKIP, because
+    the rule "BUY - bulk estate costume jewelry moves in the storefront" is what
+    tells the model the shop wants a category its own fit heuristic scores at 0.1.
+    A dry run without the operator's standing rules is not a dry run of this
+    system; it is a dry run of a system that has forgotten every decision he made.
+    """
+    if standing_rules is None:
+        standing_rules = DEFAULT_STANDING_RULES
     lot_id = f"BT-{int(seq):03d}"
     report = {
         "source_url": frame_url(listing, seq), "listing_id": listing,
@@ -184,7 +250,7 @@ def run(listing, seq, data_dir, out_dir, force_appraise=False,
     # ------------------------------------------------------------ 0. fetch
     bar(0, "FETCH — live listing, cached fallback, provenance recorded")
     t0 = time.time()
-    got = resolve_photo(listing, seq, data_dir, offline=offline)
+    got = resolve_photo(listing, seq, data_dir, offline=offline, source=source)
     img, caption = got["image"], got["caption"]
     dims = image_dimensions(img)
     print(f"[*] photopanel      {got['panel_source']}  ({got['panel_total']} photos)")
@@ -260,8 +326,10 @@ def run(listing, seq, data_dir, out_dir, force_appraise=False,
     # -------------------------------------------------------- 4. appraisal
     bar(4, f"STAGE 2 APPRAISAL — {APPRAISAL_MODEL} (LIVE)")
     t = time.time()
+    cat_hint = REFERENCE_COMPS.get(lot_id, {}).get("cat") or verdict.get("category")
+    print(f"[i] category_hint={cat_hint!r}  standing_rules={len(standing_rules)}")
     raw = engine.appraise_lot(lot_id=lot_id, caption=caption, image_bytes=img,
-                              category_hint=verdict.get("category"), standing_rules=[])
+                              category_hint=cat_hint, standing_rules=standing_rules)
     print(f"[✓] {time.time() - t:.1f}s  model={raw.get('model_used')}")
     print(json.dumps(raw, indent=2))
     _appraisal, questions = AppraisalEngine.parse_appraisal_to_domain(raw)
@@ -319,7 +387,7 @@ def run(listing, seq, data_dir, out_dir, force_appraise=False,
 
     # ------------------------------------------------------------ 6. queue
     bar(6, "QUESTION QUEUE — build_queue")
-    qres = build_queue(questions, standing_rules=[])
+    qres = build_queue(questions, standing_rules=standing_rules)
     print(f"[✓] asked={len(qres.asked)} auto_answered={len(qres.auto_answered)} "
           f"deferred={len(qres.deferred)} dropped={len(qres.dropped)}")
     for q in qres.asked:
@@ -345,6 +413,7 @@ def run(listing, seq, data_dir, out_dir, force_appraise=False,
     print(f"[i] needs_human_pricing {d.needs_human_pricing}")
     print(f"[i] allocated           {d.allocated}   auto_send={d.auto_send}")
     print(f"[i] reason              {d.reason}")
+    report["source_kind"] = source
     report["decision"] = {k: (v.value if hasattr(v, "value") else v)
                           for k, v in d.__dict__.items()}
     report["summary"] = summary.__dict__
@@ -400,14 +469,23 @@ def main():
                          "(the corpus run would stop; results will NOT match a live cycle)")
     ap.add_argument("--no-pricing", action="store_true",
                     help="skip the grounded pricing calls (they are the expensive part)")
+    ap.add_argument("--source", choices=["auctionzip", "estatesales"], default="auctionzip",
+                    help="where the PIXELS come from. estatesales is 1200x900 JPEG "
+                         "(5x the pixels, no WAF) but covers only 171 of 462 photos; "
+                         "the caption always comes from AuctionZip either way")
     ap.add_argument("--offline", action="store_true",
                     help="do not touch AuctionZip; use the cached drop only")
+    ap.add_argument("--no-standing-rules", action="store_true",
+                    help="appraise with NO operator standing rules. Diagnostic only: "
+                         "it changes the verdict (jewelry fit 0.85 -> 0.2), it is not "
+                         "what a live cycle does")
     ap.add_argument("--budget-cap", type=float, default=600.0)
     args = ap.parse_args()
 
     run(listing=args.listing, seq=args.seq, data_dir=args.data_dir, out_dir=args.out,
         force_appraise=args.force_appraise, do_pricing=not args.no_pricing,
-        offline=args.offline, budget_cap=args.budget_cap)
+        offline=args.offline, budget_cap=args.budget_cap, source=args.source,
+        standing_rules=[] if args.no_standing_rules else None)
     return 0
 
 

@@ -18,3 +18,4 @@ ORIGINAL_REQUEST.md
 .vscode/
 pyrightconfig.json
 data/dryruns/
+data/**/estatesales_images/
