@@ -208,20 +208,25 @@ class TestTheCollabDecisionsHold:
                 if lid in self.JEWELLERY_LOTS and (d.max_bid or 0) > 25.0}
         assert not over, f"over the agreed $25 cap: {over}"
 
-    def test_a_negotiated_cap_is_a_ceiling_never_a_floor(self):
+    def test_the_owners_max_bid_is_the_one_that_ships(self):
         """
-        A cap limits a bid; it must not raise one. If the appraiser's condition
-        reading lands under the agreed number, the lower figure is what goes on
-        the sheet — an authorisation to spend $100 is not an instruction to.
+        Where he set a number it stands, in both directions. A defensive cap
+        exists so the lot is not lost for five dollars; a condition penalty
+        that walks it down produces exactly the loss it was meant to prevent.
         """
         from scripts.run_vertex_pipeline import OPERATOR_APPROVED
         allocated = self.allocated()
         for lot_id, rec in OPERATOR_APPROVED.items():
-            cap = rec.get("cap")
-            d = allocated.get(lot_id)
+            cap, d = rec.get("cap"), allocated.get(lot_id)
             if cap is None or d is None:
                 continue
-            assert d.max_bid <= cap, f"{lot_id} bids ${d.max_bid} over its ${cap} cap"
+            assert d.max_bid == cap, (
+                f"{lot_id} bids ${d.max_bid}; the owner set ${cap}")
+
+    def test_the_topps_run_ships_at_its_defensive_cap(self):
+        d = self.allocated().get("BT-001")
+        assert d is not None and d.max_bid == 100.0, (
+            f"BT-001 at ${d.max_bid if d else None}; the agreed defensive cap was $100")
 
     def test_the_top_card_lot_is_still_on_the_sheet(self):
         assert "BT-001" in self.allocated(), "the lot the owner kept is missing"

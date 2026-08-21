@@ -73,8 +73,11 @@ REFERENCE_COMPS = {
 OPERATOR_APPROVED = {
     # fit: what the owner decided about category fit. None means he declined the
     #      lot outright, and the sheet must not bid it.
-    # cap: a maximum he negotiated. A condition penalty may bid under a cap; it
-    #      must never walk one down.
+    # cap: a max bid he set. In absentee proxy bidding a max is a ceiling you
+    #      only reach if someone pushes you there, so it is what he is willing
+    #      to go to, not what he expects to pay. A condition penalty must not
+    #      walk it down — bidding under a defensive cap loses the lot to the
+    #      next bidder, which is the outcome the cap existed to prevent.
     "BT-001": {"fit": 0.90, "cap": 100.00,
                "why": "collab: top of the three card lots, $100 cap agreed"},
     "BT-016": {"fit": None,
@@ -117,14 +120,16 @@ def operator_lot_inputs(lot_id: str, raw_appraisal: dict) -> tuple[float, float]
 
 def apply_operator_cap(decision):
     """
-    Hold a bid to a number the owner negotiated.
+    Use the max bid the owner set, where he set one.
 
-    A cap limits a bid and never raises one: where the appraiser's condition
-    reading lands under the agreed figure, the lower figure goes on the sheet.
-    Authorisation to spend is not an instruction to.
+    His number stands in both directions. "$100 defensive cap" on the Topps run
+    means go to $100 rather than lose it; "move max bid down to 25" on the
+    jewellery means 25. Treating either as a ceiling over a computed figure
+    quietly bids less than he authorised, and in a proxy auction bidding less
+    than your ceiling is how you lose the lot for five dollars.
     """
     cap = OPERATOR_APPROVED.get(decision.lot_id, {}).get("cap")
-    if cap is None or decision.max_bid is None or decision.max_bid <= cap:
+    if cap is None or decision.max_bid is None or decision.max_bid == cap:
         return decision
     return replace(decision, max_bid=cap,
                    all_in=round(cap * (1.0 + ABSENTEE_FEE), 2))

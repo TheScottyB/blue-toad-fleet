@@ -7,7 +7,7 @@
 
   [![Google Cloud Run](https://img.shields.io/badge/Google%20Cloud%20Run-Live%20Service-34d399?style=flat-square&logo=googlecloud)](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app)
   [![Vertex AI](https://img.shields.io/badge/Vertex%20AI-Gemini%203.6%20Flash-a78bfa?style=flat-square&logo=google)](https://cloud.google.com/vertex-ai)
-  [![Unit Tests](https://img.shields.io/badge/Unit%20Tests-173%20Passing-38bdf8?style=flat-square&logo=pytest)](https://github.com/TheScottyB/blue-toad-fleet)
+  [![Unit Tests](https://img.shields.io/badge/Unit%20Tests-262%20Passing-38bdf8?style=flat-square&logo=pytest)](https://github.com/TheScottyB/blue-toad-fleet)
   [![License: MIT](https://img.shields.io/badge/License-MIT-fbbf24?style=flat-square)](LICENSE)
 </div>
 
@@ -26,6 +26,7 @@
 ## Demo Video
 
 [`media/blue_toad_fleet_demo.mp4`](media/blue_toad_fleet_demo.mp4) — a narrated, 4-beat walkthrough (~3:48) covering the commercial problem, the Spatial Room Graph on the real Aug-22 gallery, the live Gate Console's Curator's Negotiation, and the live Cloud Run / test-suite proof. Recorded end to end from the real manifest, the real deployed console, and a real terminal session — see `docs/VIDEO_SCRIPT.md` for the shot-by-shot script.
+Recorded from the Aug-22 cycle as it ran on 2026-08-20; the figures spoken in the narration are that run's. The sheet has since been trimmed on the owner's instruction — `make demo` and the live API always show current numbers.
 
 ---
 
@@ -44,7 +45,7 @@ make demo
 # 3. Watch cross-cycle memory collapse the clarification queue
 make cycles
 
-# 4. Run the 173-test unit suite (runs in under half a second)
+# 4. Run the 262-test unit suite (runs in under half a second)
 make test
 ```
 
@@ -102,11 +103,11 @@ Appraisals feed into pure, unit-tested valuation logic implementing the store's 
 | Metric | July 11 Historical Benchmark | August 22 Live Sourcing Cycle |
 | :--- | :--- | :--- |
 | **Raw Photos Ingested** | 452 raw photos (324 captioned) | 462 raw photos (304 captioned) |
-| **Multi-Angle Duplicates Merged** | **95 duplicate photos merged** | **104 duplicate photos merged** |
-| **Consolidated Physical Lots** | 357 physical lots | 358 physical lots |
+| **Multi-Angle Duplicates Merged** | **95 duplicate photos merged** | **103 duplicate photos merged** |
+| **Consolidated Physical Lots** | 357 physical lots | 359 physical lots |
 | **Legacy V1 Wishlist Chaos** | 88 unranked rows (**$14,340.00 max sum**) | N/A (Displaced by Fleet V2) |
-| **Fleet V2 Approved Sourcing** | **67 bids allocated ($1,910.00 max)** | **12 approved bids ($335.00 max)** |
-| **Total Committed All-In (w/ 15% Fee)**| **$2,196.50** (strictly under $2,205 cap) | **$385.25** (strictly under $600 cap) |
+| **Fleet V2 Approved Sourcing** | **67 bids allocated ($1,910.00 max)** | **10 approved bids ($260.00 max)** |
+| **Total Committed All-In (w/ 15% Fee)**| **$2,196.50** (strictly under $2,205 cap) | **$299.00** (strictly under $600 cap) |
 | **Increment Discipline** | $5.00 standard increments | $5.00 standard increments |
 | **Execution Artifacts** | `BlueToad_2026-07-11_Benchmark_Comparison.xlsx` | `BlueToad_2026-08-22_BidSheet.xlsx` & `aug22_absentee_bid_email.txt` |
 
@@ -163,7 +164,7 @@ blue-toad-fleet/
 │   ├── gate/                   # Gate Console UI renderer (pure HTML/CSS)
 │   ├── intake/                 # Manifest parsing, natural sort & spatial clustering
 │   └── server.py               # Cloud Run FastAPI server & API endpoints
-├── tests/                      # Comprehensive pytest unit suite (173 tests)
+├── tests/                      # Comprehensive pytest unit suite (262 tests)
 ├── Dockerfile                  # Container definition for Google Cloud Run
 ├── LICENSE                     # MIT License
 ├── Makefile                    # Standard developer workflow targets
