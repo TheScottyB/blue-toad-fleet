@@ -30,6 +30,7 @@ Three rules decide what a group of photos says about one lot:
 from dataclasses import dataclass
 from typing import Iterable, Mapping
 
+from src.assemble.email import compile_absentee_email
 from src.bidmath import CompEstimate, Confidence, Lot
 from src.intake.manifest import TriagedPhoto, group_into_lots
 
@@ -114,4 +115,4 @@ def assemble_lots(
     return lots
 
 
-__all__ = ["AppraisedPhoto", "NO_COMP", "assemble_lots"]
+__all__ = ["AppraisedPhoto", "NO_COMP", "assemble_lots", "compile_absentee_email"]

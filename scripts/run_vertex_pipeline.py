@@ -34,6 +34,7 @@ from src.appraisal import (
 )
 from src.appraiser import AppraisalEngine
 from src.appraiser.routing import TRIAGE_MODEL, estimate_cost_usd
+from src.assemble.email import compile_absentee_email
 from src.bidmath import (
     Lot, CompEstimate, Confidence as BidConfidence, Priority, Decision,
     price_lot, allocate, summarize, ABSENTEE_FEE, snap_to_increment,
@@ -468,73 +469,15 @@ def run_pipeline(
     # 6. Generate Absentee Email Draft
     approved_bids = [d for d in allocated_decisions if d.allocated and d.max_bid]
     email_draft_path = Path(data_dir).parent / "aug22_absentee_bid_email.txt"
-    email_lines = [
-        "TO: info@bluetoadauctions.com",
-        "SUBJECT: Absentee Bids - August 22 Antique & Estate Auction (Bidder: Richmond General)",
-        "DATE: Friday, August 21, 2026 (Before 8:00 PM CDT Cutoff)",
-        "",
-        "Blue Toad Auctions,",
-        "",
-        "Please register the following absentee proxy bids for the Saturday, August 22, 2026 auction",
-        "at 200 Elizabeth Lane, Genoa City, WI.",
-        "",
-        "Bidder Info:",
-        "  Name: Richmond General (Scott)",
-        "  Resale Certificate: On file (Wisconsin Tax-Exempt)",
-        "  Terms: 15% Absentee Buyer Fee acknowledged (Credit Card on File)",
-        "",
-        "-" * 89,
-    ]
-
-    # One block per bid rather than a fixed-width table. A clerk has to match
-    # each line to a physical lot on Saturday morning, and the table truncated
-    # descriptions mid-word at 48 characters -- "storage box containing bulk"
-    # is a bid on an unidentified object.
-    for i, d in enumerate(approved_bids, 1):
-        lot_obj = next(l for l in lots if l.lot_id == d.lot_id)
-        start_bid = snap_to_increment(max(5.0, d.max_bid * 0.35))
-        description = " ".join((lot_obj.caption or d.category).split())
-        wrapped = textwrap.wrap(description, width=78) or [description]
-        email_lines.append(f"{i:>2}) [{d.lot_id}]  {wrapped[0]}")
-        email_lines.extend(f"      {line}" for line in wrapped[1:])
-        # The bid line has to state the MECHANIC, not just the number. A lot
-        # sold times-the-money charges the max once per unit, so a line reading
-        # "MAX $25.00" beside a sheet total of $285.00 is off by $50 and the
-        # clerk cannot see why. This is the sentence the operator typed by hand
-        # into the revised sheet on cutoff day; the system writes it now.
-        if d.mechanic is BidMechanic.TIMES_THE_MONEY and d.unit_count > 1:
-            email_lines.append(
-                f"      START ${start_bid:,.2f}   MAX ${d.max_bid:,.2f} PER UNIT "
-                f"x {d.unit_count} = ${d.committed_max:,.2f} TOTAL")
-            email_lines.append(
-                f"      >> Times the money. I am taking ALL {d.unit_count}. "
-                f"Please do NOT limit me to one unit on this lot. <<")
-        elif d.mechanic is BidMechanic.CHOICE and d.unit_count > 1:
-            k = units_committed(d.mechanic, d.unit_count, d.units_wanted)
-            email_lines.append(
-                f"      START ${start_bid:,.2f}   MAX ${d.max_bid:,.2f} PER UNIT "
-                f"x {k} of {d.unit_count} = ${d.committed_max:,.2f} TOTAL")
-            email_lines.append(
-                f"      >> Buyer's choice. Please take {k} of the "
-                f"{d.unit_count} at that price. <<")
-        else:
-            email_lines.append(
-                f"      START ${start_bid:,.2f}   MAX ${d.max_bid:,.2f}")
-        email_lines.append("")
-
-    email_lines.extend([
-        "-" * 89,
-        f"TOTAL COMMITTED PROXY BIDS: ${sheet_summary.committed_max:,.2f} (${sheet_summary.committed_all_in:,.2f} all-in w/ 15% fee)",
-        "",
-        "Special Instructions:",
-        "  - For 'Buyer's Choice / Times the Money' shelf lots, max quantity is 1 unit only.",
-        "  - Standard $5.00 bidding increments applied.",
-        "  - Please confirm receipt of these absentee bids by reply email.",
-        "",
-        "Thank you,",
-        "Richmond General",
-    ])
-    email_draft_path.write_text("\n".join(email_lines))
+    email_text = compile_absentee_email(
+        to="info@bluetoadauctions.com",
+        subject="Absentee Bids - August 22 Antique & Estate Auction (Bidder: Richmond General)",
+        auction_date="Saturday, August 22, 2026",
+        venue="200 Elizabeth Lane, Genoa City, WI",
+        lots=lots,
+        decisions=allocated_decisions,
+    )
+    email_draft_path.write_text(email_text)
     print(f"\n[✓] Compiled Final Sealed Absentee Bid Email Draft: {email_draft_path}")
 
     # 7. Generate Excel Sourcing Sheet

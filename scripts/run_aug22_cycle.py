@@ -25,6 +25,11 @@ import openpyxl
 from openpyxl.styles import Font, PatternFill
 from openpyxl.utils import get_column_letter
 
+from src.assemble.email import compile_absentee_email
+from src.bidmath import (
+    ABSENTEE_FEE, CompEstimate, Confidence, Decision, Lot, Priority,
+)
+
 # Exact final approved lot allocations with $5 auction increments
 APPROVED_BIDS = [
     # Lot ID, Sequence, Description, Category, Start Bid, Max Bid, Est Resale
@@ -41,8 +46,6 @@ APPROVED_BIDS = [
     ("BT-030", 30, "non-sport trading cards", "vintage cards", 10.00, 15.00, "$30-$80"),
     ("BT-066", 66, "hand held video games (5 Radica/LCD units)", "vintage toys", 5.00, 10.00, "$25-$45"),
 ]
-
-ABSENTEE_FEE = 0.15  # Blue Toad standard 15% absentee fee
 
 
 def main():
@@ -65,43 +68,30 @@ def main():
         print(f"  {lot_id} | {desc:<48} | Start: ${start_bid:>5.2f} | Max: ${max_bid:>6.2f} | All-In: ${all_in:>6.2f} | Est: {est}")
 
     # Generate Final Sealed Absentee Bid Email Draft
-    email_draft_path = Path("data/aug22_absentee_bid_email.txt")
-    email_lines = [
-        "TO: info@bluetoadauctions.com",
-        "SUBJECT: Absentee Bids - August 22 Antique & Estate Auction (Bidder: Richmond General)",
-        "DATE: Friday, August 21, 2026 (Before 8:00 PM CDT Cutoff)",
-        "",
-        "Blue Toad Auctions,",
-        "",
-        "Please register the following absentee proxy bids for the Saturday, August 22, 2026 auction",
-        "at 200 Elizabeth Lane, Genoa City, WI.",
-        "",
-        "Bidder Info:",
-        "  Name: Richmond General (Scott)",
-        "  Resale Certificate: On file (Wisconsin Tax-Exempt)",
-        "  Terms: 15% Absentee Buyer Fee acknowledged (Credit Card on File)",
-        "",
-        "-----------------------------------------------------------------------------------------",
-        "ITEM DESCRIPTION                                     PHOTO REF     START ($)  MAX BID ($)",
-        "-----------------------------------------------------------------------------------------",
-    ]
-
+    lots = []
+    decisions = []
     for lot_id, seq, desc, cat, start_bid, max_bid, est in APPROVED_BIDS:
-        email_lines.append(f"{desc[:48]:<50} {lot_id:<12} ${start_bid:>8.2f} ${max_bid:>9.2f}")
-
-    email_lines.extend([
-        "-----------------------------------------------------------------------------------------",
-        f"TOTAL COMMITTED PROXY BIDS: ${total_max:,.2f} (${total_all_in:,.2f} all-in w/ 15% fee)",
-        "",
-        "Special Instructions:",
-        "  - For 'Buyer's Choice / Times the Money' shelf lots, max quantity is 1 unit only.",
-        "  - Standard $5.00 bidding increments applied.",
-        "  - Please confirm receipt of these absentee bids by reply email.",
-        "",
-        "Thank you,",
-        "Richmond General",
-    ])
-    email_draft_path.write_text("\n".join(email_lines))
+        lots.append(Lot(
+            lot_id=lot_id, caption=desc, category=cat,
+            fit_score=0.9, condition_penalty=0.0,
+            comp=CompEstimate(low=None, high=None, source_count=0, confidence=Confidence.NONE),
+        ))
+        all_in = round(max_bid * (1 + ABSENTEE_FEE), 2)
+        decisions.append(Decision(
+            lot_id=lot_id, category=cat, priority=Priority.A,
+            max_bid=max_bid, all_in=all_in, bid_fraction=0.375,
+            reason="approved", needs_human_pricing=False,
+            auto_send=False, allocated=True,
+        ))
+    email_draft_path = Path("data/aug22_absentee_bid_email.txt")
+    email_draft_path.write_text(compile_absentee_email(
+        to="info@bluetoadauctions.com",
+        subject="Absentee Bids - August 22 Antique & Estate Auction (Bidder: Richmond General)",
+        auction_date="Saturday, August 22, 2026",
+        venue="200 Elizabeth Lane, Genoa City, WI",
+        lots=lots,
+        decisions=decisions,
+    ))
     print(f"\n[✓] Compiled Final Sealed Absentee Bid Email Draft: {email_draft_path}")
 
     # Generate Excel Sourcing Sheet
