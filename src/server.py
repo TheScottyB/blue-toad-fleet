@@ -27,7 +27,9 @@ from src.appraisal import (
 )
 from src.appraiser import AppraisalEngine
 from src.gate import CycleView, render_console
-from scripts.run_vertex_pipeline import REFERENCE_COMPS
+from scripts.run_vertex_pipeline import (
+    REFERENCE_COMPS, OPERATOR_APPROVED, operator_lot_inputs, apply_operator_cap,
+)
 
 app = FastAPI(title="Blue Toad Fleet", version="2.0.0")
 
@@ -63,6 +65,18 @@ STATE = {
             category="vintage tools",
             answer="SKIP — store backlog of unlisted tools",
             learned_cycle="2026-08-22",
+        ),
+        StandingRule(
+            kind=QuestionKind.APPETITE,
+            category="jewelry",
+            answer="BUY — bulk estate costume jewelry moves in the storefront",
+            learned_cycle="2026-08-20",
+        ),
+        StandingRule(
+            kind=QuestionKind.APPETITE,
+            category="vintage cards",
+            answer="BUY — including junk-wax bulk boxes",
+            learned_cycle="2026-08-20",
         ),
     ],
     "user_constraints": {"payment_method": "credit_card", "budget_envelope": 600.00},
@@ -155,11 +169,15 @@ def get_aug22_state():
         app_pair = appraisals_by_lot.get(lot_tag)
         if lot_tag in REFERENCE_COMPS:
             comp_info = REFERENCE_COMPS[lot_tag]
-            ident = app_pair[1].get("identification", comp_info["desc"]) if app_pair else comp_info["desc"]
+            raw_app = app_pair[1] if app_pair else {}
+            ident = raw_app.get("identification", comp_info["desc"])
             cat = comp_info["cat"]
-            fit = 0.90
-            penalty = 0.0
-            conf = AppConfidence.HIGH
+            # The owner's decision carries the fit; the appraiser's own condition
+            # and confidence readings stand, so the console shows both.
+            fit, penalty = operator_lot_inputs(lot_tag, raw_app)
+            conf_str = str(raw_app.get("confidence", "low")).lower()
+            conf = (AppConfidence(conf_str)
+                    if conf_str in AppConfidence._value2member_map_ else AppConfidence.LOW)
         elif app_pair:
             app_obj, raw_app = app_pair
             ident = raw_app.get("identification", cap)
@@ -208,7 +226,7 @@ def get_aug22_state():
     captions_map = {l.lot_id: l.caption for l in lots}
 
     # 4. BidMath Pricing & Allocation
-    decisions = [price_lot(l) for l in lots]
+    decisions = [apply_operator_cap(price_lot(l)) for l in lots]
     allocated_decisions = allocate(
         decisions,
         budget_cap=STATE["budget_cap"],

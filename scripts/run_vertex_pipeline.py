@@ -16,6 +16,7 @@ import os
 import sys
 import textwrap
 import time
+from dataclasses import replace
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -53,6 +54,82 @@ REFERENCE_COMPS = {
     "BT-066": {"low": 26.0, "high": 32.0, "sources": 2, "conf": BidConfidence.HIGH, "cat": "vintage toys", "desc": "hand held video games (5 Radica/LCD units)"},
 }
 
+# Decisions the owner made in the 2026-08-20 collaborative chat, kept next to the
+# comps they apply to. These are answers, not appraisals.
+#
+# The record is partial and says so. He remembers trimming the card lots to the
+# best one and capping the jewellery at $25; the rest of that conversation is not
+# recoverable. Anything not recorded here follows the appraiser, which is the
+# honest default — a decision nobody can produce is not a decision.
+#
+# The appraiser scores a lot on how well it fits the eight categories it was told
+# the shop buys. It scored the bulk costume jewelry and the junk-wax card box at
+# 0.20 and asked whether the shop wanted them at all — a fair question, and one
+# the owner answered: he takes them for the storefront. `fit` carries his answer,
+# `why` carries the reason the fit score could not see.
+#
+# Recorded here rather than written over the appraisal, so the console can show
+# both what the model concluded and what the owner decided.
+OPERATOR_APPROVED = {
+    # fit: what the owner decided about category fit. None means he declined the
+    #      lot outright, and the sheet must not bid it.
+    # cap: a maximum he negotiated. A condition penalty may bid under a cap; it
+    #      must never walk one down.
+    "BT-001": {"fit": 0.90, "cap": 100.00,
+               "why": "collab: top of the three card lots, $100 cap agreed"},
+    "BT-016": {"fit": None,
+               "why": "collab: 'give me the top 1 of the three card lots' — BT-001 took it"},
+    "BT-030": {"fit": None,
+               "why": "collab: 'give me the top 1 of the three card lots' — BT-001 took it"},
+
+    "BT-002": {"fit": 0.90, "cap": 25.00,
+               "why": "collab: buys bulk estate costume jewelry, max bid $25"},
+    "BT-087": {"fit": 0.90, "cap": 25.00,
+               "why": "collab: buys bulk estate costume jewelry, max bid $25"},
+    "BT-181": {"fit": 0.90, "cap": 25.00,
+               "why": "collab: buys bulk estate costume jewelry, max bid $25"},
+
+    "BT-021": {"fit": 0.90, "why": "collab: vintage telephones sell in store"},
+    "BT-041": {"fit": 0.90, "why": "collab: Edison cylinders are an alpha pick this cycle"},
+    "BT-048": {"fit": 0.90, "why": "collab: licensed 80s character pieces move fast"},
+    "BT-050": {"fit": 0.90, "why": "collab: Lionel set approved"},
+    "BT-066": {"fit": 0.90, "why": "collab: handheld electronic games approved"},
+    "BT-235": {"fit": 0.90, "why": "collab: Century of Progress bottle approved"},
+}
+
+def operator_lot_inputs(lot_id: str, raw_appraisal: dict) -> tuple[float, float]:
+    """
+    (fit_score, condition_penalty) for a candidate lot.
+
+    The owner's decision carries the fit — he knows things a category-fit score
+    cannot, and a lot he declined comes back at 0.0 so the allocator skips it.
+    The appraiser's condition reading is carried through untouched: nothing in
+    the collaborative review was about visible damage.
+
+    One function because the console and the pipeline used to build these
+    separately, and a decision applied in one was invisible in the other.
+    """
+    decision = OPERATOR_APPROVED.get(lot_id, {})
+    fit = decision.get("fit", float(raw_appraisal.get("fit_score", 0.5)))
+    penalty = float(raw_appraisal.get("condition_penalty", 0.0))
+    return (0.0 if fit is None else float(fit)), penalty
+
+
+def apply_operator_cap(decision):
+    """
+    Hold a bid to a number the owner negotiated.
+
+    A cap limits a bid and never raises one: where the appraiser's condition
+    reading lands under the agreed figure, the lower figure goes on the sheet.
+    Authorisation to spend is not an instruction to.
+    """
+    cap = OPERATOR_APPROVED.get(decision.lot_id, {}).get("cap")
+    if cap is None or decision.max_bid is None or decision.max_bid <= cap:
+        return decision
+    return replace(decision, max_bid=cap,
+                   all_in=round(cap * (1.0 + ABSENTEE_FEE), 2))
+
+
 DEFAULT_STANDING_RULES = [
     StandingRule(
         kind=QuestionKind.APPETITE,
@@ -71,6 +148,18 @@ DEFAULT_STANDING_RULES = [
         category="vintage tools",
         answer="SKIP — store backlog of unlisted tools",
         learned_cycle="2026-08-22",
+    ),
+    StandingRule(
+        kind=QuestionKind.APPETITE,
+        category="jewelry",
+        answer="BUY — bulk estate costume jewelry moves in the storefront",
+        learned_cycle="2026-08-20",
+    ),
+    StandingRule(
+        kind=QuestionKind.APPETITE,
+        category="vintage cards",
+        answer="BUY — including junk-wax bulk boxes",
+        learned_cycle="2026-08-20",
     ),
 ]
 
@@ -207,16 +296,12 @@ def run_pipeline(
             comp_info = REFERENCE_COMPS[lot_id]
             app_pair = appraisal_by_lot.get(lot_id)
             if app_pair:
-                app_obj, raw_app = app_pair
-                fit = 0.85
-                penalty = 0.0
-                cat = comp_info["cat"]
-                ident = raw_app.get("identification", comp_info["desc"])
+                _, raw_app = app_pair
             else:
-                fit = 0.85
-                penalty = 0.0
-                cat = comp_info["cat"]
-                ident = comp_info["desc"]
+                raw_app = {}
+            fit, penalty = operator_lot_inputs(lot_id, raw_app)
+            cat = comp_info["cat"]
+            ident = raw_app.get("identification", comp_info["desc"])
 
             comp_est = CompEstimate(
                 low=comp_info["low"],
@@ -234,7 +319,7 @@ def run_pipeline(
                 comp=comp_est,
             )
             lots.append(lot_obj)
-            decisions.append(price_lot(lot_obj))
+            decisions.append(apply_operator_cap(price_lot(lot_obj)))
         else:
             lot_obj = Lot(
                 lot_id=lot_id,

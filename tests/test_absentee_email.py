@@ -53,9 +53,18 @@ class TestDescriptionsSurvive:
             + ", ".join(sorted(set(missing)))
         )
 
-    def test_every_bid_names_its_lot_id(self, email):
-        ids = set(re.findall(r"\bBT-\d{3}\b", email))
-        assert len(ids) >= 12, f"only {len(ids)} lot id(s) in the email"
+    def test_every_bid_line_names_its_lot_id(self, email):
+        """
+        One id per bid, however many bids there are. Pinning the count just
+        breaks the test every time the owner changes his mind about a lot.
+        """
+        numbered = re.findall(r"^\s*\d+\)\s*\[(BT-\d{3})\]", email, re.M)
+        starts = len(re.findall(r"\bSTART \$", email))
+        assert numbered, "no numbered bid blocks found"
+        assert len(numbered) == starts == len(set(numbered)), (
+            f"{len(numbered)} numbered block(s), {starts} START line(s), "
+            f"{len(set(numbered))} distinct lot id(s) — these must match"
+        )
 
     def test_the_full_identification_text_is_present(self, email):
         """Spot-check the two lots that were previously cut off."""
