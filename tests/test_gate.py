@@ -199,3 +199,16 @@ class TestTheCuratorBanner:
     def test_without_pitch_text_the_banner_is_omitted_rather_than_faked(self):
         h = render_console(_view())
         assert "Curator" not in h
+
+
+class TestShowroomMap:
+    def test_topology_title_always_renders(self):
+        assert "Pole Barn Showroom Topology" in render_console(_view())
+
+    def test_occupancy_tags_named_lots_on_the_map(self):
+        v = _view()
+        v.zone_occupancy = {"center_island_1": ["BT-001"], "south_under_table": ["BT-041"]}
+        h = render_console(v)
+        assert "BT-001" in h
+        assert "BT-041" in h
+

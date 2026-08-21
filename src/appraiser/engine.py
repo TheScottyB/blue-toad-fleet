@@ -312,6 +312,9 @@ class AppraisalEngine:
                     "summary": caption[:40] if caption else "Uncaptioned item",
                     "fit_score": 0.20,
                     "worth_appraising": False,
+                    "surface_signature": "other",
+                    "zone": "unknown",
+                    "margin_neighbors": [],
                     "error": str(e),
                 }
 

@@ -29,6 +29,7 @@ class CycleView:
     deadline: str = "Friday 8:00 PM"
     illustrative: bool = False
     lots_total: int | None = None
+    zone_occupancy: dict[str, list[str]] = field(default_factory=dict)
 
 
 _CSS = """
@@ -110,8 +111,17 @@ def _tag(text: str, cls: str = "") -> str:
     return f'<span class="tag {cls}">{escape(text)}</span>'
 
 
-def _map_block() -> str:
-    return """
+def _zone_lots(v: CycleView | None, zone_key: str) -> str:
+    if not v:
+        return ""
+    lots = v.zone_occupancy.get(zone_key) or []
+    if not lots:
+        return ""
+    return f'<span class="map-tag">{", ".join(escape(x) for x in lots)}</span>'
+
+
+def _map_block(v: CycleView | None = None) -> str:
+    return f"""
 <div class="map-container">
   <div class="map-title">
     <span>Pole Barn Showroom Topology &middot; 200 Elizabeth Lane, Genoa City</span>
@@ -121,25 +131,29 @@ def _map_block() -> str:
     <div class="map-zone wall">
       <b>NORTH BACK WALL &middot; HANGING DISPLAYS</b>
       <span>Framed advertising signs, lighted beer signs, vintage travel posters</span>
+      {_zone_lots(v, "north_back_wall")}
     </div>
     <div class="map-zone">
       <b>WEST SIDE TABLES (A & B)</b>
       <span>Glassware, Princess phones, small electronics, collectibles</span>
+      {_zone_lots(v, "west_side_tables")}
     </div>
     <div class="map-zone aisle">
       <b>=== CENTER AISLE & AUCTIONEER PODIUM ===</b>
       <div style="margin-top:6px;font-size:11.5px;color:var(--violet)">
-        <b>Island Table 1:</b> Topps Baseball Cards & Costume Jewelry<br>
-        <b>Island Table 2:</b> Edison Phonograph Cylinders & Tonka Trucks
+        <b>Island Table 1:</b> Topps Baseball Cards & Costume Jewelry {_zone_lots(v, "center_island_1")}<br>
+        <b>Island Table 2:</b> Edison Phonograph Cylinders & Tonka Trucks {_zone_lots(v, "center_island_2")}
       </div>
     </div>
     <div class="map-zone">
       <b>EAST SIDE TABLES (C & D)</b>
       <span>Stoneware crocks, vintage tools, railroadiana</span>
+      {_zone_lots(v, "east_side_tables")}
     </div>
     <div class="map-zone wall" style="background:rgba(0,0,0,0.2)">
       <b>SOUTH STANDING ROOM & UNDER-TABLE STORAGE</b>
       <span>Concrete floor multi-box dinnerware runs (Poppy Trail) &middot; Cashier cage & refreshments</span>
+      {_zone_lots(v, "south_under_table")}
     </div>
   </div>
 </div>
@@ -316,7 +330,7 @@ def render_console(v: CycleView, pitch_text: str = "") -> str:
     ${s.committed_all_in:,.2f} committed of ${v.budget_cap:,.2f} cap
     ({used:.0f}%)</div>
 </header>
-{_map_block()}
+{_map_block(v)}
 {_pitch_block(pitch_text) if pitch_text else ''}
 {_question_block(v)}
 {_sheet_block(v)}

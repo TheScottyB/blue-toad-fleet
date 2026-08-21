@@ -6,6 +6,8 @@ returning prose where the pipeline expects a field, and it is why a missing
 maker's mark becomes `null` plus a question rather than a confident invention.
 """
 
+from src.intake.spatial import SURFACE_VALUES, ZONE_VALUES
+
 CATEGORIES = [
     "breweriana", "railroad", "advertising", "travel posters", "stoneware",
     "native american", "vintage toys", "cameras", "other", "unsorted",
@@ -74,9 +76,27 @@ TRIAGE_SCHEMA = {
             "type": "boolean",
             "description": "True if a closer appraisal pass is warranted.",
         },
+        "surface_signature": {
+            "type": "string",
+            "enum": SURFACE_VALUES,
+            "description": "Background surface: blue pleated vinyl tablecloth, "
+                           "raw pine plywood, concrete slab, or other.",
+        },
+        "zone": {
+            "type": "string",
+            "enum": ZONE_VALUES,
+            "description": "Physical pole-barn zone this photo was taken in.",
+        },
+        "margin_neighbors": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Objects visible only on the image border, used to "
+                           "anchor uncaptioned photos to a table cluster.",
+        },
     },
     "required": ["is_lot", "same_lot_as_previous", "category", "summary",
-                 "fit_score", "worth_appraising"],
+                 "fit_score", "worth_appraising",
+                 "surface_signature", "zone", "margin_neighbors"],
 }
 
 
