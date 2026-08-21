@@ -14,6 +14,7 @@ Executes the two-stage model pipeline:
 import json
 import os
 import sys
+import textwrap
 import time
 from pathlib import Path
 
@@ -277,18 +278,25 @@ def run_pipeline(
         "  Resale Certificate: On file (Wisconsin Tax-Exempt)",
         "  Terms: 15% Absentee Buyer Fee acknowledged (Credit Card on File)",
         "",
-        "-----------------------------------------------------------------------------------------",
-        "ITEM DESCRIPTION                                     PHOTO REF     START ($)  MAX BID ($)",
-        "-----------------------------------------------------------------------------------------",
+        "-" * 89,
     ]
 
-    for d in approved_bids:
+    # One block per bid rather than a fixed-width table. A clerk has to match
+    # each line to a physical lot on Saturday morning, and the table truncated
+    # descriptions mid-word at 48 characters -- "storage box containing bulk"
+    # is a bid on an unidentified object.
+    for i, d in enumerate(approved_bids, 1):
         lot_obj = next(l for l in lots if l.lot_id == d.lot_id)
         start_bid = snap_to_increment(max(5.0, d.max_bid * 0.35))
-        email_lines.append(f"{lot_obj.caption[:48]:<50} {d.lot_id:<12} ${start_bid:>8.2f} ${d.max_bid:>9.2f}")
+        description = " ".join((lot_obj.caption or d.category).split())
+        wrapped = textwrap.wrap(description, width=78) or [description]
+        email_lines.append(f"{i:>2}) [{d.lot_id}]  {wrapped[0]}")
+        email_lines.extend(f"      {line}" for line in wrapped[1:])
+        email_lines.append(f"      START ${start_bid:,.2f}   MAX ${d.max_bid:,.2f}")
+        email_lines.append("")
 
     email_lines.extend([
-        "-----------------------------------------------------------------------------------------",
+        "-" * 89,
         f"TOTAL COMMITTED PROXY BIDS: ${sheet_summary.committed_max:,.2f} (${sheet_summary.committed_all_in:,.2f} all-in w/ 15% fee)",
         "",
         "Special Instructions:",
