@@ -36,7 +36,8 @@ from src.appraiser import AppraisalEngine
 from src.appraiser.routing import TRIAGE_MODEL, estimate_cost_usd
 from src.bidmath import (
     Lot, CompEstimate, Confidence as BidConfidence, Priority, Decision,
-    price_lot, allocate, summarize, ABSENTEE_FEE, snap_to_increment
+    price_lot, allocate, summarize, ABSENTEE_FEE, snap_to_increment,
+    mechanic_from_ruling, BidMechanic
 )
 
 # Reference valuation comps for approved candidate categories (matching shop pricing bands)
@@ -87,7 +88,14 @@ OPERATOR_APPROVED = {
                "why": "collab: 'give me the top 1 of the three card lots' — BT-001 took it"},
 
     "BT-002": {"fit": 0.90, "cap": 25.00,
-               "why": "collab: buys bulk estate costume jewelry, max bid $25"},
+               "why": "collab: buys bulk estate costume jewelry, max bid $25",
+               # The auctioneer's own ruling on the lot_grouping question the
+               # appraiser raised: "Is the auction bid for a single tray (12, 14
+               # or 16) or for all trays shown together?" Bill Theesfield by
+               # email 2026-08-21: "Yes, that is a x3 bid." Recorded as words so
+               # the sheet derives the money from the ruling rather than someone
+               # retyping $75 into an email under the cutoff.
+               "ruling": "take all three trays at x3"},
     "BT-087": {"fit": 0.90, "cap": 25.00,
                "why": "collab: buys bulk estate costume jewelry, max bid $25"},
     "BT-181": {"fit": 0.90, "cap": 25.00,
@@ -399,6 +407,14 @@ def run_pipeline(
                 confidence=comp_info["conf"],
             )
 
+            # No ruling on file and no ruling asked for is a plain single lot;
+            # only a ruling that EXISTS and cannot be read is UNKNOWN. Passing
+            # None straight through would flag all 415 lots as needing a ruling
+            # nobody ever requested.
+            ruling = OPERATOR_APPROVED.get(lot_id, {}).get("ruling")
+            mech, units, wanted = (
+                mechanic_from_ruling(ruling) if ruling
+                else (BidMechanic.STRAIGHT, 1, None))
             lot_obj = Lot(
                 lot_id=lot_id,
                 caption=ident,
@@ -406,6 +422,7 @@ def run_pipeline(
                 fit_score=fit,
                 condition_penalty=penalty,
                 comp=comp_est,
+                mechanic=mech, unit_count=units, units_wanted=wanted,
             )
             lots.append(lot_obj)
             decisions.append(apply_operator_cap(price_lot(lot_obj)))

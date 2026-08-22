@@ -19,7 +19,7 @@ from src.intake.manifest import parse_drop, group_into_lots, TriagedPhoto
 from src.assemble import AppraisedPhoto, assemble_lots, NO_COMP
 from src.bidmath import (
     Lot, CompEstimate, Confidence as BidConfidence, Priority, Decision,
-    price_lot, allocate, summarize, ABSENTEE_FEE
+    price_lot, allocate, summarize, ABSENTEE_FEE, mechanic_from_ruling
 )
 from src.appraisal import (
     Question, QuestionKind, build_queue, learn, StandingRule,
@@ -256,6 +256,21 @@ def get_aug22_state():
     ]
 
     captions_map = {l.lot_id: l.caption for l in lots}
+
+    # 3b. The auctioneer's ruling on how a lot is SOLD, applied before pricing.
+    # The appraiser asks "one lot or all of them?"; a human or the house answers
+    # in words; this is where the answer becomes money. Without it the console
+    # renders BT-002 at one tray while the absentee email that went out commits
+    # three. A lot with no ruling on file was never asked about and is a plain
+    # single lot — only a ruling that exists and cannot be read is UNKNOWN.
+    ruled = []
+    for l in lots:
+        ruling = OPERATOR_APPROVED.get(l.lot_id, {}).get("ruling")
+        if ruling:
+            mech, units, wanted = mechanic_from_ruling(ruling)
+            l = replace(l, mechanic=mech, unit_count=units, units_wanted=wanted)
+        ruled.append(l)
+    lots = ruled
 
     # 4. BidMath Pricing & Allocation
     decisions = [apply_operator_cap(price_lot(l)) for l in lots]

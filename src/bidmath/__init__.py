@@ -15,6 +15,7 @@ module turns an estimate into a decision, deterministically, so the decision
 is auditable and unit-testable.
 """
 
+import re
 from dataclasses import dataclass, field, replace
 from enum import Enum
 from typing import Iterable
@@ -508,3 +509,130 @@ def remainder_opportunity(decision: Decision,
         mechanic=BidMechanic.TIMES_THE_MONEY, unit_count=left, units_wanted=left,
         speculative=True,
     )
+
+
+# --------------------------------------------------------------------------
+# Reading a ruling into a commitment.
+#
+# The appraiser asks the right question — "is this one lot or all of them?" —
+# and a human or the auctioneer answers it in words. Nothing carried that answer
+# to the fields that decide what gets spent, so the operator typed it into the
+# absentee email by hand instead. This is the wire.
+#
+# It parses free text into money, so it is built to refuse. Anything it cannot
+# read confidently becomes UNKNOWN, which budgets every unit and asks for a
+# ruling. The tempting default, STRAIGHT, silently books one unit of a lot that
+# may charge five, and does it without erroring.
+# --------------------------------------------------------------------------
+
+MAX_PLAUSIBLE_UNITS = 60
+"""Above this a parsed count is a misread, not an auction lot. Blue Toad sells
+shelves and tray runs, not hundreds of identical units."""
+
+_WORD_NUMBERS = {
+    "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6,
+    "seven": 7, "eight": 8, "nine": 9, "ten": 10, "eleven": 11, "twelve": 12,
+}
+
+_TTM_RE = re.compile(r"times[\s-]+the[\s-]+money|times[\s-]+money", re.I)
+_MULT_RE = re.compile(r"(?:^|[^a-z0-9])(?:x|×)\s*(\d{1,3})\b|\b(\d{1,3})\s*(?:x|×)", re.I)
+_CHOICE_RE = re.compile(r"(?:buyer'?s?|winner'?s?|bidder'?s?)[\s-]+choice|\bchoice\s+of\b", re.I)
+_STRAIGHT_RE = re.compile(
+    r"\bsingle\s+lot\b|\bone\s+lot\b|\ball\s+together\b|\bas\s+one\b|"
+    r"\bas\s+a\s+unit\b|\bcombined\b|\bgoes\s+as\s+a\s+unit\b", re.I)
+_TAKE_RE = re.compile(r"\btak(?:e|ing)\s+(?:all\s+)?(\d{1,3}|[a-z]+)\b", re.I)
+_MAXQTY_RE = re.compile(r"max(?:imum)?\s+quantity\s+is\s+(\d{1,3}|[a-z]+)", re.I)
+_ALL_RE = re.compile(r"\ball\s+(\d{1,3}|[a-z]+)\b", re.I)
+_OF_THEM_RE = re.compile(r"\b(\d{1,3}|[a-z]+)\s+of\s+(?:them|these|those)\b", re.I)
+
+
+def _as_count(token) -> int | None:
+    if token is None:
+        return None
+    t = str(token).strip().lower()
+    if t.isdigit():
+        n = int(t)
+    elif t in _WORD_NUMBERS:
+        n = _WORD_NUMBERS[t]
+    else:
+        return None
+    return n if 1 <= n <= MAX_PLAUSIBLE_UNITS else None
+
+
+def mechanic_from_ruling(
+    answer: str | None,
+    units_available: int | None = None,
+) -> tuple["BidMechanic", int, int | None]:
+    """
+    (mechanic, unit_count, units_wanted) from an auctioneer's or operator's words.
+
+    `units_available` is what the photograph showed, used when the words name a
+    mechanic but no count. Returns UNKNOWN whenever the text does not settle it,
+    including when it names two mechanics at once — "is it buyer's choice or a
+    single lot?" is the question being restated, not answered, and letting word
+    order break that tie decides money on a coin flip.
+    """
+    text = (answer or "").strip()
+    fallback_n = units_available if units_available and units_available > 0 else 1
+    unknown = (BidMechanic.UNKNOWN, fallback_n, None)
+    if not text:
+        return unknown
+
+    mult = None
+    m = _MULT_RE.search(text)
+    if m:
+        mult = _as_count(m.group(1) or m.group(2))
+        if mult is None:                       # x0, x900 — a misread, not a lot
+            return unknown
+
+    says_ttm = bool(_TTM_RE.search(text)) or mult is not None
+    says_choice = bool(_CHOICE_RE.search(text))
+    says_straight = bool(_STRAIGHT_RE.search(text))
+
+    # CHOICE and TIMES_THE_MONEY are the same family — both price per unit, and
+    # they differ only in who picks the quantity. Naming both, as the operator
+    # does in "any OTHER 'Buyer's Choice / Times the Money' shelf lot", is a
+    # category label, not an ambiguity, and the actionable part is the quantity
+    # that follows it.
+    #
+    # The genuine conflict is per-unit against STRAIGHT: "is it buyer's choice
+    # or sold as a single lot?" is the question restated, and letting word order
+    # break that tie decides money on a coin flip.
+    if says_straight and (says_ttm or says_choice):
+        return unknown
+
+    wanted = None
+    for pattern in (_MAXQTY_RE, _TAKE_RE):
+        w = pattern.search(text)
+        if w:
+            wanted = _as_count(w.group(1))
+            if wanted is not None:
+                break
+
+    if says_straight:
+        return (BidMechanic.STRAIGHT, 1, 1)
+
+    if says_ttm and says_choice and mult is None:
+        says_ttm = False        # no multiplier stated: read it as the elective form
+
+    if says_ttm:
+        n = mult
+        if n is None:
+            for pat in (_ALL_RE, _OF_THEM_RE):
+                hit = pat.search(text)
+                if hit and (n := _as_count(hit.group(1))) is not None:
+                    break
+        if n is None:
+            n = units_available if units_available and units_available > 1 else None
+        if n is None:
+            # A per-unit charge over an unknown number of units is unpriceable.
+            return unknown
+        if wanted is None and _ALL_RE.search(text):
+            wanted = n
+        return (BidMechanic.TIMES_THE_MONEY, n, min(wanted, n) if wanted else None)
+
+    if says_choice:
+        n = units_available if units_available and units_available > 0 else (mult or 1)
+        return (BidMechanic.CHOICE, n, min(wanted, n) if wanted else None)
+
+    return unknown
