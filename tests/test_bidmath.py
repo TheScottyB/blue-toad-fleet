@@ -89,10 +89,16 @@ class TestPriceLot:
         assert d.needs_deep_comps is True
         assert "pending deep comps" in d.reason
 
-    def test_low_fit_is_skipped_not_priced(self):
-        d = price_lot(lot(fit=0.20))
+    def test_low_fit_without_comps_is_empty_dollar_skip(self):
+        d = price_lot(lot(fit=0.20, c=comp(low=None, high=None, n=0, conf=Confidence.NONE)))
         assert d.priority is Priority.SKIP
         assert d.max_bid is None
+        assert d.needs_human_pricing is True
+
+    def test_low_fit_with_comps_still_has_a_number(self):
+        d = price_lot(lot(lot_id="L", fit=0.20, c=comp(low=40, high=80, n=3)))
+        assert d.priority is Priority.SKIP
+        assert d.max_bid is not None and d.max_bid > 0
         assert d.needs_human_pricing is False
 
     def test_priority_bands(self):
@@ -166,7 +172,7 @@ class TestSummarize:
         ds = allocate(
             [price_lot(lot(lot_id=f"L{i}", c=comp(low=100, high=140))) for i in range(3)]
             + [price_lot(lot(lot_id="U", c=comp(None, None, 0, Confidence.NONE)))]
-            + [price_lot(lot(lot_id="S", fit=0.1))],
+            + [price_lot(lot(lot_id="S", fit=0.1, c=comp(low=1, high=2)))],
             budget_cap=10_000, auto_send_threshold=1_000.0,
         )
         s = summarize(ds)

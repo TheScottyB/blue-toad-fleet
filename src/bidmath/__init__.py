@@ -56,6 +56,21 @@ class Priority(str, Enum):
     SKIP = "SKIP"
 
 
+class LaborAspect(str, Enum):
+    """Shop time to take a won lot from the truck to listed.
+
+    A 14-day turn that costs an afternoon of ID and photos is worse than a
+    tray that hits the storefront table. This is not a model call — category
+    and container shape decide it.
+    """
+    SHELF = "shelf"
+    """Minutes. Floor or table stock; no individual listing."""
+    LIST = "list"
+    """About an hour. One photo set, one omni listing."""
+    RESEARCH = "research"
+    """Hours. Marks, ID, multi-item contents, or a listing that needs copy."""
+
+
 class BidMechanic(str, Enum):
     """How many times the hammer price is charged, and for what.
 
@@ -138,6 +153,9 @@ class Lot:
     A decision, not a property of the lot. The winner elects it standing at the
     block; an absentee bidder is not there, so it has to be written down and
     handed to the clerk. None means nobody has decided yet."""
+    labor: "LaborAspect" = LaborAspect.LIST
+    """Shop labor to process the lot after the hammer. Default LIST so
+    existing positional Lot() constructors stay valid."""
 
 
 def units_committed(mechanic: "BidMechanic", unit_count: int,
@@ -213,6 +231,7 @@ class Decision:
     materialises only when the winner declines part of the lot. Contingent money
     never auto-sends: a human should see a bid placed on an event that may not
     occur, however cheap it is."""
+    labor: "LaborAspect" = LaborAspect.LIST
 
     @property
     def needs_deep_comps(self) -> bool:
@@ -297,15 +316,9 @@ def price_lot(
     """
     priority = _priority_for(lot)
     carry = dict(mechanic=lot.mechanic, unit_count=lot.unit_count,
-                 units_wanted=lot.units_wanted)
+                 units_wanted=lot.units_wanted, labor=lot.labor)
 
-    if priority is Priority.SKIP:
-        return Decision(
-            lot_id=lot.lot_id, category=lot.category, priority=Priority.SKIP,
-            max_bid=None, all_in=None, bid_fraction=None,
-            reason=f"fit {lot.fit_score:.2f} below threshold",
-            needs_human_pricing=False, **carry,
-        )
+    # Fit sets priority (including SKIP) but does not short-circuit comps.
 
     # An unestablished mechanic is not a pricing problem, it is an unanswered
     # question about how the house sells the lot — and the answer multiplies the
@@ -586,7 +599,7 @@ def remainder_opportunity(decision: Decision,
                 f"taking {taken}, re-auctioned at the ${bid:,.0f} opening"),
         needs_human_pricing=False,
         mechanic=BidMechanic.TIMES_THE_MONEY, unit_count=left, units_wanted=left,
-        speculative=True,
+        speculative=True, labor=decision.labor,
     )
 
 
