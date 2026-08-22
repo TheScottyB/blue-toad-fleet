@@ -118,3 +118,21 @@ def test_edges_memoized_by_cache_mtime_size(tmp_path, monkeypatch):
     p.write_text(json.dumps({"2": [1.0, 0.0], "181": [0.1, 0.9]}))
     embed_mod.load_reshoot_edges(p, photo_by_seq, sequences)
     assert n["c"] == 2
+
+
+def test_dump_vectors_round_trips_photo_id_keys(tmp_path):
+    from src.intake.embed import dump_vectors, load_vectors
+    p = tmp_path / "embeddings.json"
+    dump_vectors(p, {P2: [1.0, 0.0], P181: [0.0, 1.0]})
+    v = load_vectors(p, {2: P2, 181: P181})
+    assert set(v) == {P2, P181}
+    assert v[P2][0] == 1.0
+
+
+def test_dump_vectors_does_not_overwrite_unrelated_ids(tmp_path):
+    from src.intake.embed import dump_vectors, load_vectors
+    p = tmp_path / "embeddings.json"
+    dump_vectors(p, {P2: [1.0, 0.0]})
+    dump_vectors(p, {P2: [1.0, 0.0], P181: [0.0, 1.0]})
+    v = load_vectors(p, {2: P2, 181: P181})
+    assert set(v) == {P2, P181}

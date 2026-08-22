@@ -35,3 +35,5 @@ ORIGINAL_REQUEST.md
 pyrightconfig.json
 data/dryruns/
 data/**/estatesales_images/
+# Derived: 462 x 3072-d gemini-embedding-2. Build with scripts/embed_gallery.py.
+data/**/embeddings.json

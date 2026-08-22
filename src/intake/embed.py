@@ -122,3 +122,17 @@ def load_reshoot_edges(
     if key is not None:
         _EDGE_MEMO[key] = edges
     return edges
+
+
+def dump_vectors(cache_path, vectors: dict[str, list[float]]) -> None:
+    """Atomic write of photo_id -> vector. Never called from GET /."""
+    path = Path(cache_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        pid: [round(float(x), 6) for x in vec]
+        for pid, vec in vectors.items()
+        if _as_vector(vec) is not None
+    }
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(payload, separators=(",", ":")))
+    tmp.replace(path)
