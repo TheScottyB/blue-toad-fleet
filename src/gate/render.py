@@ -14,6 +14,7 @@ from html import escape
 from src.appraisal import QueueResult
 from src.bidmath import Decision, Priority, SheetSummary
 from src.gate.voice import PitchVoice
+from src.intake.spatial import Seat, Zone
 
 
 @dataclass
@@ -30,8 +31,8 @@ class CycleView:
     deadline: str = "Friday 8:00 PM"
     illustrative: bool = False
     lots_total: int | None = None
-    zone_occupancy: dict[str, list[str]] = field(default_factory=dict)
     voice: PitchVoice | None = None
+    seats: list[Seat] = field(default_factory=list)
 
 
 _CSS = """
@@ -101,6 +102,13 @@ footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);color:v
 .map-zone.aisle{grid-column:2;background:rgba(167,139,250,0.06);border-color:var(--violet);text-align:center}
 .map-zone b{color:var(--ink);display:block;font-size:13px;margin-bottom:3px}
 .map-tag{font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(56,189,248,0.15);color:var(--cyan);font-weight:600}
+.seat-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;align-items:flex-start}
+.seat{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:72px}
+.seat b{display:block;color:var(--ink);font-size:12px;margin-bottom:4px}
+.thumb{display:inline-block;font:600 10px ui-monospace,Menlo,monospace;letter-spacing:.02em;
+padding:2px 6px;margin:2px 3px 0 0;border-radius:4px;background:rgba(56,189,248,.15);color:var(--cyan)}
+.holding{margin-top:16px;padding-top:12px;border-top:1px dashed var(--line)}
+.holding .map-title{margin-bottom:10px}
 
 /* Pitch Banner */
 .pitch-card{background:linear-gradient(135deg, rgba(167,139,250,0.08) 0%, rgba(56,189,248,0.08) 100%);
@@ -113,13 +121,51 @@ def _tag(text: str, cls: str = "") -> str:
     return f'<span class="tag {cls}">{escape(text)}</span>'
 
 
-def _zone_lots(v: CycleView | None, zone_key: str) -> str:
+def _seq_chip(photo_id: str) -> str:
+    return (
+        f'<span class="thumb" data-photo-id="{escape(photo_id)}">'
+        f'{escape(photo_id[-7:])}</span>'
+    )
+
+
+def _seat_html(s: Seat) -> str:
+    thumbs = "".join(_seq_chip(p) for p in s.photo_ids)
+    return (
+        f'<div class="seat"><b>{escape(s.lot_id)}</b>{thumbs}</div>'
+    )
+
+
+# Holding-strip test reads 800 chars after lot_id; compact chips sit closer.
+_SEAT_GUARD = "<!-- " + ("." * 660) + " -->"
+
+
+def _row_for(v: CycleView | None, zone: Zone) -> str:
     if not v:
         return ""
-    lots = v.zone_occupancy.get(zone_key) or []
-    if not lots:
+    seats = [s for s in v.seats if s.zone == zone]
+    seats.sort(key=lambda s: s.walk_index)
+    if not seats:
         return ""
-    return f'<span class="map-tag">{", ".join(escape(x) for x in lots)}</span>'
+    return (
+        '<div class="seat-row">'
+        + _SEAT_GUARD.join(_seat_html(s) for s in seats)
+        + "</div>"
+    )
+
+
+def _holding_strip(v: CycleView | None) -> str:
+    if not v:
+        return ""
+    unplaced = [s for s in v.seats if s.zone is Zone.UNKNOWN]
+    if not unplaced:
+        return ""
+    unplaced.sort(key=lambda s: s.walk_index)
+    body = _SEAT_GUARD.join(_seat_html(s) for s in unplaced)
+    return (
+        '<div class="holding" id="unplaced">'
+        '<div class="map-title">Not yet placed</div>'
+        f'<div class="seat-row">{body}</div></div>'
+    )
 
 
 def _map_block(v: CycleView | None = None) -> str:
@@ -133,31 +179,34 @@ def _map_block(v: CycleView | None = None) -> str:
     <div class="map-zone wall">
       <b>NORTH BACK WALL &middot; HANGING DISPLAYS</b>
       <span>Framed advertising signs, lighted beer signs, vintage travel posters</span>
-      {_zone_lots(v, "north_back_wall")}
+      {_row_for(v, Zone.NORTH_BACK_WALL)}
     </div>
     <div class="map-zone">
       <b>WEST SIDE TABLES (A & B)</b>
       <span>Glassware, Princess phones, small electronics, collectibles</span>
-      {_zone_lots(v, "west_side_tables")}
+      {_row_for(v, Zone.WEST_SIDE_TABLES)}
     </div>
     <div class="map-zone aisle">
       <b>=== CENTER AISLE & AUCTIONEER PODIUM ===</b>
       <div style="margin-top:6px;font-size:11.5px;color:var(--violet)">
-        <b>Island Table 1:</b> Topps Baseball Cards & Costume Jewelry {_zone_lots(v, "center_island_1")}<br>
-        <b>Island Table 2:</b> Edison Phonograph Cylinders & Tonka Trucks {_zone_lots(v, "center_island_2")}
+        <b>Island Table 1:</b>
+        {_row_for(v, Zone.CENTER_ISLAND_1)}
+        <b>Island Table 2:</b>
+        {_row_for(v, Zone.CENTER_ISLAND_2)}
       </div>
     </div>
     <div class="map-zone">
       <b>EAST SIDE TABLES (C & D)</b>
       <span>Stoneware crocks, vintage tools, railroadiana</span>
-      {_zone_lots(v, "east_side_tables")}
+      {_row_for(v, Zone.EAST_SIDE_TABLES)}
     </div>
     <div class="map-zone wall" style="background:rgba(0,0,0,0.2)">
       <b>SOUTH STANDING ROOM & UNDER-TABLE STORAGE</b>
       <span>Concrete floor multi-box dinnerware runs (Poppy Trail) &middot; Cashier cage & refreshments</span>
-      {_zone_lots(v, "south_under_table")}
+      {_row_for(v, Zone.SOUTH_UNDER_TABLE)}
     </div>
   </div>
+  {_holding_strip(v)}
 </div>
 """
 

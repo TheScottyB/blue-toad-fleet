@@ -5,6 +5,7 @@ from src.bidmath import (
     CompEstimate, Confidence, Lot, allocate, price_lot, summarize,
 )
 from src.gate import CycleView, render_console
+from src.intake.spatial import Seat, Zone
 
 
 def _lot(i, fit=0.85, low=100.0, high=140.0, n=3, conf=Confidence.HIGH):
@@ -205,12 +206,35 @@ class TestShowroomMap:
     def test_topology_title_always_renders(self):
         assert "Pole Barn Showroom Topology" in render_console(_view())
 
-    def test_occupancy_tags_named_lots_on_the_map(self):
+    def test_fake_island_inventory_is_gone(self):
+        h = render_console(_view())
+        assert "Topps Baseball Cards & Costume Jewelry" not in h
+
+    def test_holding_strip_lists_unplaced_seats(self):
         v = _view()
-        v.zone_occupancy = {"center_island_1": ["BT-001"], "south_under_table": ["BT-041"]}
+        v.seats = [
+            Seat(lot_id="BT-002", zone=Zone.UNKNOWN, walk_index=2,
+                 photo_ids=("838421481", "838424282")),
+            Seat(lot_id="BT-087", zone=Zone.UNKNOWN, walk_index=87,
+                 photo_ids=("838422448",)),
+        ]
+        h = render_console(v)
+        assert "not yet placed" in h.lower() or "unplaced" in h.lower()
+        assert "BT-002" in h and "BT-087" in h
+        # one seat, two thumbs
+        idx = h.find("BT-002")
+        chunk = h[idx:idx + 800]
+        assert "838421481" in chunk and "838424282" in chunk
+        assert "838422448" not in chunk
+
+    def test_zoned_seat_sits_on_its_row_not_only_the_strip(self):
+        v = _view()
+        v.seats = [
+            Seat(lot_id="BT-001", zone=Zone.CENTER_ISLAND_1, walk_index=1,
+                 photo_ids=("p1",)),
+        ]
         h = render_console(v)
         assert "BT-001" in h
-        assert "BT-041" in h
 
 
 class TestStructuredVoiceBanner:
