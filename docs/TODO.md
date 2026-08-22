@@ -121,12 +121,41 @@ to be softened to match the code. The code comes up to meet it.
       queue answers → `StandingRule` → `mechanic`/`unit_count`/`units_wanted`,
       generalised beyond the hand-entered `OPERATOR_APPROVED["ruling"]` field.
 
-- [ ] **C4. Velocity** — `README.md:113`, defined in full in `NOTES.md` (commit
-      `dce15ed`) and implemented nowhere. `fit_score` is standing in for it.
-      Pure deterministic code, no new model calls, unit-testable like bidmath.
-      The honest Google-stack version of the "eBay velocity data" claim is a
-      sales *time window* on the existing grounded pricing, which already
-      returns `sold_comp_count` and real citations.
+- [ ] **C4. Velocity — via the operator's own eBay Seller Hub, through the
+      browser connection.** `README.md:113`, defined in full in `NOTES.md`
+      (commit `dce15ed`), implemented nowhere; `fit_score` stands in for it.
+
+      **The route is settled and is NOT Google-Search grounding.** Operator,
+      2026-08-21: *"for the ebay velocity claim, we use the users ebay seller
+      account and research through browser connection, this is the second bigger
+      remover of friction."* Seller Hub → Research → Product research, driven
+      authenticated as `richmondgeneral`. That makes the README's "real-time eBay
+      velocity data" claim literally true rather than something to soften.
+
+      **Verified live 2026-08-21** on `Boston Champion pencil sharpener`,
+      `tabName=SOLD`. The page yields, as text, with no API:
+      - aggregate: **avg sold price $21.58**, range **$6.80–$42.00**, avg
+        shipping **$8.79**, free shipping **17%**, **sell-through**, **24 total
+        sellers**
+      - per sale: title, sold price, shipping, format (Auction / Fixed price),
+        bids, and **date last sold**
+      - 24 sales dated across **Jul 23 – Aug 21 2026** — a 30-day window, which
+        is the velocity signal itself: ~0.8 sales/day on that comp set
+
+      This is strictly better than the grounded-pricing route for velocity: real
+      hammer prices from eBay's own database with a date on every one, so
+      `velocity = gross margin $ / days on market` is computable rather than
+      inferred, and sell-through gives the probability the thing sells at all.
+
+      **Automation gotchas, both observed:**
+      - `dayRange=365` in the URL did **not** take on a fresh navigation — the
+        page returned a 30-day window regardless. The range must be set through
+        the dropdown, or the working param found. Do not trust the URL to have
+        applied the range; read the date line the page prints and use that.
+      - Working URL shape:
+        `ebay.com/sh/research?marketplace=EBAY-US&keywords=<q>&dayRange=<n>&categoryId=0&offset=0&limit=50&tabName=SOLD`
+      - It is an authenticated seller account. Read-only research only; never
+        touch Listings, Orders, Marketing or Messages from an automated pass.
 
 ## D. Undersold — real work in no judged artifact
 
