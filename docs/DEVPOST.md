@@ -110,8 +110,8 @@ Appraisals feed into pure, unit-tested bid math implementing the store's documen
   * Ingested 452 raw photos and merged **95 multi-angle duplicate photos** into single lots.
   * Slashed legacy unconstrained wishlist spending from **$14,340.00 down to $1,910.00 max ($2,196.50 all-in)**, fitting precisely inside the store's $2,205.00 budget cap.
 * **Live August 22 Production Run:**
-  * Filtered 462 photos into **9 laser-targeted bids ($275.00 max / $316.25 all-in)** within a strict $600 credit card cap, formatted to $5 bidding increments.
-  * Those nine bids represent **$713–$879 estimated gross resale**, a **2.25–2.78x** gross resale-to-cost multiple and $396.75–$562.75 potential gross spread before selling costs.
+  * Filtered 462 photos into **53 laser-targeted bids ($520.00 max / $598.00 all-in)** within a strict $600 credit card cap, formatted to $5 bidding increments. The absentee email Blue Toad accepted (9 lots / $275) is a closed artifact; this is the full grounded-comp sheet.
+  * Those bids represent **$1,570–$4,189 estimated gross resale**, a **2.63–7.01x** gross resale-to-cost multiple.
 * **Flawless Google Cloud Deployment:**
   * Serving live traffic with sub-second response times on Cloud Run ([blue-toad-fleet-u5gvrqwvua-uc.a.run.app](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app)).
 * **100% Test Coverage on Core BidMath:**

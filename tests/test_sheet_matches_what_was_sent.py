@@ -32,7 +32,7 @@ def sent():
 def sheet():
     from src.server import get_aug22_state
     from src.bidmath import summarize
-    _, _, _, decisions, _, _, _ = get_aug22_state()
+    _, _, _, decisions, _, _, _ = get_aug22_state(sheet="sent")
     return [d for d in decisions if d.allocated], summarize(decisions)
 
 

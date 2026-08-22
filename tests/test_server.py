@@ -325,7 +325,7 @@ class TestTheCollabDecisionsHold:
 
     def allocated(self):
         from src.server import get_aug22_state
-        _, _, _, decisions, _, _, _ = get_aug22_state()
+        _, _, _, decisions, _, _, _ = get_aug22_state(sheet="sent")
         return {d.lot_id: d for d in decisions if d.allocated}
 
     def test_only_the_top_card_lot_is_bid(self):
@@ -408,7 +408,7 @@ class TestTheSheetAndTheEmailAgree:
             import pytest
             pytest.skip("no compiled email")
 
-        _, _, _, decisions, summary, _, _ = get_aug22_state()
+        _, _, _, decisions, summary, _, _ = get_aug22_state(sheet="sent")
         console_lots = {d.lot_id for d in decisions if d.allocated}
         email_lots = set(re.findall(r"\bBT-\d{3}\b", email_path.read_text()))
 

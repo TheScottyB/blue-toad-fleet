@@ -146,7 +146,7 @@ def curator_pitch(decisions, captions) -> str:
     return text
 
 
-def get_aug22_state():
+def get_aug22_state(*, sheet: str = "full"):
     manifest_path = Path("data/aug22_gallery_4160518/manifest.json")
     if not manifest_path.exists():
         manifest_path = Path("/app/data/aug22_gallery_4160518/manifest.json")
@@ -254,7 +254,25 @@ def get_aug22_state():
         ))
 
     # 3. Comps Mapping & Seam Assembly (assemble_lots)
+    # "sent" is the 12-lot hand sheet that went to Blue Toad. "full" overlays
+    # every usable grounded price so the submission is not a 12-item sample.
     comps = {}
+    if sheet == "full":
+        for lot_id, row in load_grounded_prices().items():
+            if not row.get("usable") or row.get("low") is None or row.get("high") is None:
+                continue
+            n = int(row.get("sold_comp_count") or 0)
+            conf = (
+                BidConfidence.HIGH if n >= 3
+                else BidConfidence.MEDIUM if n >= 2
+                else BidConfidence.LOW
+            )
+            est = CompEstimate(
+                low=float(row["low"]), high=float(row["high"]),
+                source_count=max(n, 1), confidence=conf,
+            )
+            comps[lot_id] = est
+            comps[f"seq:{lot_id}"] = est
     for k, v in REFERENCE_COMPS.items():
         comp_est = CompEstimate(
             low=v["low"],

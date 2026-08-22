@@ -71,7 +71,8 @@ def price_one(lot) -> dict:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--min-fit", type=float, default=0.70)
+    ap.add_argument("--min-fit", type=float, default=0.0,
+                        help="price every cached appraisal at or above this fit")
     ap.add_argument("--limit", type=int, default=0, help="0 = every qualifying lot")
     ap.add_argument("--workers", type=int, default=6)
     args = ap.parse_args()
@@ -82,8 +83,7 @@ def main() -> int:
         done = {r["lot_id"]: r for r in json.loads(CACHE.read_text())}
 
     todo = [l for l in appraisals
-            if l["lot_id"] not in REFERENCE_COMPS
-            and l["lot_id"] not in done
+            if l["lot_id"] not in done
             and float(l.get("fit_score") or 0) >= args.min_fit]
     todo.sort(key=lambda l: -float(l.get("fit_score") or 0))
     if args.limit:

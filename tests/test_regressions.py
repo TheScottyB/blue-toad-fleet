@@ -146,8 +146,11 @@ class TestArtifactsAgreeWithEachOther:
         from starlette.testclient import TestClient
         from src.server import app
         html = TestClient(app).get("/").text
+        # Skip cards still print a max; the header is allocated committed.
         cards = [float(x.replace(",", "")) for x in
-                 re.findall(r"all-in \$([\d,]+\.\d{2})</span>", html)]
+                 re.findall(
+                     r'<div class="card [^"]*" data-allocated="1">[\s\S]*?all-in \$([\d,]+\.\d{2})</span>',
+                     html)]
         hdr = re.search(r"\$([\d,]+\.\d{2}) committed", html)
         assert hdr, "console header has no committed figure"
         assert sum(cards) == pytest.approx(
@@ -276,6 +279,8 @@ class TestTheConsoleShowsTheClerkDirective:
         _, _, _, decisions, _, _, _ = get_aug22_state()
         html = TestClient(app).get("/").text
         cards = [float(x.replace(",", "")) for x in
-                 _re.findall(r"all-in \$([\d,]+\.\d{2})</span>", html)]
+                 _re.findall(
+                     r'<div class="card [^"]*" data-allocated="1">[\s\S]*?all-in \$([\d,]+\.\d{2})</span>',
+                     html)]
         assert sum(cards) == pytest.approx(
             summarize(decisions).committed_all_in, abs=0.01)

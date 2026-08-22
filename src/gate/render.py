@@ -433,8 +433,9 @@ def _sheet_block(v: CycleView) -> str:
         directive = (f'<div class="directive">{escape(clerk_directive(d))}</div>'
                      if (d.mechanic is not BidMechanic.STRAIGHT
                          or d.needs_mechanic_ruling) else "")
+        alloc = "1" if d.allocated else "0"
         out.append(
-            f'<div class="card {cls}"><div class="hd">'
+            f'<div class="card {cls}" data-allocated="{alloc}"><div class="hd">'
             f'<span class="id">{escape(d.lot_id)}</span>'
             f'<span class="idn">{escape(caption or d.category)}</span>'
             f'{_tag(d.priority.value)}{flag}{money}</div>{body}{directive}</div>'

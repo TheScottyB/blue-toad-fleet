@@ -26,7 +26,7 @@
 ## Demo Video
 
 [`media/blue_toad_fleet_demo.mp4`](media/blue_toad_fleet_demo.mp4) — a narrated, 4-beat walkthrough (~3:48) covering the commercial problem, the Spatial Room Graph on the real Aug-22 gallery, the live Gate Console's Curator's Negotiation, and the live Cloud Run / test-suite proof. Recorded end to end from the real manifest, the real deployed console, and a real terminal session — see `docs/VIDEO_SCRIPT.md` for the shot-by-shot script.
-Recorded on 2026-08-20, and the figures on screen are that run's: 12 lots, $335.00 max, $385.25 all-in. The sheet has since been trimmed to **9 lots, $275.00 max, $316.25 all-in** — the auctioneer ruled the labelled jewelry-tray run a ×3 bid, and BT-181 turned out to be BT-002 re-photographed (see `NOTES.md` §5). The current figures live in `data/BlueToad_2026-08-22_BidSheet.xlsx` and `data/aug22_absentee_bid_email.txt`. `make demo` runs credential-free seeded lots and is not this cycle's sheet; the deployed Cloud Run service has not been redeployed since the trim.
+The absentee email Blue Toad accepted is a closed artifact: **9 lots, $275.00 max, $316.25 all-in** (`data/aug22_absentee_bid_email_REVISED.txt`). The live console is the full processed set — every lot with a usable grounded comp, not the 12 hand-entered samples that produced that email. Current live sheet: **53 approved bids ($520.00 max)** / **$598.00** all-in, **$1,570–$4,189 estimated gross resale**, **2.63–7.01x**.
 
 ---
 
@@ -88,7 +88,7 @@ Cloud Run, `types.Part.from_bytes` to assemble the photo alongside the prompt, a
 
 * **Triage Fan-out (`gemini-3.5-flash-lite`):** Ingests 460+ raw photos in seconds for ~$0.30 per cycle, filtering out low-margin clutter and background filler.
 * **Deep Multimodal Appraisal (`gemini-3.6-flash`):** Evaluates high-conviction survivors using structured OpenAPI 3.0 schemas on the `global` Vertex endpoint.
-* **Honest Refusal Rule:** The appraisal model is forbidden from naming any price at all (`APPRAISAL_SYSTEM`: *"NEVER state or imply a price, estimate or value range"*). The refusal is decided downstream and is deterministic, not model-dependent — `price_lot` ([`src/bidmath/__init__.py`](src/bidmath/__init__.py)) returns any lot whose `CompEstimate` has no sources with `max_bid=None` and the reason `no external comp — human pricing required`, and `allocate` can never allocate it. On the live Aug-22 cycle this refuses **170 of 353 lots**.
+* **Honest Refusal Rule:** The appraisal model is forbidden from naming any price at all (`APPRAISAL_SYSTEM`: *"NEVER state or imply a price, estimate or value range"*). The refusal is decided downstream and is deterministic, not model-dependent — `price_lot` ([`src/bidmath/__init__.py`](src/bidmath/__init__.py)) returns any lot whose `CompEstimate` has no sources with `max_bid=None` and the reason `no external comp — human pricing required`, and `allocate` can never allocate it. On the live Aug-22 cycle this refuses **83 of 353 lots**.
 
 ### 3a. Grounded Pricing Without Losing the Evidence
 Live Vertex validation exposed a failure at the boundary between Google Search grounding and structured output: adding `response_schema` preserved the search queries but returned **zero `grounding_chunks`**; the same call without the schema returned six citation chunks. Blue Toad therefore separates the work. The first call performs grounded research in free text and preserves Google-supplied citations; a second call, with no tools or search, is instructed to extract only the figures in that research note into the pricing schema. Three independent grounded samples are then medianed, and the lot is refused if the calls disagree too widely, contain fewer than two sold comps, or provide no usable citation. See [`price_lot_grounded`](src/appraiser/engine.py) and [`price_is_usable`](src/appraiser/pricing.py).
@@ -128,10 +128,10 @@ Appraisals feed into pure, unit-tested valuation logic implementing the store's 
 | **Multi-Angle Duplicates Merged** | **95 duplicate photos merged** | walk grouping + embedding reshoots → **353 lots from 462 photos** |
 | **Consolidated Physical Lots** | 357 physical lots | **353 physical lots** |
 | **Legacy V1 Wishlist Chaos** | 88 unranked rows (**$14,340.00 max sum**) | N/A (Displaced by Fleet V2) |
-| **Fleet V2 Approved Sourcing** | **67 bids allocated ($1,910.00 max)** | **9 approved bids ($275.00 max)** |
-| **Total Committed All-In (w/ 15% Fee)**| **$2,196.50** (strictly under $2,205 cap) | **$316.25** (strictly under $600 cap) |
-| **Estimated Gross Resale** | — | **$713–$879 estimated gross resale** |
-| **Gross Resale-to-Cost Multiple** | — | **2.25–2.78x** before selling costs |
+| **Fleet V2 Approved Sourcing** | **67 bids allocated ($1,910.00 max)** | **53 approved bids ($520.00 max)** |
+| **Total Committed All-In (w/ 15% Fee)**| **$2,196.50** (strictly under $2,205 cap) | **$598.00** (strictly under $600 cap) |
+| **Estimated Gross Resale** | — | **$1,570–$4,189 estimated gross resale** |
+| **Gross Resale-to-Cost Multiple** | — | **2.63–7.01x** before selling costs |
 | **Increment Discipline** | $5.00 standard increments | $5.00 standard increments |
 | **Execution Artifacts** | `BlueToad_2026-07-11_Benchmark_Comparison.xlsx` | `BlueToad_2026-08-22_BidSheet.xlsx` & `aug22_absentee_bid_email.txt` |
 
