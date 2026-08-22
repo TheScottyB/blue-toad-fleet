@@ -18,8 +18,9 @@ from fastapi.responses import (HTMLResponse, PlainTextResponse, JSONResponse,
 
 from dataclasses import replace
 from src.intake.embed import load_reshoot_edges, sha256_file
-from src.intake.manifest import parse_drop, group_into_lots, LotGroup, TriagedPhoto
-from src.intake.spatial import merge_reshoots, seats_from_groups
+from src.intake.manifest import parse_drop, LotGroup, TriagedPhoto
+from src.intake.puzzle import as_lot_groups, puzzle_loop, walk_proposal_edges
+from src.intake.spatial import seats_from_groups
 from src.assemble import AppraisedPhoto, assemble_lots, NO_COMP, compile_absentee_email
 from src.bidmath import (
     ABSENTEE_FEE, BidMechanic, CompEstimate, Confidence as BidConfidence,
@@ -73,9 +74,9 @@ CYCLE_JOBS = open_job_launcher()
 STATE = {
     "cycle_id": "2026-08-22",
     "listing_id": "4160518",
-    "budget_cap": 600.00,
+    "budget_cap": 1000.00,
     "auto_send_threshold": 35.00,
-    "user_constraints": {"payment_method": "credit_card", "budget_envelope": 600.00},
+    "user_constraints": {"payment_method": "credit_card", "budget_envelope": 1000.00},
 }
 
 
@@ -332,10 +333,7 @@ def get_aug22_state(*, sheet: str = "full"):
         print(f"[!] Warning: Could not parse embedding cache: {e}")
         edges = set()
 
-    assembled_raw = assemble_lots(appraised_photos, comps=comps, reshoot_edges=edges)
-    lots = [apply_operator_fit(l) for l in assembled_raw]
-
-    groups = group_into_lots([
+    triaged_photos = [
         TriagedPhoto(
             photo_id=p.photo_id,
             caption=p.caption,
@@ -343,9 +341,30 @@ def get_aug22_state(*, sheet: str = "full"):
             same_lot_as_previous=p.same_lot_as_previous,
         )
         for p in appraised_photos
-    ])
-    if edges:
-        groups = merge_reshoots(groups, edges)
+    ]
+    by_id = {p.photo_id: p for p in appraised_photos}
+
+    def identify(pids):
+        # Cached appraisals / captions only — GET / never calls Vertex.
+        return {
+            pid: (
+                (by_id[pid].identification or by_id[pid].caption, by_id[pid].category)
+                if pid in by_id else ("", "unsorted")
+            )
+            for pid in pids
+        }
+
+    proposal = walk_proposal_edges(triaged_photos) | {
+        frozenset(e) if not isinstance(e, frozenset) else e for e in edges
+    }
+    clusters = puzzle_loop(
+        triaged_photos,
+        proposal_edges=proposal,
+        identify=identify,
+    )
+    groups = as_lot_groups(clusters)
+    assembled_raw = assemble_lots(appraised_photos, comps=comps, groups=groups)
+    lots = [apply_operator_fit(l) for l in assembled_raw]
     seats = seats_from_groups(
         [LotGroup(lot_key=g.lot_key.removeprefix("seq:"), photo_ids=g.photo_ids)
          for g in groups],
@@ -572,6 +591,7 @@ def list_lots():
             "caption": l.caption,
             "category": l.category,
             "fit_score": l.fit_score,
+            "labor": (d.labor.value if d else l.labor.value),
             "comp_low": l.comp.low if l.comp.source_count > 0 else None,
             "comp_high": l.comp.high if l.comp.source_count > 0 else None,
             "priority": d.priority.value if d else None,

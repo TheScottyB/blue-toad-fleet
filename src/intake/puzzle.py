@@ -3,7 +3,7 @@
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from src.intake.manifest import TriagedPhoto, lot_number_from
+from src.intake.manifest import LotGroup, TriagedPhoto, lot_number_from
 
 GENERIC_CATEGORIES = frozenset({"other", "unsorted", "general estate", ""})
 
@@ -278,4 +278,8 @@ def puzzle_loop(
     if not halted:
         identify_missing(clusters)
     return clusters
+
+
+def as_lot_groups(clusters: list[Cluster]) -> list[LotGroup]:
+    return [LotGroup(lot_key=c.cluster_id, photo_ids=c.photo_ids) for c in clusters]
 

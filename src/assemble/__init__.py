@@ -31,8 +31,9 @@ from dataclasses import dataclass
 from typing import Iterable, Mapping
 
 from src.assemble.email import compile_absentee_email
+from src.assemble.labor import labor_aspect
 from src.bidmath import BidMechanic, CompEstimate, Confidence, Lot, is_choice_lot
-from src.intake.manifest import TriagedPhoto, group_into_lots
+from src.intake.manifest import LotGroup, TriagedPhoto, group_into_lots
 from src.intake.spatial import merge_reshoots
 
 _CONFIDENCE_RANK = {
@@ -75,6 +76,7 @@ def assemble_lots(
     appraised: Iterable[AppraisedPhoto],
     comps: Mapping[str, CompEstimate] | None = None,
     reshoot_edges: set | None = None,
+    groups: list[LotGroup] | None = None,
 ) -> list[Lot]:
     """Collapse per-photo appraisals into one `Lot` per physical lot.
 
@@ -84,20 +86,25 @@ def assemble_lots(
     `reshoot_edges` are mutual non-walk nearest-neighbor pairs already computed
     upstream; assemble does not load vectors. When present, groups linked by an
     edge are unioned before Lot construction.
+
+    `groups` skips internal `group_into_lots`. Callers that already merged
+    proposals (puzzle_loop + reshoot) pass `reshoot_edges=None` so edges are
+    not applied twice.
     """
     appraised = list(appraised)
     comps = comps or {}
     by_id = {p.photo_id: p for p in appraised}
 
-    groups = group_into_lots([
-        TriagedPhoto(
-            photo_id=p.photo_id,
-            caption=p.caption,
-            is_lot=p.is_lot,
-            same_lot_as_previous=p.same_lot_as_previous,
-        )
-        for p in appraised
-    ])
+    if groups is None:
+        groups = group_into_lots([
+            TriagedPhoto(
+                photo_id=p.photo_id,
+                caption=p.caption,
+                is_lot=p.is_lot,
+                same_lot_as_previous=p.same_lot_as_previous,
+            )
+            for p in appraised
+        ])
     if reshoot_edges:
         groups = merge_reshoots(groups, reshoot_edges)
 
@@ -144,6 +151,12 @@ def assemble_lots(
             mechanic=BidMechanic.CHOICE if per_unit else BidMechanic.STRAIGHT,
             unit_count=1,
             units_wanted=1 if per_unit else None,
+            labor=labor_aspect(
+                best.category,
+                is_container=any(m.is_container for m in members),
+                contents=tuple(contents),
+                identification=best.identification,
+            ),
         ))
 
     return lots

@@ -123,3 +123,20 @@ class TestLoop:
         )
         assert rounds["n"] <= 4  # 3 rounds + final freeze identify
 
+
+from src.assemble import AppraisedPhoto, assemble_lots
+from src.intake.manifest import LotGroup
+
+
+def test_assemble_accepts_precomputed_groups():
+    photos = [
+        AppraisedPhoto(photo_id="a", caption="x", identification="truck",
+                       category="vintage toys", is_lot=True),
+        AppraisedPhoto(photo_id="b", caption="y", identification="truck",
+                       category="vintage toys", is_lot=True),
+    ]
+    groups = [LotGroup(lot_key="seq:a", photo_ids=("a", "b"))]
+    lots = assemble_lots(photos, groups=groups)
+    assert len(lots) == 1
+    assert lots[0].lot_id == "seq:a"
+
