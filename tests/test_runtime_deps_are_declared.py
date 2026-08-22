@@ -28,7 +28,10 @@ DOCKERFILE = ROOT / "Dockerfile"
 # two differ; anything not listed is assumed to match its own name.
 DISTRIBUTIONS = {
     "PIL": {"pillow"},
-    "google": {"google-genai", "google-auth", "google-cloud-aiplatform"},
+    "google": {
+        "google-genai", "google-auth", "google-cloud-aiplatform",
+        "google-cloud-firestore",
+    },
     "yaml": {"pyyaml"},
     "dateutil": {"python-dateutil"},
     "cv2": {"opencv-python", "opencv-python-headless"},

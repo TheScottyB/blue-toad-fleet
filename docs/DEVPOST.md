@@ -94,7 +94,7 @@ Appraisals feed into pure, unit-tested bid math implementing the store's documen
   * Pure, decoupled Python backend — no orchestration framework, no vector store, no agent runtime. The loop above is ~3,500 lines of typed Python, of which the decision layer — photo grouping, the question queue, cross-cycle memory and the bid math — is ~1,300 lines that make no model calls and touch no I/O, so every number that reaches a bid sheet is reproducible and unit-tested.
   * Deterministic keyed memory `(QuestionKind, Category)` that generalises house conventions without vector drift.
   * Automated Excel bid sheet generator (`openpyxl`) and formatted absentee email draft generator.
-  * 650 unit tests passing (657 collected; 7 network tests skip by default), in about five seconds.
+  * 664 unit tests passing (671 collected; 7 network tests skip by default), in about five seconds.
 
 ---
 
@@ -119,7 +119,7 @@ Appraisals feed into pure, unit-tested bid math implementing the store's documen
 * **Flawless Google Cloud Deployment:**
   * Serving live traffic with sub-second response times on Cloud Run ([blue-toad-fleet-u5gvrqwvua-uc.a.run.app](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app)).
 * **100% Test Coverage on Core BidMath:**
-  * 650 unit tests passing (657 collected; 7 network tests skip by default), in about five seconds.
+  * 664 unit tests passing (671 collected; 7 network tests skip by default), in about five seconds.
 
 ---
 

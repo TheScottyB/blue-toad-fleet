@@ -252,16 +252,17 @@ def learn(
     answered: Iterable[tuple[Question, str]],
     cycle: str,
     generalisable: frozenset[QuestionKind] = frozenset(
-        {QuestionKind.LOT_GROUPING, QuestionKind.SCOPE, QuestionKind.APPETITE}
+        {QuestionKind.POLICY, QuestionKind.LOT_GROUPING,
+         QuestionKind.SCOPE, QuestionKind.APPETITE}
     ),
 ) -> list[StandingRule]:
     """
     Promote answers to standing rules.
 
-    Only some kinds generalise. "Shelf lots mean the whole shelf" is a
-    convention that holds next cycle. "Is there a mark on *this* base" is
-    about one object and teaches nothing reusable — asking it again next
-    cycle is correct behaviour, not a failure of memory.
+    Only some kinds generalise. House policy, grouping, scope, and shop
+    appetite hold next cycle. "Is there a mark on *this* base" is about
+    one object and teaches nothing reusable — asking it again next cycle
+    is correct behaviour, not a failure of memory.
     """
     return [
         StandingRule(kind=q.kind, category=q.category, answer=a, learned_cycle=cycle)

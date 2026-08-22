@@ -156,6 +156,11 @@ class TestLearn:
                       cycle="c1")
         assert len(rules) == 1
 
+    def test_policy_generalises(self):
+        rules = learn([(q(kind=QuestionKind.POLICY, cat="sports memorabilia"),
+                        "SKIP raw autographs")], cycle="c1")
+        assert len(rules) == 1
+
 
 class TestTwoCycleDecay:
     """The video's learning beat, as a test."""

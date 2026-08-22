@@ -9,6 +9,7 @@ SERVICE_NAME="blue-toad-fleet"
 echo "==> [1/3] Enabling Google Cloud Services on project: $GOOGLE_CLOUD_PROJECT"
 gcloud services enable run.googleapis.com aiplatform.googleapis.com \
   artifactregistry.googleapis.com cloudbuild.googleapis.com \
+  firestore.googleapis.com \
   --project "$GOOGLE_CLOUD_PROJECT"
 
 echo "==> [2/3] Building and deploying $SERVICE_NAME to Cloud Run ($REGION)..."
@@ -17,7 +18,7 @@ gcloud run deploy "$SERVICE_NAME" \
   --region "$REGION" \
   --platform managed \
   --allow-unauthenticated \
-  --set-env-vars GOOGLE_CLOUD_PROJECT="$GOOGLE_CLOUD_PROJECT",VERTEX_LOCATION=global \
+  --set-env-vars GOOGLE_CLOUD_PROJECT="$GOOGLE_CLOUD_PROJECT",VERTEX_LOCATION=global,BTF_MEMORY_BACKEND=firestore,BTF_FIRESTORE_DATABASE=blue-toad \
   --project "$GOOGLE_CLOUD_PROJECT"
 
 echo "==> [3/3] Fetching service status and public URL..."

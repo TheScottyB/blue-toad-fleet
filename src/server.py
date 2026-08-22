@@ -10,7 +10,7 @@ import json
 import os
 from pathlib import Path
 from typing import Optional
-from fastapi import FastAPI, HTTPException, Body
+from fastapi import FastAPI, HTTPException, Body, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse
 
@@ -27,6 +27,11 @@ from src.appraisal import (
     Question, QuestionKind, build_queue, learn, StandingRule,
     Appraisal, Confidence as AppConfidence
 )
+from src.memory import (
+    MemoryConflict, StandingRuleRecord, make_question_id, open_rule_store,
+    seed_rules,
+)
+from src.memory.store import InMemoryRuleStore
 from src.appraiser import AppraisalEngine
 from src.appraiser.containers import visible_contents
 from src.appraiser.routing import GEMMA_MODEL
@@ -48,46 +53,29 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# In-memory runtime state for the active cycle
+SHOP_ID = os.environ.get("BTF_SHOP_ID", "richmond-general")
+RULES = open_rule_store()
+
+# Cycle-scoped runtime. Standing rules live in RULES, not here.
 STATE = {
     "cycle_id": "2026-08-22",
     "listing_id": "4160518",
     "budget_cap": 600.00,
     "auto_send_threshold": 35.00,
-    "standing_rules": [
-        StandingRule(
-            kind=QuestionKind.APPETITE,
-            category="dinnerware / pottery",
-            answer="SKIP — store has zero room for dishes or box sets",
-            learned_cycle="2026-08-22",
-        ),
-        StandingRule(
-            kind=QuestionKind.POLICY,
-            category="sports memorabilia",
-            answer="SKIP raw uncertified autographs — store currently overstocked",
-            learned_cycle="2026-08-22",
-        ),
-        StandingRule(
-            kind=QuestionKind.APPETITE,
-            category="vintage tools",
-            answer="SKIP — store backlog of unlisted tools",
-            learned_cycle="2026-08-22",
-        ),
-        StandingRule(
-            kind=QuestionKind.APPETITE,
-            category="jewelry",
-            answer="BUY — bulk estate costume jewelry moves in the storefront",
-            learned_cycle="2026-08-20",
-        ),
-        StandingRule(
-            kind=QuestionKind.APPETITE,
-            category="vintage cards",
-            answer="BUY — including junk-wax bulk boxes",
-            learned_cycle="2026-08-20",
-        ),
-    ],
     "user_constraints": {"payment_method": "credit_card", "budget_envelope": 600.00},
 }
+
+
+def current_rules() -> list[StandingRule]:
+    return RULES.active_rules(SHOP_ID)
+
+
+def reset_rule_store(seed=None):
+    """Tests only. Replaces the process store with a fresh in-memory seed."""
+    global RULES
+    RULES = InMemoryRuleStore(
+        seed=seed_rules() if seed is None else seed, shop_id=SHOP_ID,
+    )
 
 engine = AppraisalEngine()
 
@@ -135,7 +123,7 @@ def curator_pitch(decisions, captions) -> str:
     if not cache.exists():
         alt = Path("/app/data/aug22_gallery_4160518/curator_voice.txt")
         cache = alt if alt.exists() else cache
-    facts = build_pitch(decisions, captions, STATE["standing_rules"])
+    facts = build_pitch(decisions, captions, current_rules())
 
     # Key the cache to the sheet it describes. It was previously served whenever
     # the file was non-empty, with no invalidation at all, so the banner kept
@@ -367,9 +355,18 @@ def get_aug22_state():
             confidence_gap=0.3,
             wants_photo=False,
         ),
+        Question(
+            kind=QuestionKind.APPETITE,
+            category="advertising / bottles",
+            prompt="Century Progress bottle (BT-235) and similar advertising glass: keep buying for the storefront?",
+            lot_ids=("BT-235",),
+            value_at_stake=48.0,
+            confidence_gap=0.3,
+            wants_photo=False,
+        ),
     ]
     all_questions = domain_questions + emitted_questions
-    queue_res = build_queue(all_questions, STATE["standing_rules"], cap=12)
+    queue_res = build_queue(all_questions, current_rules(), cap=12)
 
     return photos, seats, lots, allocated_decisions, summary, queue_res, captions_map
 
@@ -386,13 +383,15 @@ def healthz():
         "vertex_client": bool(engine.client),
         "gemma_model": GEMMA_MODEL,
         "gemma_ok": bool(engine.client) and "gemma" in GEMMA_MODEL.lower(),
+        "memory_backend": getattr(RULES, "backend_name", "unknown"),
+        "memory_durable": bool(getattr(RULES, "durable", False)),
     }
 
 
 @app.get("/", response_class=HTMLResponse)
 def get_console():
     photos, seats, lots, decisions, summary, queue_res, captions_map = get_aug22_state()
-    pitch = build_pitch(decisions, captions_map, STATE["standing_rules"])
+    pitch = build_pitch(decisions, captions_map, current_rules())
     # Unit tests must stay credential-free and fast. Cloud Run has no
     # PYTEST_CURRENT_TEST, so Gemma runs there (then caches).
     live_client = None if os.environ.get("PYTEST_CURRENT_TEST") else engine.client
@@ -449,6 +448,7 @@ def list_questions():
     return {
         "asked": [
             {
+                "question_id": make_question_id(STATE["cycle_id"], q),
                 "kind": q.kind.value,
                 "category": q.category,
                 "prompt": q.prompt,
@@ -460,52 +460,124 @@ def list_questions():
             for q in queue_res.asked
         ],
         "auto_answered_from_memory": [
-            {"question": q.prompt, "rule": r.answer, "learned_cycle": r.learned_cycle}
+            {
+                "question_id": make_question_id(STATE["cycle_id"], q),
+                "question": q.prompt,
+                "rule": r.answer,
+                "learned_cycle": r.learned_cycle,
+            }
             for q, r in queue_res.auto_answered
         ],
     }
 
 
+def _require_operator(x_operator_token: str | None) -> None:
+    expected = os.environ.get("OPERATOR_TOKEN")
+    if not expected:
+        return
+    if (x_operator_token or "") != expected:
+        raise HTTPException(status_code=401, detail="operator token required")
+
+
 @app.post("/api/answer")
-def answer_question(payload: dict = Body(...)):
-    kind_str = payload.get("kind")
-    cat = payload.get("category")
-    ans = payload.get("answer")
-
-    if not kind_str or not cat or not ans:
-        raise HTTPException(status_code=400, detail="Missing kind, category, or answer")
-
-    try:
-        kind = QuestionKind(kind_str.lower())
-    except ValueError:
-        raise HTTPException(status_code=400, detail=f"Invalid question kind: {kind_str}")
-
-    # Promote through domain learn() mechanism
-    temp_question = Question(
-        kind=kind,
-        category=cat,
-        prompt=f"Clarification for {cat}",
-        lot_ids=(),
-    )
-    promoted = learn([(temp_question, ans)], cycle=STATE["cycle_id"])
-    if promoted:
-        new_rule = promoted[0]
-    else:
-        new_rule = StandingRule(
-            kind=kind,
-            category=cat,
-            answer=ans,
-            learned_cycle=STATE["cycle_id"],
+def answer_question(
+    payload: dict = Body(...),
+    x_operator_token: str | None = Header(default=None),
+):
+    _require_operator(x_operator_token)
+    qid = payload.get("question_id")
+    ans = (payload.get("answer") or "").strip()
+    if not qid or not ans:
+        raise HTTPException(
+            status_code=400, detail="Missing question_id or answer",
         )
 
-    STATE["standing_rules"] = [
-        r for r in STATE["standing_rules"] if (r.kind, r.category) != (new_rule.kind, new_rule.category)
-    ] + [new_rule]
+    photos, seats, lots, decisions, summary, queue_res, captions = get_aug22_state()
+    by_id = {make_question_id(STATE["cycle_id"], q): q for q in queue_res.asked}
+    question = by_id.get(qid)
+    if question is None:
+        raise HTTPException(
+            status_code=404, detail="question is not on the current desk queue",
+        )
 
+    before = {
+        "asked": len(queue_res.asked),
+        "auto_answered": len(queue_res.auto_answered),
+        "allocated": [d.lot_id for d in decisions if d.allocated],
+    }
+
+    promoted = learn([(question, ans)], cycle=STATE["cycle_id"])
+    stored = None
+    if not promoted:
+        return {
+            "status": "recorded",
+            "promoted": False,
+            "reason": "object-specific answers do not become standing memory",
+            "question_id": qid,
+            "affected_lots": list(question.lot_ids),
+            "before": before,
+            "after": before,
+            "appraisal_source": "cached_sheet",
+            "pending_reappraisal": False,
+        }
+
+    new_rule = promoted[0]
+    try:
+        stored = RULES.put(StandingRuleRecord(
+            shop_id=SHOP_ID,
+            kind=new_rule.kind,
+            category=new_rule.category,
+            answer=new_rule.answer,
+            learned_cycle=new_rule.learned_cycle,
+            source_question_id=qid,
+        ), expected_revision=payload.get("expected_revision"))
+    except MemoryConflict as e:
+        raise HTTPException(status_code=409, detail=str(e)) from e
+
+    _, _, _, after_decisions, _, after_queue, _ = get_aug22_state()
+    after = {
+        "asked": len(after_queue.asked),
+        "auto_answered": len(after_queue.auto_answered),
+        "allocated": [d.lot_id for d in after_decisions if d.allocated],
+    }
     return {
-        "status": "learned",
-        "standing_rules_count": len(STATE["standing_rules"]),
-        "rule": {"kind": kind.value, "category": cat, "answer": ans, "cycle": STATE["cycle_id"]},
+        "status": "applied",
+        "promoted": True,
+        "question_id": qid,
+        "rule": {
+            "rule_id": stored.rule_id,
+            "revision": stored.revision,
+            "kind": stored.kind.value,
+            "category": stored.category,
+            "answer": stored.answer,
+            "learned_cycle": stored.learned_cycle,
+            "source_question_id": stored.source_question_id,
+        },
+        "affected_lots": list(question.lot_ids),
+        "before": before,
+        "after": after,
+        "appraisal_source": "cached_sheet",
+        "pending_reappraisal": True,
+        "standing_rules_count": len(current_rules()),
+    }
+
+
+@app.get("/api/memory")
+def list_memory():
+    rules = current_rules()
+    return {
+        "backend": getattr(RULES, "backend_name", "unknown"),
+        "durable": bool(getattr(RULES, "durable", False)),
+        "shop_id": SHOP_ID,
+        "rules": [
+            {
+                "kind": r.kind.value,
+                "category": r.category,
+                "answer": r.answer,
+                "learned_cycle": r.learned_cycle,
+            }
+            for r in rules
+        ],
     }
 
 
@@ -532,7 +604,7 @@ def appraise_live(payload: dict = Body(...)):
             caption=caption,
             image_bytes=photo_bytes,
             category_hint=category_hint,
-            standing_rules=STATE["standing_rules"],
+            standing_rules=current_rules(),
         )
         appraisal, questions = engine.parse_appraisal_to_domain(raw_result)
         return {

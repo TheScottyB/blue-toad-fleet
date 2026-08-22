@@ -16,6 +16,7 @@ from src.bidmath import (units_committed, clerk_directive, BidMechanic,
                          Decision, Priority, SheetSummary)
 from src.gate.voice import PitchVoice
 from src.intake.spatial import Seat, Zone
+from src.memory.ids import make_question_id
 
 
 @dataclass
@@ -67,6 +68,11 @@ border-radius:0 11px 11px 0;padding:14px 18px;margin:9px 0}
 border:1px solid var(--line);background:var(--card2);color:var(--ink2);cursor:pointer;transition:all .15s}
 .btn:hover{background:var(--line);color:var(--ink)}
 .btn.p{border-color:var(--violet);color:var(--violet)}
+.answer-text{width:100%;margin-top:8px;padding:7px 9px;border-radius:7px;
+border:1px solid var(--line);background:var(--card2);color:var(--ink);
+font:13px ui-sans-serif,system-ui,sans-serif}
+#answer-result{margin:10px 0;padding:10px 14px;border-radius:8px;
+border:1px solid var(--green);color:var(--green);font-size:13px}
 .tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
 padding:2px 7px;border-radius:5px;border:1px solid var(--line);color:var(--ink3);white-space:nowrap}
 .tag.photo{border-color:var(--cyan);color:var(--cyan)}
@@ -116,6 +122,49 @@ padding:2px 6px;margin:2px 3px 0 0;border-radius:4px;background:rgba(56,189,248,
 .pitch-card{background:linear-gradient(135deg, rgba(167,139,250,0.08) 0%, rgba(56,189,248,0.08) 100%);
 border:1px solid var(--violet);border-radius:12px;padding:18px;margin:20px 0}
 .pitch-hd{font-weight:700;font-size:14px;color:var(--violet);margin-bottom:8px;display:flex;align-items:center;gap:8px}
+"""
+
+_ANSWER_JS = """
+<script>
+(function(){
+  var box = document.getElementById("answer-result");
+  document.addEventListener("click", function(ev){
+    var btn = ev.target.closest("[data-act=answer]");
+    if (!btn) return;
+    ev.preventDefault();
+    var card = btn.closest(".q");
+    if (!card) return;
+    var qid = card.getAttribute("data-question-id");
+    var input = card.querySelector(".answer-text");
+    var answer = ((input && input.value) || "").trim()
+      || (btn.getAttribute("data-answer") || "").trim();
+    if (!answer) { if (input) input.focus(); return; }
+    btn.disabled = true;
+    var label = btn.textContent;
+    btn.textContent = "saving…";
+    if (box) { box.hidden = false; box.textContent = "saving…"; }
+    fetch("/api/answer", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({question_id: qid, answer: answer})
+    }).then(function(r){
+      return r.json().then(function(j){ return {ok: r.ok, j: j}; });
+    }).then(function(x){
+      if (box) {
+        box.textContent = x.ok
+          ? (x.j.status + " · " + ((x.j.rule && x.j.rule.answer) || x.j.reason || "recorded"))
+          : (x.j.detail || "failed");
+      }
+      if (x.ok) setTimeout(function(){ location.reload(); }, 700);
+      else { btn.disabled = false; btn.textContent = label; }
+    }).catch(function(){
+      btn.disabled = false;
+      btn.textContent = label;
+      if (box) box.textContent = "network error";
+    });
+  });
+})();
+</script>
 """
 
 
@@ -276,6 +325,7 @@ def _question_block(v: CycleView) -> str:
             )
 
     out.append(f"<h2>Needs your eye &mdash; {len(q.asked)} question(s)</h2>")
+    out.append('<div id="answer-result" hidden></div>')
     if not q.asked:
         # Only say it when it is true. With work still deferred to the preview,
         # "nothing ambiguous" is the console overclaiming on the operator's behalf.
@@ -287,15 +337,22 @@ def _question_block(v: CycleView) -> str:
         photo = _tag("photo", "photo") if question.wants_photo else ""
         lots = ", ".join(question.lot_ids[:6])
         more = f" +{len(question.lot_ids) - 6}" if len(question.lot_ids) > 6 else ""
+        qid = make_question_id(v.cycle_id, question)
         out.append(
-            f'<div class="q"><div class="top"><span class="n">{i}</span>'
+            f'<div class="q" data-question-id="{escape(qid)}">'
+            f'<div class="top"><span class="n">{i}</span>'
             f'<span class="txt">{escape(question.prompt)}</span>{photo}</div>'
             f'<div class="meta">{escape(question.kind.value)} &middot; '
             f'{escape(question.category)} &middot; {escape(lots)}{more} &middot; '
             f'impact {question.impact}</div>'
-            f'<div class="acts"><button class="btn p">Answer</button>'
-            f'<button class="btn">Applies to all {escape(question.category)}</button>'
-            f'<button class="btn">Skip</button></div></div>'
+            f'<textarea class="answer-text" rows="2" '
+            f'placeholder="Type the standing answer, then Answer"></textarea>'
+            f'<div class="acts">'
+            f'<button type="button" class="btn p" data-act="answer">Answer</button>'
+            f'<button type="button" class="btn" data-act="answer" '
+            f'data-answer="Applies to all {escape(question.category)}">'
+            f'Applies to all {escape(question.category)}</button>'
+            f'</div></div>'
         )
 
     if q.deferred:
@@ -430,4 +487,6 @@ def render_console(v: CycleView, pitch_text: str = "") -> str:
   Unanswered questions do not block &mdash; at the Friday 8:00 PM cutoff the sheet ships with
   those rows flagged low-confidence.
 </footer>
-</div></body></html>"""
+</div>
+{_ANSWER_JS}
+</body></html>"""

@@ -56,6 +56,13 @@ class TestQuestionQueue:
         assert "Is there a mark on the base?" in h
         assert "Needs your eye" in h
 
+    def test_answer_controls_post_to_the_real_api(self):
+        h = render_console(_view(questions=[_q(kind=QuestionKind.APPETITE)]))
+        assert 'data-question-id="q_' in h
+        assert 'data-act="answer"' in h
+        assert 'fetch("/api/answer"' in h
+        assert "src=" not in h and "href=" not in h
+
     def test_photo_requests_are_marked(self):
         h = render_console(_view(questions=[_q(kind=QuestionKind.SCOPE, photo=True)]))
         assert ">photo<" in h

@@ -15,6 +15,7 @@ def test_health_endpoints(client):
     assert r1.status_code == 200
     assert r1.json()["status"] == "healthy"
     assert r1.json()["service"] == "blue-toad-fleet"
+    assert r1.json()["memory_backend"] in {"memory", "file", "firestore"}
 
     r2 = client.get("/healthz")
     assert r2.status_code == 200
@@ -59,16 +60,50 @@ def test_api_questions(client):
     assert len(data["auto_answered_from_memory"]) >= 3
 
 def test_api_answer_promotion(client):
-    payload = {
-        "kind": "mark",
-        "category": "stoneware",
-        "answer": "Only bid if wing mark is clearly visible"
-    }
-    r = client.post("/api/answer", json=payload)
+    from src.server import reset_rule_store
+    reset_rule_store()
+    asked = client.get("/api/questions").json()["asked"]
+    assert asked, "desk queue empty; nothing to answer"
+    target = asked[0]
+    r = client.post("/api/answer", json={
+        "question_id": target["question_id"],
+        "answer": "BUY — advertising glass moves in the storefront",
+    })
     assert r.status_code == 200
     data = r.json()
-    assert data["status"] == "learned"
-    assert data["rule"]["category"] == "stoneware"
+    assert data["status"] == "applied"
+    assert data["promoted"] is True
+    assert data["rule"]["category"] == target["category"]
+    mem = client.get("/api/memory").json()
+    assert mem["backend"] == "memory"
+    assert any(x["category"] == target["category"] for x in mem["rules"])
+    later = client.get("/api/questions").json()
+    assert all(q["question_id"] != target["question_id"] for q in later["asked"])
+    assert any(
+        a["question_id"] == target["question_id"]
+        for a in later["auto_answered_from_memory"]
+    )
+    reset_rule_store()
+
+
+def test_api_answer_rejects_unasked_question(client):
+    from src.server import reset_rule_store
+    reset_rule_store()
+    r = client.post("/api/answer", json={
+        "question_id": "q_does_not_exist",
+        "answer": "BUY",
+    })
+    assert r.status_code == 404
+
+
+def test_api_answer_does_not_promote_via_raw_kind(client):
+    r = client.post("/api/answer", json={
+        "kind": "mark",
+        "category": "stoneware",
+        "answer": "Only bid if wing mark is clearly visible",
+    })
+    assert r.status_code == 400
+
 
 def test_api_answer_invalid(client):
     r = client.post("/api/answer", json={"kind": "invalid_kind"})
