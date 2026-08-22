@@ -198,8 +198,11 @@ to be softened to match the code. The code comes up to meet it.
       item_sales` reconciles exactly. Sum it; do not count rows (rows undercount
       by ~5% here).
 
-      **Still open:** a clean full units walk. The 285 listings and 138 active
-      are directly verified; `~300 units` is extrapolated from a 192-row sample.
+      **Closed 2026-08-22 — clean walk done, all six pages, no dedup.**
+      285 sold listings, **295 sold units**, 138 active. **Absorption 2.14**
+      (2.15 comp-only, 5.6 months of supply). Rows undercount units by 3.5%,
+      and all of that gap is on page 1 — the only page carrying multi-quantity
+      listings. The earlier `~300` extrapolation was 1.7% high.
 
       **Boundary.** It is an authenticated seller account. Read-only research
       only; never touch Listings, Orders, Marketing, Payments or Messages from

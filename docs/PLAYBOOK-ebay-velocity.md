@@ -168,16 +168,19 @@ Free-shipping share matters for the same reason: 16% of sold listings had it, so
 
 Window `Aug 21, 2025 – Aug 21, 2026`, read 2026-08-21/22.
 
+Clean walk, all six pages at `limit=50`, no deduplication.
+
 ```
 sold listings, 365d       285      (offset 250 -> 35 rows, short page = end)
-sold units, 365d          ~300     (rows x ~1.05; SEE LIMITATION BELOW)
+sold UNITS, 365d          295      (sum of Total sold; rows undercount by 3.5%)
 active listings now       138      (aggregate block, ACTIVE tab)
+non-comp sold              29 listings / 31 units
 non-comp active            15      (11%)
-non-comp sold             ~10%
 
-absorption (listings)     285 / 138 = 2.07
-absorption (comp-only)    257 / 123 = 2.09
-months of supply          12 / 2.07 = 5.8
+ABSORPTION (units)        295 / 138 = 2.14   <- the metric
+absorption (comp-only)    264 / 123 = 2.15
+absorption (listings)     285 / 138 = 2.07   <- wrong basis, 3% low
+months of supply          12 / 2.14 = 5.6
 
 avg sold price          $21.44     range $1.25 - $80.00
 avg shipping            $10.44     landed ~$31.88
@@ -185,12 +188,16 @@ free shipping              16%
 sell-through                 -     (empty on this query — do not assume present)
 ```
 
-**LIMITATION, stated rather than smoothed over:** the units figure is an
-estimate. A full units count was not completed, because GOTCHA 2 forces 50-row
-pages and a first pass deduplicated on `title|sold`, which wrongly collapsed
-distinct listings that share a title. The 285 listing count and the 138 active
-count are directly verified; `~300 units` is `285 x 1.05` from a 192-row sample.
-Do the clean walk before quoting a units-based absorption anywhere it matters.
+Every figure above is a direct count. An earlier pass estimated `~300` units by
+extrapolating from a 192-row sample; the clean walk gives **295**, so the
+estimate was 1.7% high — close, and still worth replacing, because the gap
+between counting rows and summing units is 3.5% here and would be far larger on
+an item where sellers hold stock.
+
+Per-page counts, for anyone re-running it:
+`offset 0: 50 rows/60 units · 50: 50/50 · 100: 50/50 · 150: 50/50 · 200: 50/50 ·
+250: 35/35`. Only the first page carries multi-quantity listings (60 units from
+50 rows), which is what a rows-based count silently loses.
 
 ---
 
