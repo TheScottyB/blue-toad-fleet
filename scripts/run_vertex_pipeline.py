@@ -38,7 +38,7 @@ from src.appraiser.routing import TRIAGE_MODEL, estimate_cost_usd
 from src.bidmath import (
     Lot, CompEstimate, Confidence as BidConfidence, Priority, Decision,
     price_lot, allocate, summarize, ABSENTEE_FEE, snap_to_increment,
-    mechanic_from_ruling, BidMechanic, units_committed
+    mechanic_from_ruling, BidMechanic, units_committed, opening_bid
 )
 
 # Reference valuation comps for approved candidate categories (matching shop pricing bands)
@@ -576,7 +576,7 @@ def run_pipeline(
     # is a bid on an unidentified object.
     for i, d in enumerate(approved_bids, 1):
         lot_obj = next(l for l in lots if l.lot_id == d.lot_id)
-        start_bid = snap_to_increment(max(5.0, d.max_bid * 0.35))
+        start_bid = opening_bid(d.max_bid)
         description = " ".join((lot_obj.caption or d.category).split())
         wrapped = textwrap.wrap(description, width=78) or [description]
         email_lines.append(f"{i:>2}) [{d.lot_id}]  {wrapped[0]}")
@@ -656,7 +656,7 @@ def run_pipeline(
 
     for idx, d in enumerate(approved_bids, 2):
         lot_obj = next(l for l in lots if l.lot_id == d.lot_id)
-        start_bid = snap_to_increment(max(5.0, d.max_bid * 0.35))
+        start_bid = opening_bid(d.max_bid)
         est_str = f"${lot_obj.comp.low:.0f}-${lot_obj.comp.high:.0f}" if lot_obj.comp.low else "N/A"
         ws.append([
             d.lot_id,

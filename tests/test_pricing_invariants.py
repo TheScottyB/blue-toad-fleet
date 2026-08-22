@@ -440,3 +440,42 @@ class TestTheClerkDirectiveNeverMisleads:
         for per, cnt in re.findall(r"\$([\d,]+\.\d{2}) per unit x (\d+)", text):
             assert float(per.replace(",", "")) * int(cnt) == pytest.approx(
                 d.committed_max, abs=0.01)
+
+
+# --------------------------------------------------------------- opening bid
+
+class TestOpeningBid:
+    """The figure the clerk opens at, derived once instead of re-typed.
+
+    `max(5.0, max_bid * 0.35)` was open-coded in the pipeline twice and in the
+    single-photo runner once — three copies of the $5 increment and the 35% bid
+    fraction, each free to drift from the constants that document them.
+    """
+
+    @given(hammer=money)
+    def test_never_opens_above_the_max(self, hammer):
+        from src.bidmath import opening_bid
+        assert opening_bid(hammer) <= max(hammer, BID_INCREMENT)
+
+    @given(hammer=money)
+    def test_always_sits_on_the_grid(self, hammer):
+        from src.bidmath import opening_bid
+        assert round(opening_bid(hammer) % BID_INCREMENT, 6) in (0.0, BID_INCREMENT)
+
+    @given(hammer=money)
+    def test_never_opens_below_one_increment(self, hammer):
+        from src.bidmath import opening_bid
+        assert opening_bid(hammer) >= BID_INCREMENT
+
+    @given(a=money, b=money)
+    def test_is_monotonic(self, a, b):
+        from src.bidmath import opening_bid
+        assume(a < b)
+        assert opening_bid(a) <= opening_bid(b)
+
+    def test_reproduces_what_the_scripts_computed_by_hand(self):
+        """Same output as the three open-coded copies, so no sheet moves."""
+        from src.bidmath import opening_bid
+        for h in (5.0, 10.0, 15.0, 25.0, 40.0, 100.0):
+            assert opening_bid(h) == snap_to_increment(
+                max(BID_INCREMENT, h * BASE_BID_FRACTION_LOW))

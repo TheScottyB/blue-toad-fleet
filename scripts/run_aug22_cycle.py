@@ -42,7 +42,10 @@ APPROVED_BIDS = [
     ("BT-066", 66, "hand held video games (5 Radica/LCD units)", "vintage toys", 5.00, 10.00, "$25-$45"),
 ]
 
-ABSENTEE_FEE = 0.15  # Blue Toad standard 15% absentee fee
+# The fee, the grid and the all-in formula all live in src/bidmath. This
+# script previously re-declared ABSENTEE_FEE and multiplied by a literal
+# 1.15 twice, which is two more places to forget when the house changes it.
+from src.bidmath import ABSENTEE_FEE, all_in_cost  # noqa: E402
 
 
 def main():
@@ -61,7 +64,7 @@ def main():
 
     print("\n[★] Final Approved Absentee Bid Schedule:")
     for lot_id, seq, desc, cat, start_bid, max_bid, est in APPROVED_BIDS:
-        all_in = round(max_bid * 1.15, 2)
+        all_in = all_in_cost(max_bid)
         print(f"  {lot_id} | {desc:<48} | Start: ${start_bid:>5.2f} | Max: ${max_bid:>6.2f} | All-In: ${all_in:>6.2f} | Est: {est}")
 
     # Generate Final Sealed Absentee Bid Email Draft
@@ -126,7 +129,7 @@ def main():
         ws.cell(1, c).font = hdr_font
 
     for idx, (lot_id, seq, desc, cat, start_bid, max_bid, est) in enumerate(APPROVED_BIDS, 2):
-        all_in = round(max_bid * 1.15, 2)
+        all_in = all_in_cost(max_bid)
         ws.append([
             lot_id,
             cat,

@@ -221,6 +221,17 @@ def all_in_cost(max_bid: float, tax_rate: float = DEFAULT_TAX_RATE) -> float:
     return round(max_bid * (1 + ABSENTEE_FEE) * (1 + tax_rate), 2)
 
 
+def opening_bid(max_bid: float) -> float:
+    """What the clerk opens at, on the house's grid, never above the ceiling.
+
+    A fraction of the max, floored at one bidding increment so an opening bid is
+    always callable. Lived open-coded as `max(5.0, bid * 0.35)` in the pipeline
+    twice and the single-photo runner once — three copies of the increment and
+    the bid fraction, each free to drift from the constants that document them.
+    """
+    return snap_to_increment(max(BID_INCREMENT, max_bid * BASE_BID_FRACTION_LOW))
+
+
 def _priority_for(lot: Lot) -> Priority:
     if lot.fit_score < 0.35:
         return Priority.SKIP

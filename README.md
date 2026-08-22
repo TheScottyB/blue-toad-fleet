@@ -7,7 +7,7 @@
 
   [![Google Cloud Run](https://img.shields.io/badge/Google%20Cloud%20Run-Live%20Service-34d399?style=flat-square&logo=googlecloud)](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app)
   [![Vertex AI](https://img.shields.io/badge/Vertex%20AI-Gemini%203.6%20Flash-a78bfa?style=flat-square&logo=google)](https://cloud.google.com/vertex-ai)
-  [![Unit Tests](https://img.shields.io/badge/Unit%20Tests-530%20Passing-38bdf8?style=flat-square&logo=pytest)](https://github.com/TheScottyB/blue-toad-fleet)
+  [![Unit Tests](https://img.shields.io/badge/Unit%20Tests-561%20Passing-38bdf8?style=flat-square&logo=pytest)](https://github.com/TheScottyB/blue-toad-fleet)
   [![License: MIT](https://img.shields.io/badge/License-MIT-fbbf24?style=flat-square)](LICENSE)
 </div>
 
@@ -184,7 +184,7 @@ blue-toad-fleet/
 │   ├── gate/                   # Gate Console UI renderer (pure HTML/CSS)
 │   ├── intake/                 # Manifest parsing, natural sort & spatial clustering
 │   └── server.py               # Cloud Run FastAPI server & API endpoints
-├── tests/                      # Comprehensive pytest unit suite (530 tests)
+├── tests/                      # Comprehensive pytest unit suite (561 tests)
 ├── Dockerfile                  # Container definition for Google Cloud Run
 ├── LICENSE                     # MIT License
 ├── Makefile                    # Standard developer workflow targets

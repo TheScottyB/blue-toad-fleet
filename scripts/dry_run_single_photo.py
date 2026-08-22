@@ -46,7 +46,7 @@ from src.appraiser.pricing import (MIN_CALLS, median_price, price_is_usable,
 from src.appraiser.routing import (APPRAISAL_MODEL, TRIAGE_MODEL,
                                    estimate_cost_usd)
 from src.bidmath import (CompEstimate, Confidence as BidConfidence, Lot,
-                         allocate, price_lot, summarize)
+                         allocate, opening_bid, price_lot, summarize)
 from src.intake.manifest import (TriagedPhoto, clean_caption, group_into_lots,
                                  lot_number_from)
 
@@ -430,7 +430,7 @@ def _write(out_dir, seq, report, decision, identification):
     print(f"[✓] {jf}")
 
     if decision is not None and decision.allocated and decision.max_bid:
-        start = max(5.0, round(decision.max_bid * 0.35 / 5) * 5)
+        start = opening_bid(decision.max_bid)
         body = (
             f"DRY RUN — NOT SENT\n"
             f"TO: info@bluetoadauctions.com\n\n"
