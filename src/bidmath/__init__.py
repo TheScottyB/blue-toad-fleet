@@ -605,12 +605,20 @@ def mechanic_from_ruling(
     if _NEGATION_RE.search(text):
         return unknown
 
-    mult = None
-    m = _MULT_RE.search(text)
-    if m:
-        mult = _as_count(m.group(1) or m.group(2))
-        if mult is None:                       # x0, x900 — a misread, not a lot
+    # Collect EVERY multiplier, not the first. Taking the first meant
+    # "trays 12 x 14 x 16 go as a x3 bid" read 14 units and silently discarded
+    # the x3 that was the actual ruling. Two multipliers that disagree is the
+    # same shape as two mechanics named at once — the sentence has not settled
+    # the count, and letting position break the tie decides money on word order.
+    found = []
+    for m in _MULT_RE.finditer(text):
+        n = _as_count(m.group(1) or m.group(2))
+        if n is None:                          # x0, x900 — a misread, not a lot
             return unknown
+        found.append(n)
+    if len(set(found)) > 1:
+        return unknown
+    mult = found[0] if found else None
 
     says_ttm = bool(_TTM_RE.search(text)) or mult is not None
     says_choice = bool(_CHOICE_RE.search(text))

@@ -229,3 +229,35 @@ class TestChoiceWithNoCountDoesNotInventOne:
     def test_an_election_is_never_clamped_against_an_invented_count(self):
         mech, n, k = mechanic_from_ruling("buyer's choice, take 3")
         assert not (mech is BidMechanic.CHOICE and n == 1 and k == 1)
+
+
+class TestDisagreeingMultipliersRefuse:
+    """Raised by the grok lane against a4a3960, reproduced here before acting.
+
+    "trays 12 x 14 x 16 go as a x3 bid" read 14 units — the first `xN` in the
+    string — and silently discarded the `x3` that was the ruling. Tray labels
+    written with `x` as a separator is a constructed string today, but `ruling`
+    is free text somebody could paste a fuller note into, and the failure is a
+    confident wrong count in the direction of bidding on a number nobody stated.
+
+    The module already refuses when two MECHANICS are named, on the grounds that
+    the sentence restates the question rather than answering it. Two multipliers
+    that disagree is the same shape.
+    """
+
+    def test_disagreeing_multipliers_are_not_settled_by_position(self):
+        assert mechanic_from_ruling(
+            "trays 12 x 14 x 16 go as a x3 bid")[0] is BidMechanic.UNKNOWN
+
+    def test_a_repeated_agreeing_multiplier_still_reads(self):
+        assert mechanic_from_ruling("x3 bid, that is x3 the money")[:2] == (
+            BidMechanic.TIMES_THE_MONEY, 3)
+
+    @pytest.mark.parametrize("text", [
+        "trays 12, 14, and 16 go as a x3 bid",
+        "x3 bid on trays 12/14/16",
+        "take all three trays at x3",
+        "Yes, that is a x3 bid.",
+    ])
+    def test_every_phrasing_that_worked_before_still_works(self, text):
+        assert mechanic_from_ruling(text)[:2] == (BidMechanic.TIMES_THE_MONEY, 3)
