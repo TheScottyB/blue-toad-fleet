@@ -21,11 +21,14 @@ from src.intake.manifest import (
     group_into_lots, parse_drop, plan_fanout,
 )
 from src.intake.spatial import (
-    SpatiallyTaggedPhoto, SurfaceSignature, Zone,
-    apply_trajectory, occupancy, spatial_same_lot,
+    AdjacencyClaim, PhotoObservation, SpatiallyTaggedPhoto, SurfaceSignature, Zone,
+    adjacency_graph, apply_trajectory, occupancy, observations_to_tagged,
+    spatial_same_lot,
 )
 
 __all__ = ["GalleryDrop", "LotGroup", "PhotoRef", "TriagedPhoto", "WorkItem",
            "group_into_lots", "parse_drop", "plan_fanout",
            "SpatiallyTaggedPhoto", "SurfaceSignature", "Zone",
-           "apply_trajectory", "occupancy", "spatial_same_lot"]
+           "AdjacencyClaim", "PhotoObservation",
+           "apply_trajectory", "occupancy", "spatial_same_lot",
+           "adjacency_graph", "observations_to_tagged"]

@@ -31,6 +31,28 @@ ZONE_VALUES = [z.value for z in Zone]
 
 
 @dataclass(frozen=True)
+class AdjacencyClaim:
+    """'This photo's right edge shows the object in photo 47.'"""
+    from_id: str
+    edge: str
+    to_id: str
+
+
+@dataclass(frozen=True)
+class PhotoObservation:
+    """One photo as Step 0 saw it in the listing, not in isolation."""
+    photo_id: str
+    zone: Zone
+    surface: SurfaceSignature
+    caption: str = ""
+    summary: str = ""
+    is_lot: bool = True
+    same_lot_as_previous: bool = False
+    margin_neighbors: tuple[str, ...] = ()
+    adjacencies: tuple[AdjacencyClaim, ...] = ()
+
+
+@dataclass(frozen=True)
 class SpatiallyTaggedPhoto:
     photo_id: str
     caption: str = ""
@@ -76,6 +98,69 @@ def apply_trajectory(photos: list[SpatiallyTaggedPhoto]) -> list[TriagedPhoto]:
         ))
         prev = p
     return out
+
+
+def adjacency_graph(obs: list[PhotoObservation]) -> dict[str, set[str]]:
+    """Undirected neighbour map from explicit cross-photo claims."""
+    g: dict[str, set[str]] = {o.photo_id: set() for o in obs}
+    for o in obs:
+        for claim in o.adjacencies:
+            g.setdefault(claim.from_id, set()).add(claim.to_id)
+            g.setdefault(claim.to_id, set()).add(claim.from_id)
+    return g
+
+
+def observations_to_tagged(obs: list[PhotoObservation]) -> list[SpatiallyTaggedPhoto]:
+    return [
+        SpatiallyTaggedPhoto(
+            photo_id=o.photo_id,
+            caption=o.caption,
+            summary=o.summary,
+            is_lot=o.is_lot,
+            same_lot_as_previous=o.same_lot_as_previous,
+            surface=o.surface,
+            zone=o.zone,
+            margin_neighbors=o.margin_neighbors,
+        )
+        for o in obs
+    ]
+
+
+LISTING_GRAPH_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "photos": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "photo_id": {"type": "string"},
+                    "zone": {"type": "string", "enum": ZONE_VALUES},
+                    "surface_signature": {"type": "string", "enum": SURFACE_VALUES},
+                    "margin_neighbors": {"type": "array", "items": {"type": "string"}},
+                    "adjacencies": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "from_id": {"type": "string"},
+                                "edge": {
+                                    "type": "string",
+                                    "enum": ["left", "right", "behind", "below", "above"],
+                                },
+                                "to_id": {"type": "string"},
+                            },
+                            "required": ["from_id", "edge", "to_id"],
+                        },
+                    },
+                },
+                "required": ["photo_id", "zone", "surface_signature",
+                             "margin_neighbors", "adjacencies"],
+            },
+        },
+    },
+    "required": ["photos"],
+}
 
 
 def occupancy(

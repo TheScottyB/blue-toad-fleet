@@ -1,7 +1,8 @@
 from src.intake.manifest import group_into_lots
 from src.intake.spatial import (
-    SpatiallyTaggedPhoto, SurfaceSignature, Zone,
-    apply_trajectory, occupancy, spatial_same_lot,
+    AdjacencyClaim, PhotoObservation, SpatiallyTaggedPhoto, SurfaceSignature, Zone,
+    adjacency_graph, apply_trajectory, occupancy, observations_to_tagged,
+    spatial_same_lot,
 )
 
 
@@ -97,3 +98,46 @@ class TestOccupancy:
         occ = occupancy(photos, groups)
         assert groups[0].lot_key in occ[Zone.NORTH_BACK_WALL]
         assert groups[1].lot_key in occ[Zone.CENTER_ISLAND_1]
+
+
+class TestListingGraph:
+    """Step 0 sees the listing, not a single photo.
+
+    Cross-photo claims ('this photo's right edge shows photo 47') are
+    invisible to per-photo triage.
+    """
+
+    def test_right_edge_claim_links_two_photos(self):
+        obs = [
+            PhotoObservation(
+                photo_id="p1", zone=Zone.CENTER_ISLAND_1,
+                surface=SurfaceSignature.BLUE_VINYL,
+                adjacencies=(AdjacencyClaim("p1", "right", "p47"),),
+            ),
+            PhotoObservation(
+                photo_id="p47", zone=Zone.CENTER_ISLAND_1,
+                surface=SurfaceSignature.BLUE_VINYL,
+            ),
+        ]
+        graph = adjacency_graph(obs)
+        assert "p47" in graph["p1"]
+        assert "p1" in graph["p47"]
+
+    def test_observations_carry_zone_into_trajectory_tags(self):
+        obs = [
+            PhotoObservation(
+                photo_id="p1", zone=Zone.SOUTH_UNDER_TABLE,
+                surface=SurfaceSignature.CONCRETE, caption="Poppy Trail",
+                summary="Poppy Trail dinnerware",
+            ),
+            PhotoObservation(
+                photo_id="p2", zone=Zone.SOUTH_UNDER_TABLE,
+                surface=SurfaceSignature.CONCRETE, caption="",
+                summary="Poppy Trail dinnerware",
+            ),
+        ]
+        tagged = observations_to_tagged(obs)
+        groups = group_into_lots(apply_trajectory(tagged))
+        assert len(groups) == 1
+        assert groups[0].photo_ids == ("p1", "p2")
+
