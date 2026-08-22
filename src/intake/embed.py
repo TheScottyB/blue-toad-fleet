@@ -60,24 +60,68 @@ def load_vectors(
     return out
 
 
+def sidecar_path(cache_path) -> Path:
+    return Path(cache_path).with_name("reshoot_edges.json")
+
+
+def _stat_tuple(path: Path) -> tuple:
+    try:
+        st = path.stat()
+    except OSError:
+        return ("", 0, 0)
+    return (str(path.resolve()), st.st_mtime_ns, st.st_size)
+
+
 def _memo_key(
     path: Path,
+    sidecar: Path,
     photo_by_seq: dict[int, str],
     sequences: dict[str, int],
     gallery_ids: dict[str, str] | None,
 ) -> tuple | None:
-    try:
-        st = path.stat()
-    except OSError:
+    vec_t = _stat_tuple(path)
+    side_t = _stat_tuple(sidecar)
+    if vec_t[1] == 0 and side_t[1] == 0:
         return None
     return (
-        str(path.resolve()),
-        st.st_mtime_ns,
-        st.st_size,
+        vec_t,
+        side_t,
         tuple(sorted(photo_by_seq.items())),
         tuple(sorted(sequences.items())),
         tuple(sorted((gallery_ids or {}).items())),
     )
+
+
+def dump_reshoot_edges(cache_path, edges: set) -> None:
+    """Atomic write of photo_id pairs. Sibling of embeddings.json."""
+    path = sidecar_path(cache_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    pairs = sorted(sorted(e) for e in edges if len(e) == 2)
+    payload = {"edges": pairs}
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(payload, indent=2) + "\n")
+    tmp.replace(path)
+
+
+def _edges_from_sidecar(
+    sidecar: Path,
+    photo_by_seq: dict[int, str],
+    sequences: dict[str, int],
+    gallery_ids: dict[str, str] | None,
+) -> set:
+    raw = json.loads(sidecar.read_text())
+    pairs = raw.get("edges") if isinstance(raw, dict) else raw
+    if not isinstance(pairs, list):
+        raise ValueError("reshoot_edges sidecar is not a list of pairs")
+    out: set = set()
+    for pair in pairs:
+        if not isinstance(pair, (list, tuple)) or len(pair) != 2:
+            continue
+        a = _canonical_id(str(pair[0]), photo_by_seq, gallery_ids)
+        b = _canonical_id(str(pair[1]), photo_by_seq, gallery_ids)
+        if a in sequences and b in sequences and a != b:
+            out.add(frozenset({a, b}))
+    return out
 
 
 def load_reshoot_edges(
@@ -88,36 +132,52 @@ def load_reshoot_edges(
 ) -> set:
     """Vectors + reshoot edges for the request path.
 
-    Missing cache → empty (walk-only, no cosine). Present cache that maps to
-    0 grouping keys, corrupt JSON, or mixed-length vectors → walk-only, log,
-    no raise. Results are memoized per process by path mtime/size.
+    Prefers `reshoot_edges.json` next to the vector cache so GET / does not
+    run 462×462 cosine. Missing both → empty (walk-only). Present cache that
+    maps to 0 grouping keys, corrupt JSON, or mixed-length vectors →
+    walk-only, log, no raise. Results are memoized per process by path
+    mtime/size.
     """
     path = Path(cache_path)
-    if not path.is_file():
-        print("[!] embeddings cache missing or empty; walk-only grouping")
-        return set()
-
-    key = _memo_key(path, photo_by_seq, sequences, gallery_ids)
+    sidecar = sidecar_path(path)
+    key = _memo_key(path, sidecar, photo_by_seq, sequences, gallery_ids)
     if key is not None and key in _EDGE_MEMO:
         return _EDGE_MEMO[key]
 
-    try:
-        vectors = load_vectors(path, photo_by_seq, gallery_ids)
-        vectors = {k: v for k, v in vectors.items() if k in sequences}
-        if not vectors:
-            print(
-                "[!] embeddings cache present but contributed 0 vectors; "
-                "walk-only grouping"
+    edges: set | None = None
+    if sidecar.is_file():
+        try:
+            edges = _edges_from_sidecar(
+                sidecar, photo_by_seq, sequences, gallery_ids,
             )
-            edges: set = set()
+        except Exception as e:
+            print(f"[!] Warning: Could not parse reshoot_edges sidecar: {e}")
+            edges = None
+
+    if edges is None:
+        if not path.is_file():
+            print("[!] embeddings cache missing or empty; walk-only grouping")
+            edges = set()
         else:
-            lengths = {len(v) for v in vectors.values()}
-            if len(lengths) != 1:
-                raise ValueError(f"mixed-length vectors: {sorted(lengths)}")
-            edges = reshoot_edges(vectors, sequences)
-    except Exception as e:
-        print(f"[!] Warning: Could not parse embedding cache: {e}")
-        edges = set()
+            try:
+                vectors = load_vectors(path, photo_by_seq, gallery_ids)
+                vectors = {k: v for k, v in vectors.items() if k in sequences}
+                if not vectors:
+                    print(
+                        "[!] embeddings cache present but contributed 0 vectors; "
+                        "walk-only grouping"
+                    )
+                    edges = set()
+                else:
+                    lengths = {len(v) for v in vectors.values()}
+                    if len(lengths) != 1:
+                        raise ValueError(
+                            f"mixed-length vectors: {sorted(lengths)}"
+                        )
+                    edges = reshoot_edges(vectors, sequences)
+            except Exception as e:
+                print(f"[!] Warning: Could not parse embedding cache: {e}")
+                edges = set()
 
     if key is not None:
         _EDGE_MEMO[key] = edges

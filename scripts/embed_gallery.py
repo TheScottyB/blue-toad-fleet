@@ -23,7 +23,10 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from src.appraiser.images import image_mime_type, read_local_image
-from src.intake.embed import dump_vectors, load_vectors
+from src.intake.embed import (
+    dump_reshoot_edges, dump_vectors, load_vectors, sidecar_path,
+)
+from src.intake.spatial import reshoot_edges
 
 EMBED_MODEL = "gemini-embedding-2"
 SAVE_EVERY = 10
@@ -108,7 +111,12 @@ def main() -> int:
             )
 
     dump_vectors(cache_path, existing)
+    sequences = {p["photo_id"]: p["sequence"] for p in photos}
+    mapped = {k: v for k, v in existing.items() if k in sequences}
+    edges = reshoot_edges(mapped, sequences) if mapped else set()
+    dump_reshoot_edges(cache_path, edges)
     print(f"wrote {cache_path}  {len(existing)} vectors  skipped {skipped}")
+    print(f"wrote {sidecar_path(cache_path)}  {len(edges)} edges")
     if done == 0 and skipped == len(todo) and todo:
         return 2
     return 0

@@ -1,0 +1,37 @@
+# What Cloud Build receives for `gcloud run deploy --source .`
+#
+# Without this file gcloud falls back to .gitignore, which would drop
+# embeddings.json (derived, gitignored) and leave GET / walk-only.
+# reshoot_edges.json is the tiny merge table GET / actually reads.
+
+.git/
+.gitignore
+.gcloudignore
+
+# secrets — env vars are set on the service, never baked into the image
+.env
+.env.local
+.env.example
+
+# local tooling
+.venv/
+node_modules/
+__pycache__/
+*.pyc
+.pytest_cache/
+.hypothesis/
+.vscode/
+.agents/
+.superpowers/
+pyrightconfig.json
+
+# heavy artifacts the runtime never opens
+media/
+docs/screenshots/
+docs/*.png
+artifacts/
+demo/out/
+data/dryruns/
+data/**/images/
+data/**/estatesales_images/
+BRIEF-from-*.md

@@ -136,3 +136,67 @@ def test_dump_vectors_does_not_overwrite_unrelated_ids(tmp_path):
     dump_vectors(p, {P2: [1.0, 0.0], P181: [0.0, 1.0]})
     v = load_vectors(p, {2: P2, 181: P181})
     assert set(v) == {P2, P181}
+
+
+def test_sidecar_merges_2_181_without_embeddings_json(tmp_path):
+    """Cloud Run GET / must merge from the tiny sidecar, not 13MB cosine."""
+    from src.intake.embed import dump_reshoot_edges, load_reshoot_edges
+
+    cache = tmp_path / "embeddings.json"
+    dump_reshoot_edges(cache, {frozenset({P2, P181})})
+    assert not cache.is_file()
+    edges = load_reshoot_edges(
+        cache,
+        {2: "BT-002", 181: "BT-181"},
+        {"BT-002": 2, "BT-181": 181},
+        gallery_ids={P2: "BT-002", P181: "BT-181"},
+    )
+    assert frozenset({"BT-002", "BT-181"}) in edges
+
+
+def test_aug22_sidecar_pins_2_181_not_180_or_87():
+    """The committed merge table is what GET / uses. Pin the live pair."""
+    from pathlib import Path
+    from src.intake.embed import load_reshoot_edges
+
+    cache = Path("data/aug22_gallery_4160518/embeddings.json")
+    sidecar = cache.with_name("reshoot_edges.json")
+    if not sidecar.is_file():
+        import pytest
+        pytest.skip("reshoot_edges.json not in tree")
+    photo_by_seq = {2: "BT-002", 180: "BT-180", 181: "BT-181", 87: "BT-087"}
+    sequences = {"BT-002": 2, "BT-180": 180, "BT-181": 181, "BT-087": 87}
+    gallery_ids = {
+        "838421481": "BT-002",
+        "838424264": "BT-180",
+        "838424282": "BT-181",
+        "838422448": "BT-087",
+    }
+    edges = load_reshoot_edges(
+        cache, photo_by_seq, sequences, gallery_ids=gallery_ids,
+    )
+    assert frozenset({"BT-002", "BT-181"}) in edges
+    assert frozenset({"BT-002", "BT-180"}) not in edges
+    assert frozenset({"BT-002", "BT-087"}) not in edges
+
+
+def test_sidecar_skips_all_pairs_cosine(tmp_path, monkeypatch):
+    from src.intake import embed as embed_mod
+
+    embed_mod._EDGE_MEMO.clear()
+    cache = tmp_path / "embeddings.json"
+    embed_mod.dump_reshoot_edges(cache, {frozenset({P2, P181})})
+    n = {"c": 0}
+
+    def counted(*a, **k):
+        n["c"] += 1
+        return set()
+
+    monkeypatch.setattr(embed_mod, "reshoot_edges", counted)
+    embed_mod.load_reshoot_edges(
+        cache,
+        {2: "BT-002", 181: "BT-181"},
+        {"BT-002": 2, "BT-181": 181},
+        gallery_ids={P2: "BT-002", P181: "BT-181"},
+    )
+    assert n["c"] == 0
