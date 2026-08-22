@@ -1,0 +1,23 @@
+# Required job. Python 3.14 only. No 3.15 RC.
+name: test
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - name: Install
+        run: pip install -r requirements.txt -r requirements-dev.txt
+      - name: Pytest
+        run: python -m pytest tests/ -q
+      - name: Image is linux/amd64
+        run: docker build --platform linux/amd64 -t blue-toad-fleet:ci .

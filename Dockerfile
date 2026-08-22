@@ -1,4 +1,7 @@
-FROM python:3.11-slim
+# Cloud Run's container contract is linux/amd64. An ARM-only image will not
+# deploy. Custom containers are not upgraded by the managed Python runtime
+# table — this FROM line is the production interpreter.
+FROM --platform=linux/amd64 python:3.14-slim
 
 WORKDIR /app
 
