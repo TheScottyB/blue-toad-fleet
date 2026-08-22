@@ -21,6 +21,9 @@ from src.intake.manifest import (
     GalleryDrop, LotGroup, PhotoRef, TriagedPhoto, WorkItem,
     group_into_lots, parse_drop, plan_fanout,
 )
+from src.intake.puzzle import (
+    GENERIC_CATEGORIES, Cluster, cannot_link, seed_clusters,
+)
 from src.intake.spatial import (
     SANITY_FLOOR, AdjacencyClaim, PhotoObservation, Seat, SpatiallyTaggedPhoto,
     SurfaceSignature, Zone, adjacency_graph, apply_trajectory, cosine,
@@ -31,6 +34,7 @@ from src.intake.spatial import (
 __all__ = ["GalleryDrop", "LotGroup", "PhotoRef", "TriagedPhoto", "WorkItem",
            "group_into_lots", "parse_drop", "plan_fanout", "load_vectors",
            "load_reshoot_edges",
+           "Cluster", "seed_clusters", "cannot_link", "GENERIC_CATEGORIES",
            "SpatiallyTaggedPhoto", "SurfaceSignature", "Zone",
            "AdjacencyClaim", "PhotoObservation", "Seat",
            "apply_trajectory", "occupancy", "spatial_same_lot",
