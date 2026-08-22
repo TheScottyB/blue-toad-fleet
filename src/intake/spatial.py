@@ -173,3 +173,59 @@ def occupancy(
         zone = primary.zone if primary is not None else Zone.UNKNOWN
         occ[zone].append(g.lot_key)
     return occ
+
+
+SANITY_FLOOR = 0.80
+
+
+def cosine(a, b) -> float:
+    dot = sum(x * y for x, y in zip(a, b, strict=True))
+    na = sum(x * x for x in a) ** 0.5
+    nb = sum(x * x for x in b) ** 0.5
+    if na == 0 or nb == 0:
+        return 0.0
+    return dot / (na * nb)
+
+
+def _walk_adjacent(i: str, j: str, sequences: dict[str, int]) -> bool:
+    return abs(sequences[i] - sequences[j]) == 1
+
+
+def nearest_neighbor(
+    photo_id: str,
+    vectors: dict[str, tuple | list],
+    sequences: dict[str, int],
+    *,
+    exclude_walk_adjacent: bool = True,
+) -> str | None:
+    best_id, best, tied = None, None, False
+    for other, vec in vectors.items():
+        if other == photo_id:
+            continue
+        if exclude_walk_adjacent and _walk_adjacent(photo_id, other, sequences):
+            continue
+        c = cosine(vectors[photo_id], vec)
+        if best is None or c > best:
+            best_id, best, tied = other, c, False
+        elif c == best:
+            tied = True
+    if tied or best is None:
+        return None
+    return best_id
+
+
+def reshoot_edges(
+    vectors: dict[str, tuple | list],
+    sequences: dict[str, int],
+) -> set[frozenset[str]]:
+    edges: set[frozenset[str]] = set()
+    for i in vectors:
+        j = nearest_neighbor(i, vectors, sequences)
+        if j is None:
+            continue
+        if nearest_neighbor(j, vectors, sequences) != i:
+            continue
+        if cosine(vectors[i], vectors[j]) < SANITY_FLOOR:
+            continue
+        edges.add(frozenset({i, j}))
+    return edges
