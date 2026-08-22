@@ -2,7 +2,8 @@ import re
 import pytest
 from src.appraisal import Question, QuestionKind, StandingRule, build_queue, learn
 from src.bidmath import (
-    CompEstimate, Confidence, Lot, allocate, price_lot, summarize,
+    BidMechanic, CompEstimate, Confidence, Decision, Lot, Priority,
+    allocate, price_lot, summarize,
 )
 from src.gate import CycleView, render_console
 from src.intake.spatial import Seat, Zone
@@ -126,6 +127,28 @@ class TestSheet:
         h = render_console(_view(lots=[_lot(i, low=500, high=700) for i in range(40)]))
         widths = [float(w) for w in re.findall(r"width:([\d.]+)%", h)]
         assert all(w <= 100.0 for w in widths)
+
+    def test_priced_skip_is_not_over_budget_and_has_no_bid_instruction(self):
+        """Fit-last prices a SKIP. allocate=False is a choice, not a cap miss,
+        and the clerk must not be told to bid."""
+        d = Decision(
+            lot_id="BT-099", category="jewelry", priority=Priority.SKIP,
+            max_bid=25.0, all_in=28.75, bid_fraction=0.35,
+            reason="shop fit too low", needs_human_pricing=False,
+            allocated=False,
+            mechanic=BidMechanic.CHOICE, unit_count=3, units_wanted=1,
+        )
+        v = CycleView(
+            cycle_id="x", auction_date="x", photos_ingested=1,
+            queue=build_queue([], []), decisions=[d], summary=summarize([d]),
+            budget_cap=1000, auto_send_threshold=35,
+            captions={"BT-099": "choice tray we will not buy"},
+        )
+        h = render_console(v)
+        html = h.lower()
+        assert "over budget" not in html
+        assert "times the money" not in html
+        assert "bid to" not in html
 
 
 class TestSafety:

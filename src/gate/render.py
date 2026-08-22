@@ -552,6 +552,9 @@ def _sheet_block(v: CycleView) -> str:
                 flag = _tag("auto-send", "mem")
             elif d.allocated:
                 flag = _tag("needs approval")
+            elif d.priority is Priority.SKIP:
+                # allocate never spends SKIP leftover; that is a choice, not a cap miss.
+                flag = _tag("will not bid")
             else:
                 flag = _tag("over budget")
         if d.needs_deep_comps:
@@ -565,10 +568,12 @@ def _sheet_block(v: CycleView) -> str:
         # nothing — while the surface the operator actually reads showed a price
         # and no instruction. Rendered as prose in its own class so the card's
         # money figures remain the only summable ones on the page: the header
-        # and the cards have to keep reconciling.
+        # and the cards have to keep reconciling. SKIP is already "do not bid";
+        # a CHOICE/TTM directive would tell the clerk the opposite.
         directive = (f'<div class="directive">{escape(clerk_directive(d))}</div>'
-                     if (d.mechanic is not BidMechanic.STRAIGHT
-                         or d.needs_mechanic_ruling) else "")
+                     if (d.priority is not Priority.SKIP
+                         and (d.mechanic is not BidMechanic.STRAIGHT
+                              or d.needs_mechanic_ruling)) else "")
         out.append(
             f'<div class="card {cls}" data-allocated="{int(d.allocated)}"><div class="hd">'
             f'<span class="id">{escape(d.lot_id)}</span>'
