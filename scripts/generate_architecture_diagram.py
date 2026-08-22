@@ -36,17 +36,17 @@ def generate_diagram():
              '#38bdf8')
 
     # Pillar 2: Vertex AI Multi-Tier Routing
-    draw_box(4.6, 5.2, 3.4, 2.2, "2A. TRIAGE FAN-OUT", 
-             "• Model: gemini-3.5-flash-lite\n• Fast filtering at $0.30/1M tokens\n• Discards modern filler / hardware\n• 462 photos -> 60 survivors", 
+    draw_box(4.6, 5.2, 3.4, 2.2, "2A. TRIAGE FAN-OUT",
+             "• Model: gemini-3.5-flash-lite\n• Fast filtering at $0.30/1M tokens\n• Discards modern filler / hardware\n• 462 photos -> 228 survivors",
              '#34d399')
 
-    draw_box(4.6, 2.4, 3.4, 2.4, "2B. DEEP APPRAISAL", 
-             "• Model: gemini-3.6-flash (global)\n• Structured OpenAPI 3.0 Schemas\n• Container Lot Decomposition\n• Honest Refusal: 'No External Comp'", 
+    draw_box(4.6, 2.4, 3.4, 2.4, "2B. DEEP APPRAISAL",
+             "• Model: gemini-3.6-flash (global)\n• Structured OpenAPI 3.0 Schemas\n• Container Lot Decomposition\n• Model Never States A Price",
              '#a78bfa')
 
     # Pillar 3: Deterministic BidMath
-    draw_box(8.6, 3.8, 3.2, 2.6, "3. PURE BIDMATH ENGINE", 
-             "• 38% Gross Margin Target\n• Condition Penalty Clamping\n• 'Buyer's Choice' Shelf Sniper (1-Unit)\n• Greedy Allocation vs Budget Cap\n• 170 Unit Tests (0.3s runtime)", 
+    draw_box(8.6, 3.8, 3.2, 2.6, "3. PURE BIDMATH ENGINE",
+             "• 35-40% Buy-In Band (37.5% mid)\n• Condition Penalty Clamping\n• 'Buyer's Choice' Mechanic Modelling\n• Greedy Allocation vs Budget Cap\n• Refuses Lots With No Comp\n• 570 Unit Tests, 563 Pass (~5s)",
              '#fbbf24')
 
     # Pillar 4: Gate Console & Collaborative Partner

@@ -90,7 +90,7 @@ Submission deadline **Aug 31 2026 5:00pm PDT**. Deploy drop-dead **Aug 27**.
 
 - [ ] **B4. Re-record video Beat 4.** `docs/VIDEO_SCRIPT.md` carries a dated note
       with both figure sets. The recorded cut narrates 12 lots / $335.00 /
-      $385.25 / "173 tests"; current is 9 / $275.00 / $316.25 / 474. The script
+      $385.25 / "173 tests"; current is 9 / $275.00 / $316.25 / 563 passing (570 collected). The script
       was deliberately NOT rewritten — it transcribes a recording.
       **Operator's call.**
 

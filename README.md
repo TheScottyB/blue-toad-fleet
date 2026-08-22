@@ -7,7 +7,7 @@
 
   [![Google Cloud Run](https://img.shields.io/badge/Google%20Cloud%20Run-Live%20Service-34d399?style=flat-square&logo=googlecloud)](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app)
   [![Vertex AI](https://img.shields.io/badge/Vertex%20AI-Gemini%203.6%20Flash-a78bfa?style=flat-square&logo=google)](https://cloud.google.com/vertex-ai)
-  [![Unit Tests](https://img.shields.io/badge/Unit%20Tests-570%20Passing-38bdf8?style=flat-square&logo=pytest)](https://github.com/TheScottyB/blue-toad-fleet)
+  [![Unit Tests](https://img.shields.io/badge/Unit%20Tests-570-38bdf8?style=flat-square&logo=pytest)](https://github.com/TheScottyB/blue-toad-fleet)
   [![License: MIT](https://img.shields.io/badge/License-MIT-fbbf24?style=flat-square)](LICENSE)
 </div>
 
@@ -26,7 +26,7 @@
 ## Demo Video
 
 [`media/blue_toad_fleet_demo.mp4`](media/blue_toad_fleet_demo.mp4) — a narrated, 4-beat walkthrough (~3:48) covering the commercial problem, the Spatial Room Graph on the real Aug-22 gallery, the live Gate Console's Curator's Negotiation, and the live Cloud Run / test-suite proof. Recorded end to end from the real manifest, the real deployed console, and a real terminal session — see `docs/VIDEO_SCRIPT.md` for the shot-by-shot script.
-Recorded from the Aug-22 cycle as it ran on 2026-08-20; the figures spoken in the narration are that run's. The sheet has since been trimmed on the owner's instruction — `make demo` and the live API always show current numbers.
+Recorded on 2026-08-20, and the figures on screen are that run's: 12 lots, $335.00 max, $385.25 all-in. The sheet has since been trimmed to **9 lots, $275.00 max, $316.25 all-in** — the auctioneer ruled the labelled jewelry-tray run a ×3 bid, and BT-181 turned out to be BT-002 re-photographed (see `NOTES.md` §5). The current figures live in `data/BlueToad_2026-08-22_BidSheet.xlsx` and `data/aug22_absentee_bid_email.txt`. `make demo` runs credential-free seeded lots and is not this cycle's sheet; the deployed Cloud Run service has not been redeployed since the trim.
 
 ---
 
@@ -45,7 +45,7 @@ make demo
 # 3. Watch cross-cycle memory collapse the clarification queue
 make cycles
 
-# 4. Run the 489-test unit suite (runs in under half a second)
+# 4. Run the unit suite — 563 pass, 7 network tests skip by default (~5s)
 make test
 ```
 
@@ -91,7 +91,10 @@ Cloud Run, `types.Part.from_bytes` to assemble the photo alongside the prompt, a
 
 * **Triage Fan-out (`gemini-3.5-flash-lite`):** Ingests 460+ raw photos in seconds for ~$0.30 per cycle, filtering out low-margin clutter and background filler.
 * **Deep Multimodal Appraisal (`gemini-3.6-flash`):** Evaluates high-conviction survivors using structured OpenAPI 3.0 schemas on the `global` Vertex endpoint.
-* **Honest Refusal Rule:** On unrecognizable or ungrounded pottery, the model explicitly emits `"NO EXTERNAL COMP — human pricing required"` rather than hallucinating prices.
+* **Honest Refusal Rule:** The appraisal model is forbidden from naming any price at all (`APPRAISAL_SYSTEM`: *"NEVER state or imply a price, estimate or value range"*). The refusal is decided downstream and is deterministic, not model-dependent — `price_lot` ([`src/bidmath/__init__.py`](src/bidmath/__init__.py)) returns any lot whose `CompEstimate` has no sources with `max_bid=None` and the reason `no external comp — human pricing required`, and `allocate` can never allocate it. On the live Aug-22 cycle this refuses **190 of 415 lots**.
+
+### 3a. Grounded Pricing Without Losing the Evidence
+Live Vertex validation exposed a failure at the boundary between Google Search grounding and structured output: adding `response_schema` preserved the search queries but returned **zero `grounding_chunks`**; the same call without the schema returned six citation chunks. Blue Toad therefore separates the work. The first call performs grounded research in free text and preserves Google-supplied citations; a second call, with no tools or search, is instructed to extract only the figures in that research note into the pricing schema. Three independent grounded samples are then medianed, and the lot is refused if the calls disagree too widely, contain fewer than two sold comps, or provide no usable citation. See [`price_lot_grounded`](src/appraiser/engine.py) and [`price_is_usable`](src/appraiser/pricing.py).
 
 ### 3b. The Curator's Read (Gemma 4 on Vertex AI)
 The Gate console's pitch banner is written by **Gemma 4** (`gemma-4-26b-a4b-it-maas`),
@@ -107,13 +110,15 @@ A figure the system did not compute means the sentence is discarded and the
 deterministic line renders instead — as it does if Gemma is unreachable.
 
 ### 4. The "Choice-Lot Sniper" (Walls, Table Lines & Shelves)
-Detects grouped assets sold "Choice / Times the Money" across multiple room zones (such as a wall run of vintage travel posters or a table line of railroad lanterns) and enforces a strict `max_quantity = 1` absentee constraint, preventing a $900 clerk multiplication blowout while securing the highest-comp alpha piece.
+Grouped assets sold "Choice / Times the Money" are the classic clerk-multiplication trap — bid on the group and the clerk multiplies the hammer by the count. The fleet models the mechanic explicitly rather than guessing at it: `mechanic_from_ruling` parses the auctioneer's own written ruling into a `BidMechanic` and a unit count, and a choice lot with no election is budgeted at the **full group** exposure and flagged `needs_election=True` rather than silently assumed to be a single unit.
+
+BT-002 closed this loop on real money. Gemini saw three labeled jewelry trays and asked whether the bid covered one tray or all three. The auctioneer confirmed, *"Yes, that is a ×3 bid."* Recorded as the text ruling *"take all three trays at ×3,"* it resolved to `TIMES_THE_MONEY, 3`: the owner's **$25 per-unit cap became $75 committed max / $86.25 all-in**, and `clerk_directive` produced an explicit instruction to take all three. Without that ruling, the sheet would have understated its own exposure by $50 before fees.
 
 ### 5. The Collaborative Partner & Proactive Pushback
 The fleet acts as an expert commercial peer. On Friday afternoon, the agent presents a 3-tier pitch (Alpha Picks, Fast Smalls, and a Wildcard Challenge). When the owner asked to drop sports cards and tools due to store backlog, the agent used real-time eBay velocity data to respectfully push back and preserve the **13 Golden Era 1959–1969 Topps baseball cards ($100 cap)**, delivering a $300+ resale spread.
 
 ### 6. Pure Deterministic BidMath Engine
-Appraisals feed into pure, unit-tested valuation logic implementing the store's 38% margin target, condition discounts, standard **$5.00 bidding increments**, and the mandatory **15% absentee fee**.
+Appraisals feed into pure, unit-tested valuation logic implementing the store's documented **35–40% buy-in band** (applied at its 37.5% midpoint), condition discounts, standard **$5.00 bidding increments**, and the mandatory **15% absentee fee**.
 
 ---
 
@@ -123,11 +128,13 @@ Appraisals feed into pure, unit-tested valuation logic implementing the store's 
 | :--- | :--- | :--- |
 | **Raw Photos Ingested** | 452 raw photos (324 captioned) | 462 raw photos (304 captioned) |
 | **Lots Appraised on Vertex AI** | — | **228 of 415** (Stage 1 triage filtered the rest) |
-| **Multi-Angle Duplicates Merged** | **95 duplicate photos merged** | **47 duplicate photos merged** |
+| **Multi-Angle Duplicates Merged** | **95 duplicate photos merged** | **46 duplicate photos merged** |
 | **Consolidated Physical Lots** | 357 physical lots | 415 physical lots |
 | **Legacy V1 Wishlist Chaos** | 88 unranked rows (**$14,340.00 max sum**) | N/A (Displaced by Fleet V2) |
 | **Fleet V2 Approved Sourcing** | **67 bids allocated ($1,910.00 max)** | **9 approved bids ($275.00 max)** |
 | **Total Committed All-In (w/ 15% Fee)**| **$2,196.50** (strictly under $2,205 cap) | **$316.25** (strictly under $600 cap) |
+| **Estimated Gross Resale** | — | **$713–$879 estimated gross resale** |
+| **Gross Resale-to-Cost Multiple** | — | **2.25–2.78x** before selling costs |
 | **Increment Discipline** | $5.00 standard increments | $5.00 standard increments |
 | **Execution Artifacts** | `BlueToad_2026-07-11_Benchmark_Comparison.xlsx` | `BlueToad_2026-08-22_BidSheet.xlsx` & `aug22_absentee_bid_email.txt` |
 
