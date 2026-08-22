@@ -239,7 +239,7 @@ class TestDefaultsPreserveEveryExistingSheet:
         names = [f.name for f in fields(Lot)]
         assert names[:6] == ["lot_id", "caption", "category", "fit_score",
                              "condition_penalty", "comp"]
-        assert names[6:] == ["mechanic", "unit_count", "units_wanted"]
+        assert names[6:] == ["mechanic", "unit_count", "units_wanted", "labor"]
 
     def test_new_fields_are_appended_last_on_decision(self):
         from dataclasses import fields
@@ -250,4 +250,4 @@ class TestDefaultsPreserveEveryExistingSheet:
             "allocated"]
         assert names[10:] == ["mechanic", "unit_count", "units_wanted",
                               "needs_mechanic_ruling", "needs_election",
-                              "speculative"]
+                              "speculative", "labor", "coverage_gap"]

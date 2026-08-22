@@ -254,7 +254,7 @@ class TestNothingExistingMoves:
     def test_new_fields_stay_appended_last(self):
         from dataclasses import fields
         assert [f.name for f in fields(Lot)][6:] == [
-            "mechanic", "unit_count", "units_wanted"]
+            "mechanic", "unit_count", "units_wanted", "labor"]
         assert [f.name for f in fields(Decision)][10:] == [
             "mechanic", "unit_count", "units_wanted", "needs_mechanic_ruling",
-            "needs_election", "speculative"]
+            "needs_election", "speculative", "labor", "coverage_gap"]

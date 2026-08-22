@@ -71,6 +71,15 @@ class LaborAspect(str, Enum):
     """Hours. Marks, ID, multi-item contents, or a listing that needs copy."""
 
 
+class CoverageGap(str, Enum):
+    """Why the dollar field is empty. Search ran or it did not; never invent."""
+    NONE = ""
+    NOT_SEARCHED = "not_searched"
+    SPREAD = "spread"
+    NO_SOLD_COMPS = "no_sold_comps"
+    ASKING_ONLY = "asking_only"
+
+
 class BidMechanic(str, Enum):
     """How many times the hammer price is charged, and for what.
 
@@ -232,6 +241,7 @@ class Decision:
     never auto-sends: a human should see a bid placed on an event that may not
     occur, however cheap it is."""
     labor: "LaborAspect" = LaborAspect.LIST
+    coverage_gap: "CoverageGap" = CoverageGap.NONE
 
     @property
     def needs_deep_comps(self) -> bool:

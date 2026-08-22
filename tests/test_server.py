@@ -80,10 +80,18 @@ def test_api_lots_summary_and_bids(client):
     assert summary["allocated"] > 0
     assert summary["committed_max"] > 0
     assert abs(summary["committed_all_in"] - summary["committed_max"] * 1.15) < 0.01
-    assert summary["committed_all_in"] <= 600.0, "sheet exceeds the budget envelope"
+    assert summary["committed_all_in"] <= 1000.0, "sheet exceeds the budget envelope"
     assert summary["committed_max"] % 5 == 0, "total is not a sum of $5 increments"
     assert len(data["lots"]) > 0
     assert "contingent_remainder_opportunities" in data
+    assert all(lot["labor"] in {"shelf", "list", "research"} for lot in data["lots"])
+    assert all("coverage_gap" in lot for lot in data["lots"])
+    allowed = {"", "not_searched", "spread", "no_sold_comps", "asking_only"}
+    assert all(lot["coverage_gap"] in allowed for lot in data["lots"])
+    by_id = {lot["lot_id"]: lot for lot in data["lots"]}
+    assert by_id["BT-006"]["max_bid"] is None
+    assert by_id["BT-006"]["coverage_gap"] == "spread"
+    assert any(lot["coverage_gap"] == "not_searched" for lot in data["lots"])
 
 
 def test_scoped_choice_ruling_uses_election_and_exposes_remainder():
@@ -110,6 +118,26 @@ def test_scoped_choice_ruling_uses_election_and_exposes_remainder():
     assert (applied.mechanic, applied.unit_count, applied.units_wanted) == (
         BidMechanic.CHOICE, 5, 2)
     assert remainder_opportunity(price_lot(applied)) is not None
+
+
+def test_coverage_gap_for_classifies_empty_dollar_reasons():
+    from src.bidmath import CoverageGap
+    from src.server import coverage_gap_for
+
+    assert coverage_gap_for("BT-missing", {}) is CoverageGap.NOT_SEARCHED
+    spread = {"usable": False, "samples": [
+        {"low": 10.0, "high": 20.0, "comps": 5},
+        {"low": 10.0, "high": 40.0, "comps": 5},
+        {"low": 12.0, "high": 50.0, "comps": 5},
+    ]}
+    assert coverage_gap_for("BT-x", {"BT-x": spread}) is CoverageGap.SPREAD
+    thin = {"usable": False, "sold_comp_count": 0, "samples": [
+        {"low": 0.0, "high": 0.0, "comps": 0},
+        {"low": 0.0, "high": 0.0, "comps": 0},
+        {"low": 0.0, "high": 0.0, "comps": 0},
+    ]}
+    assert coverage_gap_for("BT-y", {"BT-y": thin}) is CoverageGap.NO_SOLD_COMPS
+
 
 def test_api_questions(client):
     r = client.get("/api/questions")

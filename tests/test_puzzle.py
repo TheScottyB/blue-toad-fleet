@@ -140,3 +140,11 @@ def test_assemble_accepts_precomputed_groups():
     assert len(lots) == 1
     assert lots[0].lot_id == "seq:a"
 
+
+def test_sidecar_is_not_a_price_cache():
+    from src.assemble.grounded import load_grounded_prices
+    from pathlib import Path
+    p = Path("data/aug22_gallery_4160518/grounded_search_remaining.json")
+    got = load_grounded_prices(p)
+    assert got == {}
+

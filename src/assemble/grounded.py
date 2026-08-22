@@ -14,6 +14,8 @@ from pathlib import Path
 
 def load_grounded_prices(path=None) -> dict[str, dict]:
     path = Path(path or "data/aug22_gallery_4160518/grounded_prices.json")
+    if path.name == "grounded_search_remaining.json":
+        return {}
     if not path.is_file():
         alt = Path("/app") / path
         path = alt if alt.is_file() else path

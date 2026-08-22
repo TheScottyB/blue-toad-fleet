@@ -10,6 +10,7 @@ import json
 import os
 import sys
 from pathlib import Path
+from statistics import median
 from typing import Optional
 from fastapi import FastAPI, HTTPException, Body, Header
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,7 +25,7 @@ from src.intake.spatial import seats_from_groups
 from src.assemble import AppraisedPhoto, assemble_lots, NO_COMP, compile_absentee_email
 from src.bidmath import (
     ABSENTEE_FEE, BidMechanic, CompEstimate, Confidence as BidConfidence,
-    Decision, Lot, Priority, allocate, clerk_directive, elect,
+    CoverageGap, Decision, Lot, Priority, allocate, clerk_directive, elect,
     mechanic_from_ruling, price_lot, remainder_opportunity, summarize,
 )
 from src.appraisal import (
@@ -45,6 +46,7 @@ from src.appraiser.containers import visible_contents
 from src.appraiser.grounded_batch import (
     grounded_reference_comps, grounded_status_reason,
 )
+from src.appraiser.pricing import MAX_SPREAD_RATIO, MIN_SOLD_COMPS
 from src.appraiser.routing import GEMMA_MODEL
 from src.gate import CycleView, render_console
 from src.gate.walkstrip import render_walk_strip
@@ -165,6 +167,34 @@ def cached_photo_bytes(lot_id: str) -> bytes | None:
         path = Path(photo.get("local_path") or "")
         return path.read_bytes() if path.is_file() else None
     return None
+
+
+def coverage_gap_for(lot_id: str, grounded: dict) -> CoverageGap:
+    """Why this lot's dollar field is empty, from the live grounded cache only.
+
+    Does not read the remaining-search sidecar. Usable rows are not a gap.
+    """
+    row = grounded.get(lot_id)
+    if row is None:
+        return CoverageGap.NOT_SEARCHED
+    if row.get("usable"):
+        return CoverageGap.NONE
+    samples = [s for s in (row.get("samples") or []) if isinstance(s, dict)]
+    highs = [float(s["high"]) for s in samples if s.get("high") is not None]
+    if highs and min(highs) > 0 and max(highs) / min(highs) > MAX_SPREAD_RATIO:
+        return CoverageGap.SPREAD
+    sold = [s["comps"] for s in samples if s.get("comps") is not None]
+    if not sold and row.get("sold_comp_count") is not None:
+        sold = [row["sold_comp_count"]]
+    if sold and median(sold) < MIN_SOLD_COMPS:
+        return CoverageGap.NO_SOLD_COMPS
+    return CoverageGap.SPREAD
+
+
+def stamp_coverage_gap(decision: Decision, grounded: dict) -> Decision:
+    if not decision.needs_human_pricing:
+        return decision
+    return replace(decision, coverage_gap=coverage_gap_for(decision.lot_id, grounded))
 
 
 def get_aug22_state(*, sheet: str = "full"):
@@ -396,7 +426,7 @@ def get_aug22_state(*, sheet: str = "full"):
                 decision,
                 reason=grounded_status_reason(grounded_by_lot.get(lot.lot_id)),
             )
-        decisions.append(decision)
+        decisions.append(stamp_coverage_gap(decision, grounded_by_lot))
     allocated_decisions = allocate(
         decisions,
         budget_cap=STATE["budget_cap"],
@@ -592,6 +622,7 @@ def list_lots():
             "category": l.category,
             "fit_score": l.fit_score,
             "labor": (d.labor.value if d else l.labor.value),
+            "coverage_gap": (d.coverage_gap.value if d else ""),
             "comp_low": l.comp.low if l.comp.source_count > 0 else None,
             "comp_high": l.comp.high if l.comp.source_count > 0 else None,
             "priority": d.priority.value if d else None,

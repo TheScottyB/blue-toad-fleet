@@ -318,3 +318,25 @@ class TestStructuredVoiceBanner:
         h = render_console(v)
         assert "BT-001 at the sheet cap." in h
         assert "template fallback" in h
+
+
+def test_spread_refuse_copy_does_not_say_no_external_comp():
+    from src.bidmath import CoverageGap, Decision, Priority, summarize
+    from src.appraisal import build_queue
+
+    d = Decision(
+        lot_id="BT-006", category="other", priority=Priority.B,
+        max_bid=None, all_in=None, bid_fraction=None,
+        reason="search disagreed", needs_human_pricing=True,
+        coverage_gap=CoverageGap.SPREAD,
+    )
+    v = CycleView(
+        cycle_id="x", auction_date="x", photos_ingested=1,
+        queue=build_queue([], []), decisions=[d], summary=summarize([d]),
+        budget_cap=1000, auto_send_threshold=35,
+        captions={"BT-006": "signed cap"},
+    )
+    h = render_console(v)
+    assert "no external comp" not in h.lower()
+    assert "disagreed" in h.lower()
+

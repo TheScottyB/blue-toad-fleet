@@ -13,7 +13,7 @@ from html import escape
 
 from src.appraisal import QueueResult
 from src.bidmath import (units_committed, clerk_directive, BidMechanic,
-                         Decision, Priority, SheetSummary)
+                         CoverageGap, Decision, Priority, SheetSummary)
 from src.gate.voice import PitchVoice
 from src.intake.spatial import Seat, Zone
 from src.memory.ids import make_question_id
@@ -85,6 +85,9 @@ border:1px solid var(--line);background:var(--card2);color:var(--ink)}
 @media(max-width:700px){.cycle-control .fields{grid-template-columns:1fr}}
 .tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
 padding:2px 7px;border-radius:5px;border:1px solid var(--line);color:var(--ink3);white-space:nowrap}
+.tag.shelf{border-color:var(--green);color:var(--green)}
+.tag.list{border-color:var(--cyan);color:var(--cyan)}
+.tag.research{border-color:var(--amber);color:var(--amber)}
 .tag.photo{border-color:var(--cyan);color:var(--cyan)}
 .tag.mem{border-color:var(--green);color:var(--green)}
 .defer{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--ink3);
@@ -505,6 +508,19 @@ def _question_block(v: CycleView) -> str:
 
 _CLS = {Priority.A: "a", Priority.B: "b", Priority.C: "c", Priority.SKIP: "skip"}
 
+_REFUSE_COPY = {
+    CoverageGap.NOT_SEARCHED: "Not searched yet",
+    CoverageGap.SPREAD: "Search disagreed &mdash; human pricing required",
+    CoverageGap.NO_SOLD_COMPS: "No sold comps &mdash; human pricing required",
+    CoverageGap.ASKING_ONLY: "No sold comps &mdash; human pricing required",
+}
+
+
+def _refuse_div(d: Decision) -> str:
+    text = _REFUSE_COPY.get(
+        d.coverage_gap, "No external comp &mdash; human pricing required")
+    return f'<div class="refuse">{text}</div>'
+
 
 def _sheet_block(v: CycleView) -> str:
     out = [f"<h2>The sheet &mdash; {v.summary.allocated} bid(s) allocated</h2>"]
@@ -541,7 +557,7 @@ def _sheet_block(v: CycleView) -> str:
         if d.needs_deep_comps:
             body = f'<div class="pending">{escape(d.reason)}</div>'
         elif d.needs_human_pricing:
-            body = f'<div class="refuse">{escape(d.reason)}</div>'
+            body = _refuse_div(d)
         else:
             body = f'<div class="why">{escape(d.reason)}</div>'
         # The one line that says what to DO with this lot. It lived in bidmath
@@ -557,7 +573,7 @@ def _sheet_block(v: CycleView) -> str:
             f'<div class="card {cls}" data-allocated="{int(d.allocated)}"><div class="hd">'
             f'<span class="id">{escape(d.lot_id)}</span>'
             f'<span class="idn">{escape(caption or d.category)}</span>'
-            f'{_tag(d.priority.value)}{flag}{money}</div>{body}{directive}</div>'
+            f'{_tag(d.priority.value)}{_tag(d.labor.value, d.labor.value)}{flag}{money}</div>{body}{directive}</div>'
         )
     return "\n".join(out)
 
