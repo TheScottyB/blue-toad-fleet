@@ -114,21 +114,44 @@ class Lot:
     # mid-struct binds the wrong value silently and every test still passes.
     mechanic: "BidMechanic" = BidMechanic.STRAIGHT
     unit_count: int = 1
-    """Sellable UNITS in this lot, not objects. A box of 40 books is one unit;
-    a five-shelf rack sold winner's-choice-of-shelf is five."""
+    """Sellable UNITS available, not objects. A box of 40 books is one unit; a
+    five-shelf rack sold winner's-choice-of-shelf is five."""
+    units_wanted: int | None = None
+    """k — how many of them the operator elects to take, 1..unit_count.
+
+    A decision, not a property of the lot. The winner elects it standing at the
+    block; an absentee bidder is not there, so it has to be written down and
+    handed to the clerk. None means nobody has decided yet."""
 
 
-def units_committed(mechanic: "BidMechanic", unit_count: int) -> int:
+def units_committed(mechanic: "BidMechanic", unit_count: int,
+                    units_wanted: int | None = None) -> int:
     """How many times the hammer price is charged if this bid wins.
 
-    UNKNOWN deliberately assumes the expensive reading. Guessing STRAIGHT on a
-    lot that turns out to be times-the-money breaches the cap at the block,
-    where nobody can undo it; guessing the expensive way only under-fills the
-    sheet, which a human can fix before Friday.
+    Blue Toad prices CHOICE and TIMES_THE_MONEY per unit; what differs is who
+    picks the quantity. An election caps it. Absent one, budget the whole group:
+    assuming a single unit books a fifth of the exposure on a lot that could
+    take the entire cap, and the cap exists to stop precisely that.
+
+    UNKNOWN reads expensive for the same reason. Guessing STRAIGHT on a lot that
+    turns out to be per-unit breaches the cap at the block where nobody can undo
+    it; guessing dear only under-fills a sheet a human can still fix.
     """
-    if mechanic in (BidMechanic.TIMES_THE_MONEY, BidMechanic.UNKNOWN):
-        return max(1, int(unit_count))
-    return 1
+    if mechanic is BidMechanic.STRAIGHT:
+        return 1
+    available = max(1, int(unit_count))
+    if units_wanted is None:
+        return available
+    return max(1, min(int(units_wanted), available))
+
+
+def elect(lot: "Lot", k: int) -> "Lot":
+    """Record how many units the operator will take. Returns a new Lot."""
+    if not 1 <= int(k) <= max(1, lot.unit_count):
+        raise ValueError(
+            f"{lot.lot_id}: cannot take {k} of {lot.unit_count} available. "
+            f"Electing zero is declining the lot, which is done by not bidding.")
+    return replace(lot, units_wanted=int(k))
 
 
 @dataclass(frozen=True)
@@ -146,9 +169,18 @@ class Decision:
     # ---- APPENDED WITH DEFAULTS, and they stay last (see Lot) -------------
     mechanic: "BidMechanic" = BidMechanic.STRAIGHT
     unit_count: int = 1
+    units_wanted: int | None = None
     needs_mechanic_ruling: bool = False
     """The mechanic decides the money and nobody has ruled on it. Distinct from
     needs_human_pricing, which is about the comp."""
+    needs_election: bool = False
+    """Per-unit lot with more than one unit and no k. The price is known; how
+    many to buy is not."""
+    speculative: bool = False
+    """This bid only exists if something else happens first — a remainder that
+    materialises only when the winner declines part of the lot. Contingent money
+    never auto-sends: a human should see a bid placed on an event that may not
+    occur, however cheap it is."""
 
     @property
     def committed_all_in(self) -> float | None:
@@ -159,14 +191,16 @@ class Decision:
         """
         if self.all_in is None:
             return None
-        return round(self.all_in * units_committed(self.mechanic, self.unit_count), 2)
+        return round(self.all_in * units_committed(
+            self.mechanic, self.unit_count, self.units_wanted), 2)
 
     @property
     def committed_max(self) -> float | None:
         """Hammer total across every unit charged."""
         if self.max_bid is None:
             return None
-        return round(self.max_bid * units_committed(self.mechanic, self.unit_count), 2)
+        return round(self.max_bid * units_committed(
+            self.mechanic, self.unit_count, self.units_wanted), 2)
 
 
 def bid_fraction_for(category: str, calibration: dict[str, float] | None = None) -> float:
@@ -214,7 +248,8 @@ def price_lot(
     bid sheet's job is to inform a person who knows the market.
     """
     priority = _priority_for(lot)
-    carry = dict(mechanic=lot.mechanic, unit_count=lot.unit_count)
+    carry = dict(mechanic=lot.mechanic, unit_count=lot.unit_count,
+                 units_wanted=lot.units_wanted)
 
     if priority is Priority.SKIP:
         return Decision(
@@ -236,19 +271,6 @@ def price_lot(
             needs_human_pricing=True, needs_mechanic_ruling=True, **carry,
         )
 
-    # A comp for a whole five-shelf rack is not a comp for one shelf, and
-    # winner's choice buys exactly one shelf. Taking 35% of the whole-unit comp
-    # overbids by roughly the unit count — the most expensive error available
-    # here. Until per-unit values exist, this system does not know the answer.
-    if lot.mechanic is BidMechanic.CHOICE and lot.unit_count > 1:
-        return Decision(
-            lot_id=lot.lot_id, category=lot.category, priority=priority,
-            max_bid=None, all_in=None, bid_fraction=None,
-            reason=(f"winner's choice of {lot.unit_count} units — the comp "
-                    f"covers the whole group, not the one unit you win; "
-                    f"human pricing required"),
-            needs_human_pricing=True, **carry,
-        )
 
     if not lot.comp.has_external_comp:
         return Decision(
@@ -259,7 +281,20 @@ def price_lot(
         )
 
     fraction = bid_fraction_for(lot.category, calibration)
-    base = lot.comp.low_mid * fraction
+
+    # On a per-unit lot the hammer is called PER UNIT, but the appraiser priced
+    # what it saw in the photograph — the whole group. Bidding the group's value
+    # per unit overbids by roughly the unit count, which is the most expensive
+    # error available here, so the comp is divided down to one unit and the
+    # reason says so. Dividing can only ever bid less than the group is worth;
+    # not dividing can commit several times the cap.
+    per_unit = lot.comp.low_mid
+    scaled = False
+    if lot.mechanic is not BidMechanic.STRAIGHT and lot.unit_count > 1:
+        per_unit = per_unit / lot.unit_count
+        scaled = True
+
+    base = per_unit * fraction
     # Clamp before it touches money. The field is documented 0..1 but nothing
     # enforced it, and `1 - penalty` turns a NEGATIVE penalty into a bid
     # INCREASE — a model slip of -0.5 raised a $41.25 max to $61.88. Values >1
@@ -278,16 +313,32 @@ def price_lot(
             needs_human_pricing=False, **carry,
         )
 
+    if lot.mechanic is BidMechanic.CHOICE and lot.unit_count > 1 \
+            and lot.units_wanted is None:
+        return Decision(
+            lot_id=lot.lot_id, category=lot.category, priority=priority,
+            max_bid=max_bid, all_in=all_in_cost(max_bid, tax_rate),
+            bid_fraction=fraction,
+            reason=(f"winner's choice of {lot.unit_count} at ${max_bid:.0f} per "
+                    f"unit — how many should the clerk take?"),
+            needs_human_pricing=False, needs_election=True, **carry,
+        )
+
     return Decision(
         lot_id=lot.lot_id, category=lot.category, priority=priority,
         max_bid=max_bid, all_in=all_in_cost(max_bid, tax_rate),
         bid_fraction=fraction,
         reason=(
-            f"low-mid ${lot.comp.low_mid:.0f} x {fraction:.0%} "
-            f"less {penalty:.0%} condition, "
+            (f"group low-mid ${lot.comp.low_mid:.0f} / {lot.unit_count} units = "
+             f"${per_unit:.0f} per unit" if scaled
+             else f"low-mid ${lot.comp.low_mid:.0f}")
+            + f" x {fraction:.0%} less {penalty:.0%} condition, "
             f"{lot.comp.source_count} source(s), {lot.comp.confidence.value} confidence"
         ),
-        needs_human_pricing=False, **carry,
+        needs_human_pricing=False,
+        needs_election=(lot.mechanic is BidMechanic.CHOICE
+                        and lot.unit_count > 1 and lot.units_wanted is None),
+        **carry,
     )
 
 
@@ -327,7 +378,9 @@ def allocate(
                 allocated=True,
                 auto_send=(auto_send_threshold > 0
                            and d.committed_all_in <= auto_send_threshold
-                           and not d.needs_mechanic_ruling),
+                           and not d.needs_mechanic_ruling
+                           and not d.needs_election
+                           and not d.speculative),
             ))
         else:
             out.append(replace(d, allocated=False, auto_send=False,
@@ -366,3 +419,92 @@ def summarize(decisions: Iterable[Decision]) -> SheetSummary:
             else:
                 s.needs_approval += 1
     return s
+
+
+# House minimum opening bid. Blue Toad opens the re-auctioned remainder here, or
+# at roughly half the last hammer; the operator has bought a remainder at $5.
+HOUSE_MINIMUM_BID = 5.0
+
+
+def clerk_directive(decision: Decision) -> str:
+    """One plain-English line telling the clerk what to do with this lot.
+
+    The absentee bidder is not standing at the block, so every choice he would
+    make in the room has to be made here in writing. His own July 11 drafts
+    closed with exactly this kind of instruction, in exactly this register — a
+    sentence to Bill, not a field in a report.
+
+    Silence is the dangerous default: a lot nobody should bid on, described in
+    a bid sheet, is an invitation to bid on it. So the refusals say so out loud.
+    """
+    lid = decision.lot_id
+    if decision.needs_mechanic_ruling:
+        return (f"{lid} — DO NOT BID. How this lot is sold has not been "
+                f"established, and the answer multiplies the money.")
+    if decision.max_bid is None:
+        return f"{lid} — DO NOT BID. {decision.reason}."
+    if decision.needs_election:
+        return (f"{lid} — HOLD. Buyer's choice of {decision.unit_count} at "
+                f"${decision.max_bid:,.2f} per unit; nobody has said how many "
+                f"to take.")
+
+    if decision.speculative:
+        # Contingent money reads exactly like committed money unless it says so,
+        # and a clerk holding an unmarked contingent line will simply bid it.
+        return (f"{lid} — ONLY IF IT COMES BACK UP: {decision.unit_count} unit(s) "
+                f"at ${decision.max_bid:,.2f} each, ${decision.committed_all_in:,.2f} "
+                f"all-in. Skip if the lot clears whole.")
+
+    if decision.mechanic is BidMechanic.TIMES_THE_MONEY:
+        k = units_committed(decision.mechanic, decision.unit_count,
+                            decision.units_wanted)
+        return (f"{lid} — times the money: ${decision.max_bid:,.2f} per unit "
+                f"x {k}. All-in ${decision.committed_all_in:,.2f}.")
+    if decision.mechanic is BidMechanic.CHOICE:
+        k = units_committed(decision.mechanic, decision.unit_count,
+                            decision.units_wanted)
+        return (f"{lid} — buyer's choice: bid to ${decision.max_bid:,.2f} per "
+                f"unit and take {k} of the {decision.unit_count}. All-in "
+                f"${decision.committed_all_in:,.2f}.")
+    return (f"{lid} — one lot, one bid, ${decision.max_bid:,.2f} max. "
+            f"All-in ${decision.committed_all_in:,.2f}.")
+
+
+def remainder_opportunity(decision: Decision,
+                          floor: float = HOUSE_MINIMUM_BID,
+                          tax_rate: float = DEFAULT_TAX_RATE) -> Decision | None:
+    """The second bite: what is left after an election, bid at the house minimum.
+
+    When the winner takes fewer than all of them, Blue Toad re-auctions the
+    remainder — usually opening at the minimum or half the last hammer. That is
+    already-appraised inventory going cheap, and no sheet has ever looked at it.
+    The operator has taken one at $5 himself.
+
+    Returns None whenever there is nothing to want: a straight lot, an election
+    that took everything, a lot that was never priced, or a floor that is not
+    actually a discount. A remainder bid at or above the lot's own max is not a
+    bargain, it is a bug.
+    """
+    if decision.max_bid is None or decision.mechanic is BidMechanic.STRAIGHT:
+        return None
+    taken = units_committed(decision.mechanic, decision.unit_count,
+                            decision.units_wanted)
+    left = decision.unit_count - taken
+    if left < 1:
+        return None
+
+    bid = snap_to_increment(min(floor, decision.max_bid))
+    if bid < BID_INCREMENT or bid > decision.max_bid:
+        return None
+
+    return Decision(
+        lot_id=f"{decision.lot_id}-R", category=decision.category,
+        priority=Priority.C,
+        max_bid=bid, all_in=all_in_cost(bid, tax_rate),
+        bid_fraction=None,
+        reason=(f"remainder of {decision.lot_id}: {left} unit(s) unsold after "
+                f"taking {taken}, re-auctioned at the ${bid:,.0f} opening"),
+        needs_human_pricing=False,
+        mechanic=BidMechanic.TIMES_THE_MONEY, unit_count=left, units_wanted=left,
+        speculative=True,
+    )

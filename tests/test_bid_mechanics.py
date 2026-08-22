@@ -6,8 +6,9 @@ thing, and a rural auctioneer does not sell that way. Three mechanics are real
 at Blue Toad, and the difference between them is money:
 
   STRAIGHT          bid once, take the lot.
-  CHOICE            bid high, then PICK one unit at that price. The rest go
-                    back to the floor. Winner's choice of a shelf on a
+  CHOICE            per-unit price, ELECTIVE quantity: bid high, then take
+                    1..N at that price. The unsold rest is re-auctioned, often
+                    at the house minimum. Winner's choice of a shelf on a
                     five-shelf lantern unit — one photograph, five lots.
   TIMES_THE_MONEY   the bid is PER UNIT and charged N times. Confirmed by the
                     auctioneer on the labelled jewelry tray run (12/14/16):
@@ -50,9 +51,19 @@ class TestUnitsCommitted:
         # not objects, and a straight lot is a single unit however full it is.
         assert units_committed(BidMechanic.STRAIGHT, 40) == 1
 
-    def test_choice_charges_once_because_you_win_exactly_one_unit(self):
-        # Five shelves, winner's choice. You pay the bid and take ONE shelf.
-        assert units_committed(BidMechanic.CHOICE, 5) == 1
+    def test_an_unelected_choice_lot_budgets_for_every_unit(self):
+        """CORRECTED 2026-08-21. This file first asserted that choice charges
+        once, "you pay the bid and take ONE shelf". That is not how Blue Toad
+        sells. The operator:
+
+            "it's only OPTIONAL to take 1 at bid price. One may take 1-N at bid
+             price."
+
+        Choice is per-unit pricing with an elective quantity, so with no
+        election recorded the exposure is the whole group, not one unit. See
+        tests/test_elective_quantity.py for k.
+        """
+        assert units_committed(BidMechanic.CHOICE, 5) == 5
 
     def test_times_the_money_charges_once_per_unit(self):
         assert units_committed(BidMechanic.TIMES_THE_MONEY, 3) == 3
@@ -127,25 +138,31 @@ class TestAllocateBudgetsTheRealCommitment:
         assert sum(d.all_in for d in out) == pytest.approx(sum(d.committed_all_in for d in out))
 
 
-class TestChoiceLotsRefuseToPriceWithoutPerUnitValues:
-    def test_choice_lot_is_routed_to_human_pricing(self):
-        """A comp for the whole shelving unit is not a comp for one shelf.
+class TestChoiceLotsArePricedPerUnit:
+    def test_choice_lot_is_priced_per_unit_not_refused(self):
+        """CORRECTED 2026-08-21. This originally refused to price choice lots at
+        all, reasoning that a five-shelf comp is not a one-shelf comp.
 
-        The photograph shows five shelves; the winner takes one. Pricing 35% of
-        a five-shelf comp and calling it a bid for one shelf overbids by roughly
-        the unit count — the single most expensive mistake available here.
-        Until per-unit values exist, the honest answer is that this system does
-        not know what one shelf is worth.
+        The premise was right and the conclusion was wrong. The comp does cover
+        the group, so it is divided down to one unit — dividing can only ever
+        bid LESS than the group is worth, while not dividing commits several
+        times the cap. What is genuinely unknown is not the price but k, how
+        many units the operator elects to take, and that is a question to ask
+        rather than grounds to refuse.
+
+        See tests/test_elective_quantity.py. Do not restore the refusal.
         """
         d = price_lot(lot(mechanic=BidMechanic.CHOICE, unit_count=5))
-        assert d.needs_human_pricing is True
-        assert d.max_bid is None
-        assert "choice" in d.reason.lower()
+        assert d.max_bid is not None
+        assert d.needs_human_pricing is False
+        assert d.needs_election is True
+        assert "per unit" in d.reason.lower()
 
     def test_a_choice_lot_of_one_unit_is_just_a_straight_lot(self):
-        # Choice of one is not a choice. Nothing to be uncertain about.
+        # Choice of one is not a choice. Nothing to elect.
         d = price_lot(lot(mechanic=BidMechanic.CHOICE, unit_count=1))
         assert d.needs_human_pricing is False
+        assert d.needs_election is False
         assert d.max_bid is not None
 
 
@@ -208,7 +225,7 @@ class TestDefaultsPreserveEveryExistingSheet:
         names = [f.name for f in fields(Lot)]
         assert names[:6] == ["lot_id", "caption", "category", "fit_score",
                              "condition_penalty", "comp"]
-        assert names[6:] == ["mechanic", "unit_count"]
+        assert names[6:] == ["mechanic", "unit_count", "units_wanted"]
 
     def test_new_fields_are_appended_last_on_decision(self):
         from dataclasses import fields
@@ -217,4 +234,6 @@ class TestDefaultsPreserveEveryExistingSheet:
             "lot_id", "category", "priority", "max_bid", "all_in",
             "bid_fraction", "reason", "needs_human_pricing", "auto_send",
             "allocated"]
-        assert names[10:] == ["mechanic", "unit_count", "needs_mechanic_ruling"]
+        assert names[10:] == ["mechanic", "unit_count", "units_wanted",
+                              "needs_mechanic_ruling", "needs_election",
+                              "speculative"]
