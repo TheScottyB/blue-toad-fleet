@@ -1,5 +1,22 @@
 # Blue Toad Fleet — 4-Minute Walkthrough Video Script
 
+> **Recording note — the cut in `media/blue_toad_fleet_demo.mp4` was captured
+> 2026-08-20 17:56, and the figures narrated in Beat 4 are that evening's sheet:
+> 12 lots, $335.00 max, $385.25 all-in, 173 tests.**
+>
+> The sheet has since moved twice for reasons that are recorded in git, not
+> drift: the auctioneer ruled the labelled jewelry tray run "a x3 bid"
+> (`c643171`), and BT-181 was found to be a close-up of trays already inside
+> BT-002 and declined rather than bought twice (`eb8bd7a`). Current figures are
+> **9 lots, $275.00 max, $316.25 all-in, 467 tests** — matching the absentee
+> sheet Blue Toad actually received, which `tests/test_sheet_matches_what_was_sent.py`
+> pins.
+>
+> This note is deliberately not a rewrite of the narration. The script records
+> what was said on camera; silently editing it to quote today's numbers would
+> make the document disagree with the video it transcribes, which is the exact
+> failure it would be trying to hide. Re-record Beat 4 to close the gap.
+
 **Target Duration:** Exactly 3:45 – 3:55 (Under the 4:00 strict maximum).  
 **Recording Format:** Screen capture of browser tabs + live voiceover.
 
