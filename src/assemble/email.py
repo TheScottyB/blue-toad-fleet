@@ -3,7 +3,7 @@ import textwrap
 from typing import Iterable
 
 from src.bidmath import (
-    ABSENTEE_FEE, BidMechanic, Decision, Lot, snap_to_increment, summarize,
+    ABSENTEE_FEE, BidMechanic, Decision, Lot, opening_bid, summarize,
     units_committed,
 )
 
@@ -45,7 +45,7 @@ def compile_absentee_email(
         lot = by_id.get(d.lot_id)
         description = " ".join(((lot.caption if lot else "") or d.category).split())
         wrapped = textwrap.wrap(description, width=78) or [description]
-        start_bid = snap_to_increment(max(5.0, d.max_bid * 0.35))
+        start_bid = opening_bid(d.max_bid)
         lines.append(f"{i:>2}) [{d.lot_id}]  {wrapped[0]}")
         lines.extend(f"      {line}" for line in wrapped[1:])
         # The bid line has to state the MECHANIC, not just the number. A lot

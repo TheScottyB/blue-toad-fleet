@@ -95,11 +95,13 @@ engine = AppraisalEngine()
 def photo_from_raw(raw_app: dict | None = None, **base) -> AppraisedPhoto:
     """Map a cached appraisal dict onto AppraisedPhoto, including container fields."""
     raw = raw_app or {}
-    return AppraisedPhoto(
-        is_container=bool(raw.get("is_container", False)),
-        contents=tuple(raw.get("contents") or ()),
-        **base,
-    )
+    if "is_container" not in base:
+        base["is_container"] = bool(raw.get("is_container", False))
+    if "contents" not in base:
+        base["contents"] = tuple(raw.get("contents") or ())
+    elif not isinstance(base["contents"], tuple):
+        base["contents"] = tuple(base["contents"] or ())
+    return AppraisedPhoto(**base)
 
 
 def cached_photo_bytes(lot_id: str) -> bytes | None:
