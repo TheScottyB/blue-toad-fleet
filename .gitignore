@@ -29,6 +29,8 @@ media/list.txt
 media/beat*.mp4
 node_modules/
 .agents/
+.claude/
+.playwright-mcp/
 ORIGINAL_REQUEST.md
 .env.local
 .vscode/

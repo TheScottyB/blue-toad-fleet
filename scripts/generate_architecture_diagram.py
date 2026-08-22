@@ -46,7 +46,7 @@ def generate_diagram():
 
     # Pillar 3: Deterministic BidMath
     draw_box(8.6, 3.8, 3.2, 2.6, "3. PURE BIDMATH ENGINE",
-             "• 35-40% Buy-In Band (37.5% mid)\n• Condition Penalty Clamping\n• 'Buyer's Choice' Mechanic Modelling\n• Greedy Allocation vs Budget Cap\n• Refuses Lots With No Comp\n• 570 Unit Tests, 563 Pass (~5s)",
+             "• 35-40% Buy-In Band (37.5% mid)\n• Condition Penalty Clamping\n• 'Buyer's Choice' Mechanic Modelling\n• Greedy Allocation vs Budget Cap\n• Refuses Lots With No Comp\n• 572 Unit Tests, 565 Pass (~5s)",
              '#fbbf24')
 
     # Pillar 4: Gate Console & Collaborative Partner

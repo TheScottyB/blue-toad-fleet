@@ -1,0 +1,13 @@
+[
+  {
+    "model": "gemini-3.1-flash-image",
+    "repetition": 4,
+    "output": "ai/3.1-flash_r4.png",
+    "dimensions": [
+      1200,
+      896
+    ],
+    "sha256": "91c395f13294a25f7f86626863e4a774edf10e3256e41037a18b326fc2601b2f",
+    "response_text": ""
+  }
+]

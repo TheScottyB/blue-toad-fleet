@@ -5,7 +5,7 @@ bottle with metal cap**
 
 | | |
 |---|---|
-| Captured | **2026-08-22 00:46:38 CDT** (SOLD) · **00:47:11 CDT** (ACTIVE) |
+| Captured | Screenshots **2026-08-22 01:03 CDT** · raw exports **01:12:04 CDT** |
 | Source | eBay Seller Hub → Research → Product research, authenticated as `richmondgeneral` |
 | Query | `1933 Century of Progress bottle` |
 | Marketplace | `EBAY-US`, All Categories, no condition/format/price filter |
@@ -77,6 +77,15 @@ in this report and the pixels disagree, **the pixels are correct.**
 
 The capture script exits non-zero if it lands on a signin or challenge page, so
 a picture of a login screen cannot be filed here as proof.
+
+The same page state is also preserved as re-parseable text:
+
+- `sold_365d.tsv` — 45 rows: price, quantity, date, title
+- `active.txt` — all 46 active listing titles
+- `capture.json` — both aggregate blocks and capture metadata
+
+The raw exports were read from the same fixed query URLs nine minutes after the
+screenshots; the aggregates and row counts match the pixels.
 
 **These figures still cannot be reproduced later.** The 365-day window rolls
 daily and active counts change hourly. The screenshots are the record of what
