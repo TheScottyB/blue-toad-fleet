@@ -37,7 +37,7 @@ from src.appraiser.routing import TRIAGE_MODEL, estimate_cost_usd
 from src.bidmath import (
     Lot, CompEstimate, Confidence as BidConfidence, Priority, Decision,
     price_lot, allocate, summarize, ABSENTEE_FEE, snap_to_increment,
-    mechanic_from_ruling, BidMechanic
+    mechanic_from_ruling, BidMechanic, units_committed
 )
 
 # Reference valuation comps for approved candidate categories (matching shop pricing bands)
@@ -98,8 +98,22 @@ OPERATOR_APPROVED = {
                "ruling": "take all three trays at x3"},
     "BT-087": {"fit": 0.90, "cap": 25.00,
                "why": "collab: buys bulk estate costume jewelry, max bid $25"},
-    "BT-181": {"fit": 0.90, "cap": 25.00,
-               "why": "collab: buys bulk estate costume jewelry, max bid $25"},
+    # DUPLICATE of BT-002, confirmed three independent ways on 2026-08-21:
+    #  - visual: seq 181 is a close-up of trays 12 and 14 from seq 2. The gold
+    #    flat-link mesh necklace, the cream oval-bead strand, the coin-charm
+    #    bracelet with the starfish, the blue lapis-glass pendant and the green
+    #    enamel Christmas tree brooch are the same objects on the same velvet
+    #    tray on the same concrete floor; tray 14's bead necklaces sit at 181's
+    #    right margin.
+    #  - gemini-embedding-2 ranks seq 2 as seq 181's #1 neighbour, cos 0.906,
+    #    where dHash ranks it #94 — adjacency-based grouping cannot see it
+    #    because the auctioneer returned to the table 179 frames later.
+    #  - the revised absentee sheet that actually went to Blue Toad drops it.
+    # BT-002 already commits all three trays at x3, so bidding this too buys the
+    # same trays twice. Declined rather than deleted, so the reason survives.
+    "BT-181": {"fit": None,
+               "why": "duplicate of BT-002 (close-up of trays 12/14) — "
+                      "BT-002 takes all three at x3"},
 
     "BT-021": {"fit": 0.90, "why": "collab: vintage telephones sell in store"},
     "BT-041": {"fit": 0.90, "why": "collab: Edison cylinders are an alpha pick this cycle"},
@@ -483,7 +497,29 @@ def run_pipeline(
         wrapped = textwrap.wrap(description, width=78) or [description]
         email_lines.append(f"{i:>2}) [{d.lot_id}]  {wrapped[0]}")
         email_lines.extend(f"      {line}" for line in wrapped[1:])
-        email_lines.append(f"      START ${start_bid:,.2f}   MAX ${d.max_bid:,.2f}")
+        # The bid line has to state the MECHANIC, not just the number. A lot
+        # sold times-the-money charges the max once per unit, so a line reading
+        # "MAX $25.00" beside a sheet total of $285.00 is off by $50 and the
+        # clerk cannot see why. This is the sentence the operator typed by hand
+        # into the revised sheet on cutoff day; the system writes it now.
+        if d.mechanic is BidMechanic.TIMES_THE_MONEY and d.unit_count > 1:
+            email_lines.append(
+                f"      START ${start_bid:,.2f}   MAX ${d.max_bid:,.2f} PER UNIT "
+                f"x {d.unit_count} = ${d.committed_max:,.2f} TOTAL")
+            email_lines.append(
+                f"      >> Times the money. I am taking ALL {d.unit_count}. "
+                f"Please do NOT limit me to one unit on this lot. <<")
+        elif d.mechanic is BidMechanic.CHOICE and d.unit_count > 1:
+            k = units_committed(d.mechanic, d.unit_count, d.units_wanted)
+            email_lines.append(
+                f"      START ${start_bid:,.2f}   MAX ${d.max_bid:,.2f} PER UNIT "
+                f"x {k} of {d.unit_count} = ${d.committed_max:,.2f} TOTAL")
+            email_lines.append(
+                f"      >> Buyer's choice. Please take {k} of the "
+                f"{d.unit_count} at that price. <<")
+        else:
+            email_lines.append(
+                f"      START ${start_bid:,.2f}   MAX ${d.max_bid:,.2f}")
         email_lines.append("")
 
     email_lines.extend([

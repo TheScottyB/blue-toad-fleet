@@ -83,7 +83,19 @@ class TestTheCommercialTerms:
         assert "15%" in email
 
     def test_totals_reconcile_to_the_listed_bids(self, email):
-        maxes = [float(m) for m in re.findall(r"MAX\s*\$\s*([\d,]+\.\d{2})", email)]
+        """What is printed on the page has to add up to the total on the page.
+
+        A per-unit lot contributes its COMMITTED total, not its per-unit max.
+        "MAX $25.00 PER UNIT x 3 = $75.00 TOTAL" puts two figures on one line and
+        only the second one is money the sheet has committed; summing the first
+        understates the page by $50 and the clerk cannot see why. That mismatch
+        is exactly what this assertion caught when times-the-money first reached
+        the compiler, so read the committed figure where a line states one.
+        """
+        maxes = [float(m.replace(",", "")) for m in
+                 re.findall(r"MAX\s*\$\s*[\d,]+\.\d{2}[^\n]*?=\s*\$\s*([\d,]+\.\d{2})\s*TOTAL"
+                            r"|MAX\s*\$\s*([\d,]+\.\d{2})(?![^\n]*TOTAL)", email)
+                 for m in (m[0] or m[1],) if m]
         if not maxes:  # fixed-width layout: last figure on each bid line
             maxes = [float(re.findall(r"\$\s*([\d,]+\.\d{2})", ln)[-1].replace(",", ""))
                      for ln in bid_lines(email) if re.findall(r"\$\s*([\d,]+\.\d{2})", ln)]
@@ -92,6 +104,19 @@ class TestTheCommercialTerms:
         assert abs(sum(maxes) - float(stated.group(1).replace(",", ""))) < 0.01, (
             f"listed bids sum to {sum(maxes):.2f}, email claims {stated.group(1)}"
         )
+
+    def test_per_unit_lines_state_arithmetic_that_actually_multiplies(self, email):
+        """A line claiming "$25.00 PER UNIT x 3 = $75.00" must be true.
+
+        The clerk acts on this sentence. If the stated product is wrong he bids
+        the wrong money and nothing downstream would ever catch it.
+        """
+        for per, units, total in re.findall(
+                r"MAX\s*\$\s*([\d,]+\.\d{2})\s*PER UNIT\s*x\s*(\d+)"
+                r"[^\n]*?=\s*\$\s*([\d,]+\.\d{2})\s*TOTAL", email):
+            got = float(per.replace(",", "")) * int(units)
+            assert abs(got - float(total.replace(",", ""))) < 0.01, (
+                f"${per} x {units} is ${got:.2f}, line claims ${total}")
 
     def test_the_all_in_figure_is_the_total_plus_fifteen_percent(self, email):
         m = re.search(r"\$([\d,]+\.\d{2})\s*\(\$([\d,]+\.\d{2})\s*all-in", email)
