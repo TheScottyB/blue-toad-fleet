@@ -20,6 +20,13 @@ def test_health_endpoints(client):
     assert r2.status_code == 200
     assert r2.json()["status"] == "healthy"
 
+
+def test_health_names_the_gemma_bonus_model(client):
+    data = client.get("/health").json()
+    assert "gemma" in data["gemma_model"].lower()
+    assert not data["gemma_model"].startswith("gemini-")
+    assert "gemma_ok" in data
+
 def test_root_console_renders(client):
     r = client.get("/")
     assert r.status_code == 200
@@ -73,6 +80,80 @@ def test_api_email_draft(client):
     text = r.text
     assert "info@bluetoadauctions.com" in text
     assert "$335.00" in text or "Richmond General" in text
+    assert "ITEM DESCRIPTION" not in text
+
+
+def test_corrupt_embed_cache_does_not_500_console(client, monkeypatch):
+    def boom(*_a, **_k):
+        raise ValueError("mixed-length vectors")
+    monkeypatch.setattr("src.server.load_reshoot_edges", boom)
+    r = client.get("/")
+    assert r.status_code == 200
+    assert "Blue Toad Fleet" in r.text
+
+
+def test_merged_declined_181_does_not_skip_bt002():
+    """High-confidence BT-181 with operator fit=None must not SKIP BT-002."""
+    from src.assemble import AppraisedPhoto, assemble_lots
+    from src.bidmath import CompEstimate, Confidence, Priority, price_lot
+    from scripts.run_vertex_pipeline import apply_operator_fit
+
+    jewelry = CompEstimate(65, 75, 3, Confidence.HIGH)
+    lots = assemble_lots(
+        [
+            AppraisedPhoto(
+                photo_id="BT-002", caption="Estate Costume Jewelry",
+                identification="trays", category="jewelry",
+                fit_score=0.85, confidence=Confidence.MEDIUM,
+            ),
+            AppraisedPhoto(
+                photo_id="BT-181", caption="estate costume jewelry",
+                identification="close-up", category="jewelry",
+                fit_score=0.0, confidence=Confidence.HIGH,
+            ),
+        ],
+        comps={"seq:BT-002": jewelry, "BT-002": jewelry},
+        reshoot_edges={frozenset({"BT-002", "BT-181"})},
+    )
+    lot = apply_operator_fit(lots[0])
+    assert lot.lot_id == "BT-002"
+    assert lot.fit_score != 0.0
+    assert price_lot(lot).priority is not Priority.SKIP
+
+
+def test_photo_from_raw_maps_container_fields_into_assemble():
+    from src.assemble import assemble_lots
+    from src.bidmath import Confidence
+    from src.server import photo_from_raw
+
+    photo = photo_from_raw(
+        {
+            "identification": "Edison crate",
+            "is_container": True,
+            "contents": ["Blue Amberol"],
+        },
+        photo_id="p1",
+        caption="Lot 41 box",
+        identification="Edison crate",
+        category="phonograph / records",
+        fit_score=0.9,
+        confidence=Confidence.HIGH,
+    )
+    lots = assemble_lots([photo])
+    assert "Blue Amberol" in lots[0].caption
+
+
+def test_photo_from_raw_defaults_when_cache_omits_container_keys():
+    from src.server import photo_from_raw
+
+    photo = photo_from_raw(
+        {"identification": "Red Wing crock"},
+        photo_id="p1",
+        caption="Lot 5",
+        identification="Red Wing crock",
+    )
+    assert photo.is_container is False
+    assert photo.contents == ()
 
 
 class TestTheModelReachesTheQueue:

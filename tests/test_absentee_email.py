@@ -129,3 +129,60 @@ class TestTheCommercialTerms:
             for fig in re.findall(r"\$\s*([\d,]+\.\d{2})", ln):
                 v = float(fig.replace(",", ""))
                 assert v % 5 == 0, f"{v} is not a $5 increment: {ln.strip()}"
+
+
+from src.assemble.email import compile_absentee_email
+from src.bidmath import (
+    CompEstimate, Confidence, Lot, allocate, price_lot, snap_to_increment, summarize,
+)
+
+
+def _lot(lot_id, caption, low, high):
+    return Lot(
+        lot_id=lot_id, caption=caption, category="vintage cards",
+        fit_score=0.9, condition_penalty=0.0,
+        comp=CompEstimate(low=low, high=high, source_count=3, confidence=Confidence.HIGH),
+    )
+
+
+def _compiled(lots):
+    ds = allocate([price_lot(l) for l in lots], budget_cap=10_000)
+    return compile_absentee_email(
+        to="info@bluetoadauctions.com",
+        subject="Absentee Bids - August 22 Antique & Estate Auction (Bidder: Richmond General)",
+        auction_date="Saturday, August 22, 2026",
+        venue="200 Elizabeth Lane, Genoa City, WI",
+        lots=lots,
+        decisions=ds,
+    ), summarize(ds)
+
+
+class TestCompilerKeepsTheClerkInformed:
+    def test_a_description_longer_than_48_characters_survives_whole(self):
+        caption = (
+            "Cardboard multi-row storage box containing bulk sports trading cards "
+            "including hockey, football, and baseball, produced by various manufacturers "
+            "such as Score and Fleer Ultra, c. late 1980s to 2000s."
+        )
+        text, _ = _compiled([_lot("BT-016", caption, 40, 60)])
+        assert caption in " ".join(text.split())
+        assert "storage box containing bulk    " not in text
+
+    def test_unallocated_lots_do_not_appear(self):
+        cheap = _lot("BT-001", "Topps cards", 250, 400)
+        dear = _lot("BT-999", "should not appear", 8000, 9000)
+        ds = allocate([price_lot(cheap), price_lot(dear)], budget_cap=200.0)
+        text = compile_absentee_email(
+            to="info@bluetoadauctions.com", subject="Absentee Bids",
+            auction_date="Saturday, August 22, 2026",
+            venue="200 Elizabeth Lane, Genoa City, WI",
+            lots=[cheap, dear], decisions=ds,
+        )
+        assert "BT-001" in text
+        assert "BT-999" not in text
+
+    def test_one_block_per_bid_not_a_fixed_width_table(self):
+        text, _ = _compiled([_lot("BT-001", "Topps cards", 250, 400)])
+        assert "ITEM DESCRIPTION" not in text
+        assert "1)" in text and "[BT-001]" in text
+

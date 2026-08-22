@@ -30,8 +30,10 @@ Three rules decide what a group of photos says about one lot:
 from dataclasses import dataclass
 from typing import Iterable, Mapping
 
-from src.bidmath import CompEstimate, Confidence, Lot
+from src.assemble.email import compile_absentee_email
+from src.bidmath import BidMechanic, CompEstimate, Confidence, Lot, is_choice_lot
 from src.intake.manifest import TriagedPhoto, group_into_lots
+from src.intake.spatial import merge_reshoots
 
 _CONFIDENCE_RANK = {
     Confidence.NONE: 0,
@@ -63,6 +65,7 @@ class AppraisedPhoto:
     condition_penalty: float = 0.0
     fit_score: float = 0.0
     confidence: Confidence = Confidence.NONE
+    is_container: bool = False
     # Spatially isolated alpha/supporting contents from this physical lot.
     # These refine the clerk line; they are not independently priceable lots.
     contents: tuple[str, ...] = ()
@@ -71,11 +74,16 @@ class AppraisedPhoto:
 def assemble_lots(
     appraised: Iterable[AppraisedPhoto],
     comps: Mapping[str, CompEstimate] | None = None,
+    reshoot_edges: set | None = None,
 ) -> list[Lot]:
     """Collapse per-photo appraisals into one `Lot` per physical lot.
 
     `comps` is keyed by lot id — the auctioneer's lot number where the caption
     carried one. Missing keys are expected, not an error.
+
+    `reshoot_edges` are mutual non-walk nearest-neighbor pairs already computed
+    upstream; assemble does not load vectors. When present, groups linked by an
+    edge are unioned before Lot construction.
     """
     appraised = list(appraised)
     comps = comps or {}
@@ -90,6 +98,8 @@ def assemble_lots(
         )
         for p in appraised
     ])
+    if reshoot_edges:
+        groups = merge_reshoots(groups, reshoot_edges)
 
     lots: list[Lot] = []
     for group in groups:
@@ -116,6 +126,8 @@ def assemble_lots(
                     contents.append(item)
 
         description = best.identification or primary.caption
+        # Detection before contents append so "choice beads" cannot flip mechanic.
+        per_unit = is_choice_lot(best.identification, primary.caption, best.category)
         new_contents = [item for item in contents
                         if item.casefold() not in description.casefold()]
         if new_contents:
@@ -129,9 +141,12 @@ def assemble_lots(
             fit_score=best.fit_score,
             condition_penalty=penalty,
             comp=comps.get(group.lot_key, NO_COMP),
+            mechanic=BidMechanic.CHOICE if per_unit else BidMechanic.STRAIGHT,
+            unit_count=1,
+            units_wanted=1 if per_unit else None,
         ))
 
     return lots
 
 
-__all__ = ["AppraisedPhoto", "NO_COMP", "assemble_lots"]
+__all__ = ["AppraisedPhoto", "NO_COMP", "assemble_lots", "compile_absentee_email"]

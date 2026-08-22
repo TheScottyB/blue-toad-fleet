@@ -62,6 +62,8 @@ Hard rules:
 
 4. State condition from what is visible, and say what you could not see.
 
+5. If the lot is a box, bin, tray, or tub, set is_container true, itemize the contents, and IGNORE neighboring table clutter (clocks, lamps, tools) when identifying what is for sale.
+
 Question kinds:
 - `lot_grouping` — several photos may be one lot, or one photo several lots
 - `scope`        — the caption is ambiguous about what is included

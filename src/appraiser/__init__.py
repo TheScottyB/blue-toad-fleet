@@ -20,7 +20,9 @@ confidence band. Where a determining attribute is not visible, the correct
 output is a question, not a guess.
 """
 
-from src.appraiser.routing import ModelTier, model_for, TRIAGE_MODEL, APPRAISAL_MODEL
+from src.appraiser.routing import (
+    ModelTier, model_for, TRIAGE_MODEL, APPRAISAL_MODEL, CURATOR_MODEL, GEMMA_MODEL,
+)
 from src.appraiser.schema import (
     TRIAGE_SCHEMA, APPRAISAL_SCHEMA, CONTAINER_LOCATION_SCHEMA,
     CONTAINER_DECOMPOSITION_SCHEMA, to_vertex,
@@ -36,6 +38,7 @@ from src.appraiser.engine import AppraisalEngine
 
 __all__ = [
     "ModelTier", "model_for", "TRIAGE_MODEL", "APPRAISAL_MODEL",
+    "CURATOR_MODEL", "GEMMA_MODEL",
     "TRIAGE_SCHEMA", "APPRAISAL_SCHEMA", "CONTAINER_LOCATION_SCHEMA",
     "CONTAINER_DECOMPOSITION_SCHEMA", "to_vertex",
     "build_triage_prompt", "build_appraisal_prompt",

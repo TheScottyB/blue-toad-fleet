@@ -5,6 +5,7 @@ from src.bidmath import (
     CompEstimate, Confidence, Lot, allocate, price_lot, summarize,
 )
 from src.gate import CycleView, render_console
+from src.intake.spatial import Seat, Zone
 
 
 def _lot(i, fit=0.85, low=100.0, high=140.0, n=3, conf=Confidence.HIGH):
@@ -14,7 +15,7 @@ def _lot(i, fit=0.85, low=100.0, high=140.0, n=3, conf=Confidence.HIGH):
 
 
 def _view(lots=None, questions=(), rules=(), cap=2205.0, thresh=40.0):
-    lots = lots or [_lot(i) for i in range(4)]
+    lots = lots if lots is not None else [_lot(i) for i in range(4)]
     ds = allocate([price_lot(l) for l in lots], cap, thresh)
     return CycleView(
         cycle_id="2026-08-22", auction_date="Sat 2026-08-22", photos_ingested=428,
@@ -199,3 +200,87 @@ class TestTheCuratorBanner:
     def test_without_pitch_text_the_banner_is_omitted_rather_than_faked(self):
         h = render_console(_view())
         assert "Curator" not in h
+
+
+def _slice_between(html: str, start: str, end: str) -> str:
+    i = html.find(start)
+    j = html.find(end, i + len(start)) if i >= 0 else -1
+    if i < 0 or j < 0:
+        return ""
+    return html[i:j]
+
+
+def _holding_strip_html(html: str) -> str:
+    m = re.search(
+        r'<div class="holding" id="unplaced">.*?</div></div>',
+        html,
+        re.DOTALL,
+    )
+    return m.group(0) if m else ""
+
+
+def _seat_el(html: str, lot_id: str) -> str:
+    m = re.search(
+        rf'<div class="seat"><b>{re.escape(lot_id)}</b>.*?</div>',
+        html,
+    )
+    assert m is not None, f"{lot_id} seat missing from slice"
+    return m.group(0)
+
+
+class TestShowroomMap:
+    def test_topology_title_always_renders(self):
+        assert "Pole Barn Showroom Topology" in render_console(_view())
+
+    def test_fake_island_inventory_is_gone(self):
+        h = render_console(_view())
+        assert "Topps Baseball Cards & Costume Jewelry" not in h
+
+    def test_holding_strip_lists_unplaced_seats(self):
+        v = _view()
+        v.seats = [
+            Seat(lot_id="BT-002", zone=Zone.UNKNOWN, walk_index=2,
+                 photo_ids=("838421481", "838424282")),
+            Seat(lot_id="BT-087", zone=Zone.UNKNOWN, walk_index=87,
+                 photo_ids=("838422448",)),
+        ]
+        h = render_console(v)
+        assert "not yet placed" in h.lower() or "unplaced" in h.lower()
+        strip = _holding_strip_html(h)
+        assert "BT-002" in strip and "BT-087" in strip
+        seat = _seat_el(strip, "BT-002")
+        assert "8421481" in seat and "8424282" in seat
+        assert "8422448" not in seat
+        assert "838422448" not in seat
+
+    def test_zoned_seat_sits_on_its_row_not_only_the_strip(self):
+        v = _view()
+        v.seats = [
+            Seat(lot_id="BT-099", zone=Zone.CENTER_ISLAND_1, walk_index=1,
+                 photo_ids=("p1",)),
+        ]
+        h = render_console(v)
+        island1 = _slice_between(
+            h, "<b>Island Table 1:</b>", "<b>Island Table 2:</b>")
+        assert "BT-099" in island1
+        assert _seat_el(island1, "BT-099")
+        assert "BT-099" not in _holding_strip_html(h)
+
+
+class TestStructuredVoiceBanner:
+    def test_renders_gemma_voice_prose_when_present(self):
+        from src.gate.voice import PitchVoice
+        v = _view()
+        v.voice = PitchVoice(
+            alpha="Keep the Topps at the defensive cap.",
+            fast_smalls="Handheld games turn fast.",
+            wildcard="Bet the games as the wildcard.",
+            pushback="Understood on dropping sports, but keep BT-001.",
+        )
+
+        h = render_console(v)
+        assert "Keep the Topps at the defensive cap." in h
+        assert "Handheld games turn fast." in h
+        assert "Understood on dropping sports, but keep BT-001." in h
+        assert "Gemma 4" in h
+

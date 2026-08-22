@@ -14,6 +14,8 @@ from html import escape
 from src.appraisal import QueueResult
 from src.bidmath import (units_committed, clerk_directive, BidMechanic,
                          Decision, Priority, SheetSummary)
+from src.gate.voice import PitchVoice
+from src.intake.spatial import Seat, Zone
 
 
 @dataclass
@@ -30,6 +32,8 @@ class CycleView:
     deadline: str = "Friday 8:00 PM"
     illustrative: bool = False
     lots_total: int | None = None
+    voice: PitchVoice | None = None
+    seats: list[Seat] = field(default_factory=list)
 
 
 _CSS = """
@@ -100,6 +104,13 @@ footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);color:v
 .map-zone b{color:var(--ink);display:block;font-size:13px;margin-bottom:3px}
 .directive{margin-top:6px;padding:6px 8px;border-left:2px solid var(--cyan);background:rgba(56,189,248,0.06);font-size:12px;color:var(--ink);line-height:1.45}
 .map-tag{font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(56,189,248,0.15);color:var(--cyan);font-weight:600}
+.seat-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;align-items:flex-start}
+.seat{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:72px}
+.seat b{display:block;color:var(--ink);font-size:12px;margin-bottom:4px}
+.thumb{display:inline-block;font:600 10px ui-monospace,Menlo,monospace;letter-spacing:.02em;
+padding:2px 6px;margin:2px 3px 0 0;border-radius:4px;background:rgba(56,189,248,.15);color:var(--cyan)}
+.holding{margin-top:16px;padding-top:12px;border-top:1px dashed var(--line)}
+.holding .map-title{margin-bottom:10px}
 
 /* Pitch Banner */
 .pitch-card{background:linear-gradient(135deg, rgba(167,139,250,0.08) 0%, rgba(56,189,248,0.08) 100%);
@@ -112,8 +123,51 @@ def _tag(text: str, cls: str = "") -> str:
     return f'<span class="tag {cls}">{escape(text)}</span>'
 
 
-def _map_block() -> str:
-    return """
+def _seq_chip(photo_id: str) -> str:
+    return (
+        f'<span class="thumb" data-photo-id="{escape(photo_id)}">'
+        f'{escape(photo_id[-7:])}</span>'
+    )
+
+
+def _seat_html(s: Seat) -> str:
+    thumbs = "".join(_seq_chip(p) for p in s.photo_ids)
+    return (
+        f'<div class="seat"><b>{escape(s.lot_id)}</b>{thumbs}</div>'
+    )
+
+
+def _row_for(v: CycleView | None, zone: Zone) -> str:
+    if not v:
+        return ""
+    seats = [s for s in v.seats if s.zone == zone]
+    seats.sort(key=lambda s: s.walk_index)
+    if not seats:
+        return ""
+    return (
+        '<div class="seat-row">'
+        + "".join(_seat_html(s) for s in seats)
+        + "</div>"
+    )
+
+
+def _holding_strip(v: CycleView | None) -> str:
+    if not v:
+        return ""
+    unplaced = [s for s in v.seats if s.zone is Zone.UNKNOWN]
+    if not unplaced:
+        return ""
+    unplaced.sort(key=lambda s: s.walk_index)
+    body = "".join(_seat_html(s) for s in unplaced)
+    return (
+        '<div class="holding" id="unplaced">'
+        '<div class="map-title">Not yet placed</div>'
+        f'<div class="seat-row">{body}</div></div>'
+    )
+
+
+def _map_block(v: CycleView | None = None) -> str:
+    return f"""
 <div class="map-container">
   <div class="map-title">
     <span>Pole Barn Showroom Topology &middot; 200 Elizabeth Lane, Genoa City</span>
@@ -123,44 +177,72 @@ def _map_block() -> str:
     <div class="map-zone wall">
       <b>NORTH BACK WALL &middot; HANGING DISPLAYS</b>
       <span>Framed advertising signs, lighted beer signs, vintage travel posters</span>
+      {_row_for(v, Zone.NORTH_BACK_WALL)}
     </div>
     <div class="map-zone">
       <b>WEST SIDE TABLES (A & B)</b>
       <span>Glassware, Princess phones, small electronics, collectibles</span>
+      {_row_for(v, Zone.WEST_SIDE_TABLES)}
     </div>
     <div class="map-zone aisle">
       <b>=== CENTER AISLE & AUCTIONEER PODIUM ===</b>
       <div style="margin-top:6px;font-size:11.5px;color:var(--violet)">
-        <b>Island Table 1:</b> Topps Baseball Cards & Costume Jewelry<br>
-        <b>Island Table 2:</b> Edison Phonograph Cylinders & Tonka Trucks
+        <b>Island Table 1:</b>
+        {_row_for(v, Zone.CENTER_ISLAND_1)}
+        <b>Island Table 2:</b>
+        {_row_for(v, Zone.CENTER_ISLAND_2)}
       </div>
     </div>
     <div class="map-zone">
       <b>EAST SIDE TABLES (C & D)</b>
       <span>Stoneware crocks, vintage tools, railroadiana</span>
+      {_row_for(v, Zone.EAST_SIDE_TABLES)}
     </div>
     <div class="map-zone wall" style="background:rgba(0,0,0,0.2)">
       <b>SOUTH STANDING ROOM & UNDER-TABLE STORAGE</b>
       <span>Concrete floor multi-box dinnerware runs (Poppy Trail) &middot; Cashier cage & refreshments</span>
+      {_row_for(v, Zone.SOUTH_UNDER_TABLE)}
     </div>
   </div>
+  {_holding_strip(v)}
 </div>
 """
 
 
-def _pitch_block(pitch_text: str) -> str:
+def _pitch_block(pitch_text: str = "", voice: PitchVoice | None = None) -> str:
     """
     The curator's read on the sheet, in prose.
 
-    Written by Gemma from the finished allocation — it is handed lot ids,
-    captions and the bids the shop's own math already set, and asked to phrase
-    them. It never sees a comparable sale and never picks a lot. Every figure it
-    uses is checked against the sheet before this renders; see src/gate/pitch.py.
-
-    Attributed on the face of the banner, because a reader should be able to
-    tell at a glance which parts of this console are computed and which are
-    written.
+    Structured PitchVoice (preferred) badges whether Gemma or the template
+    wrote it. A free-text pitch_text is the master's single-paragraph fallback.
+    Invented figures never reach here — write_pitch_voice / curator_voice
+    already discarded them.
     """
+    if voice is not None and not voice.fallback:
+        badge = "template fallback" if voice.fallback else "Gemma 4 · Vertex AI"
+        push = (f"<br><b>Pushback:</b> {escape(voice.pushback)}"
+                if voice.pushback else "")
+        body = (
+            f"<b>Top 3 Alpha Picks:</b> {escape(voice.alpha)}<br>"
+            f"<b>Fast Smalls:</b> {escape(voice.fast_smalls)}<br>"
+            f"<b>Wildcard / ruled out:</b> {escape(voice.wildcard)}"
+            f"{push}"
+        )
+        return f"""
+<div class="pitch-card">
+  <div class="pitch-hd">
+    Curator&rsquo;s read
+    <span class="tag" style="margin-left:auto;border-color:var(--violet);color:var(--violet)">{escape(badge)}</span>
+  </div>
+  <div style="font-size:13.5px;color:var(--ink2);line-height:1.65">{body}</div>
+  <div style="font-size:11px;color:var(--ink3);margin-top:9px">
+    Prose only. Lots and bids are set by the deterministic sheet; figures
+    are validated against it before display.
+  </div>
+</div>
+"""
+    if not pitch_text:
+        return ""
     return f"""
 <div class="pitch-card">
   <div class="pitch-hd">
@@ -175,6 +257,7 @@ def _pitch_block(pitch_text: str) -> str:
   </div>
 </div>
 """
+
 
 
 def _question_block(v: CycleView) -> str:
@@ -337,8 +420,8 @@ def render_console(v: CycleView, pitch_text: str = "") -> str:
     ${s.committed_all_in:,.2f} committed of ${v.budget_cap:,.2f} cap
     ({used:.0f}%)</div>
 </header>
-{_map_block()}
-{_pitch_block(pitch_text) if pitch_text else ''}
+{_map_block(v)}
+{_pitch_block(pitch_text, v.voice)}
 {_question_block(v)}
 {_sheet_block(v)}
 <footer>

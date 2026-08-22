@@ -227,6 +227,23 @@ class TestTheCacheMustCoverWhatWasAsked:
         cache.write_text('[{"lot_id": "BT-001"}]')
         assert AppraisalEngine.will_use_cache(cache, force_refresh=False)
 
+    def test_a_cache_missing_required_fields_is_not_used(self, tmp_path):
+        """462 triage rows predating zone/surface would otherwise serve as a hit
+        and every photo would land Zone.UNKNOWN with nothing erroring."""
+        cache = tmp_path / "triage_results.json"
+        cache.write_text('[{"photo_id": "fp1", "is_lot": true}]')
+        assert not AppraisalEngine.will_use_cache(
+            cache, force_refresh=False, required_fields={"zone", "surface_signature"})
+
+    def test_a_cache_with_required_fields_is_used(self, tmp_path):
+        cache = tmp_path / "triage_results.json"
+        cache.write_text(
+            '[{"photo_id": "fp1", "zone": "center_island_1", '
+            '"surface_signature": "blue_vinyl"}]'
+        )
+        assert AppraisalEngine.will_use_cache(
+            cache, force_refresh=False, required_fields={"zone", "surface_signature"})
+
     def test_the_batch_refuses_a_short_cache_rather_than_serving_it(self, monkeypatch, tmp_path):
         """
         A partial cache must not look like a completed run. With no credentials
@@ -241,3 +258,23 @@ class TestTheCacheMustCoverWhatWasAsked:
                 candidates=[{"lot_id": "BT-001", "local_path": ""},
                             {"lot_id": "BT-002", "local_path": ""}],
                 cache_path=cache)
+
+
+def test_appraisal_error_stub_includes_container_fields():
+    """The except stub must satisfy APPRAISAL_SCHEMA required keys."""
+    engine = AppraisalEngine()
+    engine._client = object()
+
+    def boom(*args, **kwargs):
+        raise RuntimeError("vertex down")
+
+    engine.appraise_lot = boom
+    results = engine.run_appraisal_batch(
+        candidates=[{"lot_id": "BT-999", "caption": "x"}],
+        force_refresh=True,
+    )
+    stub = results[0]
+    assert stub["lot_id"] == "BT-999"
+    assert stub["is_container"] is False
+    assert stub["contents"] == []
+

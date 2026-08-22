@@ -15,8 +15,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse
 
 from dataclasses import replace
-from src.intake.manifest import parse_drop, group_into_lots, TriagedPhoto
-from src.assemble import AppraisedPhoto, assemble_lots, NO_COMP
+from src.intake.embed import load_reshoot_edges
+from src.intake.manifest import parse_drop, group_into_lots, LotGroup, TriagedPhoto
+from src.intake.spatial import merge_reshoots, seats_from_groups
+from src.assemble import AppraisedPhoto, assemble_lots, NO_COMP, compile_absentee_email
 from src.bidmath import (
     Lot, CompEstimate, Confidence as BidConfidence, Priority, Decision,
     price_lot, allocate, summarize, ABSENTEE_FEE, mechanic_from_ruling
@@ -27,10 +29,12 @@ from src.appraisal import (
 )
 from src.appraiser import AppraisalEngine
 from src.appraiser.containers import visible_contents
+from src.appraiser.routing import GEMMA_MODEL
 from src.gate import CycleView, render_console
 from src.gate.pitch import build_pitch, curator_voice, _CURATOR_SYSTEM
+from src.gate.voice import write_pitch_voice
 from scripts.run_vertex_pipeline import (
-    REFERENCE_COMPS, OPERATOR_APPROVED, operator_lot_inputs, apply_operator_cap,
+    REFERENCE_COMPS, OPERATOR_APPROVED, apply_operator_cap, apply_operator_fit,
     trusted_lot_flags,
 )
 
@@ -86,6 +90,16 @@ STATE = {
 }
 
 engine = AppraisalEngine()
+
+
+def photo_from_raw(raw_app: dict | None = None, **base) -> AppraisedPhoto:
+    """Map a cached appraisal dict onto AppraisedPhoto, including container fields."""
+    raw = raw_app or {}
+    return AppraisedPhoto(
+        is_container=bool(raw.get("is_container", False)),
+        contents=tuple(raw.get("contents") or ()),
+        **base,
+    )
 
 
 def cached_photo_bytes(lot_id: str) -> bytes | None:
@@ -210,9 +224,11 @@ def get_aug22_state():
             comp_info = REFERENCE_COMPS[lot_tag]
             ident = raw_app.get("identification", comp_info["desc"])
             cat = comp_info["cat"]
-            # The owner's decision carries the fit; the appraiser's own condition
-            # and confidence readings stand, so the console shows both.
-            fit, penalty = operator_lot_inputs(lot_tag, raw_app)
+            # Appraiser readings only here. Owner fit is applied after merge
+            # on the surviving lot_id — stamping BT-181's decline onto the
+            # close-up would let a high-confidence 181 SKIP BT-002.
+            fit = float(raw_app.get("fit_score", 0.50))
+            penalty = float(raw_app.get("condition_penalty", 0.0))
             conf_str = str(raw_app.get("confidence", "low")).lower()
             conf = (AppConfidence(conf_str)
                     if conf_str in AppConfidence._value2member_map_ else AppConfidence.LOW)
@@ -231,7 +247,8 @@ def get_aug22_state():
             penalty = 0.0
             conf = AppConfidence.NONE
 
-        appraised_photos.append(AppraisedPhoto(
+        appraised_photos.append(photo_from_raw(
+            app_pair[1] if app_pair else None,
             photo_id=lot_tag,
             caption=cap,
             is_lot=is_lot,
@@ -256,11 +273,42 @@ def get_aug22_state():
         comps[k] = comp_est
         comps[f"seq:{k}"] = comp_est
 
-    assembled_raw = assemble_lots(appraised_photos, comps=comps)
-    lots = [
-        replace(l, lot_id=l.lot_id.removeprefix("seq:")) if l.lot_id.startswith("seq:") else l
-        for l in assembled_raw
-    ]
+    embed_cache_path = Path("data/aug22_gallery_4160518/embeddings.json")
+    if not embed_cache_path.exists():
+        embed_cache_path = Path("/app/data/aug22_gallery_4160518/embeddings.json")
+
+    # One grouping space: AppraisedPhoto.photo_id, sequences, and edges are BT-00N.
+    # load_vectors accepts seq keys and gallery photo_ids into that space.
+    photo_by_seq = {p["sequence"]: f"BT-{p['sequence']:03d}" for p in photos}
+    gallery_ids = {str(p["photo_id"]): f"BT-{p['sequence']:03d}" for p in photos}
+    sequences = {f"BT-{p['sequence']:03d}": p["sequence"] for p in photos}
+    try:
+        edges = load_reshoot_edges(
+            embed_cache_path, photo_by_seq, sequences, gallery_ids=gallery_ids,
+        )
+    except Exception as e:
+        print(f"[!] Warning: Could not parse embedding cache: {e}")
+        edges = set()
+
+    assembled_raw = assemble_lots(appraised_photos, comps=comps, reshoot_edges=edges)
+    lots = [apply_operator_fit(l) for l in assembled_raw]
+
+    groups = group_into_lots([
+        TriagedPhoto(
+            photo_id=p.photo_id,
+            caption=p.caption,
+            is_lot=p.is_lot,
+            same_lot_as_previous=p.same_lot_as_previous,
+        )
+        for p in appraised_photos
+    ])
+    if edges:
+        groups = merge_reshoots(groups, edges)
+    seats = seats_from_groups(
+        [LotGroup(lot_key=g.lot_key.removeprefix("seq:"), photo_ids=g.photo_ids)
+         for g in groups],
+        sequences,
+    )
 
     captions_map = {l.lot_id: l.caption for l in lots}
 
@@ -321,7 +369,7 @@ def get_aug22_state():
     all_questions = domain_questions + emitted_questions
     queue_res = build_queue(all_questions, STATE["standing_rules"], cap=12)
 
-    return photos, lots, lots, allocated_decisions, summary, queue_res, captions_map
+    return photos, seats, lots, allocated_decisions, summary, queue_res, captions_map
 
 
 @app.get("/health")
@@ -334,12 +382,22 @@ def healthz():
         "project": os.environ.get("GOOGLE_CLOUD_PROJECT", "threebatdrone-prod-420"),
         "version": "2.0.0",
         "vertex_client": bool(engine.client),
+        "gemma_model": GEMMA_MODEL,
+        "gemma_ok": bool(engine.client) and "gemma" in GEMMA_MODEL.lower(),
     }
 
 
 @app.get("/", response_class=HTMLResponse)
 def get_console():
-    photos, _, lots, decisions, summary, queue_res, captions_map = get_aug22_state()
+    photos, seats, lots, decisions, summary, queue_res, captions_map = get_aug22_state()
+    pitch = build_pitch(decisions, captions_map, STATE["standing_rules"])
+    # Unit tests must stay credential-free and fast. Cloud Run has no
+    # PYTEST_CURRENT_TEST, so Gemma runs there (then caches).
+    live_client = None if os.environ.get("PYTEST_CURRENT_TEST") else engine.client
+    cache = Path("/tmp/btf_gemma_voice.json")
+    voice = write_pitch_voice(
+        pitch, client=live_client, cache_path=cache,
+    )
     view = CycleView(
         cycle_id=STATE["cycle_id"],
         auction_date="Saturday, August 22, 2026",
@@ -353,6 +411,8 @@ def get_console():
         deadline="Friday August 21, 8:00 PM CDT",
         illustrative=False,
         lots_total=len(lots),
+        voice=voice,
+        seats=seats,
     )
     return render_console(view, pitch_text=curator_pitch(decisions, captions_map))
 
@@ -527,12 +587,15 @@ def decompose_live(payload: dict = Body(...)):
 
 @app.get("/api/email", response_class=PlainTextResponse)
 def get_absentee_email():
-    email_path = Path("data/aug22_absentee_bid_email.txt")
-    if not email_path.exists():
-        email_path = Path("/app/data/aug22_absentee_bid_email.txt")
-    if email_path.exists():
-        return email_path.read_text()
-    return "Absentee email draft not generated yet."
+    _, _, lots, decisions, _, _, _ = get_aug22_state()
+    return compile_absentee_email(
+        to="info@bluetoadauctions.com",
+        subject="Absentee Bids - August 22 Antique & Estate Auction (Bidder: Richmond General)",
+        auction_date="Saturday, August 22, 2026",
+        venue="200 Elizabeth Lane, Genoa City, WI",
+        lots=lots,
+        decisions=decisions,
+    )
 
 
 if __name__ == "__main__":

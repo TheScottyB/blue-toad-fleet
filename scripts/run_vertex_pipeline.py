@@ -27,7 +27,9 @@ import openpyxl
 from openpyxl.styles import Font, PatternFill
 from openpyxl.utils import get_column_letter
 
+from src.intake.embed import load_reshoot_edges
 from src.intake.manifest import parse_drop, group_into_lots, TriagedPhoto
+from src.intake.spatial import merge_reshoots
 from src.appraisal import (
     Appraisal, Confidence as AppConfidence, Question, QuestionKind,
     StandingRule, build_queue
@@ -35,10 +37,11 @@ from src.appraisal import (
 from src.appraiser import AppraisalEngine
 from src.appraiser.containers import append_visible_contents
 from src.appraiser.routing import TRIAGE_MODEL, estimate_cost_usd
+from src.assemble.email import compile_absentee_email
 from src.bidmath import (
     Lot, CompEstimate, Confidence as BidConfidence, Priority, Decision,
     price_lot, allocate, summarize, ABSENTEE_FEE, snap_to_increment,
-    mechanic_from_ruling, BidMechanic, units_committed, opening_bid
+    mechanic_from_ruling, BidMechanic, units_committed, opening_bid, is_choice_lot,
 )
 
 # Reference valuation comps for approved candidate categories (matching shop pricing bands)
@@ -256,6 +259,24 @@ def operator_lot_inputs(lot_id: str, raw_appraisal: dict) -> tuple[float, float]
     return (0.0 if fit is None else float(fit)), penalty
 
 
+def apply_operator_fit(lot):
+    """Owner fit is keyed by the surviving lot_id, after reshoot merge.
+
+    Stamping fit=None onto a member photo before merge lets a high-confidence
+    close-up (BT-181) zero the surviving lot (BT-002). Apply after union.
+    """
+    lot_id = lot.lot_id.removeprefix("seq:")
+    if lot_id != lot.lot_id:
+        lot = replace(lot, lot_id=lot_id)
+    fit, _ = operator_lot_inputs(lot_id, {
+        "fit_score": lot.fit_score,
+        "condition_penalty": lot.condition_penalty,
+    })
+    if fit == lot.fit_score:
+        return lot
+    return replace(lot, fit_score=fit)
+
+
 def apply_operator_cap(decision):
     """
     Use the max bid the owner set, where he set one.
@@ -370,6 +391,11 @@ def run_pipeline(
         ))
 
     lot_groups = group_into_lots(triaged_photos)
+    cache = Path(data_dir) / "embeddings.json"
+    photo_by_seq = {p["sequence"]: p["photo_id"] for p in photos}
+    sequences = {p["photo_id"]: p["sequence"] for p in photos}
+    edges = load_reshoot_edges(cache, photo_by_seq, sequences)
+    lot_groups = merge_reshoots(lot_groups, edges)
     print(f"[+] Grouped {len(photos)} photos into {len(lot_groups)} distinct lots.")
 
     # 2. Vertex AI Engine Setup
@@ -487,6 +513,7 @@ def run_pipeline(
         if lot_id in REFERENCE_COMPS:
             comp_info = REFERENCE_COMPS[lot_id]
             app_pair = appraisal_by_lot.get(lot_id)
+            raw_app = app_pair[1] if app_pair else {}
             if app_pair:
                 _, raw_app = app_pair
             else:
@@ -498,6 +525,11 @@ def run_pipeline(
                 raw_app.get("container_decomposition"),
             )
 
+            per_unit = is_choice_lot(ident, caption)
+            contents = raw_app.get("contents")
+            if raw_app.get("is_container") and contents:
+                ident = f"{ident}: {', '.join(contents)}"
+
             comp_est = CompEstimate(
                 low=comp_info["low"],
                 high=comp_info["high"],
@@ -505,14 +537,17 @@ def run_pipeline(
                 confidence=comp_info["conf"],
             )
 
-            # No ruling on file and no ruling asked for is a plain single lot;
-            # only a ruling that EXISTS and cannot be read is UNKNOWN. Passing
-            # None straight through would flag all 415 lots as needing a ruling
-            # nobody ever requested.
+            # A ruling on file settles the mechanic. Caption detection only
+            # supplies the standing default (CHOICE, take 1) when nobody ruled.
+            # No ruling and no detection is a plain single lot — passing None
+            # through mechanic_from_ruling would flag all 415 lots as UNKNOWN.
             ruling = OPERATOR_APPROVED.get(lot_id, {}).get("ruling")
-            mech, units, wanted = (
-                mechanic_from_ruling(ruling) if ruling
-                else (BidMechanic.STRAIGHT, 1, None))
+            if ruling:
+                mech, units, wanted = mechanic_from_ruling(ruling)
+            elif per_unit:
+                mech, units, wanted = BidMechanic.CHOICE, 1, 1
+            else:
+                mech, units, wanted = BidMechanic.STRAIGHT, 1, None
             lot_obj = Lot(
                 lot_id=lot_id,
                 caption=ident,
@@ -525,13 +560,20 @@ def run_pipeline(
             lots.append(lot_obj)
             decisions.append(apply_operator_cap(price_lot(lot_obj)))
         else:
+            ident = caption or f"Uncaptioned lot (Photo #{primary_photo['sequence']})"
+            per_unit = is_choice_lot(ident, caption)
+            if per_unit:
+                mech, units, wanted = BidMechanic.CHOICE, 1, 1
+            else:
+                mech, units, wanted = BidMechanic.STRAIGHT, 1, None
             lot_obj = Lot(
                 lot_id=lot_id,
-                caption=caption or f"Uncaptioned lot (Photo #{primary_photo['sequence']})",
+                caption=ident,
                 category="general estate",
                 fit_score=0.20,
                 condition_penalty=0.10,
                 comp=CompEstimate(low=None, high=None, source_count=0, confidence=BidConfidence.NONE),
+                mechanic=mech, unit_count=units, units_wanted=wanted,
             )
             lots.append(lot_obj)
             decisions.append(price_lot(lot_obj))
@@ -552,84 +594,15 @@ def run_pipeline(
     # 6. Generate Absentee Email Draft
     approved_bids = [d for d in allocated_decisions if d.allocated and d.max_bid]
     email_draft_path = Path(data_dir).parent / "aug22_absentee_bid_email.txt"
-    email_lines = [
-        "TO: info@bluetoadauctions.com",
-        "SUBJECT: Absentee Bids - August 22 Antique & Estate Auction (Bidder: Richmond General)",
-        "DATE: Friday, August 21, 2026 (Before 8:00 PM CDT Cutoff)",
-        "",
-        "Blue Toad Auctions,",
-        "",
-        "Please register the following absentee proxy bids for the Saturday, August 22, 2026 auction",
-        "at 200 Elizabeth Lane, Genoa City, WI.",
-        "",
-        "Bidder Info:",
-        "  Name: Richmond General (Scott)",
-        "  Resale Certificate: On file (Wisconsin Tax-Exempt)",
-        "  Terms: 15% Absentee Buyer Fee acknowledged (Credit Card on File)",
-        "",
-        "-" * 89,
-    ]
-
-    # One block per bid rather than a fixed-width table. A clerk has to match
-    # each line to a physical lot on Saturday morning, and the table truncated
-    # descriptions mid-word at 48 characters -- "storage box containing bulk"
-    # is a bid on an unidentified object.
-    for i, d in enumerate(approved_bids, 1):
-        lot_obj = next(l for l in lots if l.lot_id == d.lot_id)
-        start_bid = opening_bid(d.max_bid)
-        description = " ".join((lot_obj.caption or d.category).split())
-        wrapped = textwrap.wrap(description, width=78) or [description]
-        email_lines.append(f"{i:>2}) [{d.lot_id}]  {wrapped[0]}")
-        email_lines.extend(f"      {line}" for line in wrapped[1:])
-        # The bid line has to state the MECHANIC, not just the number. A lot
-        # sold times-the-money charges the max once per unit, so a line reading
-        # "MAX $25.00" beside a sheet total of $285.00 is off by $50 and the
-        # clerk cannot see why. This is the sentence the operator typed by hand
-        # into the revised sheet on cutoff day; the system writes it now.
-        if d.mechanic is BidMechanic.TIMES_THE_MONEY and d.unit_count > 1:
-            email_lines.append(
-                f"      START ${start_bid:,.2f}   MAX ${d.max_bid:,.2f} PER UNIT "
-                f"x {d.unit_count} = ${d.committed_max:,.2f} TOTAL")
-            email_lines.append(
-                f"      >> Times the money. I am taking ALL {d.unit_count}. "
-                f"Please do NOT limit me to one unit on this lot. <<")
-        elif d.mechanic is BidMechanic.CHOICE and d.unit_count > 1:
-            k = units_committed(d.mechanic, d.unit_count, d.units_wanted)
-            email_lines.append(
-                f"      START ${start_bid:,.2f}   MAX ${d.max_bid:,.2f} PER UNIT "
-                f"x {k} of {d.unit_count} = ${d.committed_max:,.2f} TOTAL")
-            email_lines.append(
-                f"      >> Buyer's choice. Please take {k} of the "
-                f"{d.unit_count} at that price. <<")
-        else:
-            email_lines.append(
-                f"      START ${start_bid:,.2f}   MAX ${d.max_bid:,.2f}")
-        email_lines.append("")
-
-    email_lines.extend([
-        "-" * 89,
-        f"TOTAL COMMITTED PROXY BIDS: ${sheet_summary.committed_max:,.2f} (${sheet_summary.committed_all_in:,.2f} all-in w/ 15% fee)",
-        "",
-        "Special Instructions:",
-        # Derived, not hardcoded. This footer used to state a blanket one-unit
-        # rule 25 lines below a per-lot line reading ">> I am taking ALL 3 <<",
-        # handing the clerk two contradictory directives on the same lot with
-        # $50 riding on which one he followed. The operator's own revised sheet
-        # solved it by naming the exception and adding the word OTHER; the
-        # generator does that now, from the sheet rather than from a constant.
-        *[f"  - {d.lot_id} is an exception to the one-unit rule: take "
-          f"{units_committed(d.mechanic, d.unit_count, d.units_wanted)} of the "
-          f"{d.unit_count} at the per-unit price."
-          for d in approved_bids
-          if units_committed(d.mechanic, d.unit_count, d.units_wanted) > 1],
-        "  - For any OTHER 'Buyer's Choice / Times the Money' shelf lot, max quantity is 1 unit.",
-        "  - Standard $5.00 bidding increments applied.",
-        "  - Please confirm receipt of these absentee bids by reply email.",
-        "",
-        "Thank you,",
-        "Richmond General",
-    ])
-    email_draft_path.write_text("\n".join(email_lines))
+    email_text = compile_absentee_email(
+        to="info@bluetoadauctions.com",
+        subject="Absentee Bids - August 22 Antique & Estate Auction (Bidder: Richmond General)",
+        auction_date="Saturday, August 22, 2026",
+        venue="200 Elizabeth Lane, Genoa City, WI",
+        lots=lots,
+        decisions=allocated_decisions,
+    )
+    email_draft_path.write_text(email_text)
     print(f"\n[✓] Compiled Final Sealed Absentee Bid Email Draft: {email_draft_path}")
 
     # 7. Generate Excel Sourcing Sheet
