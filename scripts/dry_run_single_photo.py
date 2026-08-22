@@ -221,7 +221,7 @@ def _photo_result(photo_id, caption, img, img_url, panel_src, img_src, total,
 
 
 def run(listing, seq, data_dir, out_dir, force_appraise=False,
-        do_pricing=True, offline=False, budget_cap=600.0, auto_send_threshold=0.0,
+        do_pricing=True, offline=False, budget_cap=1000.0, auto_send_threshold=0.0,
         source="auctionzip", standing_rules=None):
     """
     `standing_rules` defaults to the corpus runner's DEFAULT_STANDING_RULES, and
@@ -307,17 +307,11 @@ def run(listing, seq, data_dir, out_dir, force_appraise=False,
         print("\n[STOP] Triage says this is not a lot. The corpus run drops it here.")
         return _write(out_dir, seq, report, None, "not a lot")
 
-    # ------------------------------- 3b. the gate the corpus run applies
+    # ------------------------------- 3b. triage note (not a coverage gate)
     worth = bool(verdict.get("worth_appraising", True))
-    if not worth and not force_appraise:
-        print(f"\n[STOP] triage says worth_appraising=false — run_vertex_pipeline.py:159 "
-              f"drops it here.\n       Re-run with --force-appraise to exercise stages 4-7 anyway.")
-        report["stopped_at"] = "worth_appraising=false (production behaviour)"
-        return _write(out_dir, seq, report, None, "not worth appraising")
     if not worth:
-        print(f"\n[!] triage says worth_appraising=false; --force-appraise overrides it.")
-        print("    Stages 4-7 below do NOT reflect what a live cycle would do with this photo.")
-        report["forced_past_triage"] = True
+        print("\n[!] triage says worth_appraising=false; continuing — it is not a coverage gate.")
+        report["worth_appraising"] = False
 
     # -------------------------------------------------------- 4. appraisal
     bar(4, f"STAGE 2 APPRAISAL — {APPRAISAL_MODEL} (LIVE)")
@@ -461,8 +455,7 @@ def main():
                     help="cached drop, used for fallback and byte comparison")
     ap.add_argument("--out", default="data/dryruns", help="where artifacts are written")
     ap.add_argument("--force-appraise", action="store_true",
-                    help="run stages 4-7 even when triage says worth_appraising=false "
-                         "(the corpus run would stop; results will NOT match a live cycle)")
+                    help="deprecated no-op: worth_appraising no longer stops the dry run")
     ap.add_argument("--no-pricing", action="store_true",
                     help="skip the grounded pricing calls (they are the expensive part)")
     ap.add_argument("--source", choices=["auctionzip", "estatesales"], default="auctionzip",
@@ -475,7 +468,7 @@ def main():
                     help="appraise with NO operator standing rules. Diagnostic only: "
                          "it changes the verdict (jewelry fit 0.85 -> 0.2), it is not "
                          "what a live cycle does")
-    ap.add_argument("--budget-cap", type=float, default=600.0)
+    ap.add_argument("--budget-cap", type=float, default=1000.0)
     args = ap.parse_args()
 
     run(listing=args.listing, seq=args.seq, data_dir=args.data_dir, out_dir=args.out,

@@ -266,16 +266,8 @@ def select_appraisal_candidates(
     """
     Which lots earn a slow, expensive look.
 
-    Stage 1 runs a cheap model over every photograph and says whether each is
-    worth appraising. Two rules sit on top of it:
-
-    A photo with no triage verdict is appraised anyway. An untriaged photo is
-    unknown, not junk, and silently dropping it would make the coverage claim a
-    lie in exactly the cases nobody checks.
-
-    A lot the owner selected is appraised whatever triage thought. The costume
-    jewellery he buys for the storefront triages at 0.1 — he overrules that
-    knowingly, and a cheaper model upstream must not undo his decision.
+    Every photo is a candidate. Triage may still emit worth_appraising; it does
+    not decide coverage. always_include remains accepted but is no longer a gate.
     """
     verdicts = {t.get("photo_id"): t for t in triage_results}
     category_hints = category_hints or {}
@@ -283,9 +275,6 @@ def select_appraisal_candidates(
     for p in sorted(photos, key=lambda x: x.get("sequence", 0)):
         lot_id = f"BT-{p.get('sequence', 0):03d}"
         verdict = verdicts.get(p.get("photo_id"))
-        if verdict is not None and not verdict.get("worth_appraising", True):
-            if lot_id not in always_include:
-                continue
         summary = (verdict or {}).get("summary", "")
         out.append({
             "lot_id": lot_id,
