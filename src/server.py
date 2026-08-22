@@ -8,6 +8,7 @@ automated absentee email generator, and live Vertex AI appraisal execution on Go
 
 import json
 import os
+import sys
 from pathlib import Path
 from typing import Optional
 from fastapi import FastAPI, HTTPException, Body, Header
@@ -385,6 +386,7 @@ def healthz():
         "gemma_ok": bool(engine.client) and "gemma" in GEMMA_MODEL.lower(),
         "memory_backend": getattr(RULES, "backend_name", "unknown"),
         "memory_durable": bool(getattr(RULES, "durable", False)),
+        "python": sys.version.split()[0],
     }
 
 

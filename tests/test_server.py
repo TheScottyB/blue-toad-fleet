@@ -16,6 +16,7 @@ def test_health_endpoints(client):
     assert r1.json()["status"] == "healthy"
     assert r1.json()["service"] == "blue-toad-fleet"
     assert r1.json()["memory_backend"] in {"memory", "file", "firestore"}
+    assert r1.json()["python"].startswith("3.14")
 
     r2 = client.get("/healthz")
     assert r2.status_code == 200
