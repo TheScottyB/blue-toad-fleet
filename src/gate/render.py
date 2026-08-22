@@ -171,7 +171,7 @@ def _pitch_block(pitch_text: str = "", voice: PitchVoice | None = None) -> str:
     Invented figures never reach here — write_pitch_voice / curator_voice
     already discarded them.
     """
-    if voice is not None:
+    if voice is not None and not voice.fallback:
         badge = "template fallback" if voice.fallback else "Gemma 4 · Vertex AI"
         push = (f"<br><b>Pushback:</b> {escape(voice.pushback)}"
                 if voice.pushback else "")
