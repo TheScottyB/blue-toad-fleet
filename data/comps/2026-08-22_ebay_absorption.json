@@ -1,0 +1,48 @@
+{
+  "recorded_at": "2026-08-22T00:40:00-05:00",
+  "source": "eBay Seller Hub > Research > Product research, authenticated as richmondgeneral",
+  "method": "docs/PLAYBOOK-ebay-velocity.md",
+  "sold_window": "2025-08-21 to 2026-08-21 (startDate/endDate epoch ms; dayRange alone does NOT apply)",
+  "caveat": "Live rolling data. These figures CANNOT be reproduced later — the 365-day window moves daily and active counts change hourly. This file is the record of what the page showed at recorded_at, not a reproducible query result.",
+  "lots": [
+    {
+      "lot_id": "BT-235", "query": "1933 Century of Progress bottle",
+      "sold_units_365d": 46, "sold_listings_365d": 45, "active_now": 46,
+      "absorption": 1.00, "months_of_supply": 12.0,
+      "avg_sold": 24.11, "sold_range": [4.99, 105.00], "avg_shipping": 8.83,
+      "landed": 32.94, "free_shipping_pct": 7,
+      "pages_walked": "offset 0 only (45 rows, short page = complete)",
+      "noncomp_note": "active set contains bottle openers, key fobs and other non-bottle souvenirs; count not finalised"
+    },
+    {
+      "lot_id": "BT-041", "query": "Edison cylinder records lot",
+      "sold_units_365d": ">=450", "active_now": 233,
+      "absorption": ">=1.93", "months_of_supply": "<=6.2",
+      "avg_sold": 46.39, "sold_range": [0.99, 550.00], "avg_shipping": 14.04,
+      "landed": 60.43, "free_shipping_pct": 12,
+      "pages_walked": "offsets 0,100,200,400 all full (50 rows each); walk NOT completed",
+      "noncomp_note": "QUERY TOO BROAD. Catches single cylinders and Brown Wax lots ($102-$112) alongside container lots ($29-$43). The 0.99-550.00 range is the tell. For an 11-12 canister Gold Moulded / Blue Amberol lot the honest price band is the $29-$43 container cluster, NOT the $46.39 average. Absorption survives the broad query; price does not."
+    },
+    {
+      "lot_id": "BT-189", "query": "Pink Floyd 1966 concert poster", "on_sheet": false,
+      "sold_units_365d": 15, "sold_listings_365d": 12, "active_now": 20,
+      "absorption": 0.75, "months_of_supply": 16.0,
+      "avg_sold": 22.12, "sold_range": [6.98, 65.00], "avg_shipping": 6.02,
+      "landed": 28.14, "free_shipping_pct": 35,
+      "pages_walked": "offset 0 only (12 rows, short page = complete)",
+      "finding": "Zero originals sold in 365 days. Every comp is a reproduction: 'Giclee Print', 'Home Art Decor', '2nd print Handbill', four at 11x17 repro size. Confirms the appraiser's 'likely a later reproduction or fantasy print'. The $25 hint is 89% of the $28.14 landed comp — a good call, not a low one.",
+      "noncomp_note": "3 of 20 active are not posters at all: two t-shirts and a holofoil trading card in a toploader"
+    },
+    {
+      "lot_id": "BT-002", "query": null, "comped": false,
+      "reason": "No searchable identity. 'Assorted estate costume jewelry' has no keyword that returns comparable trays rather than the whole costume-jewelry market. This is the largest unpriced exposure on the sheet and the one case the Seller Hub method does not reach."
+    }
+  ],
+  "reference_non_lot": {
+    "query": "Boston Champion pencil sharpener",
+    "sold_units_365d": 295, "sold_listings_365d": 285, "active_now": 138,
+    "absorption": 2.14, "months_of_supply": 5.6,
+    "avg_sold": 21.44, "avg_shipping": 10.44, "landed": 31.88,
+    "pages_walked": "all 6 (0,50,100,150,200,250) — complete, no dedup"
+  }
+}
