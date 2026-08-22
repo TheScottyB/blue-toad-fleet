@@ -70,7 +70,8 @@ class AppraisalEngine:
 
     @staticmethod
     def will_use_cache(cache_path: Optional[Path | str], force_refresh: bool,
-                       required_ids: Optional[set[str]] = None) -> bool:
+                       required_ids: Optional[set[str]] = None,
+                       required_fields: Optional[set[str]] = None) -> bool:
         """
         Whether a batch with these arguments will serve from cache.
 
@@ -100,6 +101,12 @@ class AppraisalEngine:
                     if isinstance(r, dict)}
             if required_ids - have:
                 return False
+        if required_fields:
+            for row in cached:
+                if not isinstance(row, dict):
+                    return False
+                if any(row.get(f) in (None, "") for f in required_fields):
+                    return False
         return True
 
     def triage_photo(
@@ -312,9 +319,6 @@ class AppraisalEngine:
                     "summary": caption[:40] if caption else "Uncaptioned item",
                     "fit_score": 0.20,
                     "worth_appraising": False,
-                    "surface_signature": "other",
-                    "zone": "unknown",
-                    "margin_neighbors": [],
                     "error": str(e),
                 }
 

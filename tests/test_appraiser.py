@@ -67,10 +67,15 @@ class TestSchemas:
         q = APPRAISAL_SCHEMA["properties"]["questions"]["items"]
         assert set(q["required"]) == set(q["properties"])
 
-    def test_triage_schema_requires_spatial_fields(self):
+    def test_triage_schema_does_not_require_spatial_fields(self):
+        """Spatial is listing-level (Step 0), not per-photo triage.
+
+        Requiring zone on TRIAGE_SCHEMA made the 462-row cache a silent miss:
+        every photo landed UNKNOWN and the graph did nothing.
+        """
         for key in ("surface_signature", "zone", "margin_neighbors"):
-            assert key in TRIAGE_SCHEMA["properties"]
-            assert key in TRIAGE_SCHEMA["required"]
+            assert key not in TRIAGE_SCHEMA["properties"]
+            assert key not in TRIAGE_SCHEMA["required"]
 
     def test_appraisal_schema_itemizes_containers(self):
         assert "is_container" in APPRAISAL_SCHEMA["properties"]
@@ -177,8 +182,3 @@ class TestSystemPrompts:
         assert "Richmond, Illinois" in APPRAISAL_SYSTEM
         assert "Genoa City, Wisconsin" in APPRAISAL_SYSTEM
 
-    def test_triage_system_asks_for_surface_and_zone(self):
-        from src.appraiser.prompts import TRIAGE_SYSTEM
-        assert "blue" in TRIAGE_SYSTEM.lower() and "vinyl" in TRIAGE_SYSTEM.lower()
-        assert "plywood" in TRIAGE_SYSTEM.lower()
-        assert "concrete" in TRIAGE_SYSTEM.lower()

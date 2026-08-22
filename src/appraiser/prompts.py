@@ -35,11 +35,7 @@ You will see one gallery photo and its caption. Decide, quickly:
 
 Be decisive and cheap. You are a first pass, not the final word. When a photo is
 ambiguous, set worth_appraising true and let the next stage sort it out — a false
-positive costs a fraction of a cent, a false negative loses the lot entirely.
-
-Also name the background surface (blue vinyl tablecloth, raw pine plywood, concrete slab, or other), the physical room zone (north back wall, west side tables, center island 1, center island 2, east side tables, south under-table, or unknown), and any neighboring items visible only in the photo's margins.
-Emit surface_signature as one of: blue_vinyl, pine_plywood, concrete, other.
-Emit zone as one of: north_back_wall, west_side_tables, center_island_1, center_island_2, east_side_tables, south_under_table, unknown."""
+positive costs a fraction of a cent, a false negative loses the lot entirely."""
 
 APPRAISAL_SYSTEM = f"""You are an appraiser examining a lot for a resale buyer.
 

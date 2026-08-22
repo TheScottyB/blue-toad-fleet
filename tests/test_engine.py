@@ -227,6 +227,23 @@ class TestTheCacheMustCoverWhatWasAsked:
         cache.write_text('[{"lot_id": "BT-001"}]')
         assert AppraisalEngine.will_use_cache(cache, force_refresh=False)
 
+    def test_a_cache_missing_required_fields_is_not_used(self, tmp_path):
+        """462 triage rows predating zone/surface would otherwise serve as a hit
+        and every photo would land Zone.UNKNOWN with nothing erroring."""
+        cache = tmp_path / "triage_results.json"
+        cache.write_text('[{"photo_id": "fp1", "is_lot": true}]')
+        assert not AppraisalEngine.will_use_cache(
+            cache, force_refresh=False, required_fields={"zone", "surface_signature"})
+
+    def test_a_cache_with_required_fields_is_used(self, tmp_path):
+        cache = tmp_path / "triage_results.json"
+        cache.write_text(
+            '[{"photo_id": "fp1", "zone": "center_island_1", '
+            '"surface_signature": "blue_vinyl"}]'
+        )
+        assert AppraisalEngine.will_use_cache(
+            cache, force_refresh=False, required_fields={"zone", "surface_signature"})
+
     def test_the_batch_refuses_a_short_cache_rather_than_serving_it(self, monkeypatch, tmp_path):
         """
         A partial cache must not look like a completed run. With no credentials
