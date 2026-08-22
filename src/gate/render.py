@@ -135,10 +135,6 @@ def _seat_html(s: Seat) -> str:
     )
 
 
-# Holding-strip test reads 800 chars after lot_id; compact chips sit closer.
-_SEAT_GUARD = "<!-- " + ("." * 660) + " -->"
-
-
 def _row_for(v: CycleView | None, zone: Zone) -> str:
     if not v:
         return ""
@@ -148,7 +144,7 @@ def _row_for(v: CycleView | None, zone: Zone) -> str:
         return ""
     return (
         '<div class="seat-row">'
-        + _SEAT_GUARD.join(_seat_html(s) for s in seats)
+        + "".join(_seat_html(s) for s in seats)
         + "</div>"
     )
 
@@ -160,7 +156,7 @@ def _holding_strip(v: CycleView | None) -> str:
     if not unplaced:
         return ""
     unplaced.sort(key=lambda s: s.walk_index)
-    body = _SEAT_GUARD.join(_seat_html(s) for s in unplaced)
+    body = "".join(_seat_html(s) for s in unplaced)
     return (
         '<div class="holding" id="unplaced">'
         '<div class="map-title">Not yet placed</div>'

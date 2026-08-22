@@ -202,6 +202,32 @@ class TestTheCuratorBanner:
         assert "Curator" not in h
 
 
+def _slice_between(html: str, start: str, end: str) -> str:
+    i = html.find(start)
+    j = html.find(end, i + len(start)) if i >= 0 else -1
+    if i < 0 or j < 0:
+        return ""
+    return html[i:j]
+
+
+def _holding_strip_html(html: str) -> str:
+    m = re.search(
+        r'<div class="holding" id="unplaced">.*?</div></div>',
+        html,
+        re.DOTALL,
+    )
+    return m.group(0) if m else ""
+
+
+def _seat_el(html: str, lot_id: str) -> str:
+    m = re.search(
+        rf'<div class="seat"><b>{re.escape(lot_id)}</b>.*?</div>',
+        html,
+    )
+    assert m is not None, f"{lot_id} seat missing from slice"
+    return m.group(0)
+
+
 class TestShowroomMap:
     def test_topology_title_always_renders(self):
         assert "Pole Barn Showroom Topology" in render_console(_view())
@@ -220,21 +246,25 @@ class TestShowroomMap:
         ]
         h = render_console(v)
         assert "not yet placed" in h.lower() or "unplaced" in h.lower()
-        assert "BT-002" in h and "BT-087" in h
-        # one seat, two thumbs
-        idx = h.find("BT-002")
-        chunk = h[idx:idx + 800]
-        assert "838421481" in chunk and "838424282" in chunk
-        assert "838422448" not in chunk
+        strip = _holding_strip_html(h)
+        assert "BT-002" in strip and "BT-087" in strip
+        seat = _seat_el(strip, "BT-002")
+        assert "8421481" in seat and "8424282" in seat
+        assert "8422448" not in seat
+        assert "838422448" not in seat
 
     def test_zoned_seat_sits_on_its_row_not_only_the_strip(self):
         v = _view()
         v.seats = [
-            Seat(lot_id="BT-001", zone=Zone.CENTER_ISLAND_1, walk_index=1,
+            Seat(lot_id="BT-099", zone=Zone.CENTER_ISLAND_1, walk_index=1,
                  photo_ids=("p1",)),
         ]
         h = render_console(v)
-        assert "BT-001" in h
+        island1 = _slice_between(
+            h, "<b>Island Table 1:</b>", "<b>Island Table 2:</b>")
+        assert "BT-099" in island1
+        assert _seat_el(island1, "BT-099")
+        assert "BT-099" not in _holding_strip_html(h)
 
 
 class TestStructuredVoiceBanner:
