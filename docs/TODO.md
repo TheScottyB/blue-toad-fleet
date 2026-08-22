@@ -181,8 +181,25 @@ to be softened to match the code. The code comes up to meet it.
       Working URL shape:
       `ebay.com/sh/research?marketplace=EBAY-US&keywords=<q>&dayRange=<n>&categoryId=0&offset=0&limit=50&tabName=SOLD`
 
-      **Not yet measured:** the ACTIVE count for this or any query, so no real
-      absorption number has been computed end to end.
+      **Measured end to end 2026-08-21/22 — see `docs/PLAYBOOK-ebay-velocity.md`.**
+      Boston Champion pencil sharpener: 285 sold listings over
+      `Aug 21 2025 – Aug 21 2026`, 138 active now, **absorption 2.07** (2.09
+      comp-only, 5.8 months of supply). Filtering non-comps moves absorption by
+      1% because the junk is symmetric across numerator and denominator — so
+      filter for PRICE, not for velocity.
+
+      Three mechanical gotchas are written up in the playbook, all of which
+      silently produce a wrong number rather than an error: `dayRange` sets only
+      the dropdown label (use `startDate`/`endDate` epoch ms, or understate by
+      12x), `limit>50` renders zero rows on SOLD, and pagination ends with a
+      short page and no next marker.
+
+      `Total sold` is UNITS, not a lot size — `avg_sold_price x total_sold =
+      item_sales` reconciles exactly. Sum it; do not count rows (rows undercount
+      by ~5% here).
+
+      **Still open:** a clean full units walk. The 285 listings and 138 active
+      are directly verified; `~300 units` is extrapolated from a 192-row sample.
 
       **Boundary.** It is an authenticated seller account. Read-only research
       only; never touch Listings, Orders, Marketing, Payments or Messages from
