@@ -33,6 +33,7 @@ from typing import Iterable, Mapping
 from src.assemble.email import compile_absentee_email
 from src.bidmath import BidMechanic, CompEstimate, Confidence, Lot, is_choice_lot
 from src.intake.manifest import TriagedPhoto, group_into_lots
+from src.intake.spatial import merge_reshoots
 
 _CONFIDENCE_RANK = {
     Confidence.NONE: 0,
@@ -71,11 +72,16 @@ class AppraisedPhoto:
 def assemble_lots(
     appraised: Iterable[AppraisedPhoto],
     comps: Mapping[str, CompEstimate] | None = None,
+    reshoot_edges: set | None = None,
 ) -> list[Lot]:
     """Collapse per-photo appraisals into one `Lot` per physical lot.
 
     `comps` is keyed by lot id — the auctioneer's lot number where the caption
     carried one. Missing keys are expected, not an error.
+
+    `reshoot_edges` are mutual non-walk nearest-neighbor pairs already computed
+    upstream; assemble does not load vectors. When present, groups linked by an
+    edge are unioned before Lot construction.
     """
     appraised = list(appraised)
     comps = comps or {}
@@ -90,6 +96,8 @@ def assemble_lots(
         )
         for p in appraised
     ])
+    if reshoot_edges:
+        groups = merge_reshoots(groups, reshoot_edges)
 
     lots: list[Lot] = []
     for group in groups:

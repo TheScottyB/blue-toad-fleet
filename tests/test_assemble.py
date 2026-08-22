@@ -143,6 +143,30 @@ class TestTheWholePoint:
         assert len(lots) == 1
 
 
+class TestReshootMerge:
+    """Non-walk returns merge via edges after group_into_lots, not via triage."""
+
+    P2, P181, P87 = "838421481", "838424282", "838422448"
+
+    def test_reshoot_edges_union_two_lots_leave_third(self):
+        # Captions without lot numbers → seq:photo_id keys; triage keeps three
+        # separate groups (same_lot_as_previous=False on all).
+        lots = assemble_lots(
+            [
+                ap(self.P2, "trays front", same_lot_as_previous=False),
+                ap(self.P181, "trays close-up", same_lot_as_previous=False),
+                ap(self.P87, "unrelated shelf", same_lot_as_previous=False),
+            ],
+            reshoot_edges={frozenset({self.P2, self.P181})},
+        )
+        assert len(lots) == 2
+        by_id = {lot.lot_id: lot for lot in lots}
+        assert f"seq:{self.P2}" in by_id
+        assert f"seq:{self.P87}" in by_id
+        assert f"seq:{self.P181}" not in by_id
+        assert by_id[f"seq:{self.P2}"].unit_count == 1
+
+
 class TestContainerDecomposition:
     def test_container_contents_reach_the_lot_caption(self):
         lots = assemble_lots([
