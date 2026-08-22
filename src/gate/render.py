@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from html import escape
 
 from src.appraisal import QueueResult
-from src.bidmath import Decision, Priority, SheetSummary
+from src.bidmath import units_committed, Decision, Priority, SheetSummary
 
 
 @dataclass
@@ -250,13 +250,23 @@ def _sheet_block(v: CycleView) -> str:
     out = [f"<h2>The sheet &mdash; {v.summary.allocated} bid(s) allocated</h2>"]
     order = {Priority.A: 0, Priority.B: 1, Priority.C: 2, Priority.SKIP: 3}
     for d in sorted(v.decisions, key=lambda x: (order[x.priority],
-                                                -(x.all_in or 0))):
+                                                -(x.committed_all_in or 0))):
         cls = "refused" if d.needs_human_pricing else _CLS[d.priority]
         caption = v.captions.get(d.lot_id, "")
         money, flag = "", ""
         if d.max_bid is not None:
-            money = (f'<span class="money">max ${d.max_bid:,.2f} '
-                     f'&middot; all-in ${d.all_in:,.2f}</span>')
+            # A card reading "all-in $28.75" for an $86.25 commitment is what
+            # the operator approves against, on a page whose own header says
+            # $327.75. Show the commitment whenever it differs from one unit.
+            _units = units_committed(d.mechanic, d.unit_count, d.units_wanted)
+            if _units > 1:
+                money = (f'<span class="money">max ${d.max_bid:,.2f}/unit '
+                         f'&times;{_units} &middot; committed '
+                         f'${d.committed_max:,.2f} &middot; all-in '
+                         f'${d.committed_all_in:,.2f}</span>')
+            else:
+                money = (f'<span class="money">max ${d.max_bid:,.2f} '
+                         f'&middot; all-in ${d.all_in:,.2f}</span>')
             if d.allocated and d.auto_send:
                 flag = _tag("auto-send", "mem")
             elif d.allocated:

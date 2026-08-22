@@ -138,3 +138,94 @@ class TestNumberParsing:
     def test_an_absurd_multiplier_is_not_trusted(self):
         """A lot with 900 units is a parse error, not an auction lot."""
         assert mechanic_from_ruling("x900 bid")[0] is BidMechanic.UNKNOWN
+
+
+class TestItDoesNotReadMoneyAsAMultiplier:
+    """The operator's own bid format contains "x N". So does every dollar figure
+    beside it, and the multiplier pattern was matching the wrong one.
+
+    "MAX $25 x 3 TRAYS" parsed as 25 units, priced at $5.00 each, and wrote
+    ">> I am taking ALL 50 <<" into an outgoing draft with every honest-refusal
+    flag reading clean. A quantity nobody stated, sent to the auction house as a
+    commitment.
+    """
+
+    @pytest.mark.parametrize("text", [
+        "bid to $17.50 x 2 trays", "$7.25 x 3", "$30 x 2",
+        "MAX $25 x 3 TRAYS", "MAX $25.00 PER TRAY x 3 TRAYS = $75.00 TOTAL",
+    ])
+    def test_a_dollar_figure_is_never_the_unit_count(self, text):
+        mech, n, _ = mechanic_from_ruling(text)
+        assert n != 25 and n != 30 and n != 50 and n != 17 and n != 7, \
+            f"{text!r} -> {n} units"
+
+    def test_the_operators_own_bid_line_reads_three_units_or_refuses(self):
+        mech, n, _ = mechanic_from_ruling("MAX $25.00 PER TRAY x 3 TRAYS")
+        assert mech is BidMechanic.UNKNOWN or n == 3
+
+    def test_dimensions_are_not_unit_counts(self):
+        assert mechanic_from_ruling("buyer's choice of the 8 x 10 frames",
+                                    units_available=4)[1] != 8
+
+    def test_a_real_multiplier_still_reads(self):
+        assert mechanic_from_ruling("that is a x3 bid")[:2] == (
+            BidMechanic.TIMES_THE_MONEY, 3)
+
+
+class TestNegationIsNotAgreement:
+    """A refusal that names the mechanic was read as affirming it."""
+
+    @pytest.mark.parametrize("text", [
+        "No, that is not a x3 bid.",
+        "It is NOT times the money, take all 3.",
+        "It is not buyers choice.",
+        "that isn't a choice lot",
+        "no, not sold as a single lot",
+    ])
+    def test_a_denial_never_establishes_the_thing_denied(self, text):
+        assert mechanic_from_ruling(text, units_available=3)[0] is BidMechanic.UNKNOWN
+
+
+class TestAnUnreadableRulingRefusesToPrice:
+    """UNKNOWN must not fail open into a priceable one-unit bid.
+
+    The parser cannot establish a count, so it returned 1 — and `price_lot`'s
+    refusal required `unit_count > 1`, making it dead code. Every unreadable
+    ruling became a clean, allocated, potentially auto-sent bid. The module
+    docstring promised UNKNOWN "budgets every unit and asks for a ruling"; it
+    budgeted one unit and asked nothing.
+    """
+
+    @pytest.mark.parametrize("text", [
+        "times the money", "three times the money", "yes", "x0 bid",
+        "it's buyer's choice or sold as a single lot, not sure",
+    ])
+    def test_every_unreadable_ruling_refuses(self, text):
+        from src.bidmath import CompEstimate, Confidence, Lot, price_lot
+        mech, n, k = mechanic_from_ruling(text)
+        assert mech is BidMechanic.UNKNOWN
+        d = price_lot(Lot(lot_id="BT-900", caption="", category="railroad",
+                          fit_score=0.85, condition_penalty=0.0,
+                          comp=CompEstimate(100.0, 140.0, 3, Confidence.HIGH),
+                          mechanic=mech, unit_count=n, units_wanted=k))
+        assert d.max_bid is None, f"{text!r} priced at {d.max_bid}"
+        assert d.needs_mechanic_ruling is True
+
+
+class TestChoiceWithNoCountDoesNotInventOne:
+    """Both production callers pass no units_available, and CHOICE fabricated
+    unit_count=1 — which suppressed price_lot's divide-the-comp-down step and
+    made the whole group's value the ceiling for a single unit. Five times the
+    per-unit ceiling, in the overbid direction.
+    """
+
+    def test_choice_harvests_a_stated_count_like_times_the_money_does(self):
+        assert mechanic_from_ruling("buyer's choice, take all five")[:2] == (
+            BidMechanic.CHOICE, 5)
+
+    def test_choice_with_no_count_anywhere_refuses(self):
+        assert mechanic_from_ruling("buyer's choice, take 3")[0] is BidMechanic.UNKNOWN
+
+    def test_an_election_is_never_clamped_against_an_invented_count(self):
+        mech, n, k = mechanic_from_ruling("buyer's choice, take 3")
+        assert not (mech is BidMechanic.CHOICE and n == 1 and k == 1)

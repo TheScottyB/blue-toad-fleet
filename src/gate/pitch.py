@@ -31,6 +31,10 @@ class PitchLot:
     caption: str
     category: str
     max_bid: float
+    committed_max: float = 0.0
+    """What the lot actually commits. Equals max_bid on a straight lot; on a
+    per-unit lot it is max_bid x units, and BOTH figures are legitimate for the
+    writer to state — the per-unit price and the lot's total."""
 
 
 @dataclass
@@ -46,7 +50,9 @@ class PitchFacts:
     def allowed_amounts(self) -> set[float]:
         """Every figure the writer may legitimately repeat."""
         out = {self.committed_max, self.committed_all_in}
-        out.update(l.max_bid for l in (*self.alpha, *self.fast_smalls))
+        for l in (*self.alpha, *self.fast_smalls):
+            out.add(l.max_bid)
+            out.add(l.committed_max)
         return {round(v, 2) for v in out if v}
 
 
@@ -70,7 +76,8 @@ def build_pitch(decisions, captions: dict[str, str],
     def as_lot(d):
         return PitchLot(lot_id=d.lot_id,
                         caption=captions.get(d.lot_id, "") or d.category,
-                        category=d.category, max_bid=float(d.max_bid))
+                        category=d.category, max_bid=float(d.max_bid),
+                        committed_max=float(d.committed_max or d.max_bid))
 
     alpha = [as_lot(d) for d in ranked[:ALPHA_PICKS]]
     alpha_ids = {l.lot_id for l in alpha}
@@ -78,8 +85,16 @@ def build_pitch(decisions, captions: dict[str, str],
 
     ruled_out = [f"{r.category} — {r.answer}" for r in standing_rules]
 
-    committed_max = round(sum(d.max_bid for d in allocated), 2)
-    committed_all_in = round(sum(d.all_in or 0.0 for d in allocated), 2)
+    # Sum COMMITTED money, not one unit's worth. Everything else in the lane
+    # moved to committed_* — allocate budgets on it, summarize totals it,
+    # clerk_directive prints it — and this call site did not. That made the
+    # banner disagree with the sheet header on the same page, and did something
+    # worse: these figures seed allowed_amounts, so invented_amounts flagged the
+    # TRUE total as a hallucination, curator_voice discarded the honest
+    # sentence, and the deterministic fallback printed the understated one. The
+    # guard built to stop a model inventing numbers was enforcing the wrong one.
+    committed_max = round(sum(d.committed_max or 0.0 for d in allocated), 2)
+    committed_all_in = round(sum(d.committed_all_in or 0.0 for d in allocated), 2)
 
     return PitchFacts(alpha=alpha, fast_smalls=fast, ruled_out=ruled_out,
                       committed_max=committed_max,

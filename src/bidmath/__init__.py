@@ -260,10 +260,20 @@ def price_lot(
             needs_human_pricing=False, **carry,
         )
 
-    # An unestablished mechanic on a multi-unit lot is not a pricing problem,
-    # it is an unanswered question about how the house sells it — and the
-    # answer multiplies the money. Refuse until somebody rules.
-    if lot.mechanic is BidMechanic.UNKNOWN and lot.unit_count > 1:
+    # An unestablished mechanic is not a pricing problem, it is an unanswered
+    # question about how the house sells the lot — and the answer multiplies the
+    # money. Refuse until somebody rules.
+    #
+    # This deliberately does NOT require unit_count > 1. The parser cannot
+    # establish a count from an unreadable ruling, so it handed back 1 meaning
+    # "nobody counted", and this gate read that as "there is exactly one
+    # object" — making the refusal dead code on both production paths. Every
+    # unreadable ruling became a clean, allocated, auto-sendable bid.
+    #
+    # UNKNOWN and "but it is definitely one unit" cannot both be true: if you
+    # know there is one object, the mechanic does not matter and the lot is
+    # STRAIGHT. So there is nothing left for this branch to let through.
+    if lot.mechanic is BidMechanic.UNKNOWN:
         return Decision(
             lot_id=lot.lot_id, category=lot.category, priority=priority,
             max_bid=None, all_in=None, bid_fraction=None,
@@ -535,7 +545,17 @@ _WORD_NUMBERS = {
 }
 
 _TTM_RE = re.compile(r"times[\s-]+the[\s-]+money|times[\s-]+money", re.I)
-_MULT_RE = re.compile(r"(?:^|[^a-z0-9])(?:x|×)\s*(\d{1,3})\b|\b(\d{1,3})\s*(?:x|×)", re.I)
+# A multiplier must be attached to auction vocabulary, never to a dollar figure
+# or a dimension. "MAX $25 x 3 TRAYS" — the operator's own bid format — parsed as
+# 25 units, priced them at $5.00 each, and wrote ">> I am taking ALL 50 <<" into
+# an outgoing draft with every refusal flag reading clean. "8 x 10 frames" read
+# as 8 units; "3 xylophones" as 3. A currency lookbehind alone does not fix it:
+# `$30 x 2` still yields 30, because \b matches after a dollar sign.
+_UNIT_WORD = r"(?:units?|trays?|lots?|shel(?:f|ves)|pieces?|items?|boxes|bins?|money|times?|bids?)"
+_MULT_RE = re.compile(
+    rf"(?:^|[^a-z0-9$.])(?:x|×)\s*(\d{{1,3}})(?=\s*(?:{_UNIT_WORD}\b|$|[^\w$]))"
+    rf"|(?<![\d.$])\b(\d{{1,3}})\s*(?:x|×)\s*(?=(?:the\s+)?{_UNIT_WORD}\b)",
+    re.I)
 _CHOICE_RE = re.compile(r"(?:buyer'?s?|winner'?s?|bidder'?s?)[\s-]+choice|\bchoice\s+of\b", re.I)
 _STRAIGHT_RE = re.compile(
     r"\bsingle\s+lot\b|\bone\s+lot\b|\ball\s+together\b|\bas\s+one\b|"
@@ -543,6 +563,10 @@ _STRAIGHT_RE = re.compile(
 _TAKE_RE = re.compile(r"\btak(?:e|ing)\s+(?:all\s+)?(\d{1,3}|[a-z]+)\b", re.I)
 _MAXQTY_RE = re.compile(r"max(?:imum)?\s+quantity\s+is\s+(\d{1,3}|[a-z]+)", re.I)
 _ALL_RE = re.compile(r"\ball\s+(\d{1,3}|[a-z]+)\b", re.I)
+# "No, that is not a x3 bid" affirmed x3. A ruling that names a mechanic in
+# order to REJECT it settles nothing, and reading it as agreement is the worst
+# available direction: it books the exact arrangement the auctioneer denied.
+_NEGATION_RE = re.compile(r"\b(?:not|isn'?t|aren'?t|won'?t|no longer|never)\b|^\s*no\b", re.I)
 _OF_THEM_RE = re.compile(r"\b(\d{1,3}|[a-z]+)\s+of\s+(?:them|these|those)\b", re.I)
 
 
@@ -576,6 +600,9 @@ def mechanic_from_ruling(
     fallback_n = units_available if units_available and units_available > 0 else 1
     unknown = (BidMechanic.UNKNOWN, fallback_n, None)
     if not text:
+        return unknown
+
+    if _NEGATION_RE.search(text):
         return unknown
 
     mult = None
@@ -632,7 +659,20 @@ def mechanic_from_ruling(
         return (BidMechanic.TIMES_THE_MONEY, n, min(wanted, n) if wanted else None)
 
     if says_choice:
-        n = units_available if units_available and units_available > 0 else (mult or 1)
+        n = units_available if units_available and units_available > 0 else mult
+        if n is None:
+            for pat in (_ALL_RE, _OF_THEM_RE):
+                hit = pat.search(text)
+                if hit and (n := _as_count(hit.group(1))) is not None:
+                    break
+        if n is None:
+            # Never fabricate 1. price_lot only divides the group comp down to
+            # one unit when unit_count > 1, so an invented 1 makes the WHOLE
+            # group's value the ceiling for a single unit — five times the
+            # per-unit ceiling, in the overbid direction, on a lot nobody
+            # counted. Both production callers pass no count, so this was the
+            # live path.
+            return unknown
         return (BidMechanic.CHOICE, n, min(wanted, n) if wanted else None)
 
     return unknown

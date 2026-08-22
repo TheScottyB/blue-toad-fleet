@@ -94,7 +94,12 @@ def main():
         f"TOTAL COMMITTED PROXY BIDS: ${total_max:,.2f} (${total_all_in:,.2f} all-in w/ 15% fee)",
         "",
         "Special Instructions:",
-        "  - For 'Buyer's Choice / Times the Money' shelf lots, max quantity is 1 unit only.",
+        # NOTE: this script writes the SAME path as run_vertex_pipeline.py but
+        # carries a hardcoded APPROVED_BIDS table with no bid mechanic, so it
+        # cannot state a per-lot exception and running it silently reverts any
+        # times-the-money instruction the pipeline wrote. Kept consistent in
+        # wording; use run_vertex_pipeline.py for a real sheet.
+        "  - For any OTHER 'Buyer's Choice / Times the Money' shelf lot, max quantity is 1 unit.",
         "  - Standard $5.00 bidding increments applied.",
         "  - Please confirm receipt of these absentee bids by reply email.",
         "",

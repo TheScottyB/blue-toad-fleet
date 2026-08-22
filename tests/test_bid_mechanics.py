@@ -173,11 +173,24 @@ class TestUnknownMechanicNeedsARuling:
         assert d.max_bid is None
         assert d.needs_human_pricing is True
 
-    def test_single_unit_unknown_needs_no_ruling(self):
-        """One object: straight, choice and times-the-money are the same bid."""
+    def test_single_unit_unknown_still_refuses(self):
+        """CORRECTED 2026-08-21. This asserted that UNKNOWN at one unit needs no
+        ruling, on the arithmetic that "one object: straight, choice and
+        times-the-money are the same bid". The arithmetic is right and the
+        premise is unreachable.
+
+        `mechanic_from_ruling` cannot establish a count from a ruling it could
+        not read, so it returned 1 meaning "nobody counted" — and this gate read
+        that as "there is exactly one object". The refusal became dead code on
+        both production paths and every unreadable ruling shipped as a clean,
+        allocated, auto-sendable bid.
+
+        UNKNOWN and "definitely one unit" cannot both hold: knowing there is one
+        object means the mechanic is irrelevant, which is STRAIGHT, not UNKNOWN.
+        """
         d = price_lot(lot(mechanic=BidMechanic.UNKNOWN, unit_count=1))
-        assert d.needs_mechanic_ruling is False
-        assert d.max_bid is not None
+        assert d.needs_mechanic_ruling is True
+        assert d.max_bid is None
 
     def test_a_lot_needing_a_ruling_is_never_auto_sent(self):
         d = price_lot(lot(mechanic=BidMechanic.UNKNOWN, unit_count=3))

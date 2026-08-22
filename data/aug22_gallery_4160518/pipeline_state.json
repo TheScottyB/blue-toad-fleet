@@ -10,8 +10,8 @@
     "needs_approval": 2,
     "needs_human_pricing": 0,
     "skipped": 406,
-    "committed_max": 285.0,
-    "committed_all_in": 327.75,
+    "committed_max": 275.0,
+    "committed_all_in": 316.25,
     "by_priority": {
       "A": 9,
       "SKIP": 406

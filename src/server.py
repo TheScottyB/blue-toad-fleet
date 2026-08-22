@@ -118,17 +118,22 @@ def curator_pitch(decisions, captions) -> str:
     if not cache.exists():
         alt = Path("/app/data/aug22_gallery_4160518/curator_voice.txt")
         cache = alt if alt.exists() else cache
-    if cache.exists():
-        cached = cache.read_text().strip()
-        if cached:
-            return cached
-
     facts = build_pitch(decisions, captions, STATE["standing_rules"])
+
+    # Key the cache to the sheet it describes. It was previously served whenever
+    # the file was non-empty, with no invalidation at all, so the banner kept
+    # quoting a committed total from a sheet that no longer existed — staler
+    # than any bug it might have been hiding. A stamp mismatch re-writes it.
+    stamp = f"# sheet {facts.committed_max:.2f}/{facts.committed_all_in:.2f}\n"
+    if cache.exists():
+        cached = cache.read_text()
+        if cached.startswith(stamp) and cached[len(stamp):].strip():
+            return cached[len(stamp):].strip()
     text = curator_voice(
         facts, writer=lambda pr: engine.write_curator_voice(pr, _CURATOR_SYSTEM))
     try:
         cache.parent.mkdir(parents=True, exist_ok=True)
-        cache.write_text(text + "\n")
+        cache.write_text(stamp + text + "\n")
     except OSError:
         pass          # read-only filesystem is fine; the text is already in hand
     return text

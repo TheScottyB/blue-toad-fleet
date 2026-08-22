@@ -96,8 +96,16 @@ OPERATOR_APPROVED = {
                # the sheet derives the money from the ruling rather than someone
                # retyping $75 into an email under the cutoff.
                "ruling": "take all three trays at x3"},
-    "BT-087": {"fit": 0.90, "cap": 25.00,
-               "why": "collab: buys bulk estate costume jewelry, max bid $25"},
+    # REVISED DOWN 2026-08-21. The absentee sheet that actually went to Blue
+    # Toad reads "START $5.00   MAX $15.00   (revised down from $25.00)". This
+    # table still said $25.00, and apply_operator_cap sets max_bid to the cap
+    # unconditionally by design — it is not a ceiling that clamps down — so the
+    # bid went out $10 ABOVE what the operator authorised, on his own cash.
+    # Substituting 15.00 reproduces the sent sheet's footer exactly:
+    # $275.00 committed / $316.25 all-in.
+    "BT-087": {"fit": 0.90, "cap": 15.00,
+               "why": "collab: bulk estate costume jewelry; revised down to $15 "
+                      "on the sent 2026-08-21 sheet"},
     # DUPLICATE of BT-002, confirmed three independent ways on 2026-08-21:
     #  - visual: seq 181 is a close-up of trays 12 and 14 from seq 2. The gold
     #    flat-link mesh necklace, the cream oval-bead strand, the coin-charm
@@ -527,7 +535,18 @@ def run_pipeline(
         f"TOTAL COMMITTED PROXY BIDS: ${sheet_summary.committed_max:,.2f} (${sheet_summary.committed_all_in:,.2f} all-in w/ 15% fee)",
         "",
         "Special Instructions:",
-        "  - For 'Buyer's Choice / Times the Money' shelf lots, max quantity is 1 unit only.",
+        # Derived, not hardcoded. This footer used to state a blanket one-unit
+        # rule 25 lines below a per-lot line reading ">> I am taking ALL 3 <<",
+        # handing the clerk two contradictory directives on the same lot with
+        # $50 riding on which one he followed. The operator's own revised sheet
+        # solved it by naming the exception and adding the word OTHER; the
+        # generator does that now, from the sheet rather than from a constant.
+        *[f"  - {d.lot_id} is an exception to the one-unit rule: take "
+          f"{units_committed(d.mechanic, d.unit_count, d.units_wanted)} of the "
+          f"{d.unit_count} at the per-unit price."
+          for d in approved_bids
+          if units_committed(d.mechanic, d.unit_count, d.units_wanted) > 1],
+        "  - For any OTHER 'Buyer's Choice / Times the Money' shelf lot, max quantity is 1 unit.",
         "  - Standard $5.00 bidding increments applied.",
         "  - Please confirm receipt of these absentee bids by reply email.",
         "",
@@ -547,9 +566,15 @@ def run_pipeline(
     hdr_font = Font(name="Arial", size=11, bold=True, color="FFFFFF")
     green_fill = PatternFill(start_color="E2EFDA", end_color="E2EFDA", fill_type="solid")
 
-    headers = ["Lot ID", "Category", "Description", "Est Resale ($)", "Start Bid ($)", "Max Bid ($)", "All-In ($)", "Status"]
+    # Units and Committed are not decoration. Without them the sheet shows
+    # "Max Bid 25.00 / All-In 28.75" for a lot that commits 75.00/86.25, the
+    # columns sum to less than the sheet total, and there is no total row to
+    # trip anyone into noticing.
+    headers = ["Lot ID", "Category", "Description", "Est Resale ($)",
+               "Start Bid ($)", "Max Bid ($)", "All-In ($)", "Units",
+               "Committed Max ($)", "Committed All-In ($)", "Status"]
     ws.append(headers)
-    for c in range(1, 9):
+    for c in range(1, len(headers) + 1):
         ws.cell(1, c).fill = hdr_fill
         ws.cell(1, c).font = hdr_font
 
@@ -565,9 +590,17 @@ def run_pipeline(
             start_bid,
             d.max_bid,
             d.all_in,
+            units_committed(d.mechanic, d.unit_count, d.units_wanted),
+            d.committed_max,
+            d.committed_all_in,
             "AUTO-SEND" if d.auto_send else "APPROVED",
         ])
-        ws.cell(idx, 8).fill = green_fill
+        ws.cell(idx, 11).fill = green_fill
+
+    ws.append(["", "", "", "", "", "", "", "TOTAL",
+               sheet_summary.committed_max, sheet_summary.committed_all_in, ""])
+    for c in range(8, 11):
+        ws.cell(ws.max_row, c).font = Font(name="Arial", size=11, bold=True)
 
     for col in ws.columns:
         max_len = max(len(str(cell.value or '')) for cell in col)
