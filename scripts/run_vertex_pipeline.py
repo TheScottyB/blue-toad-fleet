@@ -27,7 +27,9 @@ import openpyxl
 from openpyxl.styles import Font, PatternFill
 from openpyxl.utils import get_column_letter
 
+from src.intake.embed import load_vectors
 from src.intake.manifest import parse_drop, group_into_lots, TriagedPhoto
+from src.intake.spatial import merge_reshoots, reshoot_edges
 from src.appraisal import (
     Appraisal, Confidence as AppConfidence, Question, QuestionKind,
     StandingRule, build_queue
@@ -325,6 +327,12 @@ def run_pipeline(
         ))
 
     lot_groups = group_into_lots(triaged_photos)
+    cache = Path(data_dir) / "embeddings.json"
+    photo_by_seq = {p["sequence"]: p["photo_id"] for p in photos}
+    sequences = {p["photo_id"]: p["sequence"] for p in photos}
+    vectors = load_vectors(cache, photo_by_seq)
+    edges = reshoot_edges(vectors, sequences) if vectors else set()
+    lot_groups = merge_reshoots(lot_groups, edges)
     print(f"[+] Grouped {len(photos)} photos into {len(lot_groups)} distinct lots.")
 
     # 2. Vertex AI Engine Setup

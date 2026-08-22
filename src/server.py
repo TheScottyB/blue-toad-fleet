@@ -15,7 +15,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse
 
 from dataclasses import replace
-from src.intake.manifest import parse_drop, group_into_lots, TriagedPhoto
+from src.intake.embed import load_vectors
+from src.intake.manifest import parse_drop, group_into_lots, LotGroup, TriagedPhoto
+from src.intake.spatial import merge_reshoots, reshoot_edges, seats_from_groups
 from src.assemble import AppraisedPhoto, assemble_lots, NO_COMP, compile_absentee_email
 from src.bidmath import (
     Lot, CompEstimate, Confidence as BidConfidence, Priority, Decision,
@@ -262,11 +264,41 @@ def get_aug22_state():
         comps[k] = comp_est
         comps[f"seq:{k}"] = comp_est
 
-    assembled_raw = assemble_lots(appraised_photos, comps=comps)
+    embed_cache_path = Path("data/aug22_gallery_4160518/embeddings.json")
+    if not embed_cache_path.exists():
+        embed_cache_path = Path("/app/data/aug22_gallery_4160518/embeddings.json")
+
+    # AppraisedPhoto.photo_id is BT-00N; vectors, sequences, and edges share that space.
+    photo_by_seq = {p["sequence"]: f"BT-{p['sequence']:03d}" for p in photos}
+    sequences = {f"BT-{p['sequence']:03d}": p["sequence"] for p in photos}
+    vectors = load_vectors(embed_cache_path, photo_by_seq)
+    if not vectors:
+        print("[!] embeddings cache missing or empty; walk-only grouping")
+    vectors = {k: v for k, v in vectors.items() if k in sequences}
+    edges = reshoot_edges(vectors, sequences) if vectors else set()
+
+    assembled_raw = assemble_lots(appraised_photos, comps=comps, reshoot_edges=edges)
     lots = [
         replace(l, lot_id=l.lot_id.removeprefix("seq:")) if l.lot_id.startswith("seq:") else l
         for l in assembled_raw
     ]
+
+    groups = group_into_lots([
+        TriagedPhoto(
+            photo_id=p.photo_id,
+            caption=p.caption,
+            is_lot=p.is_lot,
+            same_lot_as_previous=p.same_lot_as_previous,
+        )
+        for p in appraised_photos
+    ])
+    if edges:
+        groups = merge_reshoots(groups, edges)
+    seats = seats_from_groups(
+        [LotGroup(lot_key=g.lot_key.removeprefix("seq:"), photo_ids=g.photo_ids)
+         for g in groups],
+        sequences,
+    )
 
     captions_map = {l.lot_id: l.caption for l in lots}
 
@@ -327,7 +359,7 @@ def get_aug22_state():
     all_questions = domain_questions + emitted_questions
     queue_res = build_queue(all_questions, STATE["standing_rules"], cap=12)
 
-    return photos, lots, lots, allocated_decisions, summary, queue_res, captions_map
+    return photos, seats, lots, allocated_decisions, summary, queue_res, captions_map
 
 
 @app.get("/health")
@@ -347,7 +379,7 @@ def healthz():
 
 @app.get("/", response_class=HTMLResponse)
 def get_console():
-    photos, _, lots, decisions, summary, queue_res, captions_map = get_aug22_state()
+    photos, seats, lots, decisions, summary, queue_res, captions_map = get_aug22_state()
     pitch = build_pitch(decisions, captions_map, STATE["standing_rules"])
     # Unit tests must stay credential-free and fast. Cloud Run has no
     # PYTEST_CURRENT_TEST, so Gemma runs there (then caches).
@@ -370,6 +402,7 @@ def get_console():
         illustrative=False,
         lots_total=len(lots),
         voice=voice,
+        seats=seats,
     )
     return render_console(view, pitch_text=curator_pitch(decisions, captions_map))
 
