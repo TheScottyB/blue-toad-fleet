@@ -83,7 +83,8 @@ def close_tab(tid: str) -> None:
         pass
 
 
-async def capture(url: str, out: Path, full: bool, wait: float) -> dict:
+async def capture(url: str, out: Path, full: bool, wait: float,
+                  width: int = 1920, height: int = 1400) -> dict:
     tab = open_tab(url)
     await asyncio.sleep(wait)
     async with websockets.connect(tab["webSocketDebuggerUrl"],
@@ -103,6 +104,14 @@ async def capture(url: str, out: Path, full: bool, wait: float) -> dict:
                     return msg.get("result", {})
 
         await send("Page.enable")
+        # The default window is narrower than the aggregate strip, so the
+        # right-hand figures - Sell-through and Total sellers - fall off the
+        # edge. A screenshot missing the numbers it exists to evidence is not
+        # evidence, so force a viewport wide enough to hold the whole row.
+        await send("Emulation.setDeviceMetricsOverride",
+                   {"width": width, "height": height,
+                    "deviceScaleFactor": 2, "mobile": False})
+        await asyncio.sleep(1.5)
 
         # Read back what actually loaded. A redirect to a signin or challenge
         # page still screenshots successfully, and a report carrying a picture
@@ -128,9 +137,12 @@ def main() -> int:
     ap.add_argument("out")
     ap.add_argument("--full", action="store_true", help="whole scrollable page")
     ap.add_argument("--wait", type=float, default=3.0)
+    ap.add_argument("--width", type=int, default=1920)
+    ap.add_argument("--height", type=int, default=1400)
     a = ap.parse_args()
 
-    r = asyncio.run(capture(a.url, Path(a.out), a.full, a.wait))
+    r = asyncio.run(capture(a.url, Path(a.out), a.full, a.wait,
+                            a.width, a.height))
     print(f"  wrote {a.out}  {r['bytes']:,} bytes")
     print(f"  landed on: {r['t']}")
     print(f"  url:       {r['u'][:110]}")
