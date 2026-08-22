@@ -107,15 +107,18 @@ the columns reconciling:
 `avg_sold_price x total_sold = item_sales`, so the price column is an **average
 across those units** — which is why it carries odd cents. **Sum `Total sold`
 across rows for the numerator; do not count rows.** On this query rows
-undercounted units by ~5%, and it would be far worse for an item where sellers
-hold stock.
+undercounted units by **3.5%** (285 rows vs 295 units), and the entire gap sits
+on page one — the only page carrying multi-quantity listings. A sampled or
+first-page-only pass loses all of it while looking representative. It would be
+far worse for an item where sellers hold stock.
 
 ---
 
 ## 3. Classify comps — but know where it matters
 
 Not every result is a comparable. On this query, **15 of 138 active (11%)** and
-about 10% of sold were not the item at all:
+**29 of 285 sold listings / 31 of 295 sold units (10%)** were not the item at
+all:
 
 - replacement **cutters** (`KS Champion #4 Cutters Pair`, `SF-4 Speed Cutters With Carrier`)
 - a different model (`SF-4`)
@@ -134,7 +137,7 @@ Starting exclusion pattern, to be tuned per category:
 
 | | raw | comp-only | delta |
 |---|---|---|---|
-| absorption | 285 / 138 = **2.07** | 257 / 123 = **2.09** | **+1%** |
+| absorption (units) | 295 / 138 = **2.14** | 264 / 123 = **2.15** | **+0.5%** |
 
 The junk is roughly symmetric — the same cutters and parts sit in both numerator
 and denominator and cancel. **Absorption survives a dirty comp set.**
