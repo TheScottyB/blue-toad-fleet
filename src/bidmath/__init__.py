@@ -55,6 +55,31 @@ class Priority(str, Enum):
     SKIP = "SKIP"
 
 
+class BidMechanic(str, Enum):
+    """How many times the hammer price is charged, and for what.
+
+    A rural auctioneer does not sell one lot as one thing. Modelling it that
+    way understated a real commitment by a factor of N against a hard cap.
+    """
+    STRAIGHT = "straight"
+    """Bid once, take the lot. One hammer, one charge."""
+
+    CHOICE = "choice"
+    """Winner's choice: bid high, then PICK one unit at that price; the rest go
+    back to the floor. A five-shelf lantern unit photographed as one image is
+    five lots sold this way. The bid is a ceiling you only reach if pushed, so
+    walking it down to look prudent just loses the lot to the next bidder."""
+
+    TIMES_THE_MONEY = "times_the_money"
+    """The bid is PER UNIT and charged N times. Confirmed by the auctioneer on
+    the labelled jewelry tray run (12/14/16) — "Yes, that is a x3 bid" — which
+    moved one lot from $25 of committed money to $75 with no number on the
+    sheet changing."""
+
+    UNKNOWN = "unknown"
+    """Not established. Never silently treated as STRAIGHT: see units_committed."""
+
+
 @dataclass(frozen=True)
 class CompEstimate:
     """What the Comps agent produced for one lot. Advisory by design."""
@@ -83,6 +108,27 @@ class Lot:
     fit_score: float          # 0..1, from the Appraiser
     condition_penalty: float  # 0..1, fraction knocked off for condition
     comp: CompEstimate
+    # ---- APPENDED WITH DEFAULTS, and they stay last ----------------------
+    # Lot is constructed positionally in demo/ and scripts/, and test_gate.py
+    # builds CompEstimate with four positional arguments. A field inserted
+    # mid-struct binds the wrong value silently and every test still passes.
+    mechanic: "BidMechanic" = BidMechanic.STRAIGHT
+    unit_count: int = 1
+    """Sellable UNITS in this lot, not objects. A box of 40 books is one unit;
+    a five-shelf rack sold winner's-choice-of-shelf is five."""
+
+
+def units_committed(mechanic: "BidMechanic", unit_count: int) -> int:
+    """How many times the hammer price is charged if this bid wins.
+
+    UNKNOWN deliberately assumes the expensive reading. Guessing STRAIGHT on a
+    lot that turns out to be times-the-money breaches the cap at the block,
+    where nobody can undo it; guessing the expensive way only under-fills the
+    sheet, which a human can fix before Friday.
+    """
+    if mechanic in (BidMechanic.TIMES_THE_MONEY, BidMechanic.UNKNOWN):
+        return max(1, int(unit_count))
+    return 1
 
 
 @dataclass(frozen=True)
@@ -97,6 +143,30 @@ class Decision:
     needs_human_pricing: bool
     auto_send: bool = False
     allocated: bool = False
+    # ---- APPENDED WITH DEFAULTS, and they stay last (see Lot) -------------
+    mechanic: "BidMechanic" = BidMechanic.STRAIGHT
+    unit_count: int = 1
+    needs_mechanic_ruling: bool = False
+    """The mechanic decides the money and nobody has ruled on it. Distinct from
+    needs_human_pricing, which is about the comp."""
+
+    @property
+    def committed_all_in(self) -> float | None:
+        """Total exposure if this bid wins — what the budget cap must see.
+
+        `all_in` is one unit. The allocator summed that regardless of mechanic,
+        so a x3 lot spent a third of what it claimed against the cap.
+        """
+        if self.all_in is None:
+            return None
+        return round(self.all_in * units_committed(self.mechanic, self.unit_count), 2)
+
+    @property
+    def committed_max(self) -> float | None:
+        """Hammer total across every unit charged."""
+        if self.max_bid is None:
+            return None
+        return round(self.max_bid * units_committed(self.mechanic, self.unit_count), 2)
 
 
 def bid_fraction_for(category: str, calibration: dict[str, float] | None = None) -> float:
@@ -144,13 +214,40 @@ def price_lot(
     bid sheet's job is to inform a person who knows the market.
     """
     priority = _priority_for(lot)
+    carry = dict(mechanic=lot.mechanic, unit_count=lot.unit_count)
 
     if priority is Priority.SKIP:
         return Decision(
             lot_id=lot.lot_id, category=lot.category, priority=Priority.SKIP,
             max_bid=None, all_in=None, bid_fraction=None,
             reason=f"fit {lot.fit_score:.2f} below threshold",
-            needs_human_pricing=False,
+            needs_human_pricing=False, **carry,
+        )
+
+    # An unestablished mechanic on a multi-unit lot is not a pricing problem,
+    # it is an unanswered question about how the house sells it — and the
+    # answer multiplies the money. Refuse until somebody rules.
+    if lot.mechanic is BidMechanic.UNKNOWN and lot.unit_count > 1:
+        return Decision(
+            lot_id=lot.lot_id, category=lot.category, priority=priority,
+            max_bid=None, all_in=None, bid_fraction=None,
+            reason=(f"{lot.unit_count} units and the bid mechanic is not "
+                    f"established — needs a ruling before pricing"),
+            needs_human_pricing=True, needs_mechanic_ruling=True, **carry,
+        )
+
+    # A comp for a whole five-shelf rack is not a comp for one shelf, and
+    # winner's choice buys exactly one shelf. Taking 35% of the whole-unit comp
+    # overbids by roughly the unit count — the most expensive error available
+    # here. Until per-unit values exist, this system does not know the answer.
+    if lot.mechanic is BidMechanic.CHOICE and lot.unit_count > 1:
+        return Decision(
+            lot_id=lot.lot_id, category=lot.category, priority=priority,
+            max_bid=None, all_in=None, bid_fraction=None,
+            reason=(f"winner's choice of {lot.unit_count} units — the comp "
+                    f"covers the whole group, not the one unit you win; "
+                    f"human pricing required"),
+            needs_human_pricing=True, **carry,
         )
 
     if not lot.comp.has_external_comp:
@@ -158,7 +255,7 @@ def price_lot(
             lot_id=lot.lot_id, category=lot.category, priority=priority,
             max_bid=None, all_in=None, bid_fraction=None,
             reason="no external comp — human pricing required",
-            needs_human_pricing=True,
+            needs_human_pricing=True, **carry,
         )
 
     fraction = bid_fraction_for(lot.category, calibration)
@@ -178,7 +275,7 @@ def price_lot(
                 f"computed max below one ${BID_INCREMENT:.0f} bidding increment "
                 "— not worth an absentee slot"
             ),
-            needs_human_pricing=False,
+            needs_human_pricing=False, **carry,
         )
 
     return Decision(
@@ -190,7 +287,7 @@ def price_lot(
             f"less {penalty:.0%} condition, "
             f"{lot.comp.source_count} source(s), {lot.comp.confidence.value} confidence"
         ),
-        needs_human_pricing=False,
+        needs_human_pricing=False, **carry,
     )
 
 
@@ -214,17 +311,23 @@ def allocate(
     priced = [d for d in decisions if d.max_bid is not None]
     unpriced = [d for d in decisions if d.max_bid is None]
 
-    priced.sort(key=lambda d: (_PRIORITY_RANK[d.priority], d.all_in))
+    # Sort and spend on COMMITTED money, not one unit's worth. A x3 lot billed
+    # itself at a third of its cost, so it both jumped the value-density queue
+    # ahead of straight lots and left the cap looking like it had room it did
+    # not have.
+    priced.sort(key=lambda d: (_PRIORITY_RANK[d.priority], d.committed_all_in))
 
     spent = 0.0
     out: list[Decision] = []
     for d in priced:
-        if spent + d.all_in <= budget_cap:
-            spent = round(spent + d.all_in, 2)
+        if spent + d.committed_all_in <= budget_cap:
+            spent = round(spent + d.committed_all_in, 2)
             out.append(replace(
                 d,
                 allocated=True,
-                auto_send=(auto_send_threshold > 0 and d.all_in <= auto_send_threshold),
+                auto_send=(auto_send_threshold > 0
+                           and d.committed_all_in <= auto_send_threshold
+                           and not d.needs_mechanic_ruling),
             ))
         else:
             out.append(replace(d, allocated=False, auto_send=False,
@@ -256,8 +359,8 @@ def summarize(decisions: Iterable[Decision]) -> SheetSummary:
             s.skipped += 1
         if d.allocated:
             s.allocated += 1
-            s.committed_max = round(s.committed_max + d.max_bid, 2)
-            s.committed_all_in = round(s.committed_all_in + d.all_in, 2)
+            s.committed_max = round(s.committed_max + d.committed_max, 2)
+            s.committed_all_in = round(s.committed_all_in + d.committed_all_in, 2)
             if d.auto_send:
                 s.auto_send += 1
             else:
