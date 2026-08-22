@@ -61,20 +61,21 @@ Blue Toad Fleet transforms an uncataloged 450-photo gallery drop into an actiona
 * **How It Works:** Relying directly on the Spatial Room Graph, the agent isolates the container boundary, suppresses background table noise, and itemizes the individual high-velocity assets inside the bin. It separates genuine alpha from filler, unlocking hidden margin while maintaining clean pricing boundaries.
 
 ### 3. The Honest Refusal Rule & Uncertainty Budget
-Unlike generic AI tools that hallucinate a price on every photo, Blue Toad Fleet enforces an explicit **uncertainty budget**. On recognizable items (e.g., 1960s Pabst lighted sign), it extracts maker, period, and comps. On unmarked, low-velocity pottery, it explicitly emits `"NO EXTERNAL COMP — human pricing required"`. Refusing to guess is a production safety feature.
+Unlike generic AI tools that hallucinate a price on every photo, Blue Toad Fleet enforces an explicit **uncertainty budget**. On recognizable items (e.g., 1960s Pabst lighted sign), it extracts maker, period, and comps. On items with no grounded comparable, the refusal is made deterministically downstream of the model — `price_lot` returns `max_bid=None` with the reason `no external comp — human pricing required`, and the allocator can never allocate such a lot. Refusing to guess is a production safety feature, and it is enforced in code rather than requested of the model.
+
+Grounded pricing exposed a live Vertex edge case: combining Google Search with `response_schema` preserved the search queries but returned **zero `grounding_chunks`**; the same call without the schema returned six citation chunks. Blue Toad splits the operation into a free-text grounded research call that preserves Google-supplied citations and a second, no-tools schema call instructed to extract only figures from that research note. It takes the median of three grounded samples and refuses prices that lack citations, lack two sold comps, or disagree too widely.
 
 ### 4. The "Choice-Lot Sniper" (Walls, Table Lines & Shelving Units)
-Country auctioneers frequently sell grouped assets as "Buyer's Choice / Times the Money" across multiple room zones:
-* **The Back Wall:** *"Choice of the framed travel posters! $200 times the money!"*
-* **Table Lines & Shelves:** *"Choice of the lantern line!"* or *"Choice of the shelf!"*
-Naive automated agents bid on the group, causing the auction clerk to multiply $N \times \text{bid}$ (e.g. 6 posters $\times \$150 = \$900$). Blue Toad Fleet detects choice lots across walls, tables, and shelves, uses liquidity comps to select the single highest-value alpha item (e.g. the 1960s Northwest Airlines Japan poster), and enforces a strict `max_quantity = 1` absentee constraint.
+Country auctioneers frequently sell grouped assets as "Buyer's Choice / Times the Money," where the spoken hammer is a per-unit price and the clerk multiplies it by the count. Blue Toad Fleet models that mechanic explicitly instead of assuming every photograph represents one charge.
+
+BT-002 closed the collaborative loop on real money. Gemini saw three labeled jewelry trays and asked whether the bid covered one tray or all three. The auctioneer confirmed, *"Yes, that is a ×3 bid."* Recorded as the text ruling *"take all three trays at ×3,"* `mechanic_from_ruling` resolved it to `TIMES_THE_MONEY, 3`. The owner's **$25 per-unit cap became $75 committed max / $86.25 all-in**, the allocator budgeted the full exposure, and `clerk_directive` wrote: *"BT-002 — times the money: $25.00 per unit x 3. All-in $86.25."* Without that answer, the sheet would have understated its own commitment by $50 before fees.
 
 ### 5. Proactive Velocity Pushback & The Curator's Negotiation
 The fleet acts as an **expert commercial partner, not a passive yes-man**. On Friday afternoon, the agent presents a 3-tier pitch (Top 3 Alpha Picks, Fast Smalls, and a Wildcard Challenge). When the owner asked to drop sports cards and tools due to store backlog, the agent used real-time eBay velocity data to respectfully push back:
 > *"Understood on dropping modern sports cards, but heads up on Photo #1: these are 13 Golden Era 1959–1969 Topps cards in hard top-loaders (Mays/Aaron era) with <14 day turnaround at 4x margin. Recommend keeping a $100 defensive cap."*
 
 ### 6. Deterministic Greedy Budget Allocation
-Appraisals feed into pure, unit-tested bid math implementing the store's 38% margin target, condition discounts, standard $5.00 auction increments, and the mandatory 15% absentee fee. The final absentee email is compiled automatically for `info@bluetoadauctions.com`.
+Appraisals feed into pure, unit-tested bid math implementing the store's documented 35–40% buy-in band (applied at its 37.5% midpoint), condition discounts, standard $5.00 auction increments, and the mandatory 15% absentee fee. The final absentee email is compiled automatically for `info@bluetoadauctions.com`.
 
 ---
 
@@ -82,7 +83,7 @@ Appraisals feed into pure, unit-tested bid math implementing the store's 38% mar
 
 * **Required Stack — what satisfies each requirement:**
   * **Gemini 3.5 or newer:** `gemini-3.6-flash` (multimodal appraisal) and `gemini-3.5-flash-lite` (triage fan-out), both on Vertex AI's `global` endpoint.
-  * **Agent framework — a purpose-built agent loop over the Google GenAI SDK.** The loop is the part that does the work, and it is ours: a triage fan-out narrows 462 photos to candidates ([`run_triage_batch`](../src/appraiser/engine.py)); survivors get a deep multimodal appraisal that is required to emit a *question* wherever a determining attribute is not visible, rather than a guess ([`run_appraisal_batch`](../src/appraiser/engine.py)); those questions are merged, ranked by how much of the sheet they repair, and capped ([`build_queue`](../src/appraisal/__init__.py)); answers the operator gives are promoted to `StandingRule`s keyed `(QuestionKind, Category)` that survive into the next cycle ([`learn`](../src/appraisal/__init__.py)); a question the desk cannot answer — a 2mm hallmark on a clasp — is *deferred* rather than asked ([`DESK_ANSWERABLE`](../src/appraisal/__init__.py)); grounded pricing runs a search-backed call for citations and a second schema-only call that can only read figures the first one found ([`price_lot_grounded`](../src/appraiser/engine.py)); and the result becomes a clerk-facing instruction a human at an auction block can act on ([`clerk_directive`](../src/bidmath/__init__.py)).
+  * **Agent framework — a purpose-built agent loop over the Google GenAI SDK.** The loop is the part that does the work, and it is ours: a triage fan-out narrows 462 photos to candidates ([`run_triage_batch`](../src/appraiser/engine.py)); survivors get a deep multimodal appraisal that is required to emit a *question* wherever a determining attribute is not visible, rather than a guess ([`run_appraisal_batch`](../src/appraiser/engine.py)); those questions are merged, ranked by how much of the sheet they repair, and capped ([`build_queue`](../src/appraisal/__init__.py)); answers the operator gives are promoted to `StandingRule`s keyed `(QuestionKind, Category)` that survive into the next cycle ([`learn`](../src/appraisal/__init__.py)); a question the desk cannot answer — a 2mm hallmark on a clasp — is *deferred* rather than asked ([`DESK_ANSWERABLE`](../src/appraisal/__init__.py)); grounded pricing preserves citations in one search-backed call and uses a second schema-only call instructed to extract the figures from that research note ([`price_lot_grounded`](../src/appraiser/engine.py)); and the result becomes a clerk-facing instruction a human at an auction block can act on ([`clerk_directive`](../src/bidmath/__init__.py)).
     That memory is load-bearing, not decorative: on a bulk costume-jewelry tray, appraising with the operator's standing rules versus without moves `fit_score` from 0.2 to 0.85 and flips the bid gate from SKIP to BID. Cross-cycle memory changes what gets bought.
   * **Google GenAI SDK (`google-genai`) — the model layer under that loop.** `genai.Client(vertexai=True, ...)` for application-default-credential auth that runs unchanged locally and inside Cloud Run, `types.Part.from_bytes` for multimodal request assembly, and `types.GenerateContentConfig(response_schema=...)` for constrained decoding — which is what makes a missing maker's mark come back as `null` plus a question instead of a confident invention. See [`src/appraiser/engine.py`](../src/appraiser/engine.py).
   * **Google Cloud infrastructure — Cloud Run:** single-container serverless hosting on project `threebatdrone-prod-420`.
@@ -93,16 +94,17 @@ Appraisals feed into pure, unit-tested bid math implementing the store's 38% mar
   * Pure, decoupled Python backend — no orchestration framework, no vector store, no agent runtime. The loop above is ~3,500 lines of typed Python, of which the decision layer — photo grouping, the question queue, cross-cycle memory and the bid math — is ~1,300 lines that make no model calls and touch no I/O, so every number that reaches a bid sheet is reproducible and unit-tested.
   * Deterministic keyed memory `(QuestionKind, Category)` that generalises house conventions without vector drift.
   * Automated Excel bid sheet generator (`openpyxl`) and formatted absentee email draft generator.
-  * 655 unit tests running in under half a second.
+  * 650 unit tests passing (657 collected; 7 network tests skip by default), in about five seconds.
 
 ---
 
 ## Challenges we ran into
 
 1. **Uncalibrated Multi-Angle Ingestion:** Rural auction galleries contain duplicate angles and multi-box runs with zero metadata. We solved this by developing the Spatial Room Graph to track background surface transitions and margin co-visibility.
-2. **The "Times the Money" Multiplier Trap:** Auction clerks multiplying per-unit bids on shelf lots would cause catastrophic budget overruns. We solved this by creating the Shelf Sniper constraint enforcing single-unit choice limits.
-3. **Preventing Passive "Yes-Man" Agent Behavior:** Generic LLMs blindly delete items when an owner gives broad negative feedback. We engineered proactive velocity pushback grounded in eBay completed comps.
-4. **Cloud Run Edge Routing Nuances:** Google Front End (GFE) edge proxies intercepting specific root paths required precise endpoint mapping (`/health`) to ensure instant public HTTP 200 verification.
+2. **Preserving Citations Under Structured Output:** In live Vertex validation, a Google-Search-grounded call with `response_schema` recorded its queries but returned zero citation chunks; removing the schema returned six. We separated grounded research from structured extraction, then reject any price without usable citations.
+3. **The "Times the Money" Multiplier Trap:** BT-002 proved the risk was real: the auctioneer's ×3 ruling changed a $25 per-unit ceiling into $75 of committed exposure. The ruling now flows through mechanic parsing, allocation, totals, and the clerk instruction.
+4. **Preventing Passive "Yes-Man" Agent Behavior:** Generic LLMs blindly delete items when an owner gives broad negative feedback. We engineered proactive velocity pushback grounded in completed-sale evidence.
+5. **Cloud Run Edge Routing Nuances:** Google Front End (GFE) edge proxies intercepting specific root paths required precise endpoint mapping (`/health`) to ensure instant public HTTP 200 verification.
 
 ---
 
@@ -113,10 +115,11 @@ Appraisals feed into pure, unit-tested bid math implementing the store's 38% mar
   * Slashed legacy unconstrained wishlist spending from **$14,340.00 down to $1,910.00 max ($2,196.50 all-in)**, fitting precisely inside the store's $2,205.00 budget cap.
 * **Live August 22 Production Run:**
   * Filtered 462 photos into **9 laser-targeted bids ($275.00 max / $316.25 all-in)** within a strict $600 credit card cap, formatted to $5 bidding increments.
+  * Those nine bids represent **$713–$879 estimated gross resale**, a **2.25–2.78x** gross resale-to-cost multiple and $396.75–$562.75 potential gross spread before selling costs.
 * **Flawless Google Cloud Deployment:**
   * Serving live traffic with sub-second response times on Cloud Run ([blue-toad-fleet-u5gvrqwvua-uc.a.run.app](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app)).
 * **100% Test Coverage on Core BidMath:**
-  * 655 unit tests passing in under half a second.
+  * 650 unit tests passing (657 collected; 7 network tests skip by default), in about five seconds.
 
 ---
 

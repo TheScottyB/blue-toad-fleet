@@ -8,7 +8,7 @@
 > drift: the auctioneer ruled the labelled jewelry tray run "a x3 bid"
 > (`c643171`), and BT-181 was found to be a close-up of trays already inside
 > BT-002 and declined rather than bought twice (`eb8bd7a`). Current figures are
-> **9 lots, $275.00 max, $316.25 all-in, 467 tests** — matching the absentee
+> **9 lots, $275.00 max, $316.25 all-in, 565 passing tests (572 collected)** — matching the absentee
 > sheet Blue Toad actually received, which `tests/test_sheet_matches_what_was_sent.py`
 > pins.
 >
@@ -16,6 +16,18 @@
 > what was said on camera; silently editing it to quote today's numbers would
 > make the document disagree with the video it transcribes, which is the exact
 > failure it would be trying to hide. Re-record Beat 4 to close the gap.
+
+## Required replacement lines for the final submission cut
+
+These lines are not present in the current `media/blue_toad_fleet_demo.mp4` and
+must be recorded before they can be claimed by the video.
+
+* **Beat 2, replace the final pricing sentence:**
+  > *"Live Vertex testing uncovered a grounding trap: structured output kept the search queries but dropped every citation. Blue Toad separates grounded research from schema extraction, takes the median of three samples, and refuses any price it cannot cite or reproduce."*
+* **Beat 3, replace the generic Choice-Lot sentence:**
+  > *"On BT-002, Gemini saw three labeled jewelry trays and asked whether the bid applied once or three times. The auctioneer confirmed x3. Blue Toad carried that written ruling into a $75 committed ceiling, $86.25 all-in, and an explicit instruction telling the clerk to take all three."*
+* **Beat 4, replace the old result and test-count sentences:**
+  > *"The final sheet commits $275 across nine approved bids—$316.25 all-in against $713 to $879 in estimated gross resale, a 2.25 to 2.78 times gross multiple before selling costs. The repository collects 572 tests; 565 pass locally and seven network checks skip by default."*
 
 **Target Duration:** Exactly 3:45 – 3:55 (Under the 4:00 strict maximum).  
 **Recording Format:** Screen capture of browser tabs + live voiceover.
@@ -90,7 +102,9 @@
 - [ ] Opening Title Card shown for 3 seconds (`Built solo, in 13 days, by one person.`).
 - [ ] Messy AuctionZip 450-photo gallery shown.
 - [ ] Architecture diagram & Spatial Room Graph explained.
+- [ ] Grounded-research / structured-extraction split explained.
 - [ ] Live Cloud Run Gate Console demonstrated ([https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app)).
-- [ ] Choice-Lot Sniper & Proactive Pushback on 1959–69 Topps cards highlighted.
+- [ ] BT-002 ×3 ruling and clerk instruction shown.
+- [ ] Proactive Pushback on 1959–69 Topps cards highlighted.
 - [ ] Google Cloud Console (`threebatdrone-prod-420`) and unit tests displayed.
 - [ ] Total time: Under 4 minutes.

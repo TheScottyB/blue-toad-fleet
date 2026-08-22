@@ -29,11 +29,11 @@ media/list.txt
 media/beat*.mp4
 node_modules/
 .agents/
+.claude/
+.playwright-mcp/
 ORIGINAL_REQUEST.md
 .env.local
 .vscode/
 pyrightconfig.json
 data/dryruns/
 data/**/estatesales_images/
-# Derived: 462 x 3072-d gemini-embedding-2. Build with scripts/embed_gallery.py.
-data/**/embeddings.json

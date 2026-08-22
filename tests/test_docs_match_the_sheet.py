@@ -35,6 +35,40 @@ def sheet():
 
 
 @pytest.fixture(scope="module")
+def resale(sheet):
+    """Gross resale range for exactly the lots carrying committed money.
+
+    A per-unit auction mechanic multiplies the hammer exposure, not the
+    appraiser's group comp. BT-002's photograph and comp cover all three trays,
+    so counting its $65-$75 range three times would double-count the goods.
+    """
+    from src.server import get_aug22_state
+    _, _, lots, decisions, _, _, _ = get_aug22_state()
+    allocated = {d.lot_id for d in decisions if d.allocated}
+    selected = [lot for lot in lots if lot.lot_id in allocated]
+
+    assert len(selected) == sheet.allocated
+    assert all(lot.comp.low is not None and lot.comp.high is not None
+               for lot in selected)
+
+    low = sum(lot.comp.low for lot in selected)
+    high = sum(lot.comp.high for lot in selected)
+    return low, high, low / sheet.committed_all_in, high / sheet.committed_all_in
+
+
+# The badge states a bare count, not "N Passing", and that is deliberate.
+# A guard living inside the suite cannot count its own passes, and the two
+# modules carrying a module-level skipif (test_live_cache_parity.py,
+# test_absentee_email.py) skip conditionally — subtracting them is wrong
+# whenever their condition is false. Collected is the only number this guard
+# can defend, so the badge claims exactly that and the pass/skip split lives
+# in prose in the README quickstart, where a human reads it.
+#
+# The badge used to read "570 Passing" against this collected count while 7 of
+# those 570 never ran. Do not reintroduce the word.
+
+
+@pytest.fixture(scope="module")
 def suite_size():
     """Every test in the tree, counted the way pytest counts them."""
     import subprocess
@@ -55,18 +89,26 @@ class TestTheReadmeQuotesTheRealSheet:
             f"README does not quote the live committed max of "
             f"${sheet.committed_max:,.2f}")
 
-    def test_the_all_in_is_current(self, sheet):
-        assert f"**${sheet.committed_all_in:,.2f}**" in README.read_text(), (
+    def test_the_all_in_is_current(self, sheet, resale):
+        text = README.read_text()
+        assert f"**${sheet.committed_all_in:,.2f}**" in text, (
             f"README does not quote the live all-in of ${sheet.committed_all_in:,.2f}")
+        low, high, low_multiple, high_multiple = resale
+        assert f"**${low:,.0f}–${high:,.0f} estimated gross resale**" in text
+        assert f"**{low_multiple:.2f}–{high_multiple:.2f}x**" in text
 
     def test_the_lot_count_is_current(self, sheet):
         assert f"{sheet.allocated} approved bids" in README.read_text()
 
 
 class TestTheDevpostQuotesTheRealSheet:
-    def test_the_money_line_is_current(self, sheet):
+    def test_the_money_line_is_current(self, sheet, resale):
+        text = DEVPOST.read_text()
         assert (f"${sheet.committed_max:,.2f} max / "
-                f"${sheet.committed_all_in:,.2f} all-in") in DEVPOST.read_text()
+                f"${sheet.committed_all_in:,.2f} all-in") in text
+        low, high, low_multiple, high_multiple = resale
+        assert f"**${low:,.0f}–${high:,.0f} estimated gross resale**" in text
+        assert f"**{low_multiple:.2f}–{high_multiple:.2f}x**" in text
 
     def test_the_lot_count_is_current(self, sheet):
         assert f"{sheet.allocated} laser-targeted bids" in DEVPOST.read_text()
@@ -81,10 +123,10 @@ class TestTheTestCountIsWhatAJudgeWouldSee:
     def test_the_readme_badge_matches_the_suite(self, suite_size):
         if suite_size is None:
             pytest.skip("could not collect")
-        assert f"Unit%20Tests-{suite_size}%20Passing" in README.read_text(), (
+        assert f"Unit%20Tests-{suite_size}-" in README.read_text(), (
             f"badge disagrees with the {suite_size}-test suite")
 
     def test_the_devpost_count_matches_the_suite(self, suite_size):
         if suite_size is None:
             pytest.skip("could not collect")
-        assert f"{suite_size} unit tests" in DEVPOST.read_text()
+        assert f"{suite_size} collected" in DEVPOST.read_text()

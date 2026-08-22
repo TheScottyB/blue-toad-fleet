@@ -1,0 +1,29 @@
+{
+  "lot_id": "BT-235",
+  "query": "1933 Century of Progress bottle",
+  "marketplace": "EBAY-US",
+  "sold": {
+    "captured_at": "Sat Aug 22 2026 01:12:04 GMT-0500 (Central Daylight Time)",
+    "url": "https://www.ebay.com/sh/research?marketplace=EBAY-US&keywords=1933+Century+of+Progress+bottle&dayRange=365&endDate=1787374800000&startDate=1755838800000&categoryId=0&offset=0&limit=50&tabName=SOLD",
+    "window_as_printed_by_page": "Aug 21, 2025 – Aug 21, 2026",
+    "aggregate_verbatim": "$24.11 | Avg sold price | $4.99 - $105.00 | Sold price range | $8.83 | Avg shipping | 7% | Free shipping | - | Sell-through | 43 | Total sellers",
+    "rows": 45, "units": 46, "pages_walked": "offset 0 only (45 < 50 = short page = complete)"
+  },
+  "active": {
+    "captured_at": "Sat Aug 22 2026 01:12:04 GMT-0500 (Central Daylight Time)",
+    "url": "https://www.ebay.com/sh/research?marketplace=EBAY-US&keywords=1933+Century+of+Progress+bottle&categoryId=0&offset=0&limit=200&tabName=ACTIVE",
+    "aggregate_verbatim": "$30.45 | Avg listing price | $9.00 - $89.99 | Listing price range | $10.02 | Avg shipping | 15% | Free shipping | 46 | Total active listings | 22% | Promoted listings",
+    "rows": 46
+  },
+  "absorption": 1.00,
+  "months_of_supply": 12.0,
+  "landed_comp": 32.94,
+  "screenshots": {
+    "sold": "sold_365d.png",
+    "active": "active.png",
+    "captured_at": "2026-08-22 01:03 CDT",
+    "method": "Chrome DevTools Protocol Page.captureScreenshot"
+  },
+  "reproducible": false,
+  "reproducibility_note": "365-day sold window rolls daily; active counts change hourly. This is an observation at a timestamp, not a re-runnable query."
+}

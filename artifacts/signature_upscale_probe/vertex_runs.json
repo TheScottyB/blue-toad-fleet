@@ -1,0 +1,57 @@
+[
+  {
+    "model": "gemini-3.1-flash-lite-image",
+    "repetition": 1,
+    "output": "ai/3.1-flash-lite_r1.png",
+    "dimensions": [
+      1200,
+      896
+    ],
+    "sha256": "7fb7ab8ffdc5a5d0732041c2c1a19d9dab1d800526f0ebd780699e2f2ab4cf6e",
+    "response_text": ""
+  },
+  {
+    "model": "gemini-3.1-flash-image",
+    "repetition": 1,
+    "output": "ai/3.1-flash_r1.png",
+    "dimensions": [
+      1200,
+      896
+    ],
+    "sha256": "b70a64321de39727d0544141db4fb054c8adc14f83ab3c184ff7496b00c707dd",
+    "response_text": ""
+  },
+  {
+    "model": "gemini-3.1-flash-image",
+    "repetition": 2,
+    "output": "ai/3.1-flash_r2.png",
+    "dimensions": [
+      1200,
+      896
+    ],
+    "sha256": "f49d9fb5bb655cd509c615d1679e057a1b3bbe836adb7f6b63c9d998782cb996",
+    "response_text": ""
+  },
+  {
+    "model": "gemini-3.1-flash-image",
+    "repetition": 3,
+    "output": "ai/3.1-flash_r3.png",
+    "dimensions": [
+      1200,
+      896
+    ],
+    "sha256": "9bae2af23947602f743f1d79c08cba0343ff0855e9dd36b9b5c116fd35c119ed",
+    "response_text": ""
+  },
+  {
+    "model": "gemini-3-pro-image",
+    "repetition": 1,
+    "output": "ai/3-pro_r1.png",
+    "dimensions": [
+      1200,
+      896
+    ],
+    "sha256": "4c08730171f850167e71942cacb7feaf6e4b5af2b52ba5b1a90bf65cd3c32805",
+    "response_text": ""
+  }
+]

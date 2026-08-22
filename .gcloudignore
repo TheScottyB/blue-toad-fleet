@@ -1,37 +1,38 @@
 # What Cloud Build receives for `gcloud run deploy --source .`
 #
-# Without this file gcloud falls back to .gitignore, which would drop
-# embeddings.json (derived, gitignored) and leave GET / walk-only.
-# reshoot_edges.json is the tiny merge table GET / actually reads.
+# Inherit the repository exclusions first, then add build-only exclusions.
+# This keeps local-only files out of Cloud Build even when they are untracked
+# on the machine running the deploy.
+#
+# The service reads src/, the Aug 22 JSON/text state (including
+# embeddings.json + reshoot_edges.json), and the twelve tracked
+# candidate photos explicitly allowed below.
 
 .git/
-.gitignore
 .gcloudignore
+#!include:.gitignore
 
-# secrets — env vars are set on the service, never baked into the image
-.env
-.env.local
-.env.example
-
-# local tooling
-.venv/
-node_modules/
-__pycache__/
-*.pyc
-.pytest_cache/
-.hypothesis/
-.vscode/
-.agents/
-.superpowers/
-pyrightconfig.json
+# local agent/browser state; may contain authenticated URLs or account data
+.claude/
+.playwright-mcp/
 
 # heavy artifacts the runtime never opens
-media/
 docs/screenshots/
 docs/*.png
 artifacts/
-demo/out/
-data/dryruns/
-data/**/images/
-data/**/estatesales_images/
-BRIEF-from-*.md
+
+# Runtime image endpoints need exactly these tracked candidate photos.
+!data/aug22_gallery_4160518/images/
+data/aug22_gallery_4160518/images/*
+!data/aug22_gallery_4160518/images/001_838421457.jpg
+!data/aug22_gallery_4160518/images/002_838421481.jpg
+!data/aug22_gallery_4160518/images/016_838421603.jpg
+!data/aug22_gallery_4160518/images/021_838421663.jpg
+!data/aug22_gallery_4160518/images/030_838421778.jpg
+!data/aug22_gallery_4160518/images/041_838421998.jpg
+!data/aug22_gallery_4160518/images/048_838422082.jpg
+!data/aug22_gallery_4160518/images/050_838422109.jpg
+!data/aug22_gallery_4160518/images/066_838422230.jpg
+!data/aug22_gallery_4160518/images/087_838422448.jpg
+!data/aug22_gallery_4160518/images/181_838424282.jpg
+!data/aug22_gallery_4160518/images/235_838425392.jpg
