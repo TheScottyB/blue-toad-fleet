@@ -17,8 +17,6 @@ from dataclasses import dataclass
 from io import BytesIO
 from typing import Mapping
 
-from PIL import Image, ImageOps
-
 
 CONTAINER_TYPES = ["box", "tub", "tray", "case", "basket", "shelf", "other", "none"]
 MARKET_ROLES = ["alpha", "supporting", "filler"]
@@ -91,6 +89,10 @@ def crop_to_container(
         raise ValueError("container boundary is missing or invalid")
     if not image_bytes:
         raise ValueError("container crop requires image bytes")
+
+    # Pillow is a dev dependency (requirements-dev.txt). Cloud Run installs
+    # only requirements.txt; GET / uses visible_contents, never this crop.
+    from PIL import Image, ImageOps
 
     with Image.open(BytesIO(image_bytes)) as source:
         image = ImageOps.exif_transpose(source).convert("RGB")
