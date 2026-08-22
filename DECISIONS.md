@@ -144,3 +144,47 @@ drop nor a fresh fetch. Accepted here because the change is a typo correction
 by the house on a lot nobody bids. A caption change on a BID lot should NOT be
 quietly refreshed — it changes how photos group into bids, and that is a
 decision for the operator.
+
+---
+
+## D8 — Wired `clerk_directive` to the console instead of leaving it inert
+
+**Ambiguity:** the brief said work through open TODOs. The repo has ZERO literal
+TODO/FIXME markers, so there was no list to work from. Invent work, or derive it?
+
+**Decision:** derived a work list from signals the repo can prove — a static
+audit for public functions in `src/` with no caller outside their own tests. It
+surfaced three: `clerk_directive`, `remainder_opportunity` and `elect`. Took the
+first.
+
+**Why:** inventing TODOs would have produced work nobody asked for. A function
+that is built, tested, and called by nothing is a defect the repo can
+demonstrate, and `clerk_directive` is the sharpest case — it is the single line
+that says what to DO with a lot, and the console the operator actually reads
+showed a price with no instruction. This session criticised exactly that shape
+twice today (an inert `BidMechanic` enum, and `mechanic_from_ruling` with no
+caller); leaving a third instance would have been inconsistent.
+
+The directive renders as prose in its own CSS class, deliberately, so the card's
+money figures stay the only summable ones on the page — the console header and
+its cards must keep reconciling, and a stray "All-in $86.25." inside a money
+span would have broken that silently.
+
+**NOT taken, and why:** `remainder_opportunity` would add speculative bid lines
+to the live sheet. That changes what the operator sees as committed and breaks
+`test_sheet_matches_what_was_sent.py`, which pins the sheet to the artifact Blue
+Toad received. Turning it on is a money-visible decision, not a wiring job.
+`elect` has no production path for the same reason — k currently arrives only
+via `mechanic_from_ruling`, and inventing a second source for it would let two
+places disagree about how many units the operator wants.
+
+---
+
+## Recurring friction worth fixing later
+
+`tests/test_docs_match_the_sheet.py` pins the README badge and DEVPOST counts to
+the collected suite size, so EVERY commit that adds a test turns it red until the
+docs are re-synced. That happened four times in this run. The guard is right —
+it exists because a judge read a badge claiming 298 on a suite of 445 — but the
+sync should be a script or a pre-commit hook rather than a manual step, or people
+will start editing the assertion instead of the docs.

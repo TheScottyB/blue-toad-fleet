@@ -238,3 +238,44 @@ class TestOperatorDecisionsSurvive:
                          max_bid=cap * 0.4, all_in=all_in_cost(cap * 0.4),
                          bid_fraction=0.35, reason="", needs_human_pricing=False)
             assert apply_operator_cap(d).max_bid == cap
+
+
+class TestTheConsoleShowsTheClerkDirective:
+    """`clerk_directive` is the one line that says what to DO with a lot, and it
+    had no caller outside its own tests — the same defect this session twice
+    criticised elsewhere: a function built, tested, and wired to nothing.
+
+    The operator reads the console. A lot whose mechanic says DO NOT BID, or
+    whose per-unit price commits three times its printed max, should say so on
+    the card rather than only in a module nobody calls.
+    """
+
+    def test_a_per_unit_lot_states_its_directive_on_the_card(self):
+        from starlette.testclient import TestClient
+        from src.server import app
+        from src.bidmath import BidMechanic
+        from src.server import get_aug22_state
+        _, _, _, decisions, _, _, _ = get_aug22_state()
+        per_unit = [d for d in decisions if d.allocated
+                    and d.mechanic is not BidMechanic.STRAIGHT]
+        if not per_unit:
+            pytest.skip("no per-unit lot on the current sheet")
+        html = TestClient(app).get("/").text
+        for d in per_unit:
+            assert "times the money" in html.lower() or "buyer's choice" in html.lower(), (
+                f"{d.lot_id} commits {d.unit_count} units and the console never "
+                f"says which mechanic")
+
+    def test_the_directive_does_not_disturb_the_card_money_sum(self):
+        """The console header and its cards must still reconcile — the directive
+        is prose, not a second set of figures to be summed."""
+        import re as _re
+        from starlette.testclient import TestClient
+        from src.server import app, get_aug22_state
+        from src.bidmath import summarize
+        _, _, _, decisions, _, _, _ = get_aug22_state()
+        html = TestClient(app).get("/").text
+        cards = [float(x.replace(",", "")) for x in
+                 _re.findall(r"all-in \$([\d,]+\.\d{2})</span>", html)]
+        assert sum(cards) == pytest.approx(
+            summarize(decisions).committed_all_in, abs=0.01)

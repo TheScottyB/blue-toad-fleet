@@ -12,7 +12,8 @@ from dataclasses import dataclass, field
 from html import escape
 
 from src.appraisal import QueueResult
-from src.bidmath import units_committed, Decision, Priority, SheetSummary
+from src.bidmath import (units_committed, clerk_directive, BidMechanic,
+                         Decision, Priority, SheetSummary)
 
 
 @dataclass
@@ -97,6 +98,7 @@ footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);color:v
 .map-zone.wall{grid-column:1 / span 3;text-align:center;border-style:solid;border-color:var(--line);background:var(--card2)}
 .map-zone.aisle{grid-column:2;background:rgba(167,139,250,0.06);border-color:var(--violet);text-align:center}
 .map-zone b{color:var(--ink);display:block;font-size:13px;margin-bottom:3px}
+.directive{margin-top:6px;padding:6px 8px;border-left:2px solid var(--cyan);background:rgba(56,189,248,0.06);font-size:12px;color:var(--ink);line-height:1.45}
 .map-tag{font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(56,189,248,0.15);color:var(--cyan);font-weight:600}
 
 /* Pitch Banner */
@@ -275,11 +277,20 @@ def _sheet_block(v: CycleView) -> str:
                 flag = _tag("over budget")
         body = (f'<div class="refuse">No external comp &mdash; human pricing required</div>'
                 if d.needs_human_pricing else f'<div class="why">{escape(d.reason)}</div>')
+        # The one line that says what to DO with this lot. It lived in bidmath
+        # with no caller outside its own tests — built, tested, and wired to
+        # nothing — while the surface the operator actually reads showed a price
+        # and no instruction. Rendered as prose in its own class so the card's
+        # money figures remain the only summable ones on the page: the header
+        # and the cards have to keep reconciling.
+        directive = (f'<div class="directive">{escape(clerk_directive(d))}</div>'
+                     if (d.mechanic is not BidMechanic.STRAIGHT
+                         or d.needs_mechanic_ruling) else "")
         out.append(
             f'<div class="card {cls}"><div class="hd">'
             f'<span class="id">{escape(d.lot_id)}</span>'
             f'<span class="idn">{escape(caption or d.category)}</span>'
-            f'{_tag(d.priority.value)}{flag}{money}</div>{body}</div>'
+            f'{_tag(d.priority.value)}{flag}{money}</div>{body}{directive}</div>'
         )
     return "\n".join(out)
 
