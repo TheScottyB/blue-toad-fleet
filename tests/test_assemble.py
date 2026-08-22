@@ -14,6 +14,7 @@ from src.assemble import AppraisedPhoto, assemble_lots
 from src.bidmath import (
     CompEstimate, Confidence, Priority, allocate, price_lot,
 )
+from scripts.run_vertex_pipeline import apply_operator_fit
 
 
 def ap(pid, caption="", **kw):
@@ -165,6 +166,42 @@ class TestReshootMerge:
         assert f"seq:{self.P87}" in by_id
         assert f"seq:{self.P181}" not in by_id
         assert by_id[f"seq:{self.P2}"].unit_count == 1
+
+
+class TestOperatorFitAfterMerge:
+    """Owner decline of BT-181 must not SKIP the surviving BT-002 lot."""
+
+    def test_declined_closeup_does_not_zero_merged_lot_fit(self):
+        lots = assemble_lots(
+            [
+                ap("BT-002", "Estate Costume Jewelry",
+                   identification="trays 12/14/16", category="jewelry",
+                   fit_score=0.85, confidence=Confidence.MEDIUM),
+                ap("BT-181", "estate costume jewelry",
+                   identification="close-up of trays 12/14", category="jewelry",
+                   fit_score=0.0, confidence=Confidence.HIGH),
+            ],
+            comps={"seq:BT-002": comp(), "BT-002": comp()},
+            reshoot_edges={frozenset({"BT-002", "BT-181"})},
+        )
+        assert len(lots) == 1
+        lot = apply_operator_fit(lots[0])
+        assert lot.lot_id == "BT-002"
+        assert lot.fit_score == pytest.approx(0.90)
+        d = price_lot(lot)
+        assert d.priority is not Priority.SKIP
+        assert d.max_bid is not None
+
+    def test_unmerged_declined_181_still_skips(self):
+        lots = assemble_lots(
+            [ap("BT-181", "estate costume jewelry", category="jewelry",
+                fit_score=0.9, confidence=Confidence.HIGH)],
+            comps={"seq:BT-181": comp(), "BT-181": comp()},
+        )
+        lot = apply_operator_fit(lots[0])
+        assert lot.lot_id == "BT-181"
+        assert lot.fit_score == pytest.approx(0.0)
+        assert price_lot(lot).priority is Priority.SKIP
 
 
 class TestContainerDecomposition:

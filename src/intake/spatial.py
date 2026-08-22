@@ -218,6 +218,9 @@ def reshoot_edges(
     vectors: dict[str, tuple | list],
     sequences: dict[str, int],
 ) -> set[frozenset[str]]:
+    # nn consults sequences[id]; extra cache keys (or a photo_id/BT mix) must
+    # not KeyError or steal the argmax. Same filter as list_reshoot_edges.
+    vectors = {k: v for k, v in vectors.items() if k in sequences}
     edges: set[frozenset[str]] = set()
     for i in vectors:
         j = nearest_neighbor(i, vectors, sequences)

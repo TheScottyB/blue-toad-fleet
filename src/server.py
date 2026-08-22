@@ -15,9 +15,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse
 
 from dataclasses import replace
-from src.intake.embed import load_vectors
+from src.intake.embed import load_reshoot_edges
 from src.intake.manifest import parse_drop, group_into_lots, LotGroup, TriagedPhoto
-from src.intake.spatial import merge_reshoots, reshoot_edges, seats_from_groups
+from src.intake.spatial import merge_reshoots, seats_from_groups
 from src.assemble import AppraisedPhoto, assemble_lots, NO_COMP, compile_absentee_email
 from src.bidmath import (
     Lot, CompEstimate, Confidence as BidConfidence, Priority, Decision,
@@ -33,7 +33,7 @@ from src.gate import CycleView, render_console
 from src.gate.pitch import build_pitch, curator_voice, _CURATOR_SYSTEM
 from src.gate.voice import write_pitch_voice
 from scripts.run_vertex_pipeline import (
-    REFERENCE_COMPS, OPERATOR_APPROVED, operator_lot_inputs, apply_operator_cap,
+    REFERENCE_COMPS, OPERATOR_APPROVED, apply_operator_cap, apply_operator_fit,
     trusted_lot_flags,
 )
 
@@ -218,9 +218,11 @@ def get_aug22_state():
             raw_app = app_pair[1] if app_pair else {}
             ident = raw_app.get("identification", comp_info["desc"])
             cat = comp_info["cat"]
-            # The owner's decision carries the fit; the appraiser's own condition
-            # and confidence readings stand, so the console shows both.
-            fit, penalty = operator_lot_inputs(lot_tag, raw_app)
+            # Appraiser readings only here. Owner fit is applied after merge
+            # on the surviving lot_id — stamping BT-181's decline onto the
+            # close-up would let a high-confidence 181 SKIP BT-002.
+            fit = float(raw_app.get("fit_score", 0.50))
+            penalty = float(raw_app.get("condition_penalty", 0.0))
             conf_str = str(raw_app.get("confidence", "low")).lower()
             conf = (AppConfidence(conf_str)
                     if conf_str in AppConfidence._value2member_map_ else AppConfidence.LOW)
@@ -268,20 +270,21 @@ def get_aug22_state():
     if not embed_cache_path.exists():
         embed_cache_path = Path("/app/data/aug22_gallery_4160518/embeddings.json")
 
-    # AppraisedPhoto.photo_id is BT-00N; vectors, sequences, and edges share that space.
+    # One grouping space: AppraisedPhoto.photo_id, sequences, and edges are BT-00N.
+    # load_vectors accepts seq keys and gallery photo_ids into that space.
     photo_by_seq = {p["sequence"]: f"BT-{p['sequence']:03d}" for p in photos}
+    gallery_ids = {str(p["photo_id"]): f"BT-{p['sequence']:03d}" for p in photos}
     sequences = {f"BT-{p['sequence']:03d}": p["sequence"] for p in photos}
-    vectors = load_vectors(embed_cache_path, photo_by_seq)
-    if not vectors:
-        print("[!] embeddings cache missing or empty; walk-only grouping")
-    vectors = {k: v for k, v in vectors.items() if k in sequences}
-    edges = reshoot_edges(vectors, sequences) if vectors else set()
+    try:
+        edges = load_reshoot_edges(
+            embed_cache_path, photo_by_seq, sequences, gallery_ids=gallery_ids,
+        )
+    except Exception as e:
+        print(f"[!] Warning: Could not parse embedding cache: {e}")
+        edges = set()
 
     assembled_raw = assemble_lots(appraised_photos, comps=comps, reshoot_edges=edges)
-    lots = [
-        replace(l, lot_id=l.lot_id.removeprefix("seq:")) if l.lot_id.startswith("seq:") else l
-        for l in assembled_raw
-    ]
+    lots = [apply_operator_fit(l) for l in assembled_raw]
 
     groups = group_into_lots([
         TriagedPhoto(

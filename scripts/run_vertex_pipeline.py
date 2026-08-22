@@ -27,9 +27,9 @@ import openpyxl
 from openpyxl.styles import Font, PatternFill
 from openpyxl.utils import get_column_letter
 
-from src.intake.embed import load_vectors
+from src.intake.embed import load_reshoot_edges
 from src.intake.manifest import parse_drop, group_into_lots, TriagedPhoto
-from src.intake.spatial import merge_reshoots, reshoot_edges
+from src.intake.spatial import merge_reshoots
 from src.appraisal import (
     Appraisal, Confidence as AppConfidence, Question, QuestionKind,
     StandingRule, build_queue
@@ -213,6 +213,24 @@ def operator_lot_inputs(lot_id: str, raw_appraisal: dict) -> tuple[float, float]
     return (0.0 if fit is None else float(fit)), penalty
 
 
+def apply_operator_fit(lot):
+    """Owner fit is keyed by the surviving lot_id, after reshoot merge.
+
+    Stamping fit=None onto a member photo before merge lets a high-confidence
+    close-up (BT-181) zero the surviving lot (BT-002). Apply after union.
+    """
+    lot_id = lot.lot_id.removeprefix("seq:")
+    if lot_id != lot.lot_id:
+        lot = replace(lot, lot_id=lot_id)
+    fit, _ = operator_lot_inputs(lot_id, {
+        "fit_score": lot.fit_score,
+        "condition_penalty": lot.condition_penalty,
+    })
+    if fit == lot.fit_score:
+        return lot
+    return replace(lot, fit_score=fit)
+
+
 def apply_operator_cap(decision):
     """
     Use the max bid the owner set, where he set one.
@@ -330,8 +348,7 @@ def run_pipeline(
     cache = Path(data_dir) / "embeddings.json"
     photo_by_seq = {p["sequence"]: p["photo_id"] for p in photos}
     sequences = {p["photo_id"]: p["sequence"] for p in photos}
-    vectors = load_vectors(cache, photo_by_seq)
-    edges = reshoot_edges(vectors, sequences) if vectors else set()
+    edges = load_reshoot_edges(cache, photo_by_seq, sequences)
     lot_groups = merge_reshoots(lot_groups, edges)
     print(f"[+] Grouped {len(photos)} photos into {len(lot_groups)} distinct lots.")
 

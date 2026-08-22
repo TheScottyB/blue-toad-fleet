@@ -46,6 +46,11 @@ class TestReshootEdges:
     def test_walk_adjacent_never_an_edge_even_if_closest(self):
         assert frozenset({P180, P181}) not in reshoot_edges(_vectors(), SEQ)
 
+    def test_vectors_not_in_sequences_are_ignored(self):
+        v = dict(_vectors())
+        v["ghost"] = v[P2]
+        assert frozenset({P2, P181}) in reshoot_edges(v, SEQ)
+
     def test_sanity_floor_vetoes_weak_mutual_pair(self):
         from src.intake.spatial import cosine
         weak = {"a": (1.0, 0.0), "b": (0.70, 0.71414)}

@@ -16,7 +16,7 @@ judgment, just parsing and grouping — so that when the pipeline produces
 nonsense, this is not where you have to look.
 """
 
-from src.intake.embed import load_vectors
+from src.intake.embed import load_reshoot_edges, load_vectors
 from src.intake.manifest import (
     GalleryDrop, LotGroup, PhotoRef, TriagedPhoto, WorkItem,
     group_into_lots, parse_drop, plan_fanout,
@@ -30,6 +30,7 @@ from src.intake.spatial import (
 
 __all__ = ["GalleryDrop", "LotGroup", "PhotoRef", "TriagedPhoto", "WorkItem",
            "group_into_lots", "parse_drop", "plan_fanout", "load_vectors",
+           "load_reshoot_edges",
            "SpatiallyTaggedPhoto", "SurfaceSignature", "Zone",
            "AdjacencyClaim", "PhotoObservation", "Seat",
            "apply_trajectory", "occupancy", "spatial_same_lot",
