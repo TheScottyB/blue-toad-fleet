@@ -248,13 +248,23 @@ def build_queue(
     return result
 
 
+# House conventions: grouping/scope answers may generalise across clusters
+# in the two-cycle demo. Durable shop memory must not: a "these two lanterns
+# are separate lots" answer would suppress every future railroad grouping
+# question. Firestore / the Gate only persist POLICY and APPETITE.
+CONVENTION_GENERALISABLE = frozenset({
+    QuestionKind.POLICY, QuestionKind.LOT_GROUPING,
+    QuestionKind.SCOPE, QuestionKind.APPETITE,
+})
+SHOP_MEMORY_GENERALISABLE = frozenset({
+    QuestionKind.POLICY, QuestionKind.APPETITE,
+})
+
+
 def learn(
     answered: Iterable[tuple[Question, str]],
     cycle: str,
-    generalisable: frozenset[QuestionKind] = frozenset(
-        {QuestionKind.POLICY, QuestionKind.LOT_GROUPING,
-         QuestionKind.SCOPE, QuestionKind.APPETITE}
-    ),
+    generalisable: frozenset[QuestionKind] = CONVENTION_GENERALISABLE,
 ) -> list[StandingRule]:
     """
     Promote answers to standing rules.

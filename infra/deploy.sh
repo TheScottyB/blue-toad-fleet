@@ -13,12 +13,20 @@ gcloud services enable run.googleapis.com aiplatform.googleapis.com \
   --project "$GOOGLE_CLOUD_PROJECT"
 
 echo "==> [2/3] Building and deploying $SERVICE_NAME to Cloud Run ($REGION)..."
+ENV_VARS="GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT},VERTEX_LOCATION=global,BTF_MEMORY_BACKEND=firestore,BTF_FIRESTORE_DATABASE=blue-toad"
+SECRET_FLAGS=()
+if gcloud secrets describe operator-token --project "$GOOGLE_CLOUD_PROJECT" >/dev/null 2>&1; then
+  SECRET_FLAGS+=(--set-secrets "OPERATOR_TOKEN=operator-token:latest")
+else
+  echo "[!] secret operator-token missing; POST /api/answer will 503 until it exists"
+fi
 gcloud run deploy "$SERVICE_NAME" \
   --source . \
   --region "$REGION" \
   --platform managed \
   --allow-unauthenticated \
-  --set-env-vars GOOGLE_CLOUD_PROJECT="$GOOGLE_CLOUD_PROJECT",VERTEX_LOCATION=global,BTF_MEMORY_BACKEND=firestore,BTF_FIRESTORE_DATABASE=blue-toad \
+  --set-env-vars "$ENV_VARS" \
+  "${SECRET_FLAGS[@]}" \
   --project "$GOOGLE_CLOUD_PROJECT"
 
 echo "==> [3/3] Fetching service status and public URL..."

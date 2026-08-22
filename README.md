@@ -7,7 +7,7 @@
 
   [![Google Cloud Run](https://img.shields.io/badge/Google%20Cloud%20Run-Live%20Service-34d399?style=flat-square&logo=googlecloud)](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app)
   [![Vertex AI](https://img.shields.io/badge/Vertex%20AI-Gemini%203.6%20Flash-a78bfa?style=flat-square&logo=google)](https://cloud.google.com/vertex-ai)
-  [![Unit Tests](https://img.shields.io/badge/Unit%20Tests-671-38bdf8?style=flat-square&logo=pytest)](https://github.com/TheScottyB/blue-toad-fleet)
+  [![Unit Tests](https://img.shields.io/badge/Unit%20Tests-682-38bdf8?style=flat-square&logo=pytest)](https://github.com/TheScottyB/blue-toad-fleet)
   [![License: MIT](https://img.shields.io/badge/License-MIT-fbbf24?style=flat-square)](LICENSE)
 </div>
 
@@ -45,7 +45,7 @@ make demo
 # 3. Watch cross-cycle memory collapse the clarification queue
 make cycles
 
-# 4. Run the unit suite — 664 pass, 7 network tests skip by default (~5s)
+# 4. Run the unit suite — 675 pass, 7 network tests skip by default (~5s)
 make test
 ```
 
@@ -73,10 +73,7 @@ Capital is not the constraint — **time and visual throughput are**. The goal i
 
 ### 1. The Spatial Room Graph (Reconstructing the Pole Barn)
 * **Why We Do It:** Auction galleries drop 450+ unlabelled photos with zero lot numbers. Treating photos as isolated images causes duplicate bids on multi-angle shots, misses multi-box estate runs, and leaves the buyer blind during Saturday's 1-hour preview window.
-* **How It Works:** Auctioneers don't teleport; they walk a physical room. Blue Toad Fleet reconstructs the physical 200 Elizabeth Lane pole barn showroom (2 Center Islands, 2 Long Side Walls, Back Wall displays, and Under-Table Floor Space):
-  * **Surface Signature Invariants:** Segments background surface textures (blue pleated vinyl vs. raw pine plywood vs. concrete slab) to determine physical room zones.
-  * **Peripheral Margin Co-Visibility:** Scans image borders for neighboring items (e.g., a sliver of a DiMaggio hat on the border of a Dan Marino photo) to anchor uncaptioned photos to table clusters.
-  * **Trajectory Clustering:** Preserves the auctioneer's physical walking path via natural sorting, merging 10 loose under-table box photos into **ONE Poppy Trail estate dinnerware set** and eliminating 95 duplicate multi-angle bids.
+* **How It Works:** Auctioneers walk a room; photos are not a bag. Production grouping is caption / `same_lot_as_previous` plus embedding reshoot edges (seq 2↔181). Unplaced lots stay on a holding strip. The barn drawing is a walk-order map, not a surveyed floor plan.
 
 ### 2. Container Lot Decomposition ("Mining for Gold")
 * **Why Spatial Isolation is Required:** High-margin gold in rural auctions (e.g., 11–12 Edison Blue Amberol cylinders, 1959–69 Topps baseball cards, estate costume jewelry trays) is dumped into cardboard boxes or plastic tubs on crowded utility tables. Without spatial mapping to isolate the container and mask out surrounding room noise, vision models blend the box with adjacent table clutter (clocks, lamps, tools) and generate dirty, hallucinated comps.
@@ -91,7 +88,7 @@ Cloud Run, `types.Part.from_bytes` to assemble the photo alongside the prompt, a
 
 * **Triage Fan-out (`gemini-3.5-flash-lite`):** Ingests 460+ raw photos in seconds for ~$0.30 per cycle, filtering out low-margin clutter and background filler.
 * **Deep Multimodal Appraisal (`gemini-3.6-flash`):** Evaluates high-conviction survivors using structured OpenAPI 3.0 schemas on the `global` Vertex endpoint.
-* **Honest Refusal Rule:** The appraisal model is forbidden from naming any price at all (`APPRAISAL_SYSTEM`: *"NEVER state or imply a price, estimate or value range"*). The refusal is decided downstream and is deterministic, not model-dependent — `price_lot` ([`src/bidmath/__init__.py`](src/bidmath/__init__.py)) returns any lot whose `CompEstimate` has no sources with `max_bid=None` and the reason `no external comp — human pricing required`, and `allocate` can never allocate it. On the live Aug-22 cycle this refuses **190 of 415 lots**.
+* **Honest Refusal Rule:** The appraisal model is forbidden from naming any price at all (`APPRAISAL_SYSTEM`: *"NEVER state or imply a price, estimate or value range"*). The refusal is decided downstream and is deterministic, not model-dependent — `price_lot` ([`src/bidmath/__init__.py`](src/bidmath/__init__.py)) returns any lot whose `CompEstimate` has no sources with `max_bid=None` and the reason `no external comp — human pricing required`, and `allocate` can never allocate it. On the live Aug-22 cycle this refuses **170 of 353 lots**.
 
 ### 3a. Grounded Pricing Without Losing the Evidence
 Live Vertex validation exposed a failure at the boundary between Google Search grounding and structured output: adding `response_schema` preserved the search queries but returned **zero `grounding_chunks`**; the same call without the schema returned six citation chunks. Blue Toad therefore separates the work. The first call performs grounded research in free text and preserves Google-supplied citations; a second call, with no tools or search, is instructed to extract only the figures in that research note into the pricing schema. Three independent grounded samples are then medianed, and the lot is refused if the calls disagree too widely, contain fewer than two sold comps, or provide no usable citation. See [`price_lot_grounded`](src/appraiser/engine.py) and [`price_is_usable`](src/appraiser/pricing.py).
@@ -115,7 +112,7 @@ Grouped assets sold "Choice / Times the Money" are the classic clerk-multiplicat
 BT-002 closed this loop on real money. Gemini saw three labeled jewelry trays and asked whether the bid covered one tray or all three. The auctioneer confirmed, *"Yes, that is a ×3 bid."* Recorded as the text ruling *"take all three trays at ×3,"* it resolved to `TIMES_THE_MONEY, 3`: the owner's **$25 per-unit cap became $75 committed max / $86.25 all-in**, and `clerk_directive` produced an explicit instruction to take all three. Without that ruling, the sheet would have understated its own exposure by $50 before fees.
 
 ### 5. The Collaborative Partner & Proactive Pushback
-The fleet acts as an expert commercial peer. On Friday afternoon, the agent presents a 3-tier pitch (Alpha Picks, Fast Smalls, and a Wildcard Challenge). When the owner asked to drop sports cards and tools due to store backlog, the agent used real-time eBay velocity data to respectfully push back and preserve the **13 Golden Era 1959–1969 Topps baseball cards ($100 cap)**, delivering a $300+ resale spread.
+The fleet acts as an expert commercial peer. On Friday afternoon, the agent presents a 3-tier pitch (Alpha Picks, Fast Smalls, and a Wildcard Challenge). When the owner asked to drop sports cards and tools due to store backlog, the sheet kept the **13 Golden Era 1959–1969 Topps baseball cards at a $100 cap** on his written ruling — not a live eBay API. The intended velocity gate is public sold+active counts over ~90 days: implied days of supply ≤ 14 (the two-week cadence). That pass has not yet been run on the full lot set.
 
 ### 6. Pure Deterministic BidMath Engine
 Appraisals feed into pure, unit-tested valuation logic implementing the store's documented **35–40% buy-in band** (applied at its 37.5% midpoint), condition discounts, standard **$5.00 bidding increments**, and the mandatory **15% absentee fee**.
@@ -127,9 +124,9 @@ Appraisals feed into pure, unit-tested valuation logic implementing the store's 
 | Metric | July 11 Historical Benchmark | August 22 Live Sourcing Cycle |
 | :--- | :--- | :--- |
 | **Raw Photos Ingested** | 452 raw photos (324 captioned) | 462 raw photos (304 captioned) |
-| **Lots Appraised on Vertex AI** | — | **228 of 415** (Stage 1 triage filtered the rest) |
-| **Multi-Angle Duplicates Merged** | **95 duplicate photos merged** | **46 duplicate photos merged** |
-| **Consolidated Physical Lots** | 357 physical lots | 415 physical lots |
+| **Lots Appraised on Vertex AI** | — | **228** (Stage 1 triage filtered the rest) |
+| **Multi-Angle Duplicates Merged** | **95 duplicate photos merged** | walk grouping + embedding reshoots → **353 lots from 462 photos** |
+| **Consolidated Physical Lots** | 357 physical lots | **353 physical lots** |
 | **Legacy V1 Wishlist Chaos** | 88 unranked rows (**$14,340.00 max sum**) | N/A (Displaced by Fleet V2) |
 | **Fleet V2 Approved Sourcing** | **67 bids allocated ($1,910.00 max)** | **9 approved bids ($275.00 max)** |
 | **Total Committed All-In (w/ 15% Fee)**| **$2,196.50** (strictly under $2,205 cap) | **$316.25** (strictly under $600 cap) |
@@ -191,7 +188,7 @@ blue-toad-fleet/
 │   ├── gate/                   # Gate Console UI renderer (pure HTML/CSS)
 │   ├── intake/                 # Manifest parsing, natural sort & spatial clustering
 │   └── server.py               # Cloud Run FastAPI server & API endpoints
-├── tests/                      # Comprehensive pytest unit suite (671 tests)
+├── tests/                      # Comprehensive pytest unit suite (682 tests)
 ├── Dockerfile                  # Container definition for Google Cloud Run
 ├── LICENSE                     # MIT License
 ├── Makefile                    # Standard developer workflow targets

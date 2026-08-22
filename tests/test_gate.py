@@ -61,6 +61,7 @@ class TestQuestionQueue:
         assert 'data-question-id="q_' in h
         assert 'data-act="answer"' in h
         assert 'fetch("/api/answer"' in h
+        assert "X-Operator-Token" in h
         assert "src=" not in h and "href=" not in h
 
     def test_photo_requests_are_marked(self):

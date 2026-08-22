@@ -51,10 +51,7 @@ Blue Toad Fleet transforms an uncataloged 450-photo gallery drop into an actiona
 
 ### 1. The Spatial Room Graph (Reconstructing the Pole Barn)
 * **Why We Do It:** Auction galleries drop 450+ unlabelled photos with zero lot numbers. Treating photos as isolated images causes duplicate bids on multi-angle shots, misses multi-box estate runs, and leaves the buyer blind during Saturday's 1-hour preview window. Reconstructing the physical room solves these critical failure modes.
-* **How It Works:** Auctioneers don't teleport; they walk a physical room. Blue Toad Fleet reconstructs the physical 200 Elizabeth Lane pole barn showroom (2 Center Islands, 2 Long Side Walls, Back Wall displays, and Under-Table Floor Space):
-  * **Surface Signature Invariants:** Segments background surface textures (blue pleated vinyl vs. raw pine plywood vs. concrete slab) to determine physical room zones.
-  * **Peripheral Margin Co-Visibility:** Scans image borders for neighboring items (e.g., a sliver of a DiMaggio hat on the border of a Dan Marino photo) to anchor uncaptioned photos to table clusters.
-  * **Trajectory Clustering:** Preserves the auctioneer's physical walking path via natural sorting, merging 10 loose under-table box photos into **ONE Poppy Trail estate dinnerware set** instead of 10 blind bids and eliminating 95 duplicate multi-angle bids.
+* **How It Works:** Auctioneers walk a room; photos are not a bag. Production grouping is caption/`same_lot_as_previous` plus embedding reshoot edges (seq 2↔181). Unplaced lots stay on a holding strip. The console's barn drawing is a walk-order map, not a surveyed floor plan.
 
 ### 2. Container Lot Decomposition ("Mining for Gold")
 * **Why Spatial Isolation is Required:** High-margin gold in rural auctions (e.g., 11–12 Edison Blue Amberol cylinders, 1959–69 Topps baseball cards, estate costume jewelry trays) is dumped into cardboard boxes or plastic tubs on crowded utility tables. Without spatial mapping to isolate the container and mask out surrounding room noise, vision models blend the box with adjacent table clutter (clocks, lamps, tools) and generate dirty, hallucinated comps.
@@ -71,8 +68,7 @@ Country auctioneers frequently sell grouped assets as "Buyer's Choice / Times th
 BT-002 closed the collaborative loop on real money. Gemini saw three labeled jewelry trays and asked whether the bid covered one tray or all three. The auctioneer confirmed, *"Yes, that is a ×3 bid."* Recorded as the text ruling *"take all three trays at ×3,"* `mechanic_from_ruling` resolved it to `TIMES_THE_MONEY, 3`. The owner's **$25 per-unit cap became $75 committed max / $86.25 all-in**, the allocator budgeted the full exposure, and `clerk_directive` wrote: *"BT-002 — times the money: $25.00 per unit x 3. All-in $86.25."* Without that answer, the sheet would have understated its own commitment by $50 before fees.
 
 ### 5. Proactive Velocity Pushback & The Curator's Negotiation
-The fleet acts as an **expert commercial partner, not a passive yes-man**. On Friday afternoon, the agent presents a 3-tier pitch (Top 3 Alpha Picks, Fast Smalls, and a Wildcard Challenge). When the owner asked to drop sports cards and tools due to store backlog, the agent used real-time eBay velocity data to respectfully push back:
-> *"Understood on dropping modern sports cards, but heads up on Photo #1: these are 13 Golden Era 1959–1969 Topps cards in hard top-loaders (Mays/Aaron era) with <14 day turnaround at 4x margin. Recommend keeping a $100 defensive cap."*
+The fleet acts as an **expert commercial partner, not a passive yes-man**. On Friday afternoon, the agent presents a 3-tier pitch (Top 3 Alpha Picks, Fast Smalls, and a Wildcard Challenge). The owner’s standing rule skipped modern sports and tools; BT-001 stayed on the sheet at his **$100 cap**. The velocity gate we actually want is public eBay sold+active over ~90 days, asking whether implied supply lasts **≤14 days** (the two-week cadence). That has been proven as a method on a few lots; it has not been run across the full sheet.
 
 ### 6. Deterministic Greedy Budget Allocation
 Appraisals feed into pure, unit-tested bid math implementing the store's documented 35–40% buy-in band (applied at its 37.5% midpoint), condition discounts, standard $5.00 auction increments, and the mandatory 15% absentee fee. The final absentee email is compiled automatically for `info@bluetoadauctions.com`.
@@ -94,7 +90,7 @@ Appraisals feed into pure, unit-tested bid math implementing the store's documen
   * Pure, decoupled Python backend — no orchestration framework, no vector store, no agent runtime. The loop above is ~3,500 lines of typed Python, of which the decision layer — photo grouping, the question queue, cross-cycle memory and the bid math — is ~1,300 lines that make no model calls and touch no I/O, so every number that reaches a bid sheet is reproducible and unit-tested.
   * Deterministic keyed memory `(QuestionKind, Category)` that generalises house conventions without vector drift.
   * Automated Excel bid sheet generator (`openpyxl`) and formatted absentee email draft generator.
-  * 664 unit tests passing (671 collected; 7 network tests skip by default), in about five seconds.
+  * 675 unit tests passing (682 collected; 7 network tests skip by default), in about five seconds.
 
 ---
 
@@ -103,7 +99,7 @@ Appraisals feed into pure, unit-tested bid math implementing the store's documen
 1. **Uncalibrated Multi-Angle Ingestion:** Rural auction galleries contain duplicate angles and multi-box runs with zero metadata. We solved this by developing the Spatial Room Graph to track background surface transitions and margin co-visibility.
 2. **Preserving Citations Under Structured Output:** In live Vertex validation, a Google-Search-grounded call with `response_schema` recorded its queries but returned zero citation chunks; removing the schema returned six. We separated grounded research from structured extraction, then reject any price without usable citations.
 3. **The "Times the Money" Multiplier Trap:** BT-002 proved the risk was real: the auctioneer's ×3 ruling changed a $25 per-unit ceiling into $75 of committed exposure. The ruling now flows through mechanic parsing, allocation, totals, and the clerk instruction.
-4. **Preventing Passive "Yes-Man" Agent Behavior:** Generic LLMs blindly delete items when an owner gives broad negative feedback. We engineered proactive velocity pushback grounded in completed-sale evidence.
+4. **Preventing Passive "Yes-Man" Agent Behavior:** Generic LLMs blindly delete items when an owner gives broad negative feedback. Standing rules plus a human gate keep the Topps run at his $100 cap; a 14-day public-search absorption gate is the next wire, not a live eBay API.
 5. **Cloud Run Edge Routing Nuances:** Google Front End (GFE) edge proxies intercepting specific root paths required precise endpoint mapping (`/health`) to ensure instant public HTTP 200 verification.
 
 ---
@@ -119,7 +115,7 @@ Appraisals feed into pure, unit-tested bid math implementing the store's documen
 * **Flawless Google Cloud Deployment:**
   * Serving live traffic with sub-second response times on Cloud Run ([blue-toad-fleet-u5gvrqwvua-uc.a.run.app](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app)).
 * **100% Test Coverage on Core BidMath:**
-  * 664 unit tests passing (671 collected; 7 network tests skip by default), in about five seconds.
+  * 675 unit tests passing (682 collected; 7 network tests skip by default), in about five seconds.
 
 ---
 

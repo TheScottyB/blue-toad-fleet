@@ -8,7 +8,7 @@
 > drift: the auctioneer ruled the labelled jewelry tray run "a x3 bid"
 > (`c643171`), and BT-181 was found to be a close-up of trays already inside
 > BT-002 and declined rather than bought twice (`eb8bd7a`). Current figures are
-> **9 lots, $275.00 max, $316.25 all-in, 565 passing tests (572 collected)** — matching the absentee
+> **9 lots, $275.00 max, $316.25 all-in, 675 passing tests (682 collected)** — matching the absentee
 > sheet Blue Toad actually received, which `tests/test_sheet_matches_what_was_sent.py`
 > pins.
 >
@@ -27,7 +27,7 @@ must be recorded before they can be claimed by the video.
 * **Beat 3, replace the generic Choice-Lot sentence:**
   > *"On BT-002, Gemini saw three labeled jewelry trays and asked whether the bid applied once or three times. The auctioneer confirmed x3. Blue Toad carried that written ruling into a $75 committed ceiling, $86.25 all-in, and an explicit instruction telling the clerk to take all three."*
 * **Beat 4, replace the old result and test-count sentences:**
-  > *"The final sheet commits $275 across nine approved bids—$316.25 all-in against $713 to $879 in estimated gross resale, a 2.25 to 2.78 times gross multiple before selling costs. The repository collects 572 tests; 565 pass locally and seven network checks skip by default."*
+  > *"The final sheet commits $275 across nine approved bids—$316.25 all-in against $713 to $879 in estimated gross resale, a 2.25 to 2.78 times gross multiple before selling costs. The repository collects 682 tests; 675 pass locally and seven network checks skip by default."*
 
 **Target Duration:** Exactly 3:45 – 3:55 (Under the 4:00 strict maximum).  
 **Recording Format:** Screen capture of browser tabs + live voiceover.

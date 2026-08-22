@@ -20,13 +20,14 @@ from src.intake.embed import load_reshoot_edges
 from src.intake.manifest import parse_drop, group_into_lots, LotGroup, TriagedPhoto
 from src.intake.spatial import merge_reshoots, seats_from_groups
 from src.assemble import AppraisedPhoto, assemble_lots, NO_COMP, compile_absentee_email
+from src.assemble.grounded import load_grounded_prices
 from src.bidmath import (
     Lot, CompEstimate, Confidence as BidConfidence, Priority, Decision,
     price_lot, allocate, summarize, ABSENTEE_FEE, mechanic_from_ruling
 )
 from src.appraisal import (
     Question, QuestionKind, build_queue, learn, StandingRule,
-    Appraisal, Confidence as AppConfidence
+    Appraisal, Confidence as AppConfidence, SHOP_MEMORY_GENERALISABLE,
 )
 from src.memory import (
     MemoryConflict, StandingRuleRecord, make_question_id, open_rule_store,
@@ -387,6 +388,10 @@ def healthz():
         "memory_backend": getattr(RULES, "backend_name", "unknown"),
         "memory_durable": bool(getattr(RULES, "durable", False)),
         "python": sys.version.split()[0],
+        "answer_auth": (
+            "required" if os.environ.get("OPERATOR_TOKEN") or os.environ.get("K_SERVICE")
+            else "open"
+        ),
     }
 
 
@@ -424,9 +429,11 @@ def get_console():
 def list_lots():
     _, _, lots, decisions, summary, _, _ = get_aug22_state()
     by_id = {d.lot_id: d for d in decisions}
+    grounded = load_grounded_prices()
     out = []
     for l in lots:
         d = by_id.get(l.lot_id)
+        g = grounded.get(l.lot_id) or {}
         out.append({
             "lot_id": l.lot_id,
             "caption": l.caption,
@@ -434,6 +441,9 @@ def list_lots():
             "fit_score": l.fit_score,
             "comp_low": l.comp.low if l.comp.source_count > 0 else None,
             "comp_high": l.comp.high if l.comp.source_count > 0 else None,
+            "grounded_usable": bool(g.get("usable")),
+            "grounded_low": g.get("low") if g.get("usable") else None,
+            "grounded_high": g.get("high") if g.get("usable") else None,
             "priority": d.priority.value if d else None,
             "max_bid": d.max_bid if d else None,
             "all_in": d.all_in if d else None,
@@ -475,6 +485,12 @@ def list_questions():
 
 def _require_operator(x_operator_token: str | None) -> None:
     expected = os.environ.get("OPERATOR_TOKEN")
+    # Cloud Run is public. Fail closed if the secret was never mounted —
+    # missing env must not mean "anyone may write Firestore."
+    if os.environ.get("K_SERVICE") and not expected:
+        raise HTTPException(
+            status_code=503, detail="operator token not configured",
+        )
     if not expected:
         return
     if (x_operator_token or "") != expected:
@@ -508,7 +524,11 @@ def answer_question(
         "allocated": [d.lot_id for d in decisions if d.allocated],
     }
 
-    promoted = learn([(question, ans)], cycle=STATE["cycle_id"])
+    promoted = learn(
+        [(question, ans)],
+        cycle=STATE["cycle_id"],
+        generalisable=SHOP_MEMORY_GENERALISABLE,
+    )
     stored = None
     if not promoted:
         return {

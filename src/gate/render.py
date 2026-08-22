@@ -128,6 +128,8 @@ _ANSWER_JS = """
 <script>
 (function(){
   var box = document.getElementById("answer-result");
+  var tokenEl = document.getElementById("op-token");
+  if (tokenEl) tokenEl.value = sessionStorage.getItem("opToken") || "";
   document.addEventListener("click", function(ev){
     var btn = ev.target.closest("[data-act=answer]");
     if (!btn) return;
@@ -143,9 +145,14 @@ _ANSWER_JS = """
     var label = btn.textContent;
     btn.textContent = "saving…";
     if (box) { box.hidden = false; box.textContent = "saving…"; }
+    var headers = {"Content-Type": "application/json"};
+    var tokenEl = document.getElementById("op-token");
+    var token = (tokenEl && tokenEl.value) || sessionStorage.getItem("opToken") || "";
+    if (tokenEl && tokenEl.value) sessionStorage.setItem("opToken", tokenEl.value);
+    if (token) headers["X-Operator-Token"] = token;
     fetch("/api/answer", {
       method: "POST",
-      headers: {"Content-Type": "application/json"},
+      headers: headers,
       body: JSON.stringify({question_id: qid, answer: answer})
     }).then(function(r){
       return r.json().then(function(j){ return {ok: r.ok, j: j}; });
@@ -466,7 +473,13 @@ def render_console(v: CycleView, pitch_text: str = "") -> str:
 <style>{_CSS}</style></head><body><div class="wrap">
 <header>
   {banner}
-  <div class="eyebrow">Blue Toad Fleet &middot; Gate console</div>
+  <div class="eyebrow">Blue Toad Fleet &middot; Gate console
+    <label style="float:right;font-size:11px;color:var(--ink3);font-weight:500;letter-spacing:0">
+      operator key
+      <input id="op-token" type="password" autocomplete="off"
+        style="margin-left:6px;padding:3px 7px;border-radius:5px;border:1px solid var(--line);background:var(--card2);color:var(--ink)">
+    </label>
+  </div>
   <h1>Cycle {escape(v.cycle_id)}</h1>
   <p class="sub">Sale {escape(v.auction_date)} &middot; absentee cutoff
      {escape(v.deadline)} &middot; budget cap ${v.budget_cap:,.2f} &middot;

@@ -110,6 +110,23 @@ def test_api_answer_invalid(client):
     r = client.post("/api/answer", json={"kind": "invalid_kind"})
     assert r.status_code in (400, 422)
 
+
+def test_api_answer_requires_token_when_configured(client, monkeypatch):
+    monkeypatch.setenv("OPERATOR_TOKEN", "secret")
+    r = client.post("/api/answer", json={
+        "question_id": "q_x", "answer": "BUY",
+    })
+    assert r.status_code == 401
+
+
+def test_cloud_run_without_token_fails_closed(client, monkeypatch):
+    monkeypatch.setenv("K_SERVICE", "blue-toad-fleet")
+    monkeypatch.delenv("OPERATOR_TOKEN", raising=False)
+    r = client.post("/api/answer", json={
+        "question_id": "q_x", "answer": "BUY",
+    })
+    assert r.status_code == 503
+
 def test_api_email_draft(client):
     r = client.get("/api/email")
     assert r.status_code == 200

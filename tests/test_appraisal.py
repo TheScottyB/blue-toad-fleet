@@ -1,7 +1,7 @@
 import pytest
 from src.appraisal import (
     Appraisal, Confidence, Question, QuestionKind, StandingRule,
-    build_queue, group, learn, DESK_ANSWERABLE,
+    SHOP_MEMORY_GENERALISABLE, build_queue, group, learn, DESK_ANSWERABLE,
 )
 
 
@@ -160,6 +160,17 @@ class TestLearn:
         rules = learn([(q(kind=QuestionKind.POLICY, cat="sports memorabilia"),
                         "SKIP raw autographs")], cycle="c1")
         assert len(rules) == 1
+
+    def test_shop_memory_does_not_promote_grouping_or_scope(self):
+        grouping = q(kind=QuestionKind.LOT_GROUPING, cat="railroad")
+        scope = q(kind=QuestionKind.SCOPE, cat="stoneware")
+        assert learn([(grouping, "one lot")], cycle="c1",
+                     generalisable=SHOP_MEMORY_GENERALISABLE) == []
+        assert learn([(scope, "whole shelf")], cycle="c1",
+                     generalisable=SHOP_MEMORY_GENERALISABLE) == []
+        appetite = q(kind=QuestionKind.APPETITE, cat="jewelry")
+        assert len(learn([(appetite, "BUY")], cycle="c1",
+                         generalisable=SHOP_MEMORY_GENERALISABLE)) == 1
 
 
 class TestTwoCycleDecay:
