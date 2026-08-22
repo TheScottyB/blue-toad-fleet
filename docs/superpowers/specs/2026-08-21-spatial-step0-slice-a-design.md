@@ -86,45 +86,70 @@ file.
 
 - **Does:** undirected edges between photos that are the **same objects**
   (close-up / return), not merely the same table.
-- **Rule: mutual top-1.** For each photo `i`, `nn(i)` is the other photo
-  with the highest cosine (self excluded). Draw an edge `{i,j}` iff
-  `nn(i)=j` **and** `nn(j)=i`. A tie for highest cosine is not an edge
-  (refuse). One-sided rank-1 is not an edge.
-- **Why not a cosine floor.** Live vectors (probe, seq-keyed) put the
-  true reshoot and the same-table neighbors in a 0.012 band:
+- **Walk-adjacent:** `|sequence(i) - sequence(j)| == 1`. Immediate
+  neighbors in the drop. Gap ≥ 2 is not walk-adjacent (a stutter two
+  frames apart may still be a reshoot edge; do not raise this cutoff
+  to 10 in Slice A without reviewing those pairs).
+- **Rule: mutual top-1, walk-adjacent excluded from the candidate
+  set — not filtered after.** For each photo `i`, `nn(i)` is the
+  other photo with the highest cosine among candidates that are
+  **not self and not walk-adjacent to i**. Draw an edge `{i,j}` iff
+  `nn(i)=j` **and** `nn(j)=i`. A tie for highest cosine is not an
+  edge (refuse). One-sided rank-1 is not an edge.
 
-  | pair | cos | 2→s | s→2 | mutual #1 |
+  Filter-after is wrong. Over all photos, `nn(181)=180` (consecutive
+  at the same case). Discarding that edge as adjacent leaves 181
+  with no partner, so 2↔181 never fires and §8.1 fails. Exclude
+  walk-adjacent **before** taking the argmax: `nn(181)=2`, mutual
+  with 2, merge fires. Pin this with a test that `nn(181) == seq 2`
+  under the scoped definition.
+- **Why not a cosine floor as the discriminator.** Live vectors
+  (probe, seq-keyed, ranks over all photos) put the true reshoot
+  and the same-table neighbors in a 0.012 band:
+
+  | pair | cos | 2→s | s→2 | mutual #1 (all photos) |
   |---|---|---|---|---|
-  | **2↔181** | 0.9061 | **1** | **1** | **yes** |
+  | **2↔181** | 0.9061 | **1** | 180 is 181’s #1 over all | see scoping |
   | 2↔180 | 0.8941 | 2 | 1 | no |
   | 2↔182 | 0.8919 | 3 | 2 | no |
   | 2↔179 | 0.8814 | 4 | 1 | no |
-  | 2↔183 | 0.8595 | — | — | no |
   | 2↔87 | 0.8082 | 9 | 3 | no |
 
-  A floor in (0.8082, 0.9061) — which is what “above 87, below 181”
-  required — admits six same-table neighbors. Floor plus “top-3”
-  still takes 180 (rank 2) and 182 (rank 3). One-sided rank-1 is the
-  bug: 179 and 180 rank #1 *toward* 2. **The asymmetry is the signal.**
-  Seq 87 is an easy negative (different bin). Seq 180 is the hard one
-  (same table, 0.012 under the true reshoot).
+  A floor in (0.8082, 0.9061) admits six same-table neighbors.
+  Floor plus “top-3” still takes 180 and 182. One-sided rank-1 is
+  the bug: 179 and 180 rank #1 *toward* 2. Seq 87 is an easy
+  negative. Seq 180 is the hard one.
+- **Sanity veto, not a discriminator:** `SANITY_FLOOR = 0.80`. If
+  cosine(i,j) < 0.80, there is no edge even when mutual #1. This is
+  not tuned between 180 and 181 (both ~0.89–0.91). It sits under
+  seq 87’s 0.8082 so it only drops pairs weaker than the easy
+  negative (the probe’s `seq 21 ↔ seq 460` at 0.7632 is the
+  example). Rank is scale-free; the veto is the only “both of
+  these are just weak” brake. Do not raise it toward 0.89.
 - **Contract:**
 
   | Pair | Edge? | Why |
   |---|---|---|
-  | seq 2 ↔ seq 181 | yes | only mutual #1; close-up of trays 12/14 |
-  | seq 2 ↔ seq 180 | no | same table, different lot; one-sided #1 |
+  | seq 2 ↔ seq 181 | yes | scoped mutual #1; close-up of trays 12/14; cos 0.9061 |
+  | seq 2 ↔ seq 180 | no | walk-adjacent to 181, not to 2; same table as 2, different lot; one-sided |
   | seq 2 ↔ seq 87 | no | different bin; easy negative |
   | consecutive uncaptioned under-table boxes | n/a | walk / trajectory, not this unit |
 
-- **Recall trade:** mutual-#1 is strict (a minority of same-caption
-  recaptions). A false merge destroys a bid. A missed merge leaves two
-  seats on the holding strip, which is visible. Slice A takes that
-  trade. Do not loosen to top-3 or a cosine floor to chase recall.
-- **Use:** `reshoot_edges(ids, vectors) -> set[frozenset[photo_id, photo_id]]`.
-- **Depends:** embedding cache only. The graph of these edges is a
-  **matching** (disjoint pairs): each photo has at most one nearest
-  neighbor, so A↔B and B↔C cannot both be mutual.
+- **Recall trade:** scoped mutual-#1 is strict. A false merge
+  destroys a bid. A missed merge leaves two seats on the holding
+  strip. Slice A takes that trade. Do not loosen to top-3 or a
+  discriminating cosine floor. The probe reports ~76 scoped
+  mutual-#1 edges on Aug 22 (45 with gap 2–9, 31 with gap ≥ 10).
+  CI pins 2/180/181/87 only. A developer script dumps all edges
+  with seq, gap, cosine, and thumb paths so someone eyeballs them
+  once before a sheet goes out — not CI.
+- **Use:** `reshoot_edges(ids, vectors, sequences) -> set[frozenset[photo_id, photo_id]]`.
+  `nn(photo_id, vectors, sequences) -> photo_id | None` for the
+  scoped nearest neighbor (None if no candidate or a tie).
+- **Depends:** embedding cache + sequence map. The graph of these
+  edges is a **matching** (disjoint pairs) under both all-photos
+  and non-adjacent readings (probe: max degree 1). A size cap is
+  still theater.
 
 ### 3.3 Walk groups
 
@@ -242,7 +267,7 @@ no BT-181 lot id to decline. Tests must not require both a merged group
 |---|---|
 | Embedding cache missing on `GET /` | Walk-only groups. 181 may be its own unplaced seat. Map does not fake a merge. Log it. |
 | Vector missing for one photo | That photo gets no reshoot edges. Walk still groups it. |
-| Live cache makes 2↔180 mutual #1 | Do not ship. That is a failed contract (same-table merge), not a knob to turn. |
+| Live cache makes 2↔180 scoped mutual #1 | Do not ship. That is a failed contract (same-table merge), not a knob to turn. |
 | Image bytes missing | Skip embed for that id; same as missing vector. |
 | Vertex embed 429 | Cache builder backs off; request path never embeds. |
 
@@ -255,12 +280,18 @@ Cloud Run `GET /` never calls `embed_content` over the gallery.
 Use Aug 22 ids (seq 2 = `838421481`, seq 181 = `838424282`, seq 180 =
 `838424264`, seq 87 = `838422448`). CI uses **small fixture vectors**
 that reproduce the rank pattern, not the 462-vector dump, and not
-Vertex: 2 and 181 are each other’s #1; 180’s #1 is 2 but 2’s #1 is
-181 (one-sided); 87 is neither. A live cache rebuild is a developer
-script, not CI.
+Vertex. Fixture vectors must make **181’s nearest over all four ids
+be 180** (walk-adjacent, higher cosine than 2) and **181’s scoped nn
+be 2**. That is the assertion that catches filter-after. 2’s scoped
+nn is 181. 87 is nobody’s nn. A pair with cosine 0.70 that would
+otherwise be mutual #1 must not be an edge (sanity veto). A live
+cache rebuild is a developer script, not CI. `scripts/list_reshoot_edges.py`
+prints every live edge (seq, gap, cosine, thumb paths) for one
+eyeball pass; not CI.
 
-1. `reshoot_edges`: 2–181 present; **2–180 absent** (hard negative);
-   2–87 absent (easy negative).
+1. `nn(181) == seq 2` under scoped nn; `nn` over all ids would be 180.
+   `reshoot_edges`: 2–181 present; **2–180 absent** (hard negative);
+   2–87 absent; cosine 0.70 mutual pair absent.
 2. `merge_reshoots`: groups that contained 2 and 181 become one group;
    `photo_ids` includes both, earlier seq first; 180 and 87 stay out.
    Merged `photo_ids` length is 2; a test may construct a Lot with
