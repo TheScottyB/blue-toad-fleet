@@ -9,8 +9,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Protocol
 
-from src.appraisal import QuestionKind, StandingRule
-from src.memory.ids import make_rule_id
+from src.appraisal import LotRuling, QuestionKind, StandingRule
+from src.memory.ids import make_rule_id, make_ruling_id
 
 
 class MemoryConflict(Exception):
@@ -28,6 +28,7 @@ class StandingRuleRecord:
     active: bool = True
     revision: int = 1
     review_after: str | None = None
+    actor: str = "operator"
 
     def __post_init__(self):
         if isinstance(self.kind, str):
@@ -46,10 +47,10 @@ class StandingRuleRecord:
         )
 
     def as_dict(self) -> dict:
-        d = asdict(self)
-        d["kind"] = self.kind.value
-        d["rule_id"] = self.rule_id
-        return d
+        data = asdict(self)
+        data["kind"] = self.kind.value
+        data["rule_id"] = self.rule_id
+        return data
 
     @classmethod
     def from_dict(cls, raw: dict) -> "StandingRuleRecord":
@@ -63,8 +64,77 @@ class StandingRuleRecord:
             active=bool(raw.get("active", True)),
             revision=int(raw.get("revision") or 1),
             review_after=raw.get("review_after"),
+            actor=raw.get("actor") or "operator",
         )
 
+
+@dataclass
+class LotRulingRecord:
+    shop_id: str
+    cycle_id: str
+    kind: QuestionKind | str
+    lot_ids: tuple[str, ...]
+    answer: str
+    source_question_id: str
+    cluster_id: str | None = None
+    active: bool = True
+    revision: int = 1
+    actor: str = "operator"
+
+    def __post_init__(self):
+        if isinstance(self.kind, str):
+            self.kind = QuestionKind(self.kind)
+        self.lot_ids = tuple(self.lot_ids)
+        # Reuse the domain validation so persistence cannot create a broader
+        # authority than the application understands.
+        LotRuling(
+            kind=self.kind,
+            answer=self.answer,
+            learned_cycle=self.cycle_id,
+            lot_ids=self.lot_ids,
+            cluster_id=self.cluster_id,
+        )
+
+    @property
+    def ruling_id(self) -> str:
+        return make_ruling_id(
+            self.shop_id,
+            self.cycle_id,
+            self.kind.value,
+            self.lot_ids,
+            self.cluster_id,
+        )
+
+    def to_lot_ruling(self) -> LotRuling:
+        return LotRuling(
+            kind=self.kind,
+            answer=self.answer,
+            learned_cycle=self.cycle_id,
+            lot_ids=self.lot_ids,
+            cluster_id=self.cluster_id,
+        )
+
+    def as_dict(self) -> dict:
+        data = asdict(self)
+        data["kind"] = self.kind.value
+        data["lot_ids"] = list(self.lot_ids)
+        data["ruling_id"] = self.ruling_id
+        return data
+
+    @classmethod
+    def from_dict(cls, raw: dict) -> "LotRulingRecord":
+        return cls(
+            shop_id=raw["shop_id"],
+            cycle_id=raw["cycle_id"],
+            kind=raw["kind"],
+            lot_ids=tuple(raw.get("lot_ids") or ()),
+            answer=raw["answer"],
+            source_question_id=raw.get("source_question_id") or "",
+            cluster_id=raw.get("cluster_id"),
+            active=bool(raw.get("active", True)),
+            revision=int(raw.get("revision") or 1),
+            actor=raw.get("actor") or "operator",
+        )
 
 class RuleStore(Protocol):
     backend_name: str
@@ -75,6 +145,11 @@ class RuleStore(Protocol):
         self, rule: StandingRuleRecord, expected_revision: int | None = None,
     ) -> StandingRuleRecord: ...
     def history(self, shop_id: str, rule_key: str) -> list[dict]: ...
+    def active_rulings(self, shop_id: str, cycle_id: str) -> list[LotRuling]: ...
+    def put_ruling(
+        self, ruling: LotRulingRecord, expected_revision: int | None = None,
+    ) -> LotRulingRecord: ...
+    def ruling_history(self, shop_id: str, ruling_id: str) -> list[dict]: ...
 
 
 def _now() -> str:
@@ -109,6 +184,8 @@ class InMemoryRuleStore:
     ):
         self._rules: dict[str, StandingRuleRecord] = _seed_records(seed, shop_id)
         self._events: list[dict] = []
+        self._rulings: dict[str, LotRulingRecord] = {}
+        self._ruling_events: list[dict] = []
 
     def active_rules(self, shop_id: str) -> list[StandingRule]:
         return [
@@ -137,6 +214,7 @@ class InMemoryRuleStore:
             active=rule.active,
             revision=current_rev + 1,
             review_after=rule.review_after,
+            actor=rule.actor,
         )
         self._rules[stored.rule_id] = stored
         self._events.append({
@@ -147,6 +225,7 @@ class InMemoryRuleStore:
             "answer": stored.answer,
             "revision": stored.revision,
             "source_question_id": stored.source_question_id,
+            "actor": stored.actor,
             "at": _now(),
         })
         return stored
@@ -154,6 +233,49 @@ class InMemoryRuleStore:
     def history(self, shop_id: str, rule_key: str) -> list[dict]:
         return [e for e in self._events
                 if e["shop_id"] == shop_id and e["rule_id"] == rule_key]
+
+    def active_rulings(self, shop_id: str, cycle_id: str) -> list[LotRuling]:
+        return [
+            record.to_lot_ruling()
+            for record in self._rulings.values()
+            if (record.shop_id == shop_id and record.cycle_id == cycle_id
+                and record.active)
+        ]
+
+    def put_ruling(
+        self, ruling: LotRulingRecord, expected_revision: int | None = None,
+    ) -> LotRulingRecord:
+        existing = self._rulings.get(ruling.ruling_id)
+        current_rev = existing.revision if existing else 0
+        if expected_revision is not None and expected_revision != current_rev:
+            raise MemoryConflict(
+                f"ruling {ruling.ruling_id[:8]} at revision {current_rev}, "
+                f"expected {expected_revision}"
+            )
+        stored = LotRulingRecord(
+            shop_id=ruling.shop_id,
+            cycle_id=ruling.cycle_id,
+            kind=ruling.kind,
+            lot_ids=ruling.lot_ids,
+            answer=ruling.answer,
+            source_question_id=ruling.source_question_id,
+            cluster_id=ruling.cluster_id,
+            active=ruling.active,
+            revision=current_rev + 1,
+            actor=ruling.actor,
+        )
+        self._rulings[stored.ruling_id] = stored
+        self._ruling_events.append({
+            **stored.as_dict(),
+            "at": _now(),
+        })
+        return stored
+
+    def ruling_history(self, shop_id: str, ruling_id: str) -> list[dict]:
+        return [
+            event for event in self._ruling_events
+            if event["shop_id"] == shop_id and event["ruling_id"] == ruling_id
+        ]
 
 
 class FileRuleStore:
@@ -178,9 +300,16 @@ class FileRuleStore:
                 for k, v in (raw.get("rules") or {}).items()
             }
             self._events = list(raw.get("events") or [])
+            self._rulings = {
+                key: LotRulingRecord.from_dict(value)
+                for key, value in (raw.get("rulings") or {}).items()
+            }
+            self._ruling_events = list(raw.get("ruling_events") or [])
         else:
             self._rules = _seed_records(seed, shop_id)
             self._events = []
+            self._rulings = {}
+            self._ruling_events = []
             if self._rules:
                 self._flush()
 
@@ -189,6 +318,8 @@ class FileRuleStore:
         payload = {
             "rules": {k: v.as_dict() for k, v in self._rules.items()},
             "events": self._events,
+            "rulings": {k: v.as_dict() for k, v in self._rulings.items()},
+            "ruling_events": self._ruling_events,
         }
         tmp = self.path.with_suffix(self.path.suffix + ".tmp")
         tmp.write_text(json.dumps(payload, indent=2) + "\n")
@@ -221,6 +352,7 @@ class FileRuleStore:
             active=rule.active,
             revision=current_rev + 1,
             review_after=rule.review_after,
+            actor=rule.actor,
         )
         self._rules[stored.rule_id] = stored
         self._events.append({
@@ -231,6 +363,7 @@ class FileRuleStore:
             "answer": stored.answer,
             "revision": stored.revision,
             "source_question_id": stored.source_question_id,
+            "actor": stored.actor,
             "at": _now(),
         })
         self._flush()
@@ -239,6 +372,47 @@ class FileRuleStore:
     def history(self, shop_id: str, rule_key: str) -> list[dict]:
         return [e for e in self._events
                 if e["shop_id"] == shop_id and e["rule_id"] == rule_key]
+
+    def active_rulings(self, shop_id: str, cycle_id: str) -> list[LotRuling]:
+        return [
+            record.to_lot_ruling()
+            for record in self._rulings.values()
+            if (record.shop_id == shop_id and record.cycle_id == cycle_id
+                and record.active)
+        ]
+
+    def put_ruling(
+        self, ruling: LotRulingRecord, expected_revision: int | None = None,
+    ) -> LotRulingRecord:
+        existing = self._rulings.get(ruling.ruling_id)
+        current_rev = existing.revision if existing else 0
+        if expected_revision is not None and expected_revision != current_rev:
+            raise MemoryConflict(
+                f"ruling {ruling.ruling_id[:8]} at revision {current_rev}, "
+                f"expected {expected_revision}"
+            )
+        stored = LotRulingRecord(
+            shop_id=ruling.shop_id,
+            cycle_id=ruling.cycle_id,
+            kind=ruling.kind,
+            lot_ids=ruling.lot_ids,
+            answer=ruling.answer,
+            source_question_id=ruling.source_question_id,
+            cluster_id=ruling.cluster_id,
+            active=ruling.active,
+            revision=current_rev + 1,
+            actor=ruling.actor,
+        )
+        self._rulings[stored.ruling_id] = stored
+        self._ruling_events.append({**stored.as_dict(), "at": _now()})
+        self._flush()
+        return stored
+
+    def ruling_history(self, shop_id: str, ruling_id: str) -> list[dict]:
+        return [
+            event for event in self._ruling_events
+            if event["shop_id"] == shop_id and event["ruling_id"] == ruling_id
+        ]
 
 
 def seed_rules() -> list[StandingRule]:

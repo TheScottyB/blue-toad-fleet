@@ -1,4 +1,4 @@
-.PHONY: demo test install clean deploy cycles console video video-verify video-prepare video-record video-compose
+.PHONY: demo test install clean deploy cycles console stage-cycle start-cycle video video-verify video-prepare video-record video-compose release-check
 
 VENV ?= .venv
 PYTHON = $(if $(wildcard $(VENV)/bin/python),$(VENV)/bin/python,python3)
@@ -19,6 +19,11 @@ console:          ## Render the Gate console to demo/out/console.html
 test:             ## Run the unit suite
 	$(PYTEST) tests/ -q
 
+release-check:    ## Non-mutating full release gate; writes docs/evidence/RELEASE.md
+	mkdir -p artifacts/release docs/evidence
+	$(PYTEST) tests/ -q --junitxml=artifacts/release/pytest.xml
+	$(PYTHON) scripts/build_release_report.py --junitxml artifacts/release/pytest.xml --output docs/evidence/RELEASE.md
+
 clean:
 	find . -name __pycache__ -type d -exec rm -rf {} + 2>/dev/null || true
 	rm -rf .pytest_cache demo/out
@@ -26,17 +31,23 @@ clean:
 deploy:           ## Deploy to Cloud Run (requires gcloud auth + PROJECT_ID)
 	./infra/deploy.sh
 
+stage-cycle:      ## Upload SOURCE_DIR as immutable cloud input (no processing)
+	$(PYTHON) scripts/stage_cycle.py --source-dir "$(SOURCE_DIR)" --cycle-id "$(CYCLE_ID)" --auction-title "$(AUCTION_TITLE)" --auction-date "$(AUCTION_DATE)" --timezone "$(TIMEZONE_NAME)" --venue "$(VENUE)" --deadline "$(DEADLINE)"
+
+start-cycle:      ## Upload SOURCE_DIR and write READY to start the Cloud Run Job
+	$(PYTHON) scripts/stage_cycle.py --source-dir "$(SOURCE_DIR)" --cycle-id "$(CYCLE_ID)" --auction-title "$(AUCTION_TITLE)" --auction-date "$(AUCTION_DATE)" --timezone "$(TIMEZONE_NAME)" --venue "$(VENUE)" --deadline "$(DEADLINE)" --start
+
 video-prepare:    ## Verify facts and render declared video pages/cards (runs tests + gcloud proof)
-	$(PYTHON) scripts/video_pipeline.py prepare
+	$(PYTHON) scripts/build_media.py prepare
 
 video-record:     ## Record all four declared browser/terminal beats
-	$(PYTHON) scripts/video_pipeline.py record
+	$(PYTHON) scripts/build_media.py record
 
 video-compose:    ## Normalize the four recordings into final beat footage
-	$(PYTHON) scripts/video_pipeline.py compose
+	$(PYTHON) scripts/build_media.py compose
 
 video:            ## Rebuild the complete facts-driven narrated submission video
-	$(PYTHON) scripts/video_pipeline.py all
+	$(PYTHON) scripts/build_media.py all
 
 video-verify:     ## Verify final dimensions, duration, size, and audio presence
-	$(PYTHON) scripts/video_pipeline.py verify
+	$(PYTHON) scripts/build_media.py verify

@@ -2,7 +2,7 @@ from src.intake.manifest import group_into_lots
 from src.intake.spatial import (
     AdjacencyClaim, PhotoObservation, SpatiallyTaggedPhoto, SurfaceSignature, Zone,
     adjacency_graph, apply_trajectory, occupancy, observations_to_tagged,
-    spatial_same_lot,
+    load_observations, spatial_same_lot,
 )
 
 
@@ -141,3 +141,41 @@ class TestListingGraph:
         assert len(groups) == 1
         assert groups[0].photo_ids == ("p1", "p2")
 
+    def test_observation_import_requires_exact_source_and_photo_coverage(self, tmp_path):
+        import hashlib
+        import json
+
+        manifest_bytes = b'{"photos":["p1","p2"]}'
+        manifest_sha = hashlib.sha256(manifest_bytes).hexdigest()
+        path = tmp_path / "spatial.json"
+        path.write_text(json.dumps({
+            "schema_version": 1,
+            "model": "gemini-3.6-flash",
+            "manifest_sha256": manifest_sha,
+            "observations": [
+                {"photo_id": "p1", "zone": "center_island_1",
+                 "surface_signature": "blue_vinyl", "summary": "cards",
+                 "margin_neighbors": [], "adjacencies": []},
+                {"photo_id": "p2", "zone": "unknown",
+                 "surface_signature": "other", "summary": "",
+                 "margin_neighbors": [], "adjacencies": []},
+            ],
+        }))
+        rows = load_observations(
+            path,
+            expected_photo_ids={"p1", "p2"},
+            expected_manifest_sha256=manifest_sha,
+        )
+        assert rows[0].zone is Zone.CENTER_ISLAND_1
+        assert rows[1].zone is Zone.UNKNOWN
+
+        raw = json.loads(path.read_text())
+        raw["manifest_sha256"] = "stale"
+        path.write_text(json.dumps(raw))
+        import pytest
+        with pytest.raises(ValueError, match="stale"):
+            load_observations(
+                path,
+                expected_photo_ids={"p1", "p2"},
+                expected_manifest_sha256=manifest_sha,
+            )

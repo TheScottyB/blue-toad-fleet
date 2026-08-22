@@ -1,5 +1,5 @@
 import { execFileSync } from 'child_process';
-import { existsSync, mkdirSync, renameSync, rmSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, statSync } from 'fs';
 import { dirname } from 'path';
 import { chromium } from 'playwright';
 import {
@@ -47,6 +47,10 @@ try {
   const actual = await page.evaluate(() => document.images.length);
   if (actual !== expectedImages) throw new Error(`gallery has ${actual}/${expectedImages} images`);
   await page.screenshot({ path: partial, fullPage: false });
+  const bytes = readFileSync(partial);
+  if (statSync(partial).size < 100 || !bytes.subarray(0, 8).equals(Buffer.from([137,80,78,71,13,10,26,10]))) {
+    throw new Error('raw gallery capture is not a valid PNG');
+  }
   renameSync(partial, destination);
   console.log(`wrote ${destination}`);
 } finally {

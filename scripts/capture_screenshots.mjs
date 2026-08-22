@@ -1,5 +1,6 @@
-import { mkdirSync, renameSync, rmSync } from 'fs';
-import { dirname } from 'path';
+import { mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, statSync } from 'fs';
+import { dirname, join } from 'path';
+import { tmpdir } from 'os';
 import { chromium } from 'playwright';
 import { checkedGoto, projectPath } from './video_recording.mjs';
 
@@ -13,13 +14,17 @@ const shots = [
   ['06-skip-reasoning', 'BT-003', 80],
 ];
 const browser = await chromium.launch({ channel: 'chrome' });
+const runDirectory = mkdtempSync(join(tmpdir(), 'blue-toad-shots-'));
+const completed = [];
 try {
   const page = await browser.newPage({
     viewport: { width: 1600, height: 1000 },
     deviceScaleFactor: 2,
     colorScheme: 'dark',
   });
-  await checkedGoto(page, url, { waitUntil: 'networkidle', timeout: 120000 });
+  await checkedGoto(page, url, {
+    waitUntil: 'networkidle', timeout: 120000, expectedMarkers: ['Blue Toad Fleet'],
+  });
   for (const [name, anchor, offset] of shots) {
     if (anchor) {
       const y = await page.evaluate(([text, adjustment]) => {
@@ -35,16 +40,20 @@ try {
       await page.waitForTimeout(400);
     }
     const destination = projectPath(`docs/screenshots/${name}.png`);
-    const partial = projectPath(`docs/screenshots/.${name}.partial.png`);
+    const partial = join(runDirectory, `${name}.png`);
     mkdirSync(dirname(destination), { recursive: true });
-    try {
-      await page.screenshot({ path: partial });
-      renameSync(partial, destination);
-      console.log(`wrote ${destination}`);
-    } finally {
-      rmSync(partial, { force: true });
+    await page.screenshot({ path: partial });
+    const bytes = readFileSync(partial);
+    if (statSync(partial).size < 100 || !bytes.subarray(0, 8).equals(Buffer.from([137,80,78,71,13,10,26,10]))) {
+      throw new Error(`invalid screenshot output: ${name}`);
     }
+    completed.push([partial, destination]);
+  }
+  for (const [partial, destination] of completed) {
+    renameSync(partial, destination);
+    console.log(`wrote ${destination}`);
   }
 } finally {
+  rmSync(runDirectory, { recursive: true, force: true });
   await browser.close();
 }

@@ -2,8 +2,10 @@
 tests/test_engine.py — Unit tests for AppraisalEngine and live Vertex AI integration.
 """
 
-import pytest
+from threading import Event
 from unittest.mock import MagicMock, patch
+
+import pytest
 from starlette.testclient import TestClient
 
 from src.appraisal import StandingRule, QuestionKind, Confidence
@@ -278,3 +280,78 @@ def test_appraisal_error_stub_includes_container_fields():
     assert stub["is_container"] is False
     assert stub["contents"] == []
 
+
+def test_each_container_enters_appraisal_when_its_own_decomposition_finishes():
+    engine = AppraisalEngine()
+    engine._client = object()
+    first_appraisal_started = Event()
+
+    def decompose(lot_id, **kwargs):
+        if lot_id == "BT-002":
+            assert first_appraisal_started.wait(timeout=2), (
+                "BT-002 blocked BT-001 from entering appraisal"
+            )
+        return {
+            "lot_id": lot_id,
+            "is_container_lot": True,
+            "container_type": "tray",
+            "contents": [lot_id],
+        }
+
+    def appraise(lot_id, container_decomposition=None, **kwargs):
+        if lot_id == "BT-001":
+            first_appraisal_started.set()
+        return {
+            "lot_id": lot_id,
+            "identification": lot_id,
+            "container_decomposition": container_decomposition,
+        }
+
+    engine.decompose_container = decompose
+    engine.appraise_lot = appraise
+    candidates = [
+        {"lot_id": "BT-001", "caption": "first tray"},
+        {"lot_id": "BT-002", "caption": "second tray"},
+    ]
+
+    appraisals, decompositions = engine.run_enrichment_appraisal_pipeline(
+        candidates,
+        decomposition_candidates=candidates,
+        force_refresh=True,
+        appraisal_workers=1,
+        decomposition_workers=2,
+    )
+
+    assert [row["lot_id"] for row in appraisals] == ["BT-001", "BT-002"]
+    assert [row["lot_id"] for row in decompositions] == ["BT-001", "BT-002"]
+    assert appraisals[0]["container_decomposition"]["contents"] == ["BT-001"]
+
+
+def test_lot_without_decomposition_starts_appraisal_immediately():
+    engine = AppraisalEngine()
+    engine._client = object()
+    direct_appraisal_started = Event()
+
+    def decompose(lot_id, **kwargs):
+        assert direct_appraisal_started.wait(timeout=2)
+        return {"lot_id": lot_id, "is_container_lot": False}
+
+    def appraise(lot_id, **kwargs):
+        if lot_id == "BT-001":
+            direct_appraisal_started.set()
+        return {"lot_id": lot_id, "identification": lot_id}
+
+    engine.decompose_container = decompose
+    engine.appraise_lot = appraise
+    appraisals, _ = engine.run_enrichment_appraisal_pipeline(
+        [
+            {"lot_id": "BT-001", "caption": "ordinary lot"},
+            {"lot_id": "BT-002", "caption": "container lot"},
+        ],
+        decomposition_candidates=[{"lot_id": "BT-002", "caption": "container lot"}],
+        force_refresh=True,
+        appraisal_workers=1,
+        decomposition_workers=1,
+    )
+
+    assert [row["lot_id"] for row in appraisals] == ["BT-001", "BT-002"]

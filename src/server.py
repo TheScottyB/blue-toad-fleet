@@ -16,29 +16,36 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse
 
 from dataclasses import replace
-from src.intake.embed import load_reshoot_edges
+from src.intake.embed import load_reshoot_edges, sha256_file
 from src.intake.manifest import parse_drop, group_into_lots, LotGroup, TriagedPhoto
 from src.intake.spatial import merge_reshoots, seats_from_groups
 from src.assemble import AppraisedPhoto, assemble_lots, NO_COMP, compile_absentee_email
-from src.assemble.grounded import load_grounded_prices
 from src.bidmath import (
-    Lot, CompEstimate, Confidence as BidConfidence, Priority, Decision,
-    price_lot, allocate, summarize, ABSENTEE_FEE, mechanic_from_ruling
+    ABSENTEE_FEE, BidMechanic, CompEstimate, Confidence as BidConfidence,
+    Decision, Lot, Priority, allocate, clerk_directive, elect,
+    mechanic_from_ruling, price_lot, remainder_opportunity, summarize,
 )
 from src.appraisal import (
-    Question, QuestionKind, build_queue, learn, StandingRule,
-    Appraisal, Confidence as AppConfidence, SHOP_MEMORY_GENERALISABLE,
+    Question, QuestionKind, build_queue, learn, learn_rulings, StandingRule,
+    Appraisal, Confidence as AppConfidence
 )
 from src.memory import (
-    MemoryConflict, StandingRuleRecord, make_question_id, open_rule_store,
+    LotRulingRecord, MemoryConflict, StandingRuleRecord, make_question_id, open_rule_store,
     seed_rules,
 )
 from src.memory.store import InMemoryRuleStore
+from src.cycles import (
+    CycleConflict, CycleNotFound, CycleStatus,
+    open_cycle_repository, open_job_launcher,
+)
 from src.appraiser import AppraisalEngine
 from src.appraiser.containers import visible_contents
+from src.appraiser.grounded_batch import (
+    grounded_reference_comps, grounded_status_reason,
+)
 from src.appraiser.routing import GEMMA_MODEL
 from src.gate import CycleView, render_console
-from src.gate.pitch import build_pitch, curator_voice, _CURATOR_SYSTEM
+from src.gate.pitch import build_pitch
 from src.gate.voice import write_pitch_voice
 from scripts.run_vertex_pipeline import (
     REFERENCE_COMPS, OPERATOR_APPROVED, apply_operator_cap, apply_operator_fit,
@@ -57,6 +64,8 @@ app.add_middleware(
 
 SHOP_ID = os.environ.get("BTF_SHOP_ID", "richmond-general")
 RULES = open_rule_store()
+CYCLES = open_cycle_repository()
+CYCLE_JOBS = open_job_launcher()
 
 # Cycle-scoped runtime. Standing rules live in RULES, not here.
 STATE = {
@@ -70,6 +79,50 @@ STATE = {
 
 def current_rules() -> list[StandingRule]:
     return RULES.active_rules(SHOP_ID)
+
+
+def current_rulings():
+    return RULES.active_rulings(SHOP_ID, STATE["cycle_id"])
+
+
+def apply_lot_rulings(lots, rulings=None, operator_approved=None):
+    """Apply exact-object grouping rulings before any money is priced.
+
+    A durable answer wins over the historic Aug-22 fixture. Scope answers are
+    retained by memory but do not pretend to be mechanic instructions; only a
+    LOT_GROUPING ruling is parsed into unit exposure here.
+    """
+    approvals = OPERATOR_APPROVED if operator_approved is None else operator_approved
+    grouping_answers: dict[str, set[str]] = {}
+    for ruling in current_rulings() if rulings is None else rulings:
+        if ruling.kind is not QuestionKind.LOT_GROUPING:
+            continue
+        for lot_id in ruling.lot_ids:
+            grouping_answers.setdefault(lot_id, set()).add(ruling.answer)
+
+    ruled = []
+    for lot in lots:
+        answers = grouping_answers.get(lot.lot_id, set())
+        if len(answers) > 1:
+            # Conflicting authorities must refuse rather than win by iteration
+            # order. mechanic_from_ruling intentionally returns UNKNOWN here.
+            answer = "conflicting grouping rulings"
+        elif answers:
+            answer = next(iter(answers))
+        else:
+            answer = approvals.get(lot.lot_id, {}).get("ruling")
+        if answer:
+            mechanic, units, wanted = mechanic_from_ruling(answer)
+            lot = replace(
+                lot,
+                mechanic=mechanic,
+                unit_count=units,
+                units_wanted=None,
+            )
+            if wanted is not None and mechanic is not BidMechanic.UNKNOWN:
+                lot = elect(lot, wanted)
+        ruled.append(lot)
+    return ruled
 
 
 def reset_rule_store(seed=None):
@@ -111,42 +164,16 @@ def cached_photo_bytes(lot_id: str) -> bytes | None:
     return None
 
 
-def curator_pitch(decisions, captions) -> str:
-    """
-    The curator's read for the console banner.
-
-    Served from disk where a previous run wrote one, so a page load does not
-    call a model. With no cache it writes one live and keeps it. If Gemma is
-    unreachable, curator_voice returns the deterministic line and the console
-    renders normally — the banner is commentary, and commentary must never be
-    the reason a bid sheet fails to load.
-    """
-    cache = Path("data/aug22_gallery_4160518/curator_voice.txt")
-    if not cache.exists():
-        alt = Path("/app/data/aug22_gallery_4160518/curator_voice.txt")
-        cache = alt if alt.exists() else cache
-    facts = build_pitch(decisions, captions, current_rules())
-
-    # Key the cache to the sheet it describes. It was previously served whenever
-    # the file was non-empty, with no invalidation at all, so the banner kept
-    # quoting a committed total from a sheet that no longer existed — staler
-    # than any bug it might have been hiding. A stamp mismatch re-writes it.
-    stamp = f"# sheet {facts.committed_max:.2f}/{facts.committed_all_in:.2f}\n"
-    if cache.exists():
-        cached = cache.read_text()
-        if cached.startswith(stamp) and cached[len(stamp):].strip():
-            return cached[len(stamp):].strip()
-    text = curator_voice(
-        facts, writer=lambda pr: engine.write_curator_voice(pr, _CURATOR_SYSTEM))
-    try:
-        cache.parent.mkdir(parents=True, exist_ok=True)
-        cache.write_text(stamp + text + "\n")
-    except OSError:
-        pass          # read-only filesystem is fine; the text is already in hand
-    return text
-
-
 def get_aug22_state(*, sheet: str = "full"):
+    """Build the historical August fixture view.
+
+    ``sheet="sent"`` is an archival compatibility mode used only to reconcile
+    the closed absentee email against the exact hand-comp inputs it received.
+    Application endpoints use the full local fixture; fresh cloud cycles are
+    built independently by ``src.cycles.worker``.
+    """
+    if sheet not in {"full", "sent"}:
+        raise ValueError(f"unknown August fixture sheet: {sheet}")
     manifest_path = Path("data/aug22_gallery_4160518/manifest.json")
     if not manifest_path.exists():
         manifest_path = Path("/app/data/aug22_gallery_4160518/manifest.json")
@@ -158,6 +185,23 @@ def get_aug22_state(*, sheet: str = "full"):
     appraisal_cache_path = Path("data/aug22_gallery_4160518/appraisal_results.json")
     if not appraisal_cache_path.exists():
         appraisal_cache_path = Path("/app/data/aug22_gallery_4160518/appraisal_results.json")
+
+    grounded_cache_path = Path("data/aug22_gallery_4160518/grounded_prices.json")
+    if not grounded_cache_path.exists():
+        grounded_cache_path = Path("/app/data/aug22_gallery_4160518/grounded_prices.json")
+    grounded_rows = []
+    if grounded_cache_path.exists():
+        try:
+            grounded_rows = json.loads(grounded_cache_path.read_text())
+        except Exception as e:
+            print(f"[!] Warning: Could not parse grounded pricing cache: {e}")
+    grounded_by_lot = {row.get("lot_id"): row for row in grounded_rows}
+    cycle_comps = dict(REFERENCE_COMPS)
+    if sheet == "full":
+        cycle_comps = {
+            **grounded_reference_comps(grounded_rows),
+            **cycle_comps,
+        }
 
     if manifest_path.exists():
         manifest = json.loads(manifest_path.read_text())
@@ -173,7 +217,7 @@ def get_aug22_state(*, sheet: str = "full"):
             cached_data = json.loads(appraisal_cache_path.read_text())
             for raw in cached_data:
                 lot_id = raw.get("lot_id")
-                cat_hint = REFERENCE_COMPS.get(lot_id, {}).get("cat")
+                cat_hint = cycle_comps.get(lot_id, {}).get("cat")
                 app_obj, qs = engine.parse_appraisal_to_domain(raw, category_override=cat_hint)
                 appraisals_by_lot[app_obj.lot_id] = (app_obj, raw)
                 emitted_questions.extend(qs)
@@ -212,8 +256,8 @@ def get_aug22_state(*, sheet: str = "full"):
         # Determine appraisal attributes
         app_pair = appraisals_by_lot.get(lot_tag)
         raw_app = app_pair[1] if app_pair else {}
-        if lot_tag in REFERENCE_COMPS:
-            comp_info = REFERENCE_COMPS[lot_tag]
+        if lot_tag in cycle_comps:
+            comp_info = cycle_comps[lot_tag]
             ident = raw_app.get("identification", comp_info["desc"])
             cat = comp_info["cat"]
             # Appraiser readings only here. Owner fit is applied after merge
@@ -254,26 +298,8 @@ def get_aug22_state(*, sheet: str = "full"):
         ))
 
     # 3. Comps Mapping & Seam Assembly (assemble_lots)
-    # "sent" is the 12-lot hand sheet that went to Blue Toad. "full" overlays
-    # every usable grounded price so the submission is not a 12-item sample.
     comps = {}
-    if sheet == "full":
-        for lot_id, row in load_grounded_prices().items():
-            if not row.get("usable") or row.get("low") is None or row.get("high") is None:
-                continue
-            n = int(row.get("sold_comp_count") or 0)
-            conf = (
-                BidConfidence.HIGH if n >= 3
-                else BidConfidence.MEDIUM if n >= 2
-                else BidConfidence.LOW
-            )
-            est = CompEstimate(
-                low=float(row["low"]), high=float(row["high"]),
-                source_count=max(n, 1), confidence=conf,
-            )
-            comps[lot_id] = est
-            comps[f"seq:{lot_id}"] = est
-    for k, v in REFERENCE_COMPS.items():
+    for k, v in cycle_comps.items():
         comp_est = CompEstimate(
             low=v["low"],
             high=v["high"],
@@ -293,8 +319,12 @@ def get_aug22_state(*, sheet: str = "full"):
     gallery_ids = {str(p["photo_id"]): f"BT-{p['sequence']:03d}" for p in photos}
     sequences = {f"BT-{p['sequence']:03d}": p["sequence"] for p in photos}
     try:
+        source_manifest = embed_cache_path.with_name("manifest.json")
         edges = load_reshoot_edges(
             embed_cache_path, photo_by_seq, sequences, gallery_ids=gallery_ids,
+            expected_manifest_sha256=(
+                sha256_file(source_manifest) if source_manifest.is_file() else "missing"
+            ),
         )
     except Exception as e:
         print(f"[!] Warning: Could not parse embedding cache: {e}")
@@ -328,17 +358,24 @@ def get_aug22_state(*, sheet: str = "full"):
     # renders BT-002 at one tray while the absentee email that went out commits
     # three. A lot with no ruling on file was never asked about and is a plain
     # single lot — only a ruling that exists and cannot be read is UNKNOWN.
-    ruled = []
-    for l in lots:
-        ruling = OPERATOR_APPROVED.get(l.lot_id, {}).get("ruling")
-        if ruling:
-            mech, units, wanted = mechanic_from_ruling(ruling)
-            l = replace(l, mechanic=mech, unit_count=units, units_wanted=wanted)
-        ruled.append(l)
-    lots = ruled
+    lots = (
+        apply_lot_rulings(
+            lots, rulings=(), operator_approved=OPERATOR_APPROVED,
+        )
+        if sheet == "sent"
+        else apply_lot_rulings(lots)
+    )
 
     # 4. BidMath Pricing & Allocation
-    decisions = [apply_operator_cap(price_lot(l)) for l in lots]
+    decisions = []
+    for lot in lots:
+        decision = apply_operator_cap(price_lot(lot))
+        if decision.needs_deep_comps:
+            decision = replace(
+                decision,
+                reason=grounded_status_reason(grounded_by_lot.get(lot.lot_id)),
+            )
+        decisions.append(decision)
     allocated_decisions = allocate(
         decisions,
         budget_cap=STATE["budget_cap"],
@@ -386,7 +423,12 @@ def get_aug22_state(*, sheet: str = "full"):
         ),
     ]
     all_questions = domain_questions + emitted_questions
-    queue_res = build_queue(all_questions, current_rules(), cap=12)
+    queue_res = build_queue(
+        all_questions,
+        current_rules(),
+        cap=12,
+        lot_rulings=current_rulings(),
+    )
 
     return photos, seats, lots, allocated_decisions, summary, queue_res, captions_map
 
@@ -405,11 +447,10 @@ def healthz():
         "gemma_ok": bool(engine.client) and "gemma" in GEMMA_MODEL.lower(),
         "memory_backend": getattr(RULES, "backend_name", "unknown"),
         "memory_durable": bool(getattr(RULES, "durable", False)),
+        "answer_auth": "required" if os.environ.get("OPERATOR_TOKEN") else "disabled",
         "python": sys.version.split()[0],
-        "answer_auth": (
-            "required" if os.environ.get("OPERATOR_TOKEN") or os.environ.get("K_SERVICE")
-            else "open"
-        ),
+        "cycle_storage": CYCLES.backend_name if CYCLES else "disabled",
+        "cycle_job_configured": bool(CYCLE_JOBS and CYCLE_JOBS.configured),
     }
 
 
@@ -422,7 +463,7 @@ def get_console():
     live_client = None if os.environ.get("PYTEST_CURRENT_TEST") else engine.client
     cache = Path("/tmp/btf_gemma_voice.json")
     voice = write_pitch_voice(
-        pitch, client=live_client, cache_path=cache,
+        pitch, client=live_client, cache_path=cache, telemetry=engine.telemetry,
     )
     view = CycleView(
         cycle_id=STATE["cycle_id"],
@@ -439,19 +480,21 @@ def get_console():
         lots_total=len(lots),
         voice=voice,
         seats=seats,
+        cycle_controls=bool(
+            CYCLES and CYCLE_JOBS and CYCLE_JOBS.configured
+            and (os.environ.get("OPERATOR_TOKEN") or not os.environ.get("K_SERVICE"))
+        ),
     )
-    return render_console(view, pitch_text=curator_pitch(decisions, captions_map))
+    return render_console(view)
 
 
 @app.get("/api/lots")
 def list_lots():
     _, _, lots, decisions, summary, _, _ = get_aug22_state()
     by_id = {d.lot_id: d for d in decisions}
-    grounded = load_grounded_prices()
     out = []
     for l in lots:
         d = by_id.get(l.lot_id)
-        g = grounded.get(l.lot_id) or {}
         out.append({
             "lot_id": l.lot_id,
             "caption": l.caption,
@@ -459,26 +502,55 @@ def list_lots():
             "fit_score": l.fit_score,
             "comp_low": l.comp.low if l.comp.source_count > 0 else None,
             "comp_high": l.comp.high if l.comp.source_count > 0 else None,
-            "grounded_usable": bool(g.get("usable")),
-            "grounded_low": g.get("low") if g.get("usable") else None,
-            "grounded_high": g.get("high") if g.get("usable") else None,
             "priority": d.priority.value if d else None,
             "max_bid": d.max_bid if d else None,
             "all_in": d.all_in if d else None,
             "auto_send": d.auto_send if d else False,
             "allocated": d.allocated if d else False,
-            "decision": "AUTO-SEND" if d and d.auto_send and d.allocated else ("NEEDS APPROVAL" if d and d.allocated else "SKIPPED"),
+            "decision": (
+                "AUTO-SEND" if d and d.auto_send and d.allocated
+                else "NEEDS APPROVAL" if d and d.allocated
+                else "NEEDS DEEPER COMPS" if d and d.needs_deep_comps
+                and d.reason.startswith("needs deeper comps")
+                else "DEEP COMPS RETRY PENDING" if d and d.needs_deep_comps
+                and d.reason.startswith("deep comps retry")
+                else "PENDING DEEP COMPS" if d and d.needs_deep_comps
+                else "PENDING RULING" if d and d.needs_mechanic_ruling
+                else "SKIPPED"
+            ),
+            "reason": d.reason if d else None,
         })
-    return {"total": len(out), "summary": summary.__dict__, "lots": out}
+    remainder = [
+        opportunity
+        for decision in decisions
+        if (opportunity := remainder_opportunity(decision)) is not None
+    ]
+    return {
+        "total": len(out),
+        "summary": summary.__dict__,
+        "lots": out,
+        "contingent_remainder_opportunities": [
+            {
+                "lot_id": decision.lot_id,
+                "source_lot_id": decision.lot_id.removesuffix("-R"),
+                "committed_max": decision.committed_max,
+                "committed_all_in": decision.committed_all_in,
+                "directive": clerk_directive(decision),
+            }
+            for decision in remainder
+        ],
+    }
 
 
 @app.get("/api/questions")
 def list_questions():
     _, _, _, _, _, queue_res, _ = get_aug22_state()
     return {
+        "accounting": queue_res.accounting(),
         "asked": [
             {
                 "question_id": make_question_id(STATE["cycle_id"], q),
+                "expected_revision": 0,
                 "kind": q.kind.value,
                 "category": q.category,
                 "prompt": q.prompt,
@@ -498,21 +570,149 @@ def list_questions():
             }
             for q, r in queue_res.auto_answered
         ],
+        "deferred": [
+            {"kind": q.kind.value, "lot_ids": list(q.lot_ids), "prompt": q.prompt}
+            for q in queue_res.deferred
+        ],
+        "dropped": [
+            {"kind": q.kind.value, "lot_ids": list(q.lot_ids), "prompt": q.prompt}
+            for q in queue_res.dropped
+        ],
     }
 
 
 def _require_operator(x_operator_token: str | None) -> None:
     expected = os.environ.get("OPERATOR_TOKEN")
-    # Cloud Run is public. Fail closed if the secret was never mounted —
-    # missing env must not mean "anyone may write Firestore."
     if os.environ.get("K_SERVICE") and not expected:
         raise HTTPException(
-            status_code=503, detail="operator token not configured",
+            status_code=503,
+            detail="operator actions are disabled until OPERATOR_TOKEN is configured",
         )
     if not expected:
         return
     if (x_operator_token or "") != expected:
         raise HTTPException(status_code=401, detail="operator token required")
+
+
+def _operator_actor() -> str:
+    return (os.environ.get("OPERATOR_ACTOR") or "authenticated_operator").strip()
+
+
+def _require_cycle_operator(x_operator_token: str | None) -> None:
+    """Keep the cycle boundary explicit even though all mutations share auth."""
+    _require_operator(x_operator_token)
+
+
+def _configured_cycles():
+    if CYCLES is None:
+        raise HTTPException(
+            status_code=503,
+            detail="cycle storage is disabled; set BTF_CYCLE_BUCKET",
+        )
+    return CYCLES
+
+
+def _launch_staged_cycle(request) -> dict:
+    repo = _configured_cycles()
+    if CYCLE_JOBS is None or not CYCLE_JOBS.configured:
+        raise HTTPException(
+            status_code=503,
+            detail="cycle processor is disabled; set BTF_CYCLE_JOB",
+        )
+    try:
+        claimed = repo.claim_launch(request)
+    except CycleNotFound as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    if not claimed:
+        status = repo.read_status(request)
+        return {"launched": False, "deduplicated": True, "status": status.as_dict()}
+    try:
+        operation = CYCLE_JOBS.launch(request)
+        status = CycleStatus.make(
+            request, "running", "Cloud Run Job accepted the staged cycle",
+            operation_name=operation,
+        )
+        repo.write_status(status)
+        return {"launched": True, "deduplicated": False,
+                "operation_name": operation, "status": status.as_dict()}
+    except Exception as exc:
+        # Eventarc retries are useful only if a transient launch failure can
+        # release the idempotency claim.
+        repo.release_launch(request)
+        repo.write_status(CycleStatus.make(request, "failed", str(exc)[:1000]))
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@app.post("/api/cycles/start", status_code=202)
+def start_cycle(
+    payload: dict = Body(...),
+    x_operator_token: str | None = Header(default=None),
+):
+    """Explicitly start a fully staged cycle; never accepts local file paths."""
+    _require_cycle_operator(x_operator_token)
+    cycle_id = (payload.get("cycle_id") or "").strip()
+    shop_id = (payload.get("shop_id") or SHOP_ID).strip()
+    if not cycle_id:
+        raise HTTPException(status_code=400, detail="cycle_id is required")
+    repo = _configured_cycles()
+    try:
+        request = repo.read_request(shop_id, cycle_id)
+    except (CycleNotFound, ValueError) as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    if not repo.is_ready(request):
+        try:
+            repo.mark_ready(request)
+        except CycleConflict:
+            # A simultaneous console click or Eventarc delivery won the race.
+            if not repo.is_ready(request):
+                raise
+    return _launch_staged_cycle(request)
+
+
+@app.post("/api/events/storage", status_code=202)
+def storage_event(payload: dict = Body(...)):
+    """Eventarc receiver. Only a durable READY marker can launch work."""
+    data = payload.get("data") if isinstance(payload.get("data"), dict) else payload
+    bucket = str(data.get("bucket") or "").removeprefix("gs://").rstrip("/")
+    name = str(data.get("name") or "")
+    expected_bucket = os.environ.get("BTF_CYCLE_BUCKET", "").removeprefix("gs://").rstrip("/")
+    if not expected_bucket or bucket != expected_bucket:
+        return {"ignored": True, "reason": "unexpected bucket"}
+    parts = name.split("/")
+    if (len(parts) != 6 or parts[0] != "shops" or parts[2] != "cycles"
+            or parts[4:] != ["control", "READY.json"]):
+        return {"ignored": True, "reason": "not a cycle READY marker"}
+    shop_id, cycle_id = parts[1], parts[3]
+    repo = _configured_cycles()
+    try:
+        request = repo.read_request(shop_id, cycle_id)
+    except (CycleNotFound, ValueError) as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return _launch_staged_cycle(request)
+
+
+@app.get("/api/cycles/current")
+def current_cycle():
+    repo = _configured_cycles()
+    try:
+        active = repo.get_json(repo.active_name(SHOP_ID))
+        request = repo.read_request(SHOP_ID, active["cycle_id"])
+        return {"active": active, "request": request.as_dict(),
+                "status": repo.read_status(request).as_dict()}
+    except CycleNotFound as exc:
+        raise HTTPException(status_code=404, detail="no completed cycle") from exc
+
+
+@app.get("/api/cycles/{cycle_id}")
+def cycle_status(cycle_id: str):
+    repo = _configured_cycles()
+    try:
+        request = repo.read_request(SHOP_ID, cycle_id)
+        return {"request": request.as_dict(),
+                "status": repo.read_status(request).as_dict(),
+                "ready": repo.is_ready(request)}
+    except (CycleNotFound, ValueError) as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @app.post("/api/answer")
@@ -532,6 +732,11 @@ def answer_question(
     by_id = {make_question_id(STATE["cycle_id"], q): q for q in queue_res.asked}
     question = by_id.get(qid)
     if question is None:
+        if payload.get("expected_revision") is not None:
+            raise HTTPException(
+                status_code=409,
+                detail="question or authority revision is stale; reload the queue",
+            )
         raise HTTPException(
             status_code=404, detail="question is not on the current desk queue",
         )
@@ -540,15 +745,27 @@ def answer_question(
         "asked": len(queue_res.asked),
         "auto_answered": len(queue_res.auto_answered),
         "allocated": [d.lot_id for d in decisions if d.allocated],
+        "committed_max": summary.committed_max,
+        "committed_all_in": summary.committed_all_in,
+        "decisions": {
+            decision.lot_id: {
+                "allocated": decision.allocated,
+                "mechanic": decision.mechanic.value,
+                "unit_count": decision.unit_count,
+                "units_wanted": decision.units_wanted,
+                "max_bid": decision.max_bid,
+                "committed_max": decision.committed_max,
+            }
+            for decision in decisions
+            if decision.lot_id in question.lot_ids
+        },
     }
 
-    promoted = learn(
-        [(question, ans)],
-        cycle=STATE["cycle_id"],
-        generalisable=SHOP_MEMORY_GENERALISABLE,
-    )
+    promoted = learn([(question, ans)], cycle=STATE["cycle_id"])
+    learned_rulings = learn_rulings([(question, ans)], cycle=STATE["cycle_id"])
     stored = None
-    if not promoted:
+    authority_type = None
+    if not promoted and not learned_rulings:
         return {
             "status": "recorded",
             "promoted": False,
@@ -561,50 +778,91 @@ def answer_question(
             "pending_reappraisal": False,
         }
 
-    new_rule = promoted[0]
     try:
-        stored = RULES.put(StandingRuleRecord(
-            shop_id=SHOP_ID,
-            kind=new_rule.kind,
-            category=new_rule.category,
-            answer=new_rule.answer,
-            learned_cycle=new_rule.learned_cycle,
-            source_question_id=qid,
-        ), expected_revision=payload.get("expected_revision"))
+        if learned_rulings:
+            ruling = learned_rulings[0]
+            stored = RULES.put_ruling(LotRulingRecord(
+                shop_id=SHOP_ID,
+                cycle_id=STATE["cycle_id"],
+                kind=ruling.kind,
+                lot_ids=ruling.lot_ids,
+                cluster_id=ruling.cluster_id,
+                answer=ruling.answer,
+                source_question_id=qid,
+                actor=_operator_actor(),
+            ), expected_revision=payload.get("expected_revision"))
+            authority_type = "lot_ruling"
+        else:
+            new_rule = promoted[0]
+            stored = RULES.put(StandingRuleRecord(
+                shop_id=SHOP_ID,
+                kind=new_rule.kind,
+                category=new_rule.category,
+                answer=new_rule.answer,
+                learned_cycle=new_rule.learned_cycle,
+                source_question_id=qid,
+                actor=_operator_actor(),
+            ), expected_revision=payload.get("expected_revision"))
+            authority_type = "standing_policy"
     except MemoryConflict as e:
         raise HTTPException(status_code=409, detail=str(e)) from e
 
-    _, _, _, after_decisions, _, after_queue, _ = get_aug22_state()
+    _, _, _, after_decisions, after_summary, after_queue, _ = get_aug22_state()
     after = {
         "asked": len(after_queue.asked),
         "auto_answered": len(after_queue.auto_answered),
         "allocated": [d.lot_id for d in after_decisions if d.allocated],
+        "committed_max": after_summary.committed_max,
+        "committed_all_in": after_summary.committed_all_in,
+        "decisions": {
+            decision.lot_id: {
+                "allocated": decision.allocated,
+                "mechanic": decision.mechanic.value,
+                "unit_count": decision.unit_count,
+                "units_wanted": decision.units_wanted,
+                "max_bid": decision.max_bid,
+                "committed_max": decision.committed_max,
+            }
+            for decision in after_decisions
+            if decision.lot_id in question.lot_ids
+        },
     }
     return {
         "status": "applied",
         "promoted": True,
         "question_id": qid,
+        "authority_type": authority_type,
         "rule": {
-            "rule_id": stored.rule_id,
+            "rule_id": (stored.ruling_id if authority_type == "lot_ruling"
+                        else stored.rule_id),
             "revision": stored.revision,
             "kind": stored.kind.value,
-            "category": stored.category,
+            "category": getattr(stored, "category", question.category),
             "answer": stored.answer,
-            "learned_cycle": stored.learned_cycle,
+            "learned_cycle": (stored.cycle_id if authority_type == "lot_ruling"
+                              else stored.learned_cycle),
             "source_question_id": stored.source_question_id,
+            "lot_ids": list(getattr(stored, "lot_ids", ())),
+            "cluster_id": getattr(stored, "cluster_id", None),
         },
         "affected_lots": list(question.lot_ids),
         "before": before,
         "after": after,
         "appraisal_source": "cached_sheet",
-        "pending_reappraisal": True,
+        "pending_reappraisal": False,
+        "money_changed": (
+            before["committed_max"] != after["committed_max"]
+            or before["committed_all_in"] != after["committed_all_in"]
+        ),
         "standing_rules_count": len(current_rules()),
+        "lot_rulings_count": len(current_rulings()),
     }
 
 
 @app.get("/api/memory")
 def list_memory():
     rules = current_rules()
+    rulings = current_rulings()
     return {
         "backend": getattr(RULES, "backend_name", "unknown"),
         "durable": bool(getattr(RULES, "durable", False)),
@@ -617,6 +875,16 @@ def list_memory():
                 "learned_cycle": r.learned_cycle,
             }
             for r in rules
+        ],
+        "lot_rulings": [
+            {
+                "kind": ruling.kind.value,
+                "answer": ruling.answer,
+                "learned_cycle": ruling.learned_cycle,
+                "lot_ids": list(ruling.lot_ids),
+                "cluster_id": ruling.cluster_id,
+            }
+            for ruling in rulings
         ],
     }
 

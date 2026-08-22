@@ -133,7 +133,8 @@ class TestTheCommercialTerms:
 
 from src.assemble.email import compile_absentee_email
 from src.bidmath import (
-    CompEstimate, Confidence, Lot, allocate, price_lot, snap_to_increment, summarize,
+    BidMechanic, CompEstimate, Confidence, Lot, allocate, clerk_directive, elect,
+    price_lot, remainder_opportunity, snap_to_increment, summarize,
 )
 
 
@@ -186,3 +187,24 @@ class TestCompilerKeepsTheClerkInformed:
         assert "ITEM DESCRIPTION" not in text
         assert "1)" in text and "[BT-001]" in text
 
+    def test_contingent_remainder_uses_the_shared_clerk_directive(self):
+        choice = Lot(
+            lot_id="BT-900", caption="five shelf units", category="vintage toys",
+            fit_score=0.9, condition_penalty=0.0,
+            comp=CompEstimate(100, 140, 3, Confidence.HIGH),
+            mechanic=BidMechanic.CHOICE, unit_count=5, units_wanted=2,
+        )
+        remainder = remainder_opportunity(price_lot(elect(choice, 2)))
+        decisions = allocate([remainder], budget_cap=10_000)
+        text = compile_absentee_email(
+            to="info@bluetoadauctions.com",
+            subject="Contingent test",
+            auction_date="September 5, 2026",
+            venue="Test venue",
+            lots=[choice],
+            decisions=decisions,
+        )
+        assert clerk_directive(decisions[0]) in text
+        assert "ONLY IF IT COMES BACK UP" in text
+        assert "CONTINGENT REMAINDER EXPOSURE" in text
+        assert "I am taking ALL" not in text

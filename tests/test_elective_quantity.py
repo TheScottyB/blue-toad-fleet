@@ -194,12 +194,25 @@ class TestRemainderOpportunity:
                        auto_send_threshold=10_000.0)
         assert out[0].auto_send is False
 
-    def test_the_remainder_competes_for_the_same_budget(self):
+    def test_the_remainder_is_separate_from_committed_budget(self):
         d = price_lot(elect(lot(mechanic=BidMechanic.CHOICE, unit_count=5), 2))
         r = remainder_opportunity(d)
         s = summarize(allocate([d, r], budget_cap=10_000.0))
-        assert s.committed_all_in == pytest.approx(
-            round(d.committed_all_in + r.committed_all_in, 2))
+        assert s.committed_all_in == pytest.approx(d.committed_all_in)
+        assert s.contingent == 1
+        assert s.contingent_all_in == pytest.approx(r.committed_all_in)
+
+    def test_the_remainder_does_not_consume_firm_cap_headroom(self):
+        primary = price_lot(elect(
+            lot(mechanic=BidMechanic.CHOICE, unit_count=5), 2))
+        remainder = remainder_opportunity(primary)
+        straight = price_lot(lot(lot_id="straight"))
+        cap = round(primary.committed_all_in + straight.committed_all_in, 2)
+        out = allocate([primary, remainder, straight], budget_cap=cap)
+        by_id = {decision.lot_id: decision for decision in out}
+        assert by_id[primary.lot_id].allocated is True
+        assert by_id[straight.lot_id].allocated is True
+        assert by_id[remainder.lot_id].allocated is True
 
 
 class TestNothingExistingMoves:

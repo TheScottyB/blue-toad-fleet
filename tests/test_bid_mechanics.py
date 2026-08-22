@@ -172,6 +172,7 @@ class TestUnknownMechanicNeedsARuling:
         assert d.needs_mechanic_ruling is True
         assert d.max_bid is None
         assert d.needs_human_pricing is True
+        assert d.needs_deep_comps is False
 
     def test_single_unit_unknown_still_refuses(self):
         """CORRECTED 2026-08-21. This asserted that UNKNOWN at one unit needs no

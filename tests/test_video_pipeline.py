@@ -43,6 +43,9 @@ def test_one_authoritative_final_video_owner():
 def test_video_inputs_and_outputs_are_declared():
     manifest = json.loads(VIDEO_MANIFEST.read_text())
     assert manifest["schema_version"] == 1
+    assert manifest["producers"]["final"] == "scripts/assemble_final.py"
+    for producer in manifest["producers"].values():
+        assert (ROOT / producer).is_file()
     assert len(manifest["beats"]) == 4
     for beat in manifest["beats"]:
         assert set(beat) == {"name", "video", "audio", "max_video_pad_seconds"}
@@ -74,6 +77,8 @@ def test_assembler_probes_durations_and_publishes_atomically():
     source = (SCRIPTS / "assemble_final.py").read_text()
     assert "media_duration(" in source
     assert "atomic_media_output(" in source
+    assert "blue-toad-facts-sha256" in source
+    assert "release_eligible" in source
     for stale_duration in ("68.498866", "63.111837", "57.817687", "38.127166"):
         assert stale_duration not in source
 

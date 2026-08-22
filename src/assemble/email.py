@@ -3,7 +3,7 @@ import textwrap
 from typing import Iterable
 
 from src.bidmath import (
-    ABSENTEE_FEE, BidMechanic, Decision, Lot, opening_bid, summarize,
+    ABSENTEE_FEE, BidMechanic, Decision, Lot, clerk_directive, opening_bid, summarize,
     units_committed,
 )
 
@@ -17,6 +17,7 @@ def compile_absentee_email(
     lots: Iterable[Lot],
     decisions: Iterable[Decision],
     bidder: str = "Richmond General (Scott)",
+    deadline: str | None = None,
     extra_instructions: list[str] | None = None,
 ) -> str:
     by_id = {l.lot_id: l for l in lots}
@@ -26,7 +27,7 @@ def compile_absentee_email(
     lines = [
         f"TO: {to}",
         f"SUBJECT: {subject}",
-        f"DATE: Friday, August 21, 2026 (Before 8:00 PM CDT Cutoff)",
+        f"DATE: {deadline or 'Friday, August 21, 2026 (Before 8:00 PM CDT Cutoff)'}",
         "",
         "Blue Toad Auctions,",
         "",
@@ -54,22 +55,18 @@ def compile_absentee_email(
         # clerk cannot see why. This is the sentence the operator typed by hand
         # into the revised sheet on cutoff day; the system writes it now.
         if d.mechanic is BidMechanic.TIMES_THE_MONEY and d.unit_count > 1:
+            k = units_committed(d.mechanic, d.unit_count, d.units_wanted)
             lines.append(
                 f"      START ${start_bid:,.2f}   MAX ${d.max_bid:,.2f} PER UNIT "
-                f"x {d.unit_count} = ${d.committed_max:,.2f} TOTAL")
-            lines.append(
-                f"      >> Times the money. I am taking ALL {d.unit_count}. "
-                f"Please do NOT limit me to one unit on this lot. <<")
+                f"x {k} = ${d.committed_max:,.2f} TOTAL")
         elif d.mechanic is BidMechanic.CHOICE and d.unit_count > 1:
             k = units_committed(d.mechanic, d.unit_count, d.units_wanted)
             lines.append(
                 f"      START ${start_bid:,.2f}   MAX ${d.max_bid:,.2f} PER UNIT "
                 f"x {k} of {d.unit_count} = ${d.committed_max:,.2f} TOTAL")
-            lines.append(
-                f"      >> Buyer's choice. Please take {k} of the "
-                f"{d.unit_count} at that price. <<")
         else:
             lines.append(f"      START ${start_bid:,.2f}   MAX ${d.max_bid:,.2f}")
+        lines.append(f"      >> {clerk_directive(d)} <<")
         lines.append("")
 
     if extra_instructions is None:
@@ -91,9 +88,13 @@ def compile_absentee_email(
         "-" * 89,
         f"TOTAL COMMITTED PROXY BIDS: ${summary.committed_max:,.2f} "
         f"(${summary.committed_all_in:,.2f} all-in w/ {int(ABSENTEE_FEE * 100)}% fee)",
-        "",
-        "Special Instructions:",
     ])
+    if summary.contingent:
+        lines.append(
+            f"CONTINGENT REMAINDER EXPOSURE: ${summary.contingent_max:,.2f} "
+            f"(${summary.contingent_all_in:,.2f} all-in; only if stated conditions occur)"
+        )
+    lines.extend(["", "Special Instructions:"])
     lines.extend(f"  - {item}" for item in instructions)
     lines.extend(["", "Thank you,", "Richmond General"])
     return "\n".join(lines)

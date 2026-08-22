@@ -47,9 +47,10 @@ def _filt(img, k):
 def ssim(a, b, L=255.0):
     """Mean SSIM over the luma channel. 11x11 Gaussian, Wang et al. 2004.
 
-    NOT validated against a reference implementation -- scipy is not in .venv.
-    docs/CAPABILITY_PROBE.md lists that as an open item; every SSIM figure in this
-    file inherits any error here.
+    The implementation is checked against the closed-form constant-field fixture
+    in ``artifacts/signature_upscale_probe/ssim_reference_fixture.json``.  For a
+    constant field, the Wang et al. equation reduces independently to its
+    luminance term, making the expected value exact without a second library.
     """
     a, b = a.astype(np.float64), b.astype(np.float64)
     k = _gauss1d()

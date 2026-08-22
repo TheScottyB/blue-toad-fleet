@@ -5,10 +5,13 @@ from pathlib import Path
 
 import pytest
 
-from src.appraisal import Question, QuestionKind, StandingRule, learn
-from src.memory.ids import make_question_id, make_rule_id, normalize_category
+from src.appraisal import Question, QuestionKind, StandingRule, learn, learn_rulings
+from src.memory.ids import (
+    make_question_id, make_rule_id, make_ruling_id, normalize_category,
+)
 from src.memory.store import (
-    FileRuleStore, InMemoryRuleStore, MemoryConflict, StandingRuleRecord,
+    FileRuleStore, InMemoryRuleStore, LotRulingRecord, MemoryConflict,
+    StandingRuleRecord,
 )
 
 
@@ -47,6 +50,12 @@ class TestIds:
         assert make_question_id("2026-08-22", q) == make_question_id("2026-08-22", q)
         assert make_question_id("2026-08-22", q).startswith("q_")
 
+    def test_ruling_id_includes_cycle_and_object_scope(self):
+        a = make_ruling_id(SHOP, "c1", "scope", ("L1",), "cluster-a")
+        b = make_ruling_id(SHOP, "c2", "scope", ("L1",), "cluster-a")
+        c = make_ruling_id(SHOP, "c1", "scope", ("L2",), "cluster-b")
+        assert len({a, b, c}) == 3
+
 
 class TestLearnAllowlist:
     def test_mark_never_becomes_a_store_record(self):
@@ -77,11 +86,30 @@ class TestInMemoryStore:
         events = store.history(SHOP, make_rule_id(SHOP, "appetite", "railroadiana"))
         assert len(events) == 2
         assert events[-1]["answer"] == "BUY"
+        assert events[-1]["actor"] == "operator"
 
     def test_shops_are_isolated(self):
         store = InMemoryRuleStore()
         store.put(_rec())
         assert store.active_rules("other-shop") == []
+
+    def test_lot_ruling_is_cycle_scoped_and_revisioned(self):
+        store = InMemoryRuleStore()
+        record = LotRulingRecord(
+            shop_id=SHOP,
+            cycle_id="c1",
+            kind=QuestionKind.LOT_GROUPING,
+            lot_ids=("L12", "L14", "L16"),
+            cluster_id="trays-12-14-16",
+            answer="times the money x3",
+            source_question_id="q_group",
+        )
+        stored = store.put_ruling(record, expected_revision=0)
+        assert stored.revision == 1
+        assert len(store.active_rulings(SHOP, "c1")) == 1
+        assert store.active_rulings(SHOP, "c2") == []
+        with pytest.raises(MemoryConflict):
+            store.put_ruling(record, expected_revision=0)
 
 
 class TestFileStoreRestart:
@@ -104,3 +132,18 @@ class TestFileStoreRestart:
         FileRuleStore(path, seed=seed).put(_rec())
         data = json.loads(path.read_text())
         assert len(data["rules"]) == 2
+
+    def test_lot_ruling_survives_restart_without_becoming_policy(self, tmp_path):
+        path = tmp_path / "rules.json"
+        record = LotRulingRecord(
+            shop_id=SHOP,
+            cycle_id="c1",
+            kind=QuestionKind.SCOPE,
+            lot_ids=("L1", "L2"),
+            answer="one shelf",
+            source_question_id="q_scope",
+        )
+        FileRuleStore(path).put_ruling(record)
+        revived = FileRuleStore(path)
+        assert revived.active_rules(SHOP) == []
+        assert revived.active_rulings(SHOP, "c1")[0].lot_ids == ("L1", "L2")

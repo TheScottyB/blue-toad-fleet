@@ -26,7 +26,9 @@ const markers = [];
 const output = await recordPage({
   output: config.output,
   action: async page => {
-    await checkedGoto(page, url, { waitUntil: 'networkidle', timeout: 120000 });
+    await checkedGoto(page, url, {
+      waitUntil: 'networkidle', timeout: 120000, expectedMarkers: ['Blue Toad Fleet'],
+    });
     await page.waitForTimeout(1200);
     const started = Date.now();
     const mark = label => markers.push({ label, t: (Date.now() - started) / 1000 });

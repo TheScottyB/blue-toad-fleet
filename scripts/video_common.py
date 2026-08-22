@@ -128,7 +128,7 @@ def load_verified_facts(video_manifest: Mapping) -> dict:
         ["schema_version", "cycle", "money", "tests", "runtime", "source_sha256"],
         "submission facts",
     )
-    if facts["schema_version"] != 1:
+    if facts["schema_version"] not in {1, 2}:
         raise VideoBuildError(
             f"unsupported submission facts schema_version: {facts['schema_version']}"
         )

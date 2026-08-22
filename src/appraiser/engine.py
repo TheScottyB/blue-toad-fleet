@@ -13,7 +13,7 @@ import json
 import os
 import sys
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, as_completed, wait
 from pathlib import Path
 from typing import Optional, Any, Callable
 
@@ -28,6 +28,7 @@ from src.appraisal import Appraisal, Confidence, Question, QuestionKind, Standin
 from src.appraiser.images import assert_appraisal_grade, image_mime_type, read_local_image
 from src.appraiser.containers import CONTAINER_TYPES, NormalizedBox, crop_to_container
 from src.appraiser.routing import TRIAGE_MODEL, APPRAISAL_MODEL, CURATOR_MODEL
+from src.evidence.telemetry import UsageTelemetry
 from src.appraiser.pricing import (
     PRICE_SCHEMA, PRICING_SYSTEM, build_pricing_prompt,
     sources_from_response, parse_price_payload,
@@ -55,12 +56,37 @@ class AppraisalEngine:
         location: Optional[str] = None,
         triage_model: str = TRIAGE_MODEL,
         appraisal_model: str = APPRAISAL_MODEL,
+        telemetry: UsageTelemetry | None = None,
     ):
         self.project = project or os.environ.get("GOOGLE_CLOUD_PROJECT", "threebatdrone-prod-420")
         self.location = location or os.environ.get("VERTEX_LOCATION", "global")
         self.triage_model = triage_model
         self.appraisal_model = appraisal_model
+        self.telemetry = telemetry
         self._client: Optional[Any] = None
+
+    def _generate(
+        self,
+        *,
+        stage: str,
+        model: str,
+        contents: Any,
+        config: Any,
+        retry_index: int = 0,
+        fallback: bool = False,
+    ) -> Any:
+        invoke = lambda: self.client.models.generate_content(
+            model=model, contents=contents, config=config,
+        )
+        if self.telemetry is None:
+            return invoke()
+        return self.telemetry.call(
+            stage=stage,
+            model=model,
+            retry_index=retry_index,
+            fallback=fallback,
+            invoke=invoke,
+        )
 
     @property
     def client(self):
@@ -138,9 +164,10 @@ class AppraisalEngine:
         models_to_try = [self.triage_model, "gemini-2.5-flash"]
 
         last_err = None
-        for model in models_to_try:
+        for retry_index, model in enumerate(models_to_try):
             try:
-                resp = self.client.models.generate_content(
+                resp = self._generate(
+                    stage="triage",
                     model=model,
                     contents=contents,
                     config=types.GenerateContentConfig(
@@ -149,6 +176,8 @@ class AppraisalEngine:
                         response_schema=vertex_schema,
                         temperature=0.1,
                     ),
+                    retry_index=retry_index,
+                    fallback=model != self.triage_model,
                 )
                 data = json.loads(resp.text)
                 data["photo_id"] = photo_id
@@ -196,9 +225,10 @@ class AppraisalEngine:
         models_to_try = [self.appraisal_model, "gemini-2.5-flash"]
 
         last_err = None
-        for model in models_to_try:
+        for retry_index, model in enumerate(models_to_try):
             try:
-                resp = self.client.models.generate_content(
+                resp = self._generate(
+                    stage="appraisal",
                     model=model,
                     contents=contents,
                     config=types.GenerateContentConfig(
@@ -207,6 +237,8 @@ class AppraisalEngine:
                         response_schema=vertex_schema,
                         temperature=0.1,
                     ),
+                    retry_index=retry_index,
+                    fallback=model != self.appraisal_model,
                 )
                 data = json.loads(resp.text)
                 data["lot_id"] = lot_id
@@ -238,9 +270,10 @@ class AppraisalEngine:
         contents.append(types.Part.from_bytes(
             data=image_bytes, mime_type=image_mime_type(image_bytes) or "image/jpeg"))
         last_err = None
-        for model in [self.appraisal_model, "gemini-2.5-flash"]:
+        for retry_index, model in enumerate([self.appraisal_model, "gemini-2.5-flash"]):
             try:
-                resp = self.client.models.generate_content(
+                resp = self._generate(
+                    stage="decomposition.locate",
                     model=model,
                     contents=contents,
                     config=types.GenerateContentConfig(
@@ -249,6 +282,8 @@ class AppraisalEngine:
                         response_schema=to_vertex(CONTAINER_LOCATION_SCHEMA),
                         temperature=0.0,
                     ),
+                    retry_index=retry_index,
+                    fallback=model != self.appraisal_model,
                 )
                 data = json.loads(resp.text)
                 if not data.get("is_container_lot"):
@@ -327,9 +362,10 @@ class AppraisalEngine:
         contents = [build_container_decomposition_prompt(caption, resolved_type)]
         contents.append(types.Part.from_bytes(data=cropped, mime_type="image/jpeg"))
         last_err = None
-        for model in [self.appraisal_model, "gemini-2.5-flash"]:
+        for retry_index, model in enumerate([self.appraisal_model, "gemini-2.5-flash"]):
             try:
-                resp = self.client.models.generate_content(
+                resp = self._generate(
+                    stage="decomposition.itemize",
                     model=model,
                     contents=contents,
                     config=types.GenerateContentConfig(
@@ -338,6 +374,8 @@ class AppraisalEngine:
                         response_schema=to_vertex(CONTAINER_DECOMPOSITION_SCHEMA),
                         temperature=0.1,
                     ),
+                    retry_index=retry_index,
+                    fallback=model != self.appraisal_model,
                 )
                 data = json.loads(resp.text)
                 return {
@@ -369,8 +407,9 @@ class AppraisalEngine:
         cfg = types.GenerateContentConfig(temperature=0.4, max_output_tokens=300)
         if system:
             cfg.system_instruction = system
-        resp = self.client.models.generate_content(
-            model=CURATOR_MODEL, contents=[prompt], config=cfg)
+        resp = self._generate(
+            stage="curator", model=CURATOR_MODEL, contents=[prompt], config=cfg,
+        )
         return (resp.text or "").strip()
 
     def price_lot_grounded(self, identification: str, category: str = ""):
@@ -392,7 +431,8 @@ class AppraisalEngine:
         if not self.client:
             raise RuntimeError("Vertex AI client is not available.")
 
-        grounded = self.client.models.generate_content(
+        grounded = self._generate(
+            stage="grounding.search",
             model=self.appraisal_model,
             contents=[build_pricing_prompt(identification, category)],
             config=types.GenerateContentConfig(
@@ -406,7 +446,8 @@ class AppraisalEngine:
         if not prose:
             return None
 
-        extracted = self.client.models.generate_content(
+        extracted = self._generate(
+            stage="grounding.extract",
             model=self.appraisal_model,
             contents=["Read the completed-sale figures out of this research note. "
                       "Report only what it states; invent nothing.\n\n" + prose],
@@ -491,6 +532,7 @@ class AppraisalEngine:
         force_refresh: bool = False,
         max_workers: int = 4,
         progress_callback: Optional[Callable[[int, int], None]] = None,
+        result_callback: Optional[Callable[[dict], None]] = None,
     ) -> list[dict]:
         """
         Batch appraisal on survivor candidate lots.
@@ -498,7 +540,11 @@ class AppraisalEngine:
         """
         required = {c["lot_id"] for c in candidates if c.get("lot_id")}
         if self.will_use_cache(cache_path, force_refresh, required_ids=required):
-            return json.loads(Path(cache_path).read_text())
+            cached = json.loads(Path(cache_path).read_text())
+            if result_callback:
+                for row in cached:
+                    result_callback(row)
+            return cached
 
         results = []
         if not self.client:
@@ -551,6 +597,8 @@ class AppraisalEngine:
                         "error": str(e),
                     }
                 results.append(res)
+                if result_callback:
+                    result_callback(res)
                 completed += 1
                 if progress_callback:
                     progress_callback(completed, total)
@@ -629,6 +677,234 @@ class AppraisalEngine:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(json.dumps(results, indent=2))
         return results
+
+    def run_enrichment_appraisal_pipeline(
+        self,
+        candidates: list[dict],
+        decomposition_candidates: Optional[list[dict]] = None,
+        standing_rules: Optional[list[StandingRule]] = None,
+        appraisal_cache_path: Optional[Path | str] = None,
+        decomposition_cache_path: Optional[Path | str] = None,
+        force_refresh: bool = False,
+        appraisal_workers: int = 4,
+        decomposition_workers: int = 4,
+        appraisal_progress_callback: Optional[Callable[[int, int], None]] = None,
+        decomposition_progress_callback: Optional[Callable[[int, int], None]] = None,
+        appraisal_result_callback: Optional[Callable[[dict], None]] = None,
+    ) -> tuple[list[dict], list[dict]]:
+        """Appraise each lot as soon as that lot's own inputs are ready.
+
+        Container decomposition enriches an appraisal, but one slow container
+        must not block ordinary lots or containers that already finished. The
+        two stages use separate bounded pools. Returned results and cache files
+        remain complete, deterministic batches; only execution is pipelined.
+        """
+        decomposition_candidates = decomposition_candidates or []
+        required_appraisals = {
+            row["lot_id"] for row in candidates if row.get("lot_id")
+        }
+        required_decompositions = {
+            row["lot_id"] for row in decomposition_candidates if row.get("lot_id")
+        }
+        appraisal_is_cached = self.will_use_cache(
+            appraisal_cache_path, force_refresh, required_ids=required_appraisals,
+        )
+        decomposition_is_cached = bool(decomposition_candidates) and self.will_use_cache(
+            decomposition_cache_path,
+            force_refresh,
+            required_ids=required_decompositions,
+        )
+
+        if appraisal_is_cached:
+            appraisals = json.loads(Path(appraisal_cache_path).read_text())
+            if appraisal_result_callback:
+                for row in appraisals:
+                    appraisal_result_callback(row)
+            if not decomposition_candidates:
+                return appraisals, []
+            if decomposition_is_cached:
+                return appraisals, json.loads(Path(decomposition_cache_path).read_text())
+            # Decomposition is optional enrichment when a complete appraisal
+            # cache already exists, so an offline cache hit remains usable.
+            try:
+                decompositions = self.run_decomposition_batch(
+                    decomposition_candidates,
+                    cache_path=decomposition_cache_path,
+                    force_refresh=force_refresh,
+                    max_workers=decomposition_workers,
+                    progress_callback=decomposition_progress_callback,
+                )
+            except RuntimeError:
+                decompositions = []
+            return appraisals, decompositions
+
+        if not self.client:
+            raise RuntimeError(
+                "Vertex AI client not available and no cache covering all "
+                f"{len(required_appraisals)} requested lot(s)."
+            )
+
+        candidate_by_lot = {row["lot_id"]: row for row in candidates}
+        unknown = required_decompositions - set(candidate_by_lot)
+        if unknown:
+            raise ValueError(
+                "decomposition requested for unknown appraisal lot(s): "
+                + ", ".join(sorted(unknown))
+            )
+
+        if decomposition_is_cached:
+            decompositions = json.loads(Path(decomposition_cache_path).read_text())
+            decomposition_by_lot = {row.get("lot_id"): row for row in decompositions}
+            enriched_candidates = []
+            for candidate in candidates:
+                enriched = dict(candidate)
+                decomposition = decomposition_by_lot.get(candidate["lot_id"])
+                if decomposition and decomposition.get("is_container_lot"):
+                    enriched["container_decomposition"] = decomposition
+                enriched_candidates.append(enriched)
+            appraisals = self.run_appraisal_batch(
+                enriched_candidates,
+                standing_rules=standing_rules,
+                cache_path=appraisal_cache_path,
+                force_refresh=force_refresh,
+                max_workers=appraisal_workers,
+                progress_callback=appraisal_progress_callback,
+                result_callback=appraisal_result_callback,
+            )
+            return appraisals, decompositions
+
+        decomposition_by_lot = {
+            row["lot_id"]: row for row in decomposition_candidates
+        }
+        appraisals: list[dict] = []
+        decompositions: list[dict] = []
+        appraisal_done = 0
+        decomposition_done = 0
+
+        def submit_appraisal(executor, candidate, decomposition=None):
+            kwargs = {
+                "lot_id": candidate["lot_id"],
+                "caption": candidate.get("caption", ""),
+                "image_bytes": read_local_image(candidate.get("local_path")),
+                "category_hint": candidate.get("category_hint"),
+                "standing_rules": standing_rules,
+            }
+            if decomposition and decomposition.get("is_container_lot"):
+                kwargs["container_decomposition"] = decomposition
+            return executor.submit(self.appraise_lot, **kwargs)
+
+        def submit_decomposition(executor, candidate):
+            kwargs = {
+                "lot_id": candidate["lot_id"],
+                "caption": candidate.get("caption", ""),
+                "image_bytes": read_local_image(candidate.get("local_path")),
+                "spatial_context": candidate.get("spatial_context"),
+            }
+            if candidate.get("spatial_boundary") is not None:
+                kwargs["spatial_boundary"] = candidate["spatial_boundary"]
+            if candidate.get("container_type"):
+                kwargs["container_type"] = candidate["container_type"]
+            return executor.submit(self.decompose_container, **kwargs)
+
+        with (
+            ThreadPoolExecutor(max_workers=appraisal_workers) as appraisal_executor,
+            ThreadPoolExecutor(max_workers=decomposition_workers) as decomposition_executor,
+        ):
+            appraisal_futures = {}
+            decomposition_futures = {}
+
+            # No dependency: these appraisals begin immediately.
+            for candidate in candidates:
+                if candidate["lot_id"] not in decomposition_by_lot:
+                    future = submit_appraisal(appraisal_executor, candidate)
+                    appraisal_futures[future] = candidate["lot_id"]
+
+            for candidate in decomposition_candidates:
+                future = submit_decomposition(decomposition_executor, candidate)
+                decomposition_futures[future] = candidate["lot_id"]
+
+            while appraisal_futures or decomposition_futures:
+                done, _ = wait(
+                    set(appraisal_futures) | set(decomposition_futures),
+                    return_when=FIRST_COMPLETED,
+                )
+                for future in done:
+                    if future in decomposition_futures:
+                        lot_id = decomposition_futures.pop(future)
+                        try:
+                            decomposition = future.result()
+                        except Exception as exc:
+                            decomposition = self._decomposition_error(lot_id, exc)
+                        decompositions.append(decomposition)
+                        decomposition_done += 1
+                        if decomposition_progress_callback:
+                            decomposition_progress_callback(
+                                decomposition_done, len(decomposition_candidates)
+                            )
+                        appraisal_future = submit_appraisal(
+                            appraisal_executor, candidate_by_lot[lot_id], decomposition,
+                        )
+                        appraisal_futures[appraisal_future] = lot_id
+                    else:
+                        lot_id = appraisal_futures.pop(future)
+                        try:
+                            appraisal = future.result()
+                        except Exception as exc:
+                            appraisal = self._appraisal_error(lot_id, exc)
+                        appraisals.append(appraisal)
+                        if appraisal_result_callback:
+                            appraisal_result_callback(appraisal)
+                        appraisal_done += 1
+                        if appraisal_progress_callback:
+                            appraisal_progress_callback(appraisal_done, len(candidates))
+
+        appraisals.sort(key=lambda row: row.get("lot_id", ""))
+        decompositions.sort(key=lambda row: row.get("lot_id", ""))
+        self._write_batch_cache(appraisal_cache_path, appraisals)
+        self._write_batch_cache(decomposition_cache_path, decompositions)
+        return appraisals, decompositions
+
+    @staticmethod
+    def _appraisal_error(lot_id: str, exc: Exception) -> dict:
+        return {
+            "lot_id": lot_id,
+            "identification": f"Lot {lot_id}",
+            "maker": None,
+            "period": None,
+            "marks_observed": [],
+            "category": "other",
+            "condition_notes": ["Uninspected due to evaluation error"],
+            "condition_penalty": 0.0,
+            "fit_score": 0.5,
+            "confidence": "low",
+            "value_magnitude_hint": 0.0,
+            "questions": [],
+            "is_container": False,
+            "contents": [],
+            "error": str(exc),
+        }
+
+    @staticmethod
+    def _decomposition_error(lot_id: str, exc: Exception) -> dict:
+        return {
+            "lot_id": lot_id,
+            "is_container_lot": False,
+            "container_type": "none",
+            "boundary": None,
+            "contents": [],
+            "background_exclusions": [],
+            "hidden_extent": "unknown",
+            "questions": [],
+            "error": str(exc),
+        }
+
+    @staticmethod
+    def _write_batch_cache(cache_path: Optional[Path | str], rows: list[dict]) -> None:
+        if not cache_path:
+            return
+        path = Path(cache_path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(rows, indent=2))
 
     @staticmethod
     def parse_appraisal_to_domain(

@@ -34,8 +34,9 @@ def test_root_console_renders(client):
     assert r.status_code == 200
     assert "text/html" in r.headers["content-type"]
     assert "Blue Toad Fleet" in r.text
-    assert "Pole Barn Showroom Topology" in r.text
-    assert "Curator" in r.text and "Gemma 4" in r.text
+    assert "Walk-order grouping" in r.text
+    assert "spatial observations unavailable" in r.text
+    assert "Curator" in r.text and "template fallback" in r.text
 
 def test_api_lots_summary_and_bids(client):
     r = client.get("/api/lots")
@@ -51,6 +52,33 @@ def test_api_lots_summary_and_bids(client):
     assert summary["committed_all_in"] <= 600.0, "sheet exceeds the budget envelope"
     assert summary["committed_max"] % 5 == 0, "total is not a sum of $5 increments"
     assert len(data["lots"]) > 0
+    assert "contingent_remainder_opportunities" in data
+
+
+def test_scoped_choice_ruling_uses_election_and_exposes_remainder():
+    from src.appraisal import LotRuling, QuestionKind
+    from src.bidmath import (
+        BidMechanic, CompEstimate, Confidence, Lot, price_lot,
+        remainder_opportunity,
+    )
+    from src.server import apply_lot_rulings
+
+    lot = Lot(
+        lot_id="BT-500", caption="five shelves", category="advertising",
+        fit_score=0.9, condition_penalty=0.0,
+        comp=CompEstimate(250, 300, 3, Confidence.HIGH),
+    )
+    ruling = LotRuling(
+        kind=QuestionKind.LOT_GROUPING,
+        answer="buyer's choice of 5, take 2",
+        learned_cycle="c1",
+        lot_ids=("BT-500",),
+    )
+    applied = apply_lot_rulings(
+        [lot], rulings=[ruling], operator_approved={})[0]
+    assert (applied.mechanic, applied.unit_count, applied.units_wanted) == (
+        BidMechanic.CHOICE, 5, 2)
+    assert remainder_opportunity(price_lot(applied)) is not None
 
 def test_api_questions(client):
     r = client.get("/api/questions")
@@ -62,6 +90,40 @@ def test_api_questions(client):
 
 def test_api_answer_promotion(client):
     from src.server import reset_rule_store
+    reset_rule_store()
+
+
+def test_lot_grouping_answer_is_scoped_and_changes_money(client):
+    from src.server import reset_rule_store
+
+    reset_rule_store()
+    asked = client.get("/api/questions").json()["asked"]
+    target = next(
+        question for question in asked
+        if question["kind"] == "lot_grouping" and "BT-002" in question["lot_ids"]
+    )
+    response = client.post("/api/answer", json={
+        "question_id": target["question_id"],
+        "answer": "sell all trays together as one single lot",
+    })
+    assert response.status_code == 200
+    data = response.json()
+    assert data["authority_type"] == "lot_ruling"
+    assert data["rule"]["lot_ids"] == ["BT-002"]
+    assert data["before"]["decisions"]["BT-002"]["mechanic"] == "times_the_money"
+    assert data["after"]["decisions"]["BT-002"]["mechanic"] == "straight"
+    assert data["after"]["decisions"]["BT-002"]["committed_max"] < (
+        data["before"]["decisions"]["BT-002"]["committed_max"])
+    assert data["money_changed"] is True
+    assert data["pending_reappraisal"] is False
+
+    memory = client.get("/api/memory").json()
+    assert len(memory["lot_rulings"]) == 1
+    assert memory["lot_rulings"][0]["lot_ids"] == ["BT-002"]
+    email = client.get("/api/email").text
+    bt002_block = email.split("[BT-002]", 1)[1].split("\n\n", 1)[0]
+    assert "one lot, one bid" in bt002_block
+    assert "PER UNIT" not in bt002_block
     reset_rule_store()
     asked = client.get("/api/questions").json()["asked"]
     assert asked, "desk queue empty; nothing to answer"
@@ -97,6 +159,28 @@ def test_api_answer_rejects_unasked_question(client):
     assert r.status_code == 404
 
 
+def test_stale_answer_revision_conflicts_without_mutating_state(client):
+    from src.server import reset_rule_store
+
+    reset_rule_store()
+    target = next(
+        question for question in client.get("/api/questions").json()["asked"]
+        if question["kind"] in {"policy", "appetite", "lot_grouping", "scope"}
+    )
+    payload = {
+        "question_id": target["question_id"],
+        "answer": "BUY",
+        "expected_revision": target["expected_revision"],
+    }
+    first = client.post("/api/answer", json=payload)
+    assert first.status_code == 200
+    before = client.get("/api/memory").json()
+    second = client.post("/api/answer", json=payload)
+    assert second.status_code == 409
+    assert client.get("/api/memory").json() == before
+    reset_rule_store()
+
+
 def test_api_answer_does_not_promote_via_raw_kind(client):
     r = client.post("/api/answer", json={
         "kind": "mark",
@@ -111,21 +195,24 @@ def test_api_answer_invalid(client):
     assert r.status_code in (400, 422)
 
 
-def test_api_answer_requires_token_when_configured(client, monkeypatch):
-    monkeypatch.setenv("OPERATOR_TOKEN", "secret")
-    r = client.post("/api/answer", json={
-        "question_id": "q_x", "answer": "BUY",
-    })
-    assert r.status_code == 401
+def test_cloud_operator_actions_fail_closed_and_require_the_token(client, monkeypatch):
+    from src.server import reset_rule_store
 
-
-def test_cloud_run_without_token_fails_closed(client, monkeypatch):
+    reset_rule_store()
+    target = client.get("/api/questions").json()["asked"][0]
+    payload = {"question_id": target["question_id"], "answer": "BUY"}
     monkeypatch.setenv("K_SERVICE", "blue-toad-fleet")
     monkeypatch.delenv("OPERATOR_TOKEN", raising=False)
-    r = client.post("/api/answer", json={
-        "question_id": "q_x", "answer": "BUY",
-    })
-    assert r.status_code == 503
+    assert client.post("/api/answer", json=payload).status_code == 503
+
+    monkeypatch.setenv("OPERATOR_TOKEN", "test-operator-token")
+    assert client.post("/api/answer", json=payload).status_code == 401
+    response = client.post(
+        "/api/answer", json=payload,
+        headers={"X-Operator-Token": "test-operator-token"},
+    )
+    assert response.status_code == 200
+    reset_rule_store()
 
 def test_api_email_draft(client):
     r = client.get("/api/email")
@@ -325,7 +412,7 @@ class TestTheCollabDecisionsHold:
 
     def allocated(self):
         from src.server import get_aug22_state
-        _, _, _, decisions, _, _, _ = get_aug22_state(sheet="sent")
+        _, _, _, decisions, _, _, _ = get_aug22_state()
         return {d.lot_id: d for d in decisions if d.allocated}
 
     def test_only_the_top_card_lot_is_bid(self):
@@ -408,7 +495,7 @@ class TestTheSheetAndTheEmailAgree:
             import pytest
             pytest.skip("no compiled email")
 
-        _, _, _, decisions, summary, _, _ = get_aug22_state(sheet="sent")
+        _, _, _, decisions, summary, _, _ = get_aug22_state()
         console_lots = {d.lot_id for d in decisions if d.allocated}
         email_lots = set(re.findall(r"\bBT-\d{3}\b", email_path.read_text()))
 

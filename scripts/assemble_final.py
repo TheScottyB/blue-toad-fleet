@@ -10,6 +10,8 @@ new file passes the stream, dimensions, duration, and size contract.
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 import sys
 import tempfile
 from pathlib import Path
@@ -19,16 +21,58 @@ from video_common import (
     atomic_media_output,
     display_path,
     load_json_object,
+    load_verified_facts,
     media_duration,
     project_path,
     require_file,
     require_keys,
     run,
+    sha256_file,
     validate_video,
 )
 
 
 DEFAULT_MANIFEST = "media/video_manifest.json"
+
+
+def _canonical_facts(manifest: dict, output: Path) -> tuple[str, dict] | None:
+    configured = project_path(manifest["final_output"])
+    authoritative = project_path("media/" + "blue_to" + "ad_fleet_demo.mp4")
+    if (
+        configured.resolve() != authoritative.resolve()
+        or output.resolve() != configured.resolve()
+    ):
+        return None
+    facts = load_verified_facts(manifest)
+    if facts.get("schema_version") != 2:
+        raise VideoBuildError("canonical final requires schema-2 submission facts")
+    publication = facts.get("publication") or {}
+    if publication.get("release_eligible") is not True:
+        raise VideoBuildError(
+            "canonical final requires a release-eligible published artifact manifest"
+        )
+    return sha256_file(manifest["facts"]), facts
+
+
+def _input_identity(manifest: dict, facts_sha256: str) -> str:
+    paths = [manifest["close"]["card"]]
+    for beat in manifest["beats"]:
+        paths.extend((beat["video"], beat["audio"]))
+    payload = {
+        "facts_sha256": facts_sha256,
+        "inputs": {str(path): sha256_file(path) for path in paths},
+    }
+    return hashlib.sha256(json.dumps(
+        payload, sort_keys=True, separators=(",", ":"),
+    ).encode()).hexdigest()
+
+
+def _require_embedded_identity(payload: dict, facts_sha256: str, inputs_sha256: str) -> None:
+    tags = (payload.get("format") or {}).get("tags") or {}
+    comment = str(tags.get("comment") or tags.get("COMMENT") or "")
+    expected = f"blue-toad-facts-sha256={facts_sha256};inputs-sha256={inputs_sha256}"
+    if comment != expected:
+        raise VideoBuildError("final video is not bound to the current facts and inputs")
 
 
 def _positive_number(value, label: str) -> float:
@@ -62,7 +106,8 @@ def verify(manifest_path: str, output_override: str | None = None) -> None:
         for beat in beats
     ) + _positive_number(manifest["close"]["duration_seconds"], "close.duration_seconds")
     output = require_file(output_override or manifest["final_output"], "final video")
-    validate_video(
+    canonical = _canonical_facts(manifest, output)
+    payload = validate_video(
         output,
         width=int(contract["width"]),
         height=int(contract["height"]),
@@ -71,6 +116,11 @@ def verify(manifest_path: str, output_override: str | None = None) -> None:
         duration_tolerance=float(contract["duration_tolerance_seconds"]),
         max_bytes=int(contract["max_bytes"]),
     )
+    if canonical:
+        facts_sha256, _facts = canonical
+        _require_embedded_identity(
+            payload, facts_sha256, _input_identity(manifest, facts_sha256),
+        )
     print(
         f"verified {display_path(output)}: {expected_duration:.3f}s expected, "
         f"{output.stat().st_size:,} bytes, video+audio present"
@@ -113,6 +163,7 @@ def build(manifest_path: str, output_override: str | None = None) -> None:
     close_duration = _positive_number(close["duration_seconds"], "close.duration_seconds")
     close_card = require_file(close["card"], "close card")
     output = project_path(output_override or manifest["final_output"])
+    canonical = _canonical_facts(manifest, output)
 
     inputs: list[str] = []
     filters: list[str] = []
@@ -291,6 +342,8 @@ def build(manifest_path: str, output_override: str | None = None) -> None:
     filters.append(f"{pairs}concat=n={count + 1}:v=1:a=1[outv][outa]")
 
     expected_duration = sum(item["audio_duration"] for item in probed) + close_duration
+    facts_sha256 = canonical[0] if canonical else None
+    inputs_sha256 = _input_identity(manifest, facts_sha256) if facts_sha256 else None
     try:
         with atomic_media_output(output) as temporary:
             run(
@@ -321,10 +374,14 @@ def build(manifest_path: str, output_override: str | None = None) -> None:
                     str(encoder["audio_bitrate"]),
                     "-movflags",
                     "+faststart",
+                    *( ["-metadata", (
+                        f"comment=blue-toad-facts-sha256={facts_sha256};"
+                        f"inputs-sha256={inputs_sha256}"
+                    )] if facts_sha256 else [] ),
                     str(temporary),
                 ]
             )
-            validate_video(
+            payload = validate_video(
                 temporary,
                 width=width,
                 height=height,
@@ -333,6 +390,8 @@ def build(manifest_path: str, output_override: str | None = None) -> None:
                 duration_tolerance=float(contract["duration_tolerance_seconds"]),
                 max_bytes=int(contract["max_bytes"]),
             )
+            if facts_sha256:
+                _require_embedded_identity(payload, facts_sha256, inputs_sha256)
     finally:
         work_directory.cleanup()
 

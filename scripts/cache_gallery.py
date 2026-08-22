@@ -13,38 +13,86 @@ in the manifest because it is what the page actually published.
 """
 
 import argparse
+import hashlib
 import json
 import os
 import re
-import ssl
 import sys
+import tempfile
 import time
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from src.appraiser.images import full_size_url
+from src.appraiser.images import (
+    full_size_url, image_dimensions, image_mime_type, is_appraisal_grade,
+)
+from src.intake.manifest import clean_caption
 
-_PREVIEW_PREFIX = re.compile(r"^\s*preview image for\s+", re.IGNORECASE)
 _PHOTO_PATTERN = re.compile(
     r"onClick=\"DisplayFullImage\((\d+),(\d+),(\d+)\)\"><img src=\"([^\"]+)\".*?<center><b>(.*?)</b></center>",
     re.DOTALL,
 )
 
-def clean_caption(raw: str) -> str:
-    cleaned = _PREVIEW_PREFIX.sub("", (raw or "").strip()).strip()
-    return cleaned
+@dataclass(frozen=True)
+class DownloadResult:
+    ok: bool
+    error: str = ""
+    sha256: str | None = None
+    mime_type: str | None = None
+    width: int | None = None
+    height: int | None = None
+    byte_size: int = 0
+
+
+def _result(data: bytes) -> DownloadResult:
+    dimensions = image_dimensions(data)
+    mime_type = image_mime_type(data)
+    if not mime_type or not dimensions or not is_appraisal_grade(data):
+        detail = (f"{dimensions[0]}x{dimensions[1]}" if dimensions
+                  else f"{len(data)} unreadable bytes")
+        return DownloadResult(False, f"not an appraisal-grade image: {detail}")
+    return DownloadResult(
+        True,
+        sha256=hashlib.sha256(data).hexdigest(),
+        mime_type=mime_type,
+        width=dimensions[0],
+        height=dimensions[1],
+        byte_size=len(data),
+    )
+
+
+def _atomic_write(path: Path, data: bytes) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    handle = tempfile.NamedTemporaryFile(
+        dir=path.parent, prefix=f".{path.name}.", suffix=".partial", delete=False)
+    temporary = Path(handle.name)
+    try:
+        with handle:
+            handle.write(data)
+            handle.flush()
+            os.fsync(handle.fileno())
+        temporary.replace(path)
+    except BaseException:
+        temporary.unlink(missing_ok=True)
+        raise
+
+
+def _atomic_json(path: Path, payload: dict) -> None:
+    _atomic_write(path, (json.dumps(payload, indent=2) + "\n").encode())
+
+
+def _normalise_mime(value: str) -> str:
+    value = (value or "").split(";", 1)[0].strip().casefold()
+    return {"image/jpg": "image/jpeg", "image/x-png": "image/png"}.get(value, value)
 
 def fetch_photopanel_html(listing_id: str, feed: str = "129") -> str:
     url = f"https://www.auctionzip.com/cgi-bin/photopanel.cgi?listingid={listing_id}&feed={feed}&gid=0&category=0&zip=&kwd=&PageImages=0"
-    ctx = ssl.create_default_context()
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
-
     req = urllib.request.Request(
         url,
         headers={
@@ -52,16 +100,20 @@ def fetch_photopanel_html(listing_id: str, feed: str = "129") -> str:
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         },
     )
-    with urllib.request.urlopen(req, context=ctx, timeout=20) as resp:
+    with urllib.request.urlopen(req, timeout=20) as resp:
         return resp.read().decode("utf-8", errors="ignore")
 
-def download_image(url: str, dest_path: Path, max_retries: int = 3) -> bool:
+def download_image(
+    url: str,
+    dest_path: Path,
+    max_retries: int = 3,
+    *,
+    opener=urllib.request.urlopen,
+) -> DownloadResult:
     if dest_path.exists() and dest_path.stat().st_size > 0:
-        return True
-
-    ctx = ssl.create_default_context()
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
+        existing = _result(dest_path.read_bytes())
+        if existing.ok:
+            return existing
 
     if url.startswith("//"):
         url = "https:" + url
@@ -75,18 +127,33 @@ def download_image(url: str, dest_path: Path, max_retries: int = 3) -> bool:
     )
     for attempt in range(max_retries):
         try:
-            with urllib.request.urlopen(req, context=ctx, timeout=15) as resp:
+            with opener(req, timeout=15) as resp:
+                content_type = _normalise_mime(str(resp.headers.get("Content-Type") or ""))
+                if not content_type.casefold().startswith("image/"):
+                    raise ValueError(
+                        f"response content type is {content_type or 'missing'}, not image/*")
                 data = resp.read()
-                dest_path.write_bytes(data)
-                return True
+                result = _result(data)
+                if not result.ok:
+                    raise ValueError(result.error)
+                if result.mime_type != content_type:
+                    raise ValueError(
+                        f"response declares {content_type}, bytes are {result.mime_type}")
+                _atomic_write(dest_path, data)
+                return result
         except Exception as e:
             if attempt == max_retries - 1:
                 print(f"[-] Failed to download {url}: {e}", file=sys.stderr)
-                return False
+                return DownloadResult(False, str(e))
             time.sleep(0.5)
-    return False
+    return DownloadResult(False, "exhausted retries")
 
-def cache_gallery(listing_id: str, output_dir: str, max_workers: int = 8, download_images: bool = True):
+def cache_gallery(
+    listing_id: str,
+    output_dir: str,
+    max_workers: int = 8,
+    download_images: bool = True,
+) -> int:
     out = Path(output_dir)
     images_dir = out / "images"
     images_dir.mkdir(parents=True, exist_ok=True)
@@ -97,7 +164,7 @@ def cache_gallery(listing_id: str, output_dir: str, max_workers: int = 8, downlo
 
     if not matches:
         print(f"[!] No photos parsed from photopanel HTML for listing {listing_id}", file=sys.stderr)
-        return
+        return 1
 
     print(f"[+] Found {len(matches)} photos in photopanel.")
     manifest_entries = []
@@ -125,15 +192,7 @@ def cache_gallery(listing_id: str, output_dir: str, max_workers: int = 8, downlo
             "local_path": str(img_dest),
         })
 
-    manifest_file = out / "manifest.json"
-    manifest_file.write_text(json.dumps({
-        "listing_id": listing_id,
-        "total_photos": len(manifest_entries),
-        "captioned_photos": sum(1 for e in manifest_entries if e["has_caption"]),
-        "photos": manifest_entries,
-    }, indent=2))
-    print(f"[✓] Saved manifest to {manifest_file}")
-
+    failures = 0
     if download_images:
         print(f"[*] Downloading {len(manifest_entries)} images with {max_workers} threads...")
         success = 0
@@ -143,12 +202,38 @@ def cache_gallery(listing_id: str, output_dir: str, max_workers: int = 8, downlo
                 for e in manifest_entries
             }
             for future in as_completed(future_to_entry):
-                if future.result():
+                entry = future_to_entry[future]
+                result = future.result()
+                if result.ok:
                     success += 1
+                    entry.update({
+                        "sha256": result.sha256,
+                        "mime_type": result.mime_type,
+                        "width": result.width,
+                        "height": result.height,
+                        "byte_size": result.byte_size,
+                        "download_status": "usable",
+                    })
+                else:
+                    failures += 1
+                    entry.update({
+                        "download_status": "failed",
+                        "download_error": result.error,
+                    })
 
         print(f"[✓] Successfully cached {success}/{len(manifest_entries)} images into {images_dir}")
 
-def main():
+    manifest_file = out / "manifest.json"
+    _atomic_json(manifest_file, {
+        "listing_id": listing_id,
+        "total_photos": len(manifest_entries),
+        "captioned_photos": sum(1 for e in manifest_entries if e["has_caption"]),
+        "photos": manifest_entries,
+    })
+    print(f"[✓] Saved manifest to {manifest_file}")
+    return 1 if failures else 0
+
+def main() -> int:
     parser = argparse.ArgumentParser(description="Cache AuctionZip gallery drop offline.")
     parser.add_argument("--listing-id", default="4160518", help="AuctionZip listing ID (default: 4160518 for Aug 22)")
     parser.add_argument("--output-dir", default=None, help="Destination directory (default: data/gallery_<listing_id>)")
@@ -157,7 +242,7 @@ def main():
     args = parser.parse_args()
 
     out_dir = args.output_dir or f"data/gallery_{args.listing_id}"
-    cache_gallery(
+    return cache_gallery(
         listing_id=args.listing_id,
         output_dir=out_dir,
         max_workers=args.workers,
@@ -165,4 +250,4 @@ def main():
     )
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

@@ -14,15 +14,16 @@ Protocol: ground truth is same-caption pairs at least MIN_GAP frames apart, from
 `manifest.json`. The gap floor is what makes this a zone-grouping test rather than
 near-duplicate matching. Distance for embeddings is cosine on L2-normalised vectors.
 
-`embeddings.npz` is not committed (5.8 MB, and it is derived from third-party
-imagery). Pass the directory holding it as argv[1]. Results live in
-docs/CAPABILITY_PROBE.md.
+The committed ``embeddings.json`` is the model output.  Image baselines use the
+manifest's sanctioned cache; missing images fail with the exact recovery command
+instead of relying on an uncommitted NPZ.
 
-    .venv/bin/python scripts/probes/task3_baselines.py <probe-artifacts-dir>
+    .venv/bin/python scripts/probes/task3_baselines.py
 """
+import argparse
+import hashlib
 import json
 import pathlib
-import sys
 from collections import defaultdict
 
 import numpy as np
@@ -55,10 +56,29 @@ def color_hist(path):
     return h / h.sum()
 
 
-def main(artifacts):
-    z = np.load(pathlib.Path(artifacts) / "embeddings.npz")
-    emb = {int(k): z[k] for k in z.files}
+def _sha256(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def main(output=None):
+    manifest = json.loads(MANIFEST.read_text())
+    vectors = json.loads(pathlib.Path(
+        "data/aug22_gallery_4160518/embeddings.json").read_text())
+    seq_to_id = {int(row["sequence"]): str(row["photo_id"])
+                 for row in manifest["photos"]}
+    emb = {
+        sequence: np.asarray(vectors[photo_id], dtype=float)
+        for sequence, photo_id in seq_to_id.items()
+        if photo_id in vectors
+    }
     paths = {int(p.name[:3]): p for p in sorted(IMAGES.glob("*.jpg"))}
+    missing = sorted(set(emb) - set(paths))
+    if missing:
+        raise FileNotFoundError(
+            f"{len(missing)} sanctioned baseline images are missing; run "
+            "`python -m scripts.cache_gallery --manifest "
+            "data/aug22_gallery_4160518/manifest.json` before this probe"
+        )
     hashes = {s: dhash8(p) for s, p in paths.items()}
     seqs = sorted(set(emb) & set(hashes))
     idx = {s: i for i, s in enumerate(seqs)}
@@ -103,7 +123,7 @@ def main(artifacts):
         return rank(s, q, t, False), float(s[idx[t]])
 
     groups = defaultdict(list)
-    for p in json.load(open(MANIFEST))["photos"]:
+    for p in manifest["photos"]:
         c = (p.get("caption") or "").strip().lower()
         if c:
             groups[c].append(p["sequence"])
@@ -139,8 +159,27 @@ def main(artifacts):
     print("embedding rank distribution, sorted: "
           + str([int(r) for r in sorted(ranks["emb"])]))
 
+    report = {
+        "schema_version": 1,
+        "inputs": {
+            "manifest_sha256": _sha256(MANIFEST),
+            "embeddings_sha256": _sha256(pathlib.Path(
+                "data/aug22_gallery_4160518/embeddings.json")),
+            "image_count": len(paths),
+        },
+        "pair_count": len(pairs),
+        "rank": {key: [float(value) for value in ranks[key]] for key in cols},
+        "recall_at_25": {
+            key: float((np.asarray(ranks[key]) <= 25).mean()) for key in cols
+        },
+    }
+    if output:
+        pathlib.Path(output).write_text(json.dumps(report, indent=2) + "\n")
+    return report
+
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        sys.exit(__doc__)
-    main(sys.argv[1])
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--output")
+    args = parser.parse_args()
+    main(args.output)

@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "reference": "Wang et al. 2004 constant-field closed form",
+  "shape": [16, 16],
+  "data_range": 255.0,
+  "field_a": 50.0,
+  "field_b": 80.0,
+  "expected_ssim": 0.8989502332705794,
+  "tolerance": 1e-12,
+  "derivation": "(2*a*b + (0.01*L)^2) / (a^2 + b^2 + (0.01*L)^2); the zero-variance contrast term is 1"
+}

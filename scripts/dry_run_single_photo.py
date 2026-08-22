@@ -26,7 +26,6 @@ from" is exactly the question a dry run exists to answer honestly.
 import argparse
 import json
 import re
-import ssl
 import sys
 import time
 import urllib.request
@@ -36,7 +35,7 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from scripts.cache_gallery import _PHOTO_PATTERN
+from scripts.cache_gallery import _PHOTO_PATTERN, _atomic_write
 from scripts.run_vertex_pipeline import DEFAULT_STANDING_RULES, REFERENCE_COMPS
 from src.appraisal import build_queue
 from src.appraiser import AppraisalEngine
@@ -65,16 +64,13 @@ def bar(n, title):
 
 
 def fetch(url, referer="https://www.auctionzip.com/", timeout=30):
-    ctx = ssl.create_default_context()
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
     req = urllib.request.Request(url, headers={
         "User-Agent": UA,
         "Referer": referer,
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.9",
     })
-    with urllib.request.urlopen(req, context=ctx, timeout=timeout) as resp:
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
         body = resp.read()
         if resp.headers.get("x-amzn-waf-action") == "challenge" or resp.status == 202:
             raise WafChallenge(f"WAF challenge on {url} (HTTP {resp.status})")
@@ -128,12 +124,12 @@ def estatesales_image(seq, data_dir):
     cache = Path(data_dir) / "estatesales_images" / f"order{row['es_order']:03d}.jpg"
     if cache.is_file() and cache.stat().st_size > 0:
         return cache.read_bytes(), row["es_url"]
-    ctx = ssl.create_default_context()
     req = urllib.request.Request(row["es_url"], headers={"User-Agent": UA})
-    with urllib.request.urlopen(req, context=ctx, timeout=60) as resp:
+    with urllib.request.urlopen(req, timeout=60) as resp:
         data = resp.read()
+    assert_appraisal_grade(data, lot_id=f"DRY-RUN-{seq}")
     cache.parent.mkdir(parents=True, exist_ok=True)
-    cache.write_bytes(data)
+    _atomic_write(cache, data)
     return data, row["es_url"]
 
 

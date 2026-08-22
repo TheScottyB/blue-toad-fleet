@@ -21,7 +21,7 @@ recording, intermediate, narration track, and final output. Only
 make video-prepare
 
 # Generate new facts-resolved narration (this calls ElevenLabs).
-.venv/bin/python scripts/video_pipeline.py narration
+.venv/bin/python scripts/build_media.py narration
 
 # Record the local gallery, grouping animation, live console, and proof terminal.
 make video-record
@@ -30,7 +30,7 @@ make video-record
 make video-compose
 
 # Build and atomically publish the final cut.
-.venv/bin/python scripts/video_pipeline.py assemble
+.venv/bin/python scripts/build_media.py assemble
 
 # Non-mutating technical verification.
 make video-verify

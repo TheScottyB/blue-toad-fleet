@@ -3,45 +3,56 @@
 scripts/run_vertex_pipeline.py — End-to-End Live Vertex AI Sourcing Pipeline.
 
 Executes the two-stage model pipeline:
-1. Photo Intake & Grouping (462 photos, 359 lots)
+1. Photo Intake & evidence-gated grouping
 2. Stage 1 Triage (gemini-3.5-flash-lite / structured filtering)
 3. Stage 2 Appraisal (gemini-3.6-flash live on Vertex AI for candidates)
 4. Question Queue resolution with memory rules (build_queue, StandingRule)
-5. Pure Bid Math allocation under budget cap ($600 envelope, 15% fee, $5 increments)
+5. Pure Bid Math allocation under the configured cap, fee, and bid increments
 6. Compiles final absentee bid email and Excel sheet.
 """
 
 import json
 import os
+import shutil
 import sys
-import textwrap
-import time
-from dataclasses import replace
+import argparse
+from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
-
-ROOT = Path(__file__).resolve().parent.parent
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+from types import MappingProxyType
+from typing import Callable, Mapping
 
 import openpyxl
 from openpyxl.styles import Font, PatternFill
 from openpyxl.utils import get_column_letter
 
-from src.intake.embed import load_reshoot_edges
+from src.intake.embed import load_reshoot_edges, sha256_file
 from src.intake.manifest import parse_drop, group_into_lots, TriagedPhoto
-from src.intake.spatial import merge_reshoots
+from src.intake.spatial import (
+    SpatiallyTaggedPhoto, Zone, SurfaceSignature, apply_trajectory,
+    load_observations, merge_reshoots,
+)
 from src.appraisal import (
     Appraisal, Confidence as AppConfidence, Question, QuestionKind,
     StandingRule, build_queue
 )
 from src.appraiser import AppraisalEngine
-from src.appraiser.containers import append_visible_contents
-from src.appraiser.routing import TRIAGE_MODEL, estimate_cost_usd
+from src.appraiser.containers import append_visible_contents, price_container_evidence
+from src.appraiser.grounded_batch import (
+    GroundedPricingPipeline, grounded_reference_comps, grounded_status_reason,
+)
+from src.appraiser.pricing import MIN_CALLS
+from src.appraiser.routing import (
+    APPRAISAL_MODEL, TRIAGE_MODEL, estimate_cost_usd,
+    rate_snapshot_usd_per_million,
+)
+from src.evidence.telemetry import UsageTelemetry
+from src.evidence import load_absorption_evidence
 from src.assemble.email import compile_absentee_email
 from src.bidmath import (
     Lot, CompEstimate, Confidence as BidConfidence, Priority, Decision,
     price_lot, allocate, summarize, ABSENTEE_FEE, snap_to_increment,
     mechanic_from_ruling, BidMechanic, units_committed, opening_bid, is_choice_lot,
+    elect,
 )
 
 # Reference valuation comps for approved candidate categories (matching shop pricing bands)
@@ -135,6 +146,85 @@ OPERATOR_APPROVED = {
     "BT-235": {"fit": 0.90, "why": "collab: Century of Progress bottle approved"},
 }
 
+
+@dataclass(frozen=True)
+class PipelineConfig:
+    cycle_id: str
+    listing_id: str
+    data_dir: Path
+    output_dir: Path
+    budget_cap: float
+    auto_send_threshold: float
+    auction_title: str
+    auction_date: str
+    auction_timezone: str
+    auction_deadline: str
+    venue: str
+    email_to: str = "info@bluetoadauctions.com"
+    force_live_vertex: bool = False
+    reference_comps: Mapping = field(default_factory=lambda: MappingProxyType({}))
+    operator_approved: Mapping = field(default_factory=lambda: MappingProxyType({}))
+    standing_rules: tuple[StandingRule, ...] = ()
+    cycle_questions: tuple[Question, ...] = ()
+    enable_grounded_pricing: bool = False
+    pricing_min_fit: float = 0.70
+    pricing_workers: int = 6
+    pricing_engine_factory: Callable | None = None
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "data_dir", Path(self.data_dir))
+        object.__setattr__(self, "output_dir", Path(self.output_dir))
+        if not all(str(value or "").strip() for value in (
+            self.cycle_id, self.listing_id, self.auction_title, self.auction_date,
+            self.auction_timezone, self.auction_deadline, self.venue, self.email_to,
+        )):
+            raise ValueError("pipeline configuration is missing required metadata")
+        if self.budget_cap <= 0 or not 0 <= self.auto_send_threshold <= self.budget_cap:
+            raise ValueError("pipeline budget or auto-send threshold is invalid")
+        if self.pricing_workers < 1:
+            raise ValueError("pricing_workers must be positive")
+
+
+@dataclass(frozen=True)
+class PipelineResult:
+    photos: tuple[dict, ...]
+    lot_groups: tuple
+    lots: tuple[Lot, ...]
+    decisions: tuple[Decision, ...]
+    summary: object
+    queue: object
+    captions: Mapping[str, str]
+    pipeline_state_path: Path
+    bid_sheet_path: Path
+    email_path: Path
+
+
+def execute_pipeline(config: PipelineConfig) -> PipelineResult:
+    """Canonical typed boundary; ``run_pipeline`` remains a compatibility shim."""
+    return run_pipeline(
+        cycle_id=config.cycle_id,
+        listing_id=config.listing_id,
+        data_dir=str(config.data_dir),
+        output_dir=str(config.output_dir),
+        budget_cap=config.budget_cap,
+        auto_send_threshold=config.auto_send_threshold,
+        force_live_vertex=config.force_live_vertex,
+        auction_title=config.auction_title,
+        auction_date=config.auction_date,
+        auction_timezone=config.auction_timezone,
+        auction_deadline=config.auction_deadline,
+        venue=config.venue,
+        email_to=config.email_to,
+        reference_comps=dict(config.reference_comps),
+        operator_approved=dict(config.operator_approved),
+        standing_rules=config.standing_rules,
+        cycle_questions=config.cycle_questions,
+        enable_grounded_pricing=config.enable_grounded_pricing,
+        pricing_min_fit=config.pricing_min_fit,
+        pricing_workers=config.pricing_workers,
+        pricing_engine_factory=config.pricing_engine_factory,
+    )
+
 def trusted_lot_flags(verdict, caption: str, previous_captioned: bool,
                       index: int) -> tuple[bool, bool]:
     """
@@ -170,6 +260,7 @@ def select_appraisal_candidates(
     triage_results: list[dict],
     photos: list[dict],
     always_include: set[str],
+    category_hints: dict | None = None,
 ) -> list[dict]:
     """
     Which lots earn a slow, expensive look.
@@ -186,6 +277,7 @@ def select_appraisal_candidates(
     knowingly, and a cheaper model upstream must not undo his decision.
     """
     verdicts = {t.get("photo_id"): t for t in triage_results}
+    category_hints = category_hints or {}
     out = []
     for p in sorted(photos, key=lambda x: x.get("sequence", 0)):
         lot_id = f"BT-{p.get('sequence', 0):03d}"
@@ -197,7 +289,7 @@ def select_appraisal_candidates(
         out.append({
             "lot_id": lot_id,
             "caption": p.get("caption") or summary or "(uncaptioned)",
-            "category_hint": (REFERENCE_COMPS.get(lot_id, {}).get("cat")
+            "category_hint": (category_hints.get(lot_id, {}).get("cat")
                               or (verdict or {}).get("category")),
             "local_path": p.get("local_path"),
         })
@@ -241,7 +333,9 @@ def select_decomposition_candidates(
     return out
 
 
-def operator_lot_inputs(lot_id: str, raw_appraisal: dict) -> tuple[float, float]:
+def operator_lot_inputs(
+    lot_id: str, raw_appraisal: dict, operator_approved: dict | None = None,
+) -> tuple[float, float]:
     """
     (fit_score, condition_penalty) for a candidate lot.
 
@@ -253,10 +347,54 @@ def operator_lot_inputs(lot_id: str, raw_appraisal: dict) -> tuple[float, float]
     One function because the console and the pipeline used to build these
     separately, and a decision applied in one was invisible in the other.
     """
-    decision = OPERATOR_APPROVED.get(lot_id, {})
+    decisions = OPERATOR_APPROVED if operator_approved is None else operator_approved
+    decision = decisions.get(lot_id, {})
     fit = decision.get("fit", float(raw_appraisal.get("fit_score", 0.5)))
     penalty = float(raw_appraisal.get("condition_penalty", 0.0))
     return (0.0 if fit is None else float(fit)), penalty
+
+
+def comp_from_reference(
+    comp_info: Mapping,
+    raw_appraisal: Mapping,
+) -> tuple[CompEstimate, dict, str | None]:
+    """Resolve a whole-lot comp or an explicit alpha-plus-bulk container record.
+
+    Container component evidence is optional but typed: callers must supply a
+    cited ``bulk_floor`` and may supply a cited ``alpha_comp``. The model's
+    decomposition alone can never promote the alpha into the money path.
+    """
+    record = dict(comp_info)
+    container = record.get("container_evidence")
+    decomposition = raw_appraisal.get("container_decomposition")
+    if isinstance(container, Mapping) and isinstance(decomposition, Mapping):
+        resolved = price_container_evidence(
+            decomposition,
+            alpha_comp=container.get("alpha_comp"),
+            bulk_floor=container.get("bulk_floor") or {},
+        )
+        record.update({
+            "low": resolved.low,
+            "high": resolved.high,
+            "sources": resolved.source_count,
+            "citations": list(resolved.citations),
+            "provenance": "container_alpha_plus_bulk" if resolved.alpha_confirmed
+                          else "container_bulk_floor",
+        })
+        confidence = (BidConfidence.HIGH if resolved.source_count >= 2
+                      else BidConfidence.MEDIUM)
+        return CompEstimate(
+            low=resolved.low,
+            high=resolved.high,
+            source_count=resolved.source_count,
+            confidence=confidence,
+        ), record, resolved.upside_note
+    return CompEstimate(
+        low=record["low"],
+        high=record["high"],
+        source_count=record["sources"],
+        confidence=record["conf"],
+    ), record, None
 
 
 def apply_operator_fit(lot):
@@ -277,7 +415,7 @@ def apply_operator_fit(lot):
     return replace(lot, fit_score=fit)
 
 
-def apply_operator_cap(decision):
+def apply_operator_cap(decision, operator_approved: dict | None = None):
     """
     Use the max bid the owner set, where he set one.
 
@@ -287,7 +425,8 @@ def apply_operator_cap(decision):
     quietly bids less than he authorised, and in a proxy auction bidding less
     than your ceiling is how you lose the lot for five dollars.
     """
-    cap = OPERATOR_APPROVED.get(decision.lot_id, {}).get("cap")
+    decisions = OPERATOR_APPROVED if operator_approved is None else operator_approved
+    cap = decisions.get(decision.lot_id, {}).get("cap")
     if cap is None or decision.max_bid is None or decision.max_bid == cap:
         return decision
     return replace(decision, max_bid=cap,
@@ -328,45 +467,141 @@ DEFAULT_STANDING_RULES = [
 ]
 
 
+AUG22_DOMAIN_QUESTIONS = (
+    Question(
+        kind=QuestionKind.POLICY,
+        category="sports memorabilia",
+        prompt=("Uncertified Autographs (Jordan Hat BT-006, DiMaggio Hat BT-010): "
+                "No visible PSA/JSA certificate in photos. Bid speculative raw "
+                "floor or skip?"),
+        lot_ids=("BT-006", "BT-010"),
+        value_at_stake=800.0,
+        confidence_gap=0.5,
+    ),
+    Question(
+        kind=QuestionKind.APPETITE,
+        category="dinnerware / pottery",
+        prompt=("Under-Table Box Runs (Poppy Trail BT-073): Blue Toad convention "
+                "check — assume all 10 under-table boxes sell together as ONE "
+                "bulk estate lot, or skip?"),
+        lot_ids=("BT-073", "BT-075", "BT-078", "BT-080"),
+        value_at_stake=200.0,
+        confidence_gap=0.3,
+    ),
+    Question(
+        kind=QuestionKind.APPETITE,
+        category="vintage tools",
+        prompt=("Vintage Tool Sourcing (Toolbox BT-083, Wrenches BT-086): "
+                "Store inventory status?"),
+        lot_ids=("BT-083", "BT-086"),
+        value_at_stake=150.0,
+        confidence_gap=0.3,
+    ),
+)
+
+
+def validate_cycle_questions(
+    questions: tuple[Question, ...] | list[Question],
+    known_lot_ids: set[str],
+) -> tuple[Question, ...]:
+    """Reject historical/cross-cycle questions before they enter the queue."""
+    configured = tuple(questions)
+    foreign_question_lots = sorted({
+        lot_id
+        for question in configured
+        for lot_id in question.lot_ids
+        if lot_id not in known_lot_ids
+    })
+    if foreign_question_lots:
+        raise ValueError(
+            "cycle questions reference lots outside this cycle: "
+            + ", ".join(foreign_question_lots))
+    return configured
+
+
 def run_pipeline(
     cycle_id: str = "2026-08-22",
     listing_id: str = "4160518",
     data_dir: str = "data/aug22_gallery_4160518",
+    output_dir: str | None = None,
     budget_cap: float = 600.0,
     auto_send_threshold: float = 35.0,
     force_live_vertex: bool = False,
+    auction_title: str | None = None,
+    auction_date: str | None = None,
+    auction_timezone: str | None = None,
+    auction_deadline: str | None = None,
+    venue: str | None = None,
+    email_to: str = "info@bluetoadauctions.com",
+    reference_comps: dict | None = None,
+    operator_approved: dict | None = None,
+    standing_rules: tuple[StandingRule, ...] | list[StandingRule] | None = None,
+    cycle_questions: tuple[Question, ...] | list[Question] | None = None,
+    enable_grounded_pricing: bool = False,
+    pricing_min_fit: float = 0.70,
+    pricing_workers: int = 6,
+    pricing_engine_factory=None,
 ):
+    execution_metadata = {
+        "auction_title": auction_title,
+        "auction_date": auction_date,
+        "auction_timezone": auction_timezone,
+        "auction_deadline": auction_deadline,
+        "venue": venue,
+    }
+    missing_metadata = [name for name, value in execution_metadata.items()
+                        if not str(value or "").strip()]
+    if missing_metadata:
+        raise ValueError(
+            "missing cycle execution metadata: " + ", ".join(missing_metadata))
+
     print("\n" + "=" * 80)
     print("BLUE TOAD FLEET — LIVE VERTEX AI SOURCING PIPELINE")
     print(f"Cycle: {cycle_id} | Listing ID: {listing_id} | Budget Cap: ${budget_cap:.2f}")
     print("=" * 80)
 
     # 1. Intake & Spatial Grouping
-    manifest_path = Path(data_dir) / "manifest.json"
+    data_path = Path(data_dir)
+    output_path = Path(output_dir) if output_dir else data_path.parent
+    cache_path = Path(output_dir) if output_dir else data_path
+    output_path.mkdir(parents=True, exist_ok=True)
+    cache_path.mkdir(parents=True, exist_ok=True)
+    refs = {} if reference_comps is None else reference_comps
+    approvals = {} if operator_approved is None else operator_approved
+    configured_rules = tuple(standing_rules or ())
+    configured_questions = tuple(cycle_questions or ())
+
+    manifest_path = data_path / "manifest.json"
     if not manifest_path.exists():
-        print(f"[!] Manifest not found at {manifest_path}", file=sys.stderr)
-        sys.exit(1)
+        raise FileNotFoundError(f"manifest not found: {manifest_path}")
 
     manifest_data = json.loads(manifest_path.read_text())
     photos = manifest_data["photos"]
+    manifest_identity_sha256 = str(
+        manifest_data.get("durable_manifest_sha256") or sha256_file(manifest_path)
+    )
     print(f"[*] Ingested {len(photos)} photos from manifest ({manifest_data['captioned_photos']} captioned).")
 
     entries = [{"name": p["filename"], "uri": p["thumb_url"], "caption": p["caption"]} for p in photos]
     drop = parse_drop(cycle_id=cycle_id, listing_id=listing_id, entries=entries)
 
     # 1b. Stage 1 triage across the whole drop. Cached, so a re-run is free.
-    engine = AppraisalEngine()
-    triage_cache = Path(data_dir) / "triage_results.json"
+    telemetry = UsageTelemetry(
+        cycle_id, rates_usd_per_million=rate_snapshot_usd_per_million(),
+    )
+    engine = AppraisalEngine(telemetry=telemetry)
+    triage_cache = cache_path / "triage_results.json"
     from_triage_cache = engine.will_use_cache(triage_cache, force_live_vertex)
     print(f"[*] Stage 1 Triage: {len(photos)} photos from "
           f"{'cached results' if from_triage_cache else 'LIVE Vertex AI (' + TRIAGE_MODEL + ')'}...")
     try:
-        triage_results = engine.run_triage_batch(
-            photos=photos, cache_path=triage_cache,
-            force_refresh=force_live_vertex, max_workers=8,
-            progress_callback=lambda done, total: (
-                print(f"    triaged {done}/{total}", end="\r") if done % 25 == 0 else None),
-        )
+        with telemetry.stage("triage.batch"):
+            triage_results = engine.run_triage_batch(
+                photos=photos, cache_path=triage_cache,
+                force_refresh=force_live_vertex, max_workers=8,
+                progress_callback=lambda done, total: (
+                    print(f"    triaged {done}/{total}", end="\r") if done % 25 == 0 else None),
+            )
     except Exception as e:
         print(f"\n[!] Triage unavailable ({e}); falling back to the caption heuristic.")
         triage_results = []
@@ -390,22 +625,51 @@ def run_pipeline(
             same_lot_as_previous=same_lot,
         ))
 
+    spatial_path = data_path / "spatial_observations.json"
+    spatial_mode = "walk-only"
+    if spatial_path.is_file():
+        observations = load_observations(
+            spatial_path,
+            expected_photo_ids={str(photo["photo_id"]) for photo in photos},
+            expected_manifest_sha256=manifest_identity_sha256,
+        )
+        by_observation = {observation.photo_id: observation for observation in observations}
+        spatial_input = []
+        for triaged, photo in zip(triaged_photos, photos, strict=True):
+            observation = by_observation[triaged.photo_id]
+            spatial_input.append(SpatiallyTaggedPhoto(
+                photo_id=triaged.photo_id,
+                caption=triaged.caption,
+                summary=observation.summary,
+                is_lot=triaged.is_lot,
+                same_lot_as_previous=triaged.same_lot_as_previous,
+                surface=observation.surface,
+                zone=observation.zone,
+                margin_neighbors=observation.margin_neighbors,
+            ))
+        triaged_photos = apply_trajectory(spatial_input)
+        spatial_mode = "validated-listing-graph"
     lot_groups = group_into_lots(triaged_photos)
-    cache = Path(data_dir) / "embeddings.json"
+    cache = cache_path / "embeddings.json"
     photo_by_seq = {p["sequence"]: p["photo_id"] for p in photos}
     sequences = {p["photo_id"]: p["sequence"] for p in photos}
-    edges = load_reshoot_edges(cache, photo_by_seq, sequences)
+    edges = load_reshoot_edges(
+        cache,
+        photo_by_seq,
+        sequences,
+        expected_manifest_sha256=manifest_identity_sha256,
+    )
     lot_groups = merge_reshoots(lot_groups, edges)
     print(f"[+] Grouped {len(photos)} photos into {len(lot_groups)} distinct lots.")
 
     # 2. Vertex AI Engine Setup
-    appraisal_cache = Path(data_dir) / "appraisal_results.json"
+    appraisal_cache = cache_path / "appraisal_results.json"
 
     # Identify candidate lots for detailed Stage 2 appraisal
     primary_ids = {g.primary_photo_id for g in lot_groups}
     lot_photos = [p for p in photos if p["photo_id"] in primary_ids]
     candidate_items = select_appraisal_candidates(
-        triage_results, lot_photos, always_include=set(REFERENCE_COMPS))
+        triage_results, lot_photos, always_include=set(refs), category_hints=refs)
 
     # 1c/2a. A bounded collection earns a two-pass spatial isolation before
     # appraisal: locate the physical rim, crop away room noise, then itemize.
@@ -416,87 +680,95 @@ def run_pipeline(
         lot_photos,
         appraised_lot_ids={c["lot_id"] for c in candidate_items},
     )
-    decomposition_by_lot = {}
+    decomposition_cache = cache_path / "decomposition_results.json"
     if decomposition_candidates:
-        decomposition_cache = Path(data_dir) / "decomposition_results.json"
         from_decomposition_cache = engine.will_use_cache(
             decomposition_cache, force_live_vertex,
             required_ids={c["lot_id"] for c in decomposition_candidates})
         source = ("cached results" if from_decomposition_cache
                   else "LIVE Vertex AI spatial isolation")
         print(f"[*] Container Decomposition: {len(decomposition_candidates)} lots from {source}...")
-        try:
-            decompositions = engine.run_decomposition_batch(
-                decomposition_candidates,
-                cache_path=decomposition_cache,
-                force_refresh=force_live_vertex,
-                max_workers=4,
-            )
-        except Exception as e:
-            print(f"[!] Container decomposition unavailable ({e}); appraisals remain un-enriched.")
-            decompositions = []
-        decomposition_by_lot = {d.get("lot_id"): d for d in decompositions}
-
-    for candidate in candidate_items:
-        decomposition = decomposition_by_lot.get(candidate["lot_id"])
-        if decomposition and decomposition.get("is_container_lot"):
-            candidate["container_decomposition"] = decomposition
 
     from_cache = engine.will_use_cache(
         appraisal_cache, force_live_vertex,
         required_ids={c["lot_id"] for c in candidate_items})
     source = "cached results" if from_cache else "LIVE Vertex AI (gemini-3.6-flash)"
-    print(f"\n[*] Stage 2 Appraisal: {len(candidate_items)} candidate lots from {source}...")
-    raw_appraisals = engine.run_appraisal_batch(
-        candidates=candidate_items,
-        standing_rules=DEFAULT_STANDING_RULES,
-        cache_path=appraisal_cache,
-        force_refresh=force_live_vertex,
-        max_workers=4,
-    )
+    grounded_pipeline = None
+    if enable_grounded_pricing:
+        grounded_cache = cache_path / "grounded_prices.json"
+        pricing_kwargs = {}
+        pricing_kwargs["engine_factory"] = (
+            pricing_engine_factory
+            if pricing_engine_factory is not None
+            else lambda: AppraisalEngine(telemetry=telemetry)
+        )
+        print(f"[*] Grounded Pricing: appraisals enter at fit >= {pricing_min_fit:.2f} "
+              f"as they finish, with {pricing_workers} workers and {MIN_CALLS} "
+              "independent samples each...")
+        grounded_pipeline = GroundedPricingPipeline(
+            grounded_cache,
+            min_fit=pricing_min_fit,
+            workers=pricing_workers,
+            excluded_lot_ids=set(refs),
+            progress_callback=lambda done, _total: (
+                print(f"    grounded {done} completed", end="\r")
+                if done % 5 == 0 else None
+            ),
+            **pricing_kwargs,
+        )
+    print(f"\n[*] Stage 2 Appraisal: {len(candidate_items)} candidate lots from {source}; "
+          "each starts as soon as its own inputs are ready...")
+    try:
+        with telemetry.stage("appraisal_enrichment.batch"):
+            raw_appraisals, decompositions = engine.run_enrichment_appraisal_pipeline(
+                candidate_items,
+                decomposition_candidates=decomposition_candidates,
+                standing_rules=configured_rules,
+                appraisal_cache_path=appraisal_cache,
+                decomposition_cache_path=decomposition_cache,
+                force_refresh=force_live_vertex,
+                appraisal_workers=4,
+                decomposition_workers=4,
+                appraisal_result_callback=(
+                    grounded_pipeline.submit if grounded_pipeline else None
+                ),
+            )
+            grounded_rows = grounded_pipeline.finish() if grounded_pipeline else []
+    except Exception:
+        if grounded_pipeline:
+            grounded_pipeline.shutdown()
+        raise
     print(f"[{'~' if from_cache else '✓'}] Retrieved {len(raw_appraisals)} structured "
           f"appraisals from {source}."
           + ("" if from_cache else f" Written to {appraisal_cache}."))
+
+    if grounded_pipeline:
+        grounded_refs = grounded_reference_comps(grounded_rows)
+        # An explicit operator reference wins if both sources name the same lot.
+        refs = {**grounded_refs, **refs}
+        print(f"[+] Grounded Pricing: {len(grounded_refs)}/{len(grounded_rows)} "
+              "candidate lots have usable cited sold comps.")
+    grounded_by_lot = {row["lot_id"]: row for row in grounded_rows}
 
     # 3. Parse Appraisals & Questions
     appraisal_by_lot = {}
     emitted_questions = []
     for raw in raw_appraisals:
         lot_id = raw.get("lot_id")
-        cat_hint = REFERENCE_COMPS.get(lot_id, {}).get("cat")
+        cat_hint = refs.get(lot_id, {}).get("cat")
         app, qs = engine.parse_appraisal_to_domain(raw, category_override=cat_hint)
         appraisal_by_lot[app.lot_id] = (app, raw)
         emitted_questions.extend(qs)
 
     # 4. Question Queue & Memory Resolution
-    domain_questions = [
-        Question(
-            kind=QuestionKind.POLICY,
-            category="sports memorabilia",
-            prompt="Uncertified Autographs (Jordan Hat BT-006, DiMaggio Hat BT-010): No visible PSA/JSA certificate in photos. Bid speculative raw floor or skip?",
-            lot_ids=("BT-006", "BT-010"),
-            value_at_stake=800.0,
-            confidence_gap=0.5,
-        ),
-        Question(
-            kind=QuestionKind.APPETITE,
-            category="dinnerware / pottery",
-            prompt="Under-Table Box Runs (Poppy Trail BT-073): Blue Toad convention check — assume all 10 under-table boxes sell together as ONE bulk estate lot, or skip?",
-            lot_ids=("BT-073", "BT-075", "BT-078", "BT-080"),
-            value_at_stake=200.0,
-            confidence_gap=0.3,
-        ),
-        Question(
-            kind=QuestionKind.APPETITE,
-            category="vintage tools",
-            prompt="Vintage Tool Sourcing (Toolbox BT-083, Wrenches BT-086): Store inventory status?",
-            lot_ids=("BT-083", "BT-086"),
-            value_at_stake=150.0,
-            confidence_gap=0.3,
-        ),
-    ]
-    all_questions = domain_questions + emitted_questions
-    queue_result = build_queue(all_questions, DEFAULT_STANDING_RULES, cap=12)
+    known_lot_ids = {
+        f"BT-{next(p for p in photos if p['photo_id'] == group.primary_photo_id)['sequence']:03d}"
+        for group in lot_groups
+    }
+    configured_questions = validate_cycle_questions(
+        configured_questions, known_lot_ids)
+    all_questions = [*configured_questions, *emitted_questions]
+    queue_result = build_queue(all_questions, configured_rules, cap=12)
     print(f"[+] Question Queue: {len(queue_result.asked)} asked, {len(queue_result.auto_answered)} auto-answered from standing rules.")
 
     # 5. Pricing & Allocation with Bid Math
@@ -510,15 +782,15 @@ def run_pipeline(
         lot_id = f"BT-{primary_photo['sequence']:03d}"
         captions_map[lot_id] = caption
 
-        if lot_id in REFERENCE_COMPS:
-            comp_info = REFERENCE_COMPS[lot_id]
+        if lot_id in refs:
+            comp_info = refs[lot_id]
             app_pair = appraisal_by_lot.get(lot_id)
             raw_app = app_pair[1] if app_pair else {}
             if app_pair:
                 _, raw_app = app_pair
             else:
                 raw_app = {}
-            fit, penalty = operator_lot_inputs(lot_id, raw_app)
+            fit, penalty = operator_lot_inputs(lot_id, raw_app, approvals)
             cat = comp_info["cat"]
             ident = append_visible_contents(
                 raw_app.get("identification", comp_info["desc"]),
@@ -530,18 +802,18 @@ def run_pipeline(
             if raw_app.get("is_container") and contents:
                 ident = f"{ident}: {', '.join(contents)}"
 
-            comp_est = CompEstimate(
-                low=comp_info["low"],
-                high=comp_info["high"],
-                source_count=comp_info["sources"],
-                confidence=comp_info["conf"],
+            comp_est, comp_info, upside_note = comp_from_reference(
+                comp_info, raw_app,
             )
+            refs[lot_id] = comp_info
+            if upside_note:
+                ident = f"{ident}. {upside_note}"
 
             # A ruling on file settles the mechanic. Caption detection only
             # supplies the standing default (CHOICE, take 1) when nobody ruled.
             # No ruling and no detection is a plain single lot — passing None
             # through mechanic_from_ruling would flag all 415 lots as UNKNOWN.
-            ruling = OPERATOR_APPROVED.get(lot_id, {}).get("ruling")
+            ruling = approvals.get(lot_id, {}).get("ruling")
             if ruling:
                 mech, units, wanted = mechanic_from_ruling(ruling)
             elif per_unit:
@@ -555,12 +827,26 @@ def run_pipeline(
                 fit_score=fit,
                 condition_penalty=penalty,
                 comp=comp_est,
-                mechanic=mech, unit_count=units, units_wanted=wanted,
+                mechanic=mech, unit_count=units, units_wanted=None,
             )
+            if wanted is not None and mech is not BidMechanic.UNKNOWN:
+                lot_obj = elect(lot_obj, wanted)
             lots.append(lot_obj)
-            decisions.append(apply_operator_cap(price_lot(lot_obj)))
+            decisions.append(apply_operator_cap(price_lot(lot_obj), approvals))
         else:
-            ident = caption or f"Uncaptioned lot (Photo #{primary_photo['sequence']})"
+            app_pair = appraisal_by_lot.get(lot_id)
+            raw_app = app_pair[1] if app_pair else {}
+            ident = append_visible_contents(
+                raw_app.get("identification")
+                or caption
+                or f"Uncaptioned lot (Photo #{primary_photo['sequence']})",
+                raw_app.get("container_decomposition"),
+            )
+            if app_pair:
+                fit, penalty = operator_lot_inputs(lot_id, raw_app, approvals)
+            else:
+                fit, penalty = 0.20, 0.10
+            category = raw_app.get("category") or "general estate"
             per_unit = is_choice_lot(ident, caption)
             if per_unit:
                 mech, units, wanted = BidMechanic.CHOICE, 1, 1
@@ -569,14 +855,20 @@ def run_pipeline(
             lot_obj = Lot(
                 lot_id=lot_id,
                 caption=ident,
-                category="general estate",
-                fit_score=0.20,
-                condition_penalty=0.10,
+                category=category,
+                fit_score=fit,
+                condition_penalty=penalty,
                 comp=CompEstimate(low=None, high=None, source_count=0, confidence=BidConfidence.NONE),
                 mechanic=mech, unit_count=units, units_wanted=wanted,
             )
             lots.append(lot_obj)
-            decisions.append(price_lot(lot_obj))
+            decision = price_lot(lot_obj)
+            if decision.needs_deep_comps:
+                decision = replace(
+                    decision,
+                    reason=grounded_status_reason(grounded_by_lot.get(lot_id)),
+                )
+            decisions.append(apply_operator_cap(decision, approvals))
 
     allocated_decisions = allocate(decisions, budget_cap=budget_cap, auto_send_threshold=auto_send_threshold)
     sheet_summary = summarize(allocated_decisions)
@@ -593,12 +885,18 @@ def run_pipeline(
 
     # 6. Generate Absentee Email Draft
     approved_bids = [d for d in allocated_decisions if d.allocated and d.max_bid]
-    email_draft_path = Path(data_dir).parent / "aug22_absentee_bid_email.txt"
+    resolved_auction_date = str(auction_date)
+    email_draft_path = (
+        output_path / "absentee_bid_email.txt"
+        if output_dir else data_path.parent / "aug22_absentee_bid_email.txt"
+    )
     email_text = compile_absentee_email(
-        to="info@bluetoadauctions.com",
-        subject="Absentee Bids - August 22 Antique & Estate Auction (Bidder: Richmond General)",
-        auction_date="Saturday, August 22, 2026",
-        venue="200 Elizabeth Lane, Genoa City, WI",
+        to=email_to,
+        subject=(f"Absentee Bids - {auction_title} - {resolved_auction_date} "
+                 "(Bidder: Richmond General)"),
+        auction_date=resolved_auction_date,
+        venue=venue,
+        deadline=auction_deadline,
         lots=lots,
         decisions=allocated_decisions,
     )
@@ -606,10 +904,13 @@ def run_pipeline(
     print(f"\n[✓] Compiled Final Sealed Absentee Bid Email Draft: {email_draft_path}")
 
     # 7. Generate Excel Sourcing Sheet
-    out_excel = Path(data_dir).parent / "BlueToad_2026-08-22_BidSheet.xlsx"
+    out_excel = (
+        output_path / "bid_sheet.xlsx"
+        if output_dir else data_path.parent / "BlueToad_2026-08-22_BidSheet.xlsx"
+    )
     wb = openpyxl.Workbook()
     ws = wb.active
-    ws.title = "Aug 22 Bid Sheet"
+    ws.title = "Bid Sheet"
 
     hdr_fill = PatternFill(start_color="1F497D", end_color="1F497D", fill_type="solid")
     hdr_font = Font(name="Arial", size=11, bold=True, color="FFFFFF")
@@ -621,7 +922,8 @@ def run_pipeline(
     # trip anyone into noticing.
     headers = ["Lot ID", "Category", "Description", "Est Resale ($)",
                "Start Bid ($)", "Max Bid ($)", "All-In ($)", "Units",
-               "Committed Max ($)", "Committed All-In ($)", "Status"]
+               "Committed Max ($)", "Committed All-In ($)", "Status",
+               "Price Evidence", "Citations"]
     ws.append(headers)
     for c in range(1, len(headers) + 1):
         ws.cell(1, c).fill = hdr_fill
@@ -629,6 +931,7 @@ def run_pipeline(
 
     for idx, d in enumerate(approved_bids, 2):
         lot_obj = next(l for l in lots if l.lot_id == d.lot_id)
+        comp_record = refs.get(d.lot_id, {})
         start_bid = opening_bid(d.max_bid)
         est_str = f"${lot_obj.comp.low:.0f}-${lot_obj.comp.high:.0f}" if lot_obj.comp.low else "N/A"
         ws.append([
@@ -643,39 +946,217 @@ def run_pipeline(
             d.committed_max,
             d.committed_all_in,
             "AUTO-SEND" if d.auto_send else "APPROVED",
+            comp_record.get("provenance", "operator_reference"),
+            "\n".join(comp_record.get("citations") or []),
         ])
         ws.cell(idx, 11).fill = green_fill
 
     ws.append(["", "", "", "", "", "", "", "TOTAL",
-               sheet_summary.committed_max, sheet_summary.committed_all_in, ""])
+               sheet_summary.committed_max, sheet_summary.committed_all_in,
+               "", "", ""])
     for c in range(8, 11):
         ws.cell(ws.max_row, c).font = Font(name="Arial", size=11, bold=True)
 
     for col in ws.columns:
         max_len = max(len(str(cell.value or '')) for cell in col)
         col_letter = get_column_letter(col[0].column)
-        ws.column_dimensions[col_letter].width = max(max_len + 3, 12)
+        ws.column_dimensions[col_letter].width = min(max(max_len + 3, 12), 80)
 
     wb.save(out_excel)
     print(f"[✓] Saved updated Excel Bid Sheet: {out_excel}")
 
     # 8. Save Pipeline Snapshot JSON
-    pipeline_state_file = Path(data_dir) / "pipeline_state.json"
+    pipeline_state_file = output_path / "pipeline_state.json"
+    decision_rows = []
+    lot_by_id = {lot.lot_id: lot for lot in lots}
+    for decision in allocated_decisions:
+        lot = lot_by_id[decision.lot_id]
+        evidence = refs.get(decision.lot_id, {})
+        decision_rows.append({
+            "lot_id": decision.lot_id,
+            "category": decision.category,
+            "priority": decision.priority.value,
+            "allocated": decision.allocated,
+            "auto_send": decision.auto_send,
+            "speculative": decision.speculative,
+            "max_bid": decision.max_bid,
+            "all_in": decision.all_in,
+            "committed_max": decision.committed_max,
+            "committed_all_in": decision.committed_all_in,
+            "mechanic": decision.mechanic.value,
+            "unit_count": decision.unit_count,
+            "units_wanted": decision.units_wanted,
+            "needs_human_pricing": decision.needs_human_pricing,
+            "needs_mechanic_ruling": decision.needs_mechanic_ruling,
+            "reason": decision.reason,
+            "comp": {
+                "low": lot.comp.low,
+                "high": lot.comp.high,
+                "source_count": lot.comp.source_count,
+                "confidence": lot.comp.confidence.value,
+                "provenance": evidence.get("provenance", "operator_reference")
+                if decision.lot_id in refs else None,
+                "citations": list(evidence.get("citations") or []),
+            },
+        })
+    queue_accounting = queue_result.accounting()
+    if decomposition_cache.is_file():
+        decomposition_rows = json.loads(decomposition_cache.read_text())
+    else:
+        decomposition_rows = []
+    absorption_path = data_path / "absorption_evidence.json"
+    absorption_records = (
+        load_absorption_evidence(absorption_path) if absorption_path.is_file() else []
+    )
+    absorption_revision = (
+        sha256_file(absorption_path) if absorption_records else None
+    )
+    absorption_output = output_path / "absorption_evidence.json"
+    if output_dir and absorption_records:
+        shutil.copy2(absorption_path, absorption_output)
+    usage_file = output_path / "usage_telemetry.json"
+    telemetry_payload = telemetry.aggregate()
     pipeline_state_file.write_text(json.dumps({
         "cycle_id": cycle_id,
         "listing_id": listing_id,
+        "auction": {
+            "title": auction_title,
+            "date": resolved_auction_date,
+            "timezone": auction_timezone,
+            "deadline": auction_deadline,
+            "venue": venue,
+        },
         "budget_cap": budget_cap,
         "auto_send_threshold": auto_send_threshold,
-        "summary": sheet_summary.__dict__,
+        "summary": asdict(sheet_summary),
+        "decisions": decision_rows,
+        "queue": queue_accounting,
+        "standing_rules": [
+            {
+                "kind": rule.kind.value,
+                "category": rule.category,
+                "answer": rule.answer,
+                "learned_cycle": rule.learned_cycle,
+            }
+            for rule in configured_rules
+        ],
+        "models": {
+            "triage": TRIAGE_MODEL,
+            "appraisal": APPRAISAL_MODEL,
+            "grounded_pricing": bool(enable_grounded_pricing),
+        },
+        "performance_and_cost": {
+            "planning_estimate": {
+                "kind": "estimate",
+                "rates_usd_per_million": rate_snapshot_usd_per_million(),
+                "cost_usd": estimate_cost_usd(
+                    len(photos), len(candidate_items), len(decomposition_candidates),
+                ),
+            },
+            "measured": telemetry_payload["summary"],
+        },
+        "coverage": {
+            "source_photo_ids": sorted(str(photo["photo_id"]) for photo in photos),
+            "triage_success_ids": sorted(str(row.get("photo_id")) for row in triage_results),
+            "appraisal_requested_ids": sorted(str(row["lot_id"]) for row in candidate_items),
+            "appraisal_success_ids": sorted(str(row.get("lot_id")) for row in raw_appraisals),
+            "grounded_attempt_ids": sorted(str(row.get("lot_id")) for row in grounded_rows),
+            "decomposition_requested_ids": sorted(
+                str(row["lot_id"]) for row in decomposition_candidates),
+            "decomposition_success_ids": sorted(
+                str(row.get("lot_id")) for row in decomposition_rows),
+        },
+        "spatial": {
+            "mode": spatial_mode,
+            "observations": len(photos) if spatial_mode != "walk-only" else 0,
+            "unknown_zone_default": Zone.UNKNOWN.value,
+        },
+        "external_evidence": {
+            "absorption": {
+                "status": "verified" if absorption_records else "unavailable",
+                "revision_sha256": absorption_revision,
+                "records": [record.as_dict() for record in absorption_records],
+                "metric": "sold_units_last_365_days / active_listings_now",
+                "days_on_market_used": False,
+            },
+        },
         "approved_lots_count": len(approved_bids),
         "total_lots_count": len(lot_groups),
         "photos_count": len(photos),
+        "grounded_pricing": {
+            "enabled": enable_grounded_pricing,
+            "attempted": len(grounded_rows),
+            "usable": sum(bool(row.get("usable")) for row in grounded_rows),
+        },
+        "source_manifest": "manifest.json",
+        "artifacts": {
+            "email": email_draft_path.name,
+            "bid_sheet": out_excel.name,
+            "triage": triage_cache.name,
+            "appraisals": appraisal_cache.name,
+            "grounded_prices": ("grounded_prices.json"
+                                  if enable_grounded_pricing else None),
+            "usage_telemetry": usage_file.name,
+            "absorption_evidence": (
+                absorption_output.name if output_dir and absorption_records else None
+            ),
+        },
     }, indent=2))
+    telemetry.write(usage_file)
     print(f"[✓] Saved pipeline state snapshot: {pipeline_state_file}")
 
-    return photos, lot_groups, lots, allocated_decisions, sheet_summary, queue_result, captions_map
+    # The console needs the normalized manifest beside the derived caches, but
+    # the full image binaries remain only in the immutable input prefix.
+    published_manifest = output_path / "manifest.json"
+    if output_dir and manifest_path.resolve() != published_manifest.resolve():
+        shutil.copy2(manifest_path, published_manifest)
+
+    return PipelineResult(
+        photos=tuple(photos),
+        lot_groups=tuple(lot_groups),
+        lots=tuple(lots),
+        decisions=tuple(allocated_decisions),
+        summary=sheet_summary,
+        queue=queue_result,
+        captions=MappingProxyType(dict(captions_map)),
+        pipeline_state_path=pipeline_state_file,
+        bid_sheet_path=out_excel,
+        email_path=email_draft_path,
+    )
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--live", action="store_true", help="bypass model caches")
+    parser.add_argument("--data-dir", type=Path,
+                        default=Path("data/aug22_gallery_4160518"))
+    parser.add_argument("--output-dir", type=Path, default=Path("data"))
+    args = parser.parse_args(argv)
+    try:
+        execute_pipeline(PipelineConfig(
+            cycle_id="2026-08-22",
+            listing_id="4160518",
+            data_dir=args.data_dir,
+            output_dir=args.output_dir,
+            budget_cap=600.0,
+            auto_send_threshold=35.0,
+            force_live_vertex=args.live,
+            auction_title="Blue Toad Auctions Estate Sale",
+            auction_date="2026-08-22",
+            auction_timezone="America/Chicago",
+            auction_deadline="2026-08-21T16:00:00-05:00",
+            venue="200 Elizabeth Lane, Genoa City, WI",
+            email_to="info@bluetoadauctions.com",
+            reference_comps=MappingProxyType(REFERENCE_COMPS),
+            operator_approved=MappingProxyType(OPERATOR_APPROVED),
+            standing_rules=tuple(DEFAULT_STANDING_RULES),
+            cycle_questions=tuple(AUG22_DOMAIN_QUESTIONS),
+        ))
+    except (OSError, RuntimeError, ValueError) as exc:
+        print(f"pipeline failed: {exc}", file=sys.stderr)
+        return 1
+    return 0
 
 
 if __name__ == "__main__":
-    force_live = "--live" in sys.argv
-    run_pipeline(force_live_vertex=force_live)
+    raise SystemExit(main())

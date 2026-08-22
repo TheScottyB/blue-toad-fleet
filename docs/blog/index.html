@@ -117,43 +117,42 @@
 
   <p>That is the actual reason the published absentee channel has never once been used. Not distance. Preparing it by hand costs more than it returns.</p>
 
-  <h2>The ground truth this is checked against</h2>
+  <h2>What is checked, and what is not</h2>
 
-  <p>On July 11, 2026 I went to the sale in person. Bidder #31, in the room, nine lots, paid by card. I still have the printed receipt on Blue Toad's own letterhead:</p>
+  <p>The money path is deterministic: mechanic parsing, unit exposure, the
+  fifteen-percent absentee fee, bid increments, budget allocation, workbook,
+  and clerk-facing email all reconcile through one decision object. BT-002 is
+  the concrete boundary case: a written “times three” ruling turns a $25
+  per-unit ceiling into $75 committed and $86.25 all-in.</p>
 
-  <table class="receipt">
-    <tr><td>ITEM TOTAL</td><td>$105.00</td></tr>
-    <tr><td>PREMIUM PAID (15%)</td><td>$15.75</td></tr>
-    <tr><td>TAX TOTAL (resale exempt)</td><td>$0.00</td></tr>
-    <tr><td>TOTAL PAYMENTS</td><td>$120.75</td></tr>
-  </table>
-
-  <p>That receipt is why the bid math in this project is not a guess. The repository's <code>all_in_cost(105.0)</code> returns <strong>$120.75</strong> — the receipt total, to the cent, including the fee structure and the resale exemption that zeroes the Wisconsin tax. Four of those nine lots went on to become catalog SKUs at the shop, so I know what they cost, what they listed at, and how long they took to move.</p>
-
-  <p>Anything that produces bids with real money behind it should be reconcilable against paper that already exists. This one is.</p>
+  <p>The old July comparison workbook is quarantined because its legacy totals,
+  joins, and synthetic comparison path are not auditable enough for submission
+  evidence. The August fixture is also labeled historical until a fresh cycle
+  resolves every allocated-lot question and seals one artifact manifest. The
+  publisher now refuses to blur either boundary.</p>
 
   <h2>What the fleet actually does</h2>
 
   <p>Blue Toad Fleet turns that uncataloged photo wall into a priced, positive-expected-value absentee sheet. Six mechanisms do the work, and each exists because a naive version of this failed in a specific, expensive way:</p>
 
   <ul class="mechs">
-    <li><b>The Spatial Room Graph</b>Auctioneers don't teleport — they walk a room. The fleet reconstructs the physical showroom from surface textures, border co-visibility, and the photographer's walking order. Ten loose photos of one under-table box collapse into one lot instead of ten separate bids on the same goods.</li>
-    <li><b>Container Lot Decomposition</b>The margin in a rural auction hides in cardboard boxes and plastic tubs. Once a container is spatially isolated from surrounding table clutter, the agent itemizes what's inside it without blending in the neighbors' clocks and lamps.</li>
+    <li><b>Evidence-gated spatial grouping</b>Capture order and captions provide the conservative baseline; reviewed similarity edges can join repeat views. A physical map appears only when a manifest-bound spatial sidecar proves the zones. Without it, the Gate says walk-order grouping.</li>
+    <li><b>Container Lot Decomposition</b>A bounded pass lists visible contents. An alpha affects price only when its mark is observed and no mark question remains open; otherwise the lot keeps its bulk floor.</li>
     <li><b>The Honest Refusal Rule</b>On an unmarked piece of pottery with no verifiable comp, the fleet emits <code>NO EXTERNAL COMP — human pricing required</code> rather than inventing a number. Refusing to guess is the safety feature, not a gap.</li>
-    <li><b>The Choice-Lot Sniper</b>Country auctioneers sell wall runs and table lines as "choice, times the money." Bid naively on the group and the clerk multiplies it — six posters at $150 becomes $900. The fleet detects choice lots and enforces a hard single-unit ceiling.</li>
-    <li><b>Curator's Pushback</b>When I told it to drop sports cards because of store backlog, it didn't just comply. It came back with liquidity data on one specific photo and argued for a defensive cap. A partner that never disagrees isn't a partner.</li>
+    <li><b>The Choice-Lot Guard</b>Country auctioneers sell groups as “choice” or “times the money.” Unknown mechanics refuse; a written ruling sets the unit exposure; and one clerk directive carries the same amount through the sheet and email.</li>
+    <li><b>Bounded Curator Challenge</b>A challenge exists only when a typed standing rule conflicts with fresh, lot-matched evidence. The model may phrase the conflict, but it may not add market claims or tell the operator to buy.</li>
     <li><b>Deterministic Bid Math</b>Model output stops at identification and estimation. Turning an estimate into an authorized number is pure, unit-tested Python — margin target, condition discount, the house's $5 bid increment, the 15% fee. Auditable, and the same every run.</li>
   </ul>
 
   <h2>Built on Google Cloud</h2>
 
-  <p>Vision and reasoning run on Vertex AI — Gemini 3.6 Flash for the heavy multimodal passes, lighter models for triage, routed by how much a given photo is worth thinking about. The gate console and the sourcing API serve from Cloud Run. A full cycle costs a couple of dollars in inference, which is the number that makes this worth doing at all: the sheet has to cost less than the margin it protects.</p>
+  <p>Vision and reasoning run on Vertex AI — Gemini 3.6 Flash for the heavy multimodal passes, lighter models for triage, routed by how much a given photo is worth thinking about. The gate console and sourcing API run on Cloud Run. The pipeline now records per-call tokens, latency, retries, fallbacks, errors, rate snapshots, and measured cost; a fresh corpus run is required before publishing a full-cycle cost or speed.</p>
 
-  <p>The repository is public and MIT-licensed, with 298 passing unit tests and a four-command local demo that needs no Google Cloud account, no OAuth, and no keys.</p>
+  <p>The repository is public and MIT-licensed, with a four-command local demo that needs no Google Cloud account, no OAuth, and no keys. The release report records the current test counts instead of this article freezing a number that immediately goes stale.</p>
 
   <h2>What it does not do</h2>
 
-  <p>Worth stating plainly, because a project that only lists its wins is not describing software. The fleet does not fetch the auction site — ingestion is a sanctioned gallery drop, not a scraper pointed at anyone. Comps are not fully built, so real lots still route to human pricing more often than I'd like. And the automated absentee path has not yet sent a bid to a live sale. Reproducing a paid receipt to the cent is evidence the math is right; it is not the same as having transacted through the channel, and I'm not going to blur those two things.</p>
+  <p>Worth stating plainly, because a project that only lists its wins is not describing software. The fleet does not fetch the auction site — ingestion is a sanctioned gallery drop, not a scraper pointed at anyone. Comps are incomplete, so real lots still route to human pricing. The current August fixture is not release-eligible, the automated path does not transmit a bid, and the checked-in video predates the evidence-sealed media workflow.</p>
 
   <blockquote>Velocity to distill the information. Collaboration on the judgment.</blockquote>
 
@@ -162,7 +161,7 @@
   <div class="links">
     <h2>Blue Toad Fleet</h2>
     <ul>
-      <li><a href="https://github.com/TheScottyB/blue-toad-fleet">Source on GitHub</a> — public, MIT, 298 tests</li>
+      <li><a href="https://github.com/TheScottyB/blue-toad-fleet">Source on GitHub</a> — public, MIT, release-gated evidence</li>
       <li><a href="https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app">Live gate console on Cloud Run</a></li>
       <li><a href="https://richmondgeneral.github.io/items/">Richmond General catalog</a> — the shop this was built for</li>
     </ul>

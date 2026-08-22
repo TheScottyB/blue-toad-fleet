@@ -199,6 +199,11 @@ class Decision:
     occur, however cheap it is."""
 
     @property
+    def needs_deep_comps(self) -> bool:
+        """Pricing research is unfinished; this is not a skip decision."""
+        return self.needs_human_pricing and not self.needs_mechanic_ruling
+
+    @property
     def committed_all_in(self) -> float | None:
         """Total exposure if this bid wins — what the budget cap must see.
 
@@ -313,7 +318,7 @@ def price_lot(
         return Decision(
             lot_id=lot.lot_id, category=lot.category, priority=priority,
             max_bid=None, all_in=None, bid_fraction=None,
-            reason="no external comp — human pricing required",
+            reason="pending deep comps — verified sold-price evidence is still needed",
             needs_human_pricing=True, **carry,
         )
 
@@ -396,7 +401,8 @@ def allocate(
     0 means every bid needs approval, which is the safe default and what
     production should start at.
     """
-    priced = [d for d in decisions if d.max_bid is not None]
+    priced = [d for d in decisions if d.max_bid is not None and not d.speculative]
+    contingent = [d for d in decisions if d.max_bid is not None and d.speculative]
     unpriced = [d for d in decisions if d.max_bid is None]
 
     # Sort and spend on COMMITTED money, not one unit's worth. A x3 lot billed
@@ -422,6 +428,10 @@ def allocate(
         else:
             out.append(replace(d, allocated=False, auto_send=False,
                                reason=d.reason + " — over budget cap"))
+    # A contingent remainder does not exist unless the primary lot comes back
+    # up. Keep it visible and human-approved without consuming the committed
+    # envelope as though both instructions were unconditional firm bids.
+    out.extend(replace(d, allocated=True, auto_send=False) for d in contingent)
     return out + unpriced
 
 
@@ -435,6 +445,9 @@ class SheetSummary:
     skipped: int = 0
     committed_max: float = 0.0
     committed_all_in: float = 0.0
+    contingent: int = 0
+    contingent_max: float = 0.0
+    contingent_all_in: float = 0.0
     by_priority: dict[str, int] = field(default_factory=dict)
 
 
@@ -448,6 +461,13 @@ def summarize(decisions: Iterable[Decision]) -> SheetSummary:
         elif d.priority is Priority.SKIP:
             s.skipped += 1
         if d.allocated:
+            if d.speculative:
+                s.contingent += 1
+                s.contingent_max = round(
+                    s.contingent_max + (d.committed_max or 0.0), 2)
+                s.contingent_all_in = round(
+                    s.contingent_all_in + (d.committed_all_in or 0.0), 2)
+                continue
             s.allocated += 1
             s.committed_max = round(s.committed_max + d.committed_max, 2)
             s.committed_all_in = round(s.committed_all_in + d.committed_all_in, 2)
@@ -583,16 +603,33 @@ _MULT_RE = re.compile(
     rf"|(?<![\d.$])\b(\d{{1,3}})\s*(?:x|×)\s*(?=(?:the\s+)?{_UNIT_WORD}\b)",
     re.I)
 _CHOICE_RE = re.compile(r"(?:buyer'?s?|winner'?s?|bidder'?s?)[\s-]+choice|\bchoice\s+of\b", re.I)
+_CHOICE_COUNT_RE = re.compile(
+    r"(?:buyer'?s?|winner'?s?|bidder'?s?)[\s-]+choice\s+of\s+"
+    r"(\d{1,3}|[a-z]+)\b",
+    re.I,
+)
 _STRAIGHT_RE = re.compile(
     r"\bsingle\s+lot\b|\bone\s+lot\b|\ball\s+together\b|\bas\s+one\b|"
     r"\bas\s+a\s+unit\b|\bcombined\b|\bgoes\s+as\s+a\s+unit\b", re.I)
 _TAKE_RE = re.compile(r"\btak(?:e|ing)\s+(?:all\s+)?(\d{1,3}|[a-z]+)\b", re.I)
 _MAXQTY_RE = re.compile(r"max(?:imum)?\s+quantity\s+is\s+(\d{1,3}|[a-z]+)", re.I)
 _ALL_RE = re.compile(r"\ball\s+(\d{1,3}|[a-z]+)\b", re.I)
-# "No, that is not a x3 bid" affirmed x3. A ruling that names a mechanic in
-# order to REJECT it settles nothing, and reading it as agreement is the worst
-# available direction: it books the exact arrangement the auctioneer denied.
-_NEGATION_RE = re.compile(r"\b(?:not|isn'?t|aren'?t|won'?t|no longer|never)\b|^\s*no\b", re.I)
+# A ruling that names a mechanic in order to REJECT it settles nothing, and
+# reading it as agreement is the worst available direction. Negation must scope
+# the mechanic phrase itself: "do NOT limit me to one unit" affirms taking all
+# units and must not be rejected merely because the sentence contains "not".
+_MECHANIC_PHRASE = (
+    r"(?:an?\s+)?(?:x\s*\d{1,3}(?:\s+bid)?|times[\s-]+(?:the[\s-]+)?money|"
+    r"(?:buyer'?s?|winner'?s?|bidder'?s?)[\s-]+choice|choice\s+of|"
+    r"single\s+lot|one\s+lot|all\s+together|as\s+one)"
+)
+_NEGATED_MECHANIC_RE = re.compile(
+    rf"^\s*no\s*,?\s+(?:that\s+is\s+)?(?:sold\s+)?(?:as\s+)?{_MECHANIC_PHRASE}"
+    rf"|\b(?:not|isn'?t|aren'?t|won'?t|no\s+longer|never)\s+"
+    rf"(?:sold\s+)?(?:as\s+)?{_MECHANIC_PHRASE}"
+    rf"|{_MECHANIC_PHRASE}\s+(?:is|are|was|were)\s+not\b",
+    re.I,
+)
 _OF_THEM_RE = re.compile(r"\b(\d{1,3}|[a-z]+)\s+of\s+(?:them|these|those)\b", re.I)
 
 
@@ -628,7 +665,7 @@ def mechanic_from_ruling(
     if not text:
         return unknown
 
-    if _NEGATION_RE.search(text):
+    if _NEGATED_MECHANIC_RE.search(text):
         return unknown
 
     # Collect EVERY multiplier, not the first. Taking the first meant
@@ -667,8 +704,9 @@ def mechanic_from_ruling(
         w = pattern.search(text)
         if w:
             wanted = _as_count(w.group(1))
-            if wanted is not None:
-                break
+            if wanted is None:
+                return unknown
+            break
 
     if says_straight:
         return (BidMechanic.STRAIGHT, 1, 1)
@@ -681,7 +719,10 @@ def mechanic_from_ruling(
         if n is None:
             for pat in (_ALL_RE, _OF_THEM_RE):
                 hit = pat.search(text)
-                if hit and (n := _as_count(hit.group(1))) is not None:
+                if hit:
+                    n = _as_count(hit.group(1))
+                    if n is None:
+                        return unknown
                     break
         if n is None:
             n = units_available if units_available and units_available > 1 else None
@@ -694,6 +735,10 @@ def mechanic_from_ruling(
 
     if says_choice:
         n = units_available if units_available and units_available > 0 else mult
+        if n is None and (choice_count := _CHOICE_COUNT_RE.search(text)):
+            n = _as_count(choice_count.group(1))
+            if n is None:
+                return unknown
         if n is None:
             for pat in (_ALL_RE, _OF_THEM_RE):
                 hit = pat.search(text)

@@ -1,6 +1,8 @@
 # Blue Toad Fleet — Engineering Logbook & Architecture Decisions (ADR)
 
-An immutable record of operational principles, domain discoveries, architecture decisions, and ground-truth benchmark reconciliations for the **Blue Toad Fleet** multi-agent sourcing system.
+An engineering record of operational principles and architecture decisions for
+the **Blue Toad Fleet** supervised sourcing system. Historical observations are
+not release evidence unless they are linked from `docs/SUBMISSION_CLAIMS.md`.
 
 ---
 
@@ -25,18 +27,21 @@ An immutable record of operational principles, domain discoveries, architecture 
 
 ## 2. Architecture Decision Records (ADR)
 
-### ADR-001: The Spatial Room Graph & Invariant Showroom Topology
+### ADR-001: Evidence-Gated Spatial Grouping
 * **Context:** Rural auction galleries drop 450+ unlabelled photos with zero lot numbers. Generic vision models treat photos as isolated images, creating duplicate bids across multi-angle shots and failing to identify multi-box estate runs.
-* **Decision:** Reconstruct the physical 200 Elizabeth Lane pole barn showroom (2 Center Islands, 2 Long Side Walls, Back Wall hanging displays, and Under-Table Concrete Floor space).
-* **Mechanism:**
-  1. *Surface Invariant Segmentation:* Detects background textures (blue pleated vinyl tablecloth vs. raw pine plywood vs. concrete slab) to classify physical room zones.
-  2. *Peripheral Margin Co-Visibility:* Scans image borders for adjacent goods (e.g. a sliver of a DiMaggio hat next to a Dan Marino photo) to link uncaptioned photos to table clusters.
-  3. *Trajectory Clustering:* Preserves the auctioneer's natural walking path, merging 10 loose under-table box photos into **ONE Poppy Trail dinnerware estate set** and eliminating 95 duplicate multi-angle bids.
+* **Decision:** Use captions and natural capture order as the conservative
+  baseline, reviewed embedding edges for non-adjacent repeat views, and accept
+  physical zones only from a manifest/model-bound observation sidecar.
+* **Fail-closed surface:** With no sidecar, the Gate says walk-order grouping and
+  does not render a physical showroom topology. The checked-in August fixture is
+  currently in this state.
 
 ### ADR-002: Multi-Tiered Model Routing on Vertex AI
 * **Context:** Running 450+ raw images through heavyweight multimodal models on every cycle is cost-prohibitive and slow. Conversely, lightweight models lack the nuanced reasoning required for maker identification.
 * **Decision:** Route inference through two specialized tiers:
-  * **Tier 1 (Triage Fan-out):** `gemini-3.5-flash-lite` filters 460+ photos in seconds for ~$0.30 per cycle, eliminating low-margin clutter and background filler.
+  * **Tier 1 (Triage Fan-out):** `gemini-3.5-flash-lite` filters low-margin
+    clutter. A fresh run must publish measured token, latency, retry, fallback,
+    error, and cost telemetry before any cycle-wide speed/cost claim is made.
   * **Tier 2 (Deep Appraisal):** `gemini-3.6-flash` appraises high-conviction candidate survivors using structured OpenAPI 3.0 schemas on the `global` Vertex endpoint.
 
 ### ADR-003: The Honest Refusal Rule & Uncertainty Budget
@@ -49,10 +54,13 @@ An immutable record of operational principles, domain discoveries, architecture 
 * **Context:** Country auctioneers sell vertical shelving units as "Buyer's Choice / Times the Money" (the winning bidder chooses 1, 2, or all items at the hammer price). Naive automated agents bid on the group, causing the auction clerk to multiply $8 \times \$45 = \$360$.
 * **Decision:** Detect multi-item vertical shelving units, rank items by liquidity, and enforce a strict `max_quantity = 1` absentee directive.
 
-### ADR-005: The Collaborative Partner & Proactive Pushback
+### ADR-005: The Collaborative Partner & Bounded Challenge
 * **Context:** Autonomous trading bots operating on real money either buy junk or fail silently. Conversely, passive chatbots act as subservient yes-men.
-* **Decision:** Build an expert collaborative peer that presents a structured 3-tier pitch (Alpha Picks, Fast Smalls, Wildcard Challenge) and provides proactive pushback grounded in live market velocity:
-  * *Example:* When the owner gave broad skip instructions on sports cards, the agent used real-time eBay completed velocity to push back and preserve the **13 Golden Era 1959–1969 Topps baseball cards ($100 cap)**, delivering a $300+ resale spread.
+* **Decision:** Present a structured three-tier pitch. Permit challenge prose
+  only for a typed conflict between a standing rule and fresh, lot-matched
+  evidence. Reject added lots, amounts, margins, velocity, citations, or buy/bid
+  recommendations. The BT-235 Seller Hub capture proves an annual absorption
+  ratio of 46 sold / 46 active = 1.0; it does not justify a sports-card claim.
   * *Cross-Cycle Keyed Memory:* Uses deterministic `(QuestionKind, Category)` rule keys to permanently resolve house conventions without vector drift.
 
 ### ADR-006: Pure Deterministic BidMath Engine
@@ -67,37 +75,21 @@ An immutable record of operational principles, domain discoveries, architecture 
 
 ## 3. Ground-Truth Benchmark Reconciliations
 
-### July 11, 2026 Historical Benchmark Reconciliation
-* **Dataset:** 452 raw gallery photos (`data/july11_gallery_4136050/manifest.json`).
-* **Physical Lots Consolidated:** 357 physical lots (95 multi-angle duplicate photos merged).
-* **Legacy V1 Wishlist Chaos:** 88 unranked flat rows summing to **$14,340.00** unbudgeted max bids.
-* **Fleet V2 Sourcing Schedule:**
-  * Hard Budget Cap: **$2,205.00**
-  * Auto-Send Threshold: **$40.00**
-  * Committed Max Bids: **$1,910.00**
-  * Committed All-In (w/ 15% fee): **$2,196.50** (strictly fitted within $2,205 cap).
-  * Output: `data/BlueToad_2026-07-11_Benchmark_Comparison.xlsx`.
+### July 11, 2026 historical material
 
-### August 22, 2026 Live Sourcing Cycle Reconciliation
+The former A/B comparison is quarantined. Its totals, identifiers, joins, and
+synthetic V2 path are not auditable enough for release evidence. The retained
+runner refuses to publish; rebuild only through remediation-plan Task 23.
+
+### August 22, 2026 historical local fixture
 * **Dataset:** 462 raw gallery photos (`data/aug22_gallery_4160518/manifest.json`).
-* **Physical Lots Consolidated:** 358 physical lots (104 multi-angle duplicate photos merged).
-* **Approved Sourcing Schedule (12 Targeted Lots):**
-  1. `BT-001`: Vintage Topps Baseball Cards (1959–69 Golden Era) — Start $35.00 | Max $100.00 | All-In $115.00
-  2. `BT-041`: Edison Rolls (11–12 canisters + bare roll) — Start $15.00 | Max $40.00 | All-In $46.00
-  3. `BT-002`: Estate Costume Jewelry (Tray Lot 1) — Start $10.00 | Max $25.00 | All-In $28.75
-  4. `BT-087`: Costume Jewelry (Tray Lot 2) — Start $10.00 | Max $25.00 | All-In $28.75
-  5. `BT-181`: Estate Costume Jewelry (Tray Lot 3) — Start $10.00 | Max $25.00 | All-In $28.75
-  6. `BT-050`: Lionel Building Set — Start $10.00 | Max $25.00 | All-In $28.75
-  7. `BT-021`: Princess Phone — Start $10.00 | Max $20.00 | All-In $23.00
-  8. `BT-048`: ET Nightlight — Start $10.00 | Max $20.00 | All-In $23.00
-  9. `BT-235`: Century Progress Bottle — Start $10.00 | Max $15.00 | All-In $17.25
-  10. `BT-016`: Trading Cards — Start $10.00 | Max $15.00 | All-In $17.25
-  11. `BT-030`: Non-Sport Trading Cards — Start $10.00 | Max $15.00 | All-In $17.25
-  12. `BT-066`: Handheld Video Games (Radica/LCD) — Start $5.00 | Max $10.00 | All-In $11.50
-* **Total Committed Max:** **$335.00**
-* **Total Committed All-In (w/ 15% fee):** **$385.25** (strictly fitted within $600 cap).
-* **Increment Discipline:** Standard $5.00 increments across all bids.
-* **Output Artifacts:** `data/aug22_absentee_bid_email.txt` and `data/BlueToad_2026-08-22_BidSheet.xlsx`.
+* **Current canonical grouping:** 414 groups, including reviewed non-adjacent
+  reshoot edges.
+* **Computed allocation:** 9 lots; $275.00 committed max and $316.25 all-in.
+* **Release status:** **not publishable**. The legacy state has no sealed artifact
+  manifest and has unresolved questions on allocated lots. The checked-in email,
+  workbook, screenshots, and video are historical outputs, not current release
+  evidence.
 
 ---
 
@@ -106,7 +98,8 @@ An immutable record of operational principles, domain discoveries, architecture 
 * **Host:** Google Cloud Run (`us-central1`, project `threebatdrone-prod-420`).
 * **Live Service URL:** [https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app)
 * **Endpoints:**
-  * `GET /`: Interactive Gate Console with 2D Showroom Topology and Curator Challenge.
+  * `GET /`: Interactive Gate Console with walk-order grouping unless validated
+    spatial observations exist, plus a bounded curator read.
   * `GET /health`: Instant JSON health probe (`200 OK`).
   * `GET /api/lots`: JSON catalog and priority breakdown.
   * `GET /api/questions`: Active clarification queue & cross-cycle memory rules.

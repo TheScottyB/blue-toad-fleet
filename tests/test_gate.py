@@ -49,6 +49,15 @@ class TestRenderContract:
         v = _view(lots=[])
         assert render_console(v).startswith("<!DOCTYPE html>")
 
+    def test_cloud_cycle_control_starts_only_a_staged_cycle(self):
+        v = _view()
+        v.cycle_controls = True
+        h = render_console(v)
+        assert "Start staged auction" in h
+        assert 'fetch("/api/cycles/start"' in h
+        assert 'fetch("/api/cycles/current"' in h
+        assert "This never sends a bid" in h
+
 
 class TestQuestionQueue:
     def test_questions_appear(self):
@@ -61,7 +70,6 @@ class TestQuestionQueue:
         assert 'data-question-id="q_' in h
         assert 'data-act="answer"' in h
         assert 'fetch("/api/answer"' in h
-        assert "X-Operator-Token" in h
         assert "src=" not in h and "href=" not in h
 
     def test_photo_requests_are_marked(self):
@@ -69,11 +77,13 @@ class TestQuestionQueue:
         assert ">photo<" in h
 
     def test_memory_answers_render_separately(self):
-        rule = StandingRule(kind=QuestionKind.SCOPE, category="stoneware",
-                            answer="whole shelf", learned_cycle="2026-07-11")
-        h = render_console(_view(questions=[_q(kind=QuestionKind.SCOPE)], rules=[rule]))
+        rule = StandingRule(kind=QuestionKind.APPETITE, category="stoneware",
+                            answer="always surface", learned_cycle="2026-07-11")
+        h = render_console(
+            _view(questions=[_q(kind=QuestionKind.APPETITE)], rules=[rule])
+        )
         assert "Answered from memory" in h
-        assert "whole shelf" in h and "2026-07-11" in h
+        assert "always surface" in h and "2026-07-11" in h
 
     def test_empty_queue_says_so(self):
         assert "Nothing ambiguous" in render_console(_view())
@@ -103,13 +113,13 @@ class TestSheet:
         h = render_console(_view(lots=lots))
         assert "auto-send" in h and "needs approval" in h
 
-    def test_refused_lots_are_prominent_not_hidden(self):
+    def test_lots_waiting_on_comps_are_prominent_not_mislabeled_as_skipped(self):
         lots = [_lot(0), Lot(lot_id="BT-099", caption="unmarked basket",
                              category="native american", fit_score=0.78,
                              condition_penalty=0.1,
                              comp=CompEstimate(None, None, 0, Confidence.NONE))]
         h = render_console(_view(lots=lots))
-        assert "human pricing required" in h
+        assert "pending deep comps" in h
         assert "unmarked basket" in h
 
     def test_budget_bar_never_overflows(self):
@@ -237,8 +247,11 @@ def _seat_el(html: str, lot_id: str) -> str:
 
 
 class TestShowroomMap:
-    def test_topology_title_always_renders(self):
-        assert "Pole Barn Showroom Topology" in render_console(_view())
+    def test_missing_observations_render_walk_order_not_physical_topology(self):
+        h = render_console(_view())
+        assert "Walk-order grouping" in h
+        assert "spatial observations unavailable" in h
+        assert "NORTH BACK WALL" not in h
 
     def test_fake_island_inventory_is_gone(self):
         h = render_console(_view())
@@ -268,6 +281,7 @@ class TestShowroomMap:
                  photo_ids=("p1",)),
         ]
         h = render_console(v)
+        assert "Validated showroom topology" in h
         island1 = _slice_between(
             h, "<b>Island Table 1:</b>", "<b>Island Table 2:</b>")
         assert "BT-099" in island1
@@ -292,3 +306,15 @@ class TestStructuredVoiceBanner:
         assert "Understood on dropping sports, but keep BT-001." in h
         assert "Gemma 4" in h
 
+    def test_template_voice_is_rendered_and_badged(self):
+        from src.gate.voice import PitchVoice
+        v = _view()
+        v.voice = PitchVoice(
+            alpha="BT-001 at the sheet cap.",
+            fast_smalls="None this cycle.",
+            wildcard="None this cycle.",
+            fallback=True,
+        )
+        h = render_console(v)
+        assert "BT-001 at the sheet cap." in h
+        assert "template fallback" in h

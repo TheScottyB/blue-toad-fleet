@@ -1,13 +1,49 @@
-"""Read-only embedding cache. Never calls Vertex."""
+"""Embedding cache publication and approved reshoot-edge loading."""
 
+import hashlib
 import json
+import os
+import tempfile
+from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
 from pathlib import Path
+from typing import Callable
 
 from src.intake.spatial import reshoot_edges
 
 # Process memo: GET / must not recompute 462×462 3072-d cosine every request.
 # Keyed by cache path + mtime/size + id maps so a rewritten file recomputes.
 _EDGE_MEMO: dict[tuple, set] = {}
+EMBEDDING_SCHEMA_VERSION = 2
+EMBED_MODEL = "gemini-embedding-2"
+
+
+@dataclass(frozen=True)
+class ReviewedEdge:
+    photo_ids: tuple[str, str]
+    status: str = "proposed"
+    reviewer: str | None = None
+    reviewed_at: str | None = None
+    evidence: str = "embedding mutual-nearest-neighbor proposal"
+    revision: int = 1
+
+    def __post_init__(self) -> None:
+        if len(set(self.photo_ids)) != 2 or not all(self.photo_ids):
+            raise ValueError("reviewed edge requires two distinct photo ids")
+        if self.status not in {"proposed", "approved", "rejected"}:
+            raise ValueError(f"invalid edge review status: {self.status}")
+        if self.status != "proposed" and not (self.reviewer and self.reviewed_at):
+            raise ValueError("reviewed edge requires reviewer and reviewed_at")
+        if self.revision < 1:
+            raise ValueError("edge revision must be positive")
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def _canonical_id(
@@ -92,12 +128,44 @@ def _memo_key(
     )
 
 
-def dump_reshoot_edges(cache_path, edges: set) -> None:
-    """Atomic write of photo_id pairs. Sibling of embeddings.json."""
+def dump_reshoot_edges(
+    cache_path,
+    edges: set,
+    *,
+    status: str = "proposed",
+    reviewer: str | None = None,
+    reviewed_at: str | None = None,
+    evidence: str = "embedding mutual-nearest-neighbor proposal",
+    model: str = EMBED_MODEL,
+    manifest_sha256: str | None = None,
+    vector_sha256: str | None = None,
+) -> None:
+    """Write reviewed/proposed edge records. Production consumes approved only."""
     path = sidecar_path(cache_path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    pairs = sorted(sorted(e) for e in edges if len(e) == 2)
-    payload = {"edges": pairs}
+    reviewed_at = reviewed_at or (
+        datetime.now(timezone.utc).isoformat() if status != "proposed" else None)
+    records = [
+        ReviewedEdge(
+            photo_ids=tuple(sorted(str(value) for value in edge)),
+            status=status,
+            reviewer=reviewer,
+            reviewed_at=reviewed_at,
+            evidence=evidence,
+        )
+        for edge in sorted(edges, key=lambda value: sorted(value))
+        if len(edge) == 2
+    ]
+    cache = Path(cache_path)
+    if vector_sha256 is None and cache.is_file():
+        vector_sha256 = sha256_file(cache)
+    payload = {
+        "schema_version": EMBEDDING_SCHEMA_VERSION,
+        "model": model,
+        "manifest_sha256": manifest_sha256,
+        "vector_sha256": vector_sha256,
+        "edges": [asdict(record) for record in records],
+    }
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(json.dumps(payload, indent=2) + "\n")
     tmp.replace(path)
@@ -105,17 +173,36 @@ def dump_reshoot_edges(cache_path, edges: set) -> None:
 
 def _edges_from_sidecar(
     sidecar: Path,
+    cache_path: Path,
     photo_by_seq: dict[int, str],
     sequences: dict[str, int],
     gallery_ids: dict[str, str] | None,
+    expected_model: str,
+    expected_manifest_sha256: str | None,
 ) -> set:
     raw = json.loads(sidecar.read_text())
-    pairs = raw.get("edges") if isinstance(raw, dict) else raw
-    if not isinstance(pairs, list):
-        raise ValueError("reshoot_edges sidecar is not a list of pairs")
+    if not isinstance(raw, dict) or raw.get("schema_version") != EMBEDDING_SCHEMA_VERSION:
+        raise ValueError("legacy/unversioned reshoot edges are not operator-approved")
+    if raw.get("model") != expected_model:
+        raise ValueError("reshoot edge model identity is stale")
+    if expected_manifest_sha256 and raw.get("manifest_sha256") != expected_manifest_sha256:
+        raise ValueError("reshoot edge manifest identity is stale")
+    if not cache_path.is_file():
+        raise ValueError("approved edge record has no verifiable vector cache")
+    if raw.get("vector_sha256") != sha256_file(cache_path):
+        raise ValueError("reshoot edge vector identity is stale")
+    records = raw.get("edges")
+    if not isinstance(records, list):
+        raise ValueError("reshoot_edges sidecar has no edge records")
     out: set = set()
-    for pair in pairs:
+    for record in records:
+        if not isinstance(record, dict) or record.get("status") != "approved":
+            continue
+        pair = record.get("photo_ids")
         if not isinstance(pair, (list, tuple)) or len(pair) != 2:
+            continue
+        if not all((record.get("reviewer"), record.get("reviewed_at"),
+                    record.get("evidence"), record.get("revision"))):
             continue
         a = _canonical_id(str(pair[0]), photo_by_seq, gallery_ids)
         b = _canonical_id(str(pair[1]), photo_by_seq, gallery_ids)
@@ -129,6 +216,9 @@ def load_reshoot_edges(
     photo_by_seq: dict[int, str],
     sequences: dict[str, int],
     gallery_ids: dict[str, str] | None = None,
+    *,
+    expected_model: str = EMBED_MODEL,
+    expected_manifest_sha256: str | None = None,
 ) -> set:
     """Vectors + reshoot edges for the request path.
 
@@ -148,36 +238,19 @@ def load_reshoot_edges(
     if sidecar.is_file():
         try:
             edges = _edges_from_sidecar(
-                sidecar, photo_by_seq, sequences, gallery_ids,
+                sidecar, path, photo_by_seq, sequences, gallery_ids,
+                expected_model, expected_manifest_sha256,
             )
         except Exception as e:
             print(f"[!] Warning: Could not parse reshoot_edges sidecar: {e}")
             edges = None
 
     if edges is None:
-        if not path.is_file():
-            print("[!] embeddings cache missing or empty; walk-only grouping")
-            edges = set()
-        else:
-            try:
-                vectors = load_vectors(path, photo_by_seq, gallery_ids)
-                vectors = {k: v for k, v in vectors.items() if k in sequences}
-                if not vectors:
-                    print(
-                        "[!] embeddings cache present but contributed 0 vectors; "
-                        "walk-only grouping"
-                    )
-                    edges = set()
-                else:
-                    lengths = {len(v) for v in vectors.values()}
-                    if len(lengths) != 1:
-                        raise ValueError(
-                            f"mixed-length vectors: {sorted(lengths)}"
-                        )
-                    edges = reshoot_edges(vectors, sequences)
-            except Exception as e:
-                print(f"[!] Warning: Could not parse embedding cache: {e}")
-                edges = set()
+        # Computing proposals on the request path used to make every inferred
+        # edge money-bearing without review. Missing/corrupt/unreviewed input is
+        # now deliberately walk-only.
+        print("[!] no current approved reshoot-edge revision; walk-only grouping")
+        edges = set()
 
     if key is not None:
         _EDGE_MEMO[key] = edges
@@ -196,3 +269,68 @@ def dump_vectors(cache_path, vectors: dict[str, list[float]]) -> None:
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(json.dumps(payload, separators=(",", ":")))
     tmp.replace(path)
+
+
+def publish_embedding_pair(
+    cache_path,
+    vectors: dict[str, list[float]],
+    edges: set[frozenset[str]],
+    *,
+    required_ids: set[str],
+    manifest_sha256: str,
+    model: str = EMBED_MODEL,
+    after_vector_replace: Callable[[], None] | None = None,
+) -> None:
+    """Validate and replace the vector/proposal pair, rolling back on failure."""
+    path = Path(cache_path)
+    sidecar = sidecar_path(path)
+    if set(vectors) != required_ids:
+        missing = sorted(required_ids - set(vectors))
+        extra = sorted(set(vectors) - required_ids)
+        raise ValueError(f"embedding coverage mismatch: missing={missing[:5]} extra={extra[:5]}")
+    dimensions = {len(vector) for vector in vectors.values() if _as_vector(vector)}
+    if len(dimensions) != 1 or not dimensions or 0 in dimensions:
+        raise ValueError(f"embedding dimensions are not uniform: {sorted(dimensions)}")
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    vector_payload = {
+        pid: [round(float(x), 6) for x in vectors[pid]]
+        for pid in sorted(vectors)
+    }
+    vector_bytes = json.dumps(vector_payload, separators=(",", ":")).encode()
+    vector_sha = hashlib.sha256(vector_bytes).hexdigest()
+    records = [
+        asdict(ReviewedEdge(photo_ids=tuple(sorted(edge))))
+        for edge in sorted(edges, key=lambda value: sorted(value))
+    ]
+    edge_bytes = (json.dumps({
+        "schema_version": EMBEDDING_SCHEMA_VERSION,
+        "model": model,
+        "manifest_sha256": manifest_sha256,
+        "vector_sha256": vector_sha,
+        "edges": records,
+    }, indent=2) + "\n").encode()
+
+    old_vector = path.read_bytes() if path.is_file() else None
+    old_edges = sidecar.read_bytes() if sidecar.is_file() else None
+    with tempfile.TemporaryDirectory(dir=path.parent, prefix=".embedding-pair-") as tmp:
+        tmp_dir = Path(tmp)
+        staged_vector = tmp_dir / path.name
+        staged_edges = tmp_dir / sidecar.name
+        staged_vector.write_bytes(vector_bytes)
+        staged_edges.write_bytes(edge_bytes)
+        try:
+            os.replace(staged_vector, path)
+            if after_vector_replace:
+                after_vector_replace()
+            os.replace(staged_edges, sidecar)
+        except BaseException:
+            if old_vector is None:
+                path.unlink(missing_ok=True)
+            else:
+                path.write_bytes(old_vector)
+            if old_edges is None:
+                sidecar.unlink(missing_ok=True)
+            else:
+                sidecar.write_bytes(old_edges)
+            raise

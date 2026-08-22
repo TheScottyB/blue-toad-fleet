@@ -82,6 +82,10 @@ class TestChoice:
         assert mechanic_from_ruling(
             "buyer's choice, take 2", units_available=5) == (BidMechanic.CHOICE, 5, 2)
 
+    def test_choice_can_state_both_available_and_elected_counts(self):
+        assert mechanic_from_ruling("buyer's choice of 5, take 2") == (
+            BidMechanic.CHOICE, 5, 2)
+
     def test_an_election_larger_than_the_lot_is_clamped_not_accepted(self):
         assert mechanic_from_ruling(
             "buyer's choice, take 9", units_available=5)[2] == 5
@@ -261,3 +265,31 @@ class TestDisagreeingMultipliersRefuse:
     ])
     def test_every_phrasing_that_worked_before_still_works(self, text):
         assert mechanic_from_ruling(text)[:2] == (BidMechanic.TIMES_THE_MONEY, 3)
+
+
+class TestNegationScopesTheMechanic:
+    def test_operator_not_limit_phrase_affirms_x3(self):
+        assert mechanic_from_ruling(
+            "take all three trays at x3, do not limit me to one unit"
+        ) == (BidMechanic.TIMES_THE_MONEY, 3, 3)
+
+    @pytest.mark.parametrize("text", [
+        "that is not a x3 bid",
+        "this isn't times the money",
+        "buyer's choice is not the mechanic",
+        "never a single lot",
+    ])
+    def test_negated_mechanic_still_refuses(self, text):
+        assert mechanic_from_ruling(text)[0] is BidMechanic.UNKNOWN
+
+
+class TestImplausibleCountsRefuseTheWholeRuling:
+    def test_implausible_election_is_not_silently_dropped(self):
+        assert mechanic_from_ruling(
+            "times the money, take all 900", units_available=5
+        )[0] is BidMechanic.UNKNOWN
+
+    def test_implausible_max_quantity_is_not_silently_dropped(self):
+        assert mechanic_from_ruling(
+            "buyer's choice, maximum quantity is 900", units_available=5
+        )[0] is BidMechanic.UNKNOWN

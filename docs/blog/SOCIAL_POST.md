@@ -20,11 +20,10 @@ that URL). A link to the page itself will not do — Devpost wants the post.
 > 8 PM the Friday before. I've never once used that channel, because getting a
 > priced sheet together by hand costs more than it brings back.
 >
-> So I spent 13 days building something that does the distilling for me: an agent
-> fleet on Google Cloud that reconstructs the room from the photos, figures out
-> which pile is worth a bid, and hands me a sheet before the Friday cutoff. It
-> checks out against a receipt I already had — nine lots I bought in person on
-> July 11 came to $120.75, and the math in the repo lands on $120.75.
+> So I spent 13 days building something that does the distilling for me: a
+> supervised sourcing pipeline on Google Cloud that groups repeat views, asks
+> the questions that can change the money, and drafts a budget-bounded sheet for
+> review before the Friday cutoff.
 >
 > It refuses to price things it can't verify, which was the hardest part to build
 > and the part I trust most.
@@ -41,11 +40,9 @@ that URL). A link to the page itself will not do — Devpost wants the post.
 > My local auction house publishes each estate sale as ~450 unlabelled photos.
 > No lot numbers, no app. Absentee bids close Friday 8 PM.
 >
-> Built an agent fleet on Google Cloud that reconstructs the room from the photos
-> and produces a priced bid sheet before the cutoff — and refuses to price what
-> it can't verify.
->
-> It reconciles to a real receipt: 9 lots, $120.75 paid, $120.75 computed.
+> Built a supervised sourcing pipeline on Google Cloud that groups repeat views,
+> asks money-changing questions, and drafts a bid sheet before the cutoff — while
+> refusing to price what it can't verify.
 >
 > Write-up: <POST_URL>
 > Code: https://github.com/TheScottyB/blue-toad-fleet

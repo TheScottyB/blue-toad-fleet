@@ -86,7 +86,8 @@ class TestPriceLot:
         d = price_lot(lot(c=comp(low=None, high=None, n=0, conf=Confidence.NONE)))
         assert d.max_bid is None
         assert d.needs_human_pricing is True
-        assert "human pricing required" in d.reason
+        assert d.needs_deep_comps is True
+        assert "pending deep comps" in d.reason
 
     def test_low_fit_is_skipped_not_priced(self):
         d = price_lot(lot(fit=0.20))

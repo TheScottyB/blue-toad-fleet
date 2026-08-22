@@ -1,7 +1,7 @@
 import pytest
 from src.appraisal import (
-    Appraisal, Confidence, Question, QuestionKind, StandingRule,
-    SHOP_MEMORY_GENERALISABLE, build_queue, group, learn, DESK_ANSWERABLE,
+    Appraisal, Confidence, LotRuling, Question, QuestionKind, StandingRule,
+    build_queue, group, learn, learn_rulings, DESK_ANSWERABLE,
 )
 
 
@@ -106,18 +106,25 @@ class TestBuildQueue:
         r = build_queue(smalls + [big], cap=3)
         assert big.rule_key in {x.rule_key for x in r.asked}
 
-    def test_standing_rule_suppresses_the_question(self):
-        rule = StandingRule(kind=QuestionKind.SCOPE, category="stoneware",
-                            answer="whole shelf", learned_cycle="c1")
-        r = build_queue([q(kind=QuestionKind.SCOPE, cat="stoneware")], [rule])
+    def test_lot_ruling_suppresses_only_its_question(self):
+        ruling = LotRuling(
+            kind=QuestionKind.SCOPE,
+            answer="whole shelf",
+            learned_cycle="c1",
+            lot_ids=("L1",),
+        )
+        r = build_queue(
+            [q(kind=QuestionKind.SCOPE, cat="stoneware")],
+            lot_rulings=[ruling],
+        )
         assert r.asked == []
         assert len(r.auto_answered) == 1
         assert r.auto_answered[0][1].answer == "whole shelf"
 
-    def test_rule_does_not_leak_across_categories(self):
+    def test_category_rule_cannot_suppress_a_scope_question(self):
         rule = StandingRule(kind=QuestionKind.SCOPE, category="stoneware",
                             answer="whole shelf", learned_cycle="c1")
-        r = build_queue([q(kind=QuestionKind.SCOPE, cat="railroad")], [rule])
+        r = build_queue([q(kind=QuestionKind.SCOPE, cat="stoneware")], [rule])
         assert len(r.asked) == 1
 
     def test_dropped_lots_are_flagged_not_lost(self):
@@ -137,12 +144,14 @@ class TestBuildQueue:
 
 
 class TestLearn:
-    def test_conventions_generalise(self):
-        rules = learn([(q(kind=QuestionKind.SCOPE, cat="stoneware"), "whole shelf")],
-                      cycle="2026-07-11")
-        assert len(rules) == 1
-        assert rules[0].answer == "whole shelf"
-        assert rules[0].learned_cycle == "2026-07-11"
+    def test_scope_answers_become_lot_rulings_not_standing_rules(self):
+        question = q(kind=QuestionKind.SCOPE, cat="stoneware")
+        assert learn([(question, "whole shelf")], cycle="2026-07-11") == []
+        rulings = learn_rulings(
+            [(question, "whole shelf")], cycle="2026-07-11")
+        assert len(rulings) == 1
+        assert rulings[0].answer == "whole shelf"
+        assert rulings[0].learned_cycle == "2026-07-11"
 
     def test_object_specific_answers_do_not_generalise(self):
         rules = learn([(q(kind=QuestionKind.MARK), "yes, wing mark")], cycle="c1")
@@ -160,17 +169,6 @@ class TestLearn:
         rules = learn([(q(kind=QuestionKind.POLICY, cat="sports memorabilia"),
                         "SKIP raw autographs")], cycle="c1")
         assert len(rules) == 1
-
-    def test_shop_memory_does_not_promote_grouping_or_scope(self):
-        grouping = q(kind=QuestionKind.LOT_GROUPING, cat="railroad")
-        scope = q(kind=QuestionKind.SCOPE, cat="stoneware")
-        assert learn([(grouping, "one lot")], cycle="c1",
-                     generalisable=SHOP_MEMORY_GENERALISABLE) == []
-        assert learn([(scope, "whole shelf")], cycle="c1",
-                     generalisable=SHOP_MEMORY_GENERALISABLE) == []
-        appetite = q(kind=QuestionKind.APPETITE, cat="jewelry")
-        assert len(learn([(appetite, "BUY")], cycle="c1",
-                         generalisable=SHOP_MEMORY_GENERALISABLE)) == 1
 
 
 class TestTwoCycleDecay:
@@ -192,7 +190,10 @@ class TestTwoCycleDecay:
 
         c2 = build_queue(self._cycle_questions(), rules)
         assert len(c2.asked) < len(c1.asked)
-        assert len(c2.auto_answered) == 3  # grouping, scope, appetite
+        assert len(c2.auto_answered) == 1  # appetite only
+        assert {question.kind for question in c2.asked} == {
+            QuestionKind.LOT_GROUPING, QuestionKind.SCOPE,
+        }
 
     def test_object_specific_questions_are_never_memoised_away(self):
         """
@@ -216,7 +217,7 @@ class TestTwoCycleDecay:
         assert counts[0] > counts[1]
         assert counts[1] == counts[2] == counts[3], "should settle, not oscillate"
 
-    def test_the_desk_queue_empties_but_the_work_does_not_disappear(self):
+    def test_cycle_specific_rulings_never_disappear_into_category_memory(self):
         """
         Once the conventions are learned the desk has nothing left to answer,
         which is the point — "needs you less every cycle". What must not happen
@@ -229,7 +230,9 @@ class TestTwoCycleDecay:
             rules += learn([(x, "a") for x in r.asked], cycle=f"c{i}")
 
         settled = build_queue(self._cycle_questions(), rules)
-        assert settled.asked == []
+        assert {question.kind for question in settled.asked} == {
+            QuestionKind.LOT_GROUPING, QuestionKind.SCOPE,
+        }
         assert len(settled.deferred) == 2
         assert settled.flagged_lot_ids == {"G", "H"}
 
@@ -272,12 +275,17 @@ class TestMergeKeyVsRuleKey:
         out = group([mark("a"), mark("b"), mark("c")])
         assert len(out) == 1 and len(out[0].lot_ids) == 3
 
-    def test_memory_still_generalises_across_clusters(self):
-        # One answer about shelf A must still suppress shelf B next cycle:
-        # rule_key stays (kind, category) even though merge_key does not.
+    def test_ruling_does_not_generalise_across_clusters(self):
         a = self._cluster("A", ["a1", "a2"])
-        rules = learn([(a, "whole shelf")], cycle="c1")
-        r = build_queue([self._cluster("B", ["b1", "b2"])], rules)
+        rulings = learn_rulings([(a, "whole shelf")], cycle="c1")
+        r = build_queue(
+            [self._cluster("B", ["b1", "b2"])], lot_rulings=rulings)
+        assert len(r.asked) == 1 and r.auto_answered == []
+
+    def test_ruling_suppresses_only_the_exact_cluster(self):
+        a = self._cluster("A", ["a1", "a2"])
+        rulings = learn_rulings([(a, "whole shelf")], cycle="c1")
+        r = build_queue([a], lot_rulings=rulings)
         assert r.asked == [] and len(r.auto_answered) == 1
 
     def test_prompt_suffix_does_not_stack(self):

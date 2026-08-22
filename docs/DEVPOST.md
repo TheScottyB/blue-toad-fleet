@@ -47,15 +47,23 @@ Capital was never the constraint — **time and visual throughput were**. The go
 
 ## What it does
 
-Blue Toad Fleet transforms an uncataloged 450-photo gallery drop into an actionable, positive-EV absentee bid sheet through six domain-specific agent mechanisms:
+Blue Toad Fleet transforms an uncataloged gallery drop into a reviewable,
+budget-bounded absentee bid draft through six domain-specific mechanisms:
 
-### 1. The Spatial Room Graph (Reconstructing the Pole Barn)
-* **Why We Do It:** Auction galleries drop 450+ unlabelled photos with zero lot numbers. Treating photos as isolated images causes duplicate bids on multi-angle shots, misses multi-box estate runs, and leaves the buyer blind during Saturday's 1-hour preview window. Reconstructing the physical room solves these critical failure modes.
-* **How It Works:** Auctioneers walk a room; photos are not a bag. Production grouping is caption/`same_lot_as_previous` plus embedding reshoot edges (seq 2↔181). Unplaced lots stay on a holding strip. The console's barn drawing is a walk-order map, not a surveyed floor plan.
+### 1. Evidence-Gated Spatial Grouping
+Auctioneer captions and natural capture order provide a conservative grouping
+baseline; reviewed similarity edges can join non-adjacent repeat views. A
+physical zone is accepted only from a validated observation sidecar bound to the
+exact manifest and embedding model. Without one, the Gate explicitly shows
+walk-order grouping and no room map. The checked-in August fixture has no
+spatial-observation sidecar, so this submission does not claim a reconstructed
+pole-barn topology for that run.
 
 ### 2. Container Lot Decomposition ("Mining for Gold")
-* **Why Spatial Isolation is Required:** High-margin gold in rural auctions (e.g., 11–12 Edison Blue Amberol cylinders, 1959–69 Topps baseball cards, estate costume jewelry trays) is dumped into cardboard boxes or plastic tubs on crowded utility tables. Without spatial mapping to isolate the container and mask out surrounding room noise, vision models blend the box with adjacent table clutter (clocks, lamps, tools) and generate dirty, hallucinated comps.
-* **How It Works:** Relying directly on the Spatial Room Graph, the agent isolates the container boundary, suppresses background table noise, and itemizes the individual high-velocity assets inside the bin. It separates genuine alpha from filler, unlocking hidden margin while maintaining clean pricing boundaries.
+A bounded-container pass lists only visible contents. A possible alpha changes
+the price only when its identifying mark is observed and no mark question is
+open; otherwise deterministic pricing uses the bulk floor and labels the alpha
+as unconfirmed upside. This boundary is tested without assuming a room map.
 
 ### 3. The Honest Refusal Rule & Uncertainty Budget
 Unlike generic AI tools that hallucinate a price on every photo, Blue Toad Fleet enforces an explicit **uncertainty budget**. On recognizable items (e.g., 1960s Pabst lighted sign), it extracts maker, period, and comps. On items with no grounded comparable, the refusal is made deterministically downstream of the model — `price_lot` returns `max_bid=None` with the reason `no external comp — human pricing required`, and the allocator can never allocate such a lot. Refusing to guess is a production safety feature, and it is enforced in code rather than requested of the model.
@@ -67,8 +75,13 @@ Country auctioneers frequently sell grouped assets as "Buyer's Choice / Times th
 
 BT-002 closed the collaborative loop on real money. Gemini saw three labeled jewelry trays and asked whether the bid covered one tray or all three. The auctioneer confirmed, *"Yes, that is a ×3 bid."* Recorded as the text ruling *"take all three trays at ×3,"* `mechanic_from_ruling` resolved it to `TIMES_THE_MONEY, 3`. The owner's **$25 per-unit cap became $75 committed max / $86.25 all-in**, the allocator budgeted the full exposure, and `clerk_directive` wrote: *"BT-002 — times the money: $25.00 per unit x 3. All-in $86.25."* Without that answer, the sheet would have understated its own commitment by $50 before fees.
 
-### 5. Proactive Velocity Pushback & The Curator's Negotiation
-The fleet acts as an **expert commercial partner, not a passive yes-man**. On Friday afternoon, the agent presents a 3-tier pitch (Top 3 Alpha Picks, Fast Smalls, and a Wildcard Challenge). The owner’s standing rule skipped modern sports and tools; BT-001 stayed on the sheet at his **$100 cap**. The velocity gate we actually want is public eBay sold+active over ~90 days, asking whether implied supply lasts **≤14 days** (the two-week cadence). That has been proven as a method on a few lots; it has not been run across the full sheet.
+### 5. Bounded Challenge & The Curator's Read
+The curator may surface a `REVIEW_CONFLICT` only when a typed standing rule
+conflicts with fresh, lot-matched evidence. Its prose is rejected if it adds a
+lot, amount, margin, velocity, citation, or buy recommendation that is not in
+that payload. No matching evidence means no pushback. The committed Seller Hub
+capture verifies BT-235's annual absorption ratio (46 sold / 46 active = 1.0),
+not the previously drafted sports-card example.
 
 ### 6. Deterministic Greedy Budget Allocation
 Appraisals feed into pure, unit-tested bid math implementing the store's documented 35–40% buy-in band (applied at its 37.5% midpoint), condition discounts, standard $5.00 auction increments, and the mandatory 15% absentee fee. The final absentee email is compiled automatically for `info@bluetoadauctions.com`.
@@ -90,38 +103,46 @@ Appraisals feed into pure, unit-tested bid math implementing the store's documen
   * Pure, decoupled Python backend — no orchestration framework, no vector store, no agent runtime. The loop above is ~3,500 lines of typed Python, of which the decision layer — photo grouping, the question queue, cross-cycle memory and the bid math — is ~1,300 lines that make no model calls and touch no I/O, so every number that reaches a bid sheet is reproducible and unit-tested.
   * Deterministic keyed memory `(QuestionKind, Category)` that generalises house conventions without vector drift.
   * Automated Excel bid sheet generator (`openpyxl`) and formatted absentee email draft generator.
-  * 684 unit tests passing (692 collected; 8 policy/network tests skip by default), in about five seconds.
+  * A comprehensive local pytest suite; the release report records the exact
+    collected, passed, skipped, and failed counts instead of hand-maintained copy.
 
 ---
 
 ## Challenges we ran into
 
-1. **Uncalibrated Multi-Angle Ingestion:** Rural auction galleries contain duplicate angles and multi-box runs with zero metadata. We solved this by developing the Spatial Room Graph to track background surface transitions and margin co-visibility.
+1. **Uncalibrated Multi-Angle Ingestion:** Rural auction galleries contain repeat views and multi-box runs with zero metadata. We made merges reviewable, manifest-bound, and fail-closed; physical placement remains unavailable unless a spatial sidecar proves it.
 2. **Preserving Citations Under Structured Output:** In live Vertex validation, a Google-Search-grounded call with `response_schema` recorded its queries but returned zero citation chunks; removing the schema returned six. We separated grounded research from structured extraction, then reject any price without usable citations.
 3. **The "Times the Money" Multiplier Trap:** BT-002 proved the risk was real: the auctioneer's ×3 ruling changed a $25 per-unit ceiling into $75 of committed exposure. The ruling now flows through mechanic parsing, allocation, totals, and the clerk instruction.
-4. **Preventing Passive "Yes-Man" Agent Behavior:** Generic LLMs blindly delete items when an owner gives broad negative feedback. Standing rules plus a human gate keep the Topps run at his $100 cap; a 14-day public-search absorption gate is the next wire, not a live eBay API.
+4. **Preventing Unsupported Pushback:** A language model can turn a vague
+   disagreement into invented market claims. Challenges are now typed,
+   evidence-windowed, and rejected when the prose exceeds the supplied facts.
 5. **Cloud Run Edge Routing Nuances:** Google Front End (GFE) edge proxies intercepting specific root paths required precise endpoint mapping (`/health`) to ensure instant public HTTP 200 verification.
 
 ---
 
 ## Accomplishments that we're proud of
 
-* **Ground-Truth A/B Benchmark (July 11 Dataset):**
-  * Ingested 452 raw photos and merged **95 multi-angle duplicate photos** into single lots.
-  * Slashed legacy unconstrained wishlist spending from **$14,340.00 down to $1,910.00 max ($2,196.50 all-in)**, fitting precisely inside the store's $2,205.00 budget cap.
-* **Live August 22 Production Run:**
-  * Filtered 462 photos into **53 laser-targeted bids ($520.00 max / $598.00 all-in)** within a strict $600 credit card cap, formatted to $5 bidding increments. The absentee email Blue Toad accepted (9 lots / $275) is a closed artifact; this is the full grounded-comp sheet.
-  * Those bids represent **$1,570–$4,189 estimated gross resale**, a **2.63–7.01x** gross resale-to-cost multiple.
-* **Flawless Google Cloud Deployment:**
-  * Serving live traffic with sub-second response times on Cloud Run ([blue-toad-fleet-u5gvrqwvua-uc.a.run.app](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app)).
-* **100% Test Coverage on Core BidMath:**
-  * 684 unit tests passing (692 collected; 8 policy/network tests skip by default), in about five seconds.
+* **Fail-closed deterministic allocation:**
+  * Every authorized mechanic is reconciled into one all-in exposure, and the
+    allocator is tested never to exceed the operator-supplied cap.
+  * Historical July A/B output is quarantined and is not presented as evidence.
+* **Historical August fixture, honestly bounded:**
+  * The local fixture computes 462 photos, 414 groups, and **9 allocations
+    ($275.00 max / $316.25 all-in)** under a $600 cap.
+  * It is not current release evidence: its legacy state has unresolved
+    allocated lots and no sealed artifact manifest, both of which now block
+    publication.
+* **Release-gated Cloud proof:**
+  * The public Cloud Run endpoint is listed above, but deployment revision
+    parity, measured latency, and final media are claims only after the release
+    report records them.
 
 ---
 
 ## What we learned
 
-* **Space Matters More Than Pixels:** An auction gallery is not a random bag of photos—it is a physical trajectory through a building. Reconstructing the spatial room topology unlocks 10x higher identification accuracy.
+* **Evidence Matters More Than a Persuasive Map:** capture order is useful, but
+  physical topology is shown only when cycle-bound observations support it.
 * **The Collaborative Partner Paradigm:** Full autonomy on real money is dangerous and unverified. Real commercial value is created when the machine provides visual distillation and the human provides physical intuition and final closure.
 * **Keyed Memory Beats Vector Drift:** Simple, deterministic `(kind, category)` rule keys learn permanent house conventions without prompt drift or embedding degradation.
 
@@ -131,4 +152,5 @@ Appraisals feed into pure, unit-tested bid math implementing the store's documen
 
 * **Automated Eventarc Pipeline:** Wiring GCS bucket drops directly to Cloud Run workers via Pub/Sub topics and dead-letter queues.
 * **KMS-Signed Gmail OAuth Broker:** Direct automated transmission of approved absentee drafts via Google Secret Manager and KMS grants (as designed in `docs/BROKER.md`).
-* **Multi-House Spatial Expansion:** Extending the invariant spatial room graph to neighboring Midwestern estate auction houses in Harvard, Woodstock, and Elkhorn.
+* **Multi-House Spatial Expansion:** Collecting reviewed, manifest-bound spatial
+  observations at neighboring Midwestern estate auction houses.

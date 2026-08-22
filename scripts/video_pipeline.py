@@ -36,7 +36,7 @@ def prepare(manifest: str) -> None:
     # Module execution gives the facts collector a stable package import path.
     run(
         "verified facts",
-        [sys.executable, "-m", "scripts.collect_submission_facts", "--manifest", manifest],
+        [sys.executable, "-m", "scripts.build_submission_facts", "--manifest", manifest],
     )
     run("terminal proof", python_script("capture_terminal_proof.py", "--manifest", manifest))
     run("title cards", node_script("make_title_cards.mjs", "--manifest", manifest))

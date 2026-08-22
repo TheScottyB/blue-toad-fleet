@@ -24,13 +24,9 @@ if str(ROOT) not in sys.path:
 
 from src.appraiser.images import image_mime_type, read_local_image
 from src.intake.embed import (
-    dump_reshoot_edges, dump_vectors, load_vectors, sidecar_path,
+    EMBED_MODEL, load_vectors, publish_embedding_pair, sha256_file, sidecar_path,
 )
 from src.intake.spatial import reshoot_edges
-
-EMBED_MODEL = "gemini-embedding-2"
-SAVE_EVERY = 10
-
 
 def _client(project: str, location: str):
     from google import genai
@@ -82,8 +78,6 @@ def main() -> int:
 
     project = os.environ.get("GOOGLE_CLOUD_PROJECT", "threebatdrone-prod-420")
     location = os.environ.get("VERTEX_LOCATION", "global")
-    client = _client(project, location)
-
     todo = [
         p for p in photos
         if args.force or p["photo_id"] not in existing
@@ -91,6 +85,10 @@ def main() -> int:
     skipped = 0
     done = 0
     t0 = time.time()
+    if not todo:
+        print("embedding pair already covers the manifest; leaving review revision unchanged")
+        return 0
+    client = _client(project, location)
     for i, p in enumerate(todo, 1):
         local = p.get("local_path") or ""
         data = read_local_image(local)
@@ -101,24 +99,30 @@ def main() -> int:
         vec = embed_one(client, data)
         existing[p["photo_id"]] = vec
         done += 1
-        if done % SAVE_EVERY == 0 or i == len(todo):
-            dump_vectors(cache_path, existing)
+        if done % 10 == 0 or i == len(todo):
             elapsed = time.time() - t0
             print(
                 f"[{i}/{len(todo)}] seq {p['sequence']}  "
-                f"dim {len(vec)}  {elapsed:.0f}s  saved {len(existing)}",
+                f"dim {len(vec)}  {elapsed:.0f}s  staged {len(existing)}",
                 flush=True,
             )
 
-    dump_vectors(cache_path, existing)
+    if skipped:
+        print(f"[REFUSED] {skipped} requested photo(s) were missing; cache unchanged")
+        return 2
     sequences = {p["photo_id"]: p["sequence"] for p in photos}
     mapped = {k: v for k, v in existing.items() if k in sequences}
     edges = reshoot_edges(mapped, sequences) if mapped else set()
-    dump_reshoot_edges(cache_path, edges)
+    publish_embedding_pair(
+        cache_path,
+        mapped,
+        edges,
+        required_ids=set(sequences),
+        manifest_sha256=sha256_file(data_dir / "manifest.json"),
+        model=EMBED_MODEL,
+    )
     print(f"wrote {cache_path}  {len(existing)} vectors  skipped {skipped}")
-    print(f"wrote {sidecar_path(cache_path)}  {len(edges)} edges")
-    if done == 0 and skipped == len(todo) and todo:
-        return 2
+    print(f"wrote {sidecar_path(cache_path)}  {len(edges)} proposed edges (not approved)")
     return 0
 
 

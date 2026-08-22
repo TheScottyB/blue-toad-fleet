@@ -35,6 +35,7 @@ class CycleView:
     lots_total: int | None = None
     voice: PitchVoice | None = None
     seats: list[Seat] = field(default_factory=list)
+    cycle_controls: bool = False
 
 
 _CSS = """
@@ -73,6 +74,15 @@ border:1px solid var(--line);background:var(--card2);color:var(--ink);
 font:13px ui-sans-serif,system-ui,sans-serif}
 #answer-result{margin:10px 0;padding:10px 14px;border-radius:8px;
 border:1px solid var(--green);color:var(--green);font-size:13px}
+.cycle-control{background:var(--card);border:1px solid var(--cyan);border-radius:12px;
+padding:16px 18px;margin:20px 0}
+.cycle-control .fields{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;
+align-items:end;margin-top:12px}
+.cycle-control label{display:block;font-size:11px;color:var(--ink3)}
+.cycle-control input{width:100%;margin-top:4px;padding:8px 9px;border-radius:7px;
+border:1px solid var(--line);background:var(--card2);color:var(--ink)}
+.cycle-result{min-height:20px;margin-top:9px;color:var(--ink2);font-size:12.5px}
+@media(max-width:700px){.cycle-control .fields{grid-template-columns:1fr}}
 .tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
 padding:2px 7px;border-radius:5px;border:1px solid var(--line);color:var(--ink3);white-space:nowrap}
 .tag.photo{border-color:var(--cyan);color:var(--cyan)}
@@ -87,13 +97,15 @@ border-radius:0 11px 11px 0;padding:11px 16px;margin:7px 0;font-size:13.5px;colo
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:15px 18px;margin:9px 0;transition:transform .1s}
 .card:hover{border-color:var(--ink3)}
 .card.a{border-left:3px solid var(--green)} .card.b{border-left:3px solid var(--cyan)}
-.card.c{border-left:3px solid var(--amber)} .card.refused{border-left:3px solid var(--red)}
+.card.c{border-left:3px solid var(--amber)} .card.pending{border-left:3px solid var(--amber)}
+.card.refused{border-left:3px solid var(--red)}
 .card.skip{opacity:.5}
 .card .hd{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
 .card .id{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:var(--ink3)}
 .card .idn{font-weight:640;color:var(--ink);flex:1;min-width:220px}
 .card .money{font-variant-numeric:tabular-nums;font-weight:700;color:var(--ink);white-space:nowrap}
 .card .why{font-size:12px;color:var(--ink3);margin-top:6px}
+.card .pending{color:var(--amber);font-size:13px;font-weight:600;margin-top:5px}
 .card .refuse{color:var(--red);font-size:13px;font-weight:600;margin-top:5px}
 .bar{height:6px;background:var(--card2);border-radius:99px;overflow:hidden;margin:14px 0 4px}
 .bar>i{display:block;height:100%;background:var(--violet)}
@@ -128,8 +140,6 @@ _ANSWER_JS = """
 <script>
 (function(){
   var box = document.getElementById("answer-result");
-  var tokenEl = document.getElementById("op-token");
-  if (tokenEl) tokenEl.value = sessionStorage.getItem("opToken") || "";
   document.addEventListener("click", function(ev){
     var btn = ev.target.closest("[data-act=answer]");
     if (!btn) return;
@@ -137,6 +147,7 @@ _ANSWER_JS = """
     var card = btn.closest(".q");
     if (!card) return;
     var qid = card.getAttribute("data-question-id");
+    var revision = Number(card.getAttribute("data-revision") || "0");
     var input = card.querySelector(".answer-text");
     var answer = ((input && input.value) || "").trim()
       || (btn.getAttribute("data-answer") || "").trim();
@@ -146,14 +157,12 @@ _ANSWER_JS = """
     btn.textContent = "saving…";
     if (box) { box.hidden = false; box.textContent = "saving…"; }
     var headers = {"Content-Type": "application/json"};
-    var tokenEl = document.getElementById("op-token");
-    var token = (tokenEl && tokenEl.value) || sessionStorage.getItem("opToken") || "";
-    if (tokenEl && tokenEl.value) sessionStorage.setItem("opToken", tokenEl.value);
-    if (token) headers["X-Operator-Token"] = token;
+    var token = document.getElementById("cycle-token");
+    if (token && token.value.trim()) headers["X-Operator-Token"] = token.value.trim();
     fetch("/api/answer", {
       method: "POST",
       headers: headers,
-      body: JSON.stringify({question_id: qid, answer: answer})
+      body: JSON.stringify({question_id: qid, answer: answer, expected_revision: revision})
     }).then(function(r){
       return r.json().then(function(j){ return {ok: r.ok, j: j}; });
     }).then(function(x){
@@ -174,6 +183,68 @@ _ANSWER_JS = """
 </script>
 """
 
+_CYCLE_JS = """
+<script>
+(function(){
+  var button = document.querySelector("[data-act=start-cycle]");
+  var result = document.getElementById("cycle-result");
+  var touched = false;
+  if (!button || !result) return;
+
+  function showStatus(cycleId) {
+    fetch("/api/cycles/" + encodeURIComponent(cycleId))
+      .then(function(r){ return r.json().then(function(j){ return {ok:r.ok,j:j}; }); })
+      .then(function(x){
+        if (!x.ok) return;
+        var status = x.j.status || {};
+        result.textContent = (status.state || "unknown") +
+          (status.detail ? " · " + status.detail : "");
+        if (["queued", "running"].indexOf(status.state) >= 0) {
+          setTimeout(function(){ showStatus(cycleId); }, 4000);
+        }
+      });
+  }
+
+  button.addEventListener("click", function(){
+    touched = true;
+    var cycle = (document.getElementById("cycle-id").value || "").trim();
+    var token = (document.getElementById("cycle-token").value || "").trim();
+    if (!cycle) {
+      result.textContent = "Enter the staged cycle ID.";
+      document.getElementById("cycle-id").focus();
+      return;
+    }
+    button.disabled = true;
+    result.textContent = "Starting cloud processing…";
+    var headers = {"Content-Type":"application/json"};
+    if (token) headers["X-Operator-Token"] = token;
+    fetch("/api/cycles/start", {
+      method:"POST", headers:headers, body:JSON.stringify({cycle_id:cycle})
+    }).then(function(r){
+      return r.json().then(function(j){ return {ok:r.ok,j:j}; });
+    }).then(function(x){
+      if (!x.ok) throw new Error(x.j.detail || "Could not start cycle");
+      result.textContent = x.j.deduplicated
+        ? "Already launched; checking its status…"
+        : "Accepted by the cloud processor.";
+      showStatus(cycle);
+    }).catch(function(e){
+      result.textContent = e.message || "Could not start cycle";
+    }).finally(function(){ button.disabled = false; });
+  });
+
+  fetch("/api/cycles/current")
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(j){
+      if (!j || touched) return;
+      var status = j.status || {};
+      result.textContent = "Active cloud cycle " + j.active.cycle_id +
+        (status.updated_at ? " · completed " + status.updated_at : "");
+    });
+})();
+</script>
+"""
+
 
 def _tag(text: str, cls: str = "") -> str:
     return f'<span class="tag {cls}">{escape(text)}</span>'
@@ -184,6 +255,33 @@ def _seq_chip(photo_id: str) -> str:
         f'<span class="thumb" data-photo-id="{escape(photo_id)}">'
         f'{escape(photo_id[-7:])}</span>'
     )
+
+
+def _cycle_control_block(enabled: bool) -> str:
+    if not enabled:
+        return ""
+    return """
+<section class="cycle-control" aria-labelledby="cycle-control-title">
+  <div class="eyebrow" id="cycle-control-title">New auction</div>
+  <div style="font-size:13px;color:var(--ink2);margin-top:5px">
+    After the sanctioned gallery snapshot is staged in private cloud storage,
+    start its full photo processing here. This never sends a bid.
+  </div>
+  <div class="fields">
+    <label>Staged cycle ID
+      <input id="cycle-id" autocomplete="off" placeholder="2026-09-05">
+    </label>
+    <label>Operator token
+      <input id="cycle-token" type="password" autocomplete="off"
+             placeholder="Required in production">
+    </label>
+    <button type="button" class="btn p" data-act="start-cycle">
+      Start staged auction
+    </button>
+  </div>
+  <div class="cycle-result" id="cycle-result" aria-live="polite"></div>
+</section>
+"""
 
 
 def _seat_html(s: Seat) -> str:
@@ -223,25 +321,40 @@ def _holding_strip(v: CycleView | None) -> str:
 
 
 def _map_block(v: CycleView | None = None) -> str:
+    known = bool(v and any(s.zone is not Zone.UNKNOWN for s in v.seats))
+    if not known:
+        holding = _holding_strip(v)
+        return f"""
+<div class="map-container">
+  <div class="map-title">
+    <span>Walk-order grouping &middot; spatial observations unavailable</span>
+    <span class="map-tag">No inferred placement</span>
+  </div>
+  <div style="font-size:12.5px;color:var(--ink2)">
+    Lots remain grouped by capture sequence. Physical zones appear only when a
+    validated spatial-observation sidecar is attached to this cycle.
+  </div>
+  {holding}
+</div>
+"""
+
     return f"""
 <div class="map-container">
   <div class="map-title">
-    <span>Pole Barn Showroom Topology &middot; 200 Elizabeth Lane, Genoa City</span>
-    <span class="map-tag">Invariant Spatial Graph</span>
+    <span>Validated showroom topology</span>
+    <span class="map-tag">Observed zones</span>
   </div>
   <div class="map-grid">
     <div class="map-zone wall">
-      <b>NORTH BACK WALL &middot; HANGING DISPLAYS</b>
-      <span>Framed advertising signs, lighted beer signs, vintage travel posters</span>
+      <b>NORTH BACK WALL</b>
       {_row_for(v, Zone.NORTH_BACK_WALL)}
     </div>
     <div class="map-zone">
-      <b>WEST SIDE TABLES (A & B)</b>
-      <span>Glassware, Princess phones, small electronics, collectibles</span>
+      <b>WEST SIDE TABLES</b>
       {_row_for(v, Zone.WEST_SIDE_TABLES)}
     </div>
     <div class="map-zone aisle">
-      <b>=== CENTER AISLE & AUCTIONEER PODIUM ===</b>
+      <b>CENTER ISLANDS</b>
       <div style="margin-top:6px;font-size:11.5px;color:var(--violet)">
         <b>Island Table 1:</b>
         {_row_for(v, Zone.CENTER_ISLAND_1)}
@@ -250,13 +363,11 @@ def _map_block(v: CycleView | None = None) -> str:
       </div>
     </div>
     <div class="map-zone">
-      <b>EAST SIDE TABLES (C & D)</b>
-      <span>Stoneware crocks, vintage tools, railroadiana</span>
+      <b>EAST SIDE TABLES</b>
       {_row_for(v, Zone.EAST_SIDE_TABLES)}
     </div>
     <div class="map-zone wall" style="background:rgba(0,0,0,0.2)">
-      <b>SOUTH STANDING ROOM & UNDER-TABLE STORAGE</b>
-      <span>Concrete floor multi-box dinnerware runs (Poppy Trail) &middot; Cashier cage & refreshments</span>
+      <b>SOUTH / UNDER-TABLE</b>
       {_row_for(v, Zone.SOUTH_UNDER_TABLE)}
     </div>
   </div>
@@ -274,7 +385,7 @@ def _pitch_block(pitch_text: str = "", voice: PitchVoice | None = None) -> str:
     Invented figures never reach here — write_pitch_voice / curator_voice
     already discarded them.
     """
-    if voice is not None and not voice.fallback:
+    if voice is not None:
         badge = "template fallback" if voice.fallback else "Gemma 4 · Vertex AI"
         push = (f"<br><b>Pushback:</b> {escape(voice.pushback)}"
                 if voice.pushback else "")
@@ -346,7 +457,7 @@ def _question_block(v: CycleView) -> str:
         more = f" +{len(question.lot_ids) - 6}" if len(question.lot_ids) > 6 else ""
         qid = make_question_id(v.cycle_id, question)
         out.append(
-            f'<div class="q" data-question-id="{escape(qid)}">'
+            f'<div class="q" data-question-id="{escape(qid)}" data-revision="0">'
             f'<div class="top"><span class="n">{i}</span>'
             f'<span class="txt">{escape(question.prompt)}</span>{photo}</div>'
             f'<div class="meta">{escape(question.kind.value)} &middot; '
@@ -400,7 +511,12 @@ def _sheet_block(v: CycleView) -> str:
     order = {Priority.A: 0, Priority.B: 1, Priority.C: 2, Priority.SKIP: 3}
     for d in sorted(v.decisions, key=lambda x: (order[x.priority],
                                                 -(x.committed_all_in or 0))):
-        cls = "refused" if d.needs_human_pricing else _CLS[d.priority]
+        if d.needs_deep_comps:
+            cls = "pending"
+        elif d.needs_human_pricing:
+            cls = "refused"
+        else:
+            cls = _CLS[d.priority]
         caption = v.captions.get(d.lot_id, "")
         money, flag = "", ""
         if d.max_bid is not None:
@@ -422,8 +538,12 @@ def _sheet_block(v: CycleView) -> str:
                 flag = _tag("needs approval")
             else:
                 flag = _tag("over budget")
-        body = (f'<div class="refuse">No external comp &mdash; human pricing required</div>'
-                if d.needs_human_pricing else f'<div class="why">{escape(d.reason)}</div>')
+        if d.needs_deep_comps:
+            body = f'<div class="pending">{escape(d.reason)}</div>'
+        elif d.needs_human_pricing:
+            body = f'<div class="refuse">{escape(d.reason)}</div>'
+        else:
+            body = f'<div class="why">{escape(d.reason)}</div>'
         # The one line that says what to DO with this lot. It lived in bidmath
         # with no caller outside its own tests — built, tested, and wired to
         # nothing — while the surface the operator actually reads showed a price
@@ -433,9 +553,8 @@ def _sheet_block(v: CycleView) -> str:
         directive = (f'<div class="directive">{escape(clerk_directive(d))}</div>'
                      if (d.mechanic is not BidMechanic.STRAIGHT
                          or d.needs_mechanic_ruling) else "")
-        alloc = "1" if d.allocated else "0"
         out.append(
-            f'<div class="card {cls}" data-allocated="{alloc}"><div class="hd">'
+            f'<div class="card {cls}" data-allocated="{int(d.allocated)}"><div class="hd">'
             f'<span class="id">{escape(d.lot_id)}</span>'
             f'<span class="idn">{escape(caption or d.category)}</span>'
             f'{_tag(d.priority.value)}{flag}{money}</div>{body}{directive}</div>'
@@ -445,6 +564,7 @@ def _sheet_block(v: CycleView) -> str:
 
 def render_console(v: CycleView, pitch_text: str = "") -> str:
     s = v.summary
+    pending_deep_comps = sum(d.needs_deep_comps for d in v.decisions)
     of_total = f" of {v.lots_total}" if v.lots_total else ""
     used = (s.committed_all_in / v.budget_cap * 100) if v.budget_cap else 0
     stats = [
@@ -455,8 +575,8 @@ def render_console(v: CycleView, pitch_text: str = "") -> str:
          f"<b>{len(v.queue.auto_answered)}</b> from memory"),
         ("", f"<b>{s.allocated}</b> bids &middot; {s.auto_send} auto &middot; "
              f"{s.needs_approval} to approve"),
-        ("bad" if s.needs_human_pricing else "",
-         f"<b>{s.needs_human_pricing}</b> need pricing"),
+        ("warn" if pending_deep_comps else "",
+         f"<b>{pending_deep_comps}</b> pending deep comps"),
     ]
     stat_html = "".join(f'<span class="stat {c}">{t}</span>' for c, t in stats)
 
@@ -474,13 +594,7 @@ def render_console(v: CycleView, pitch_text: str = "") -> str:
 <style>{_CSS}</style></head><body><div class="wrap">
 <header>
   {banner}
-  <div class="eyebrow">Blue Toad Fleet &middot; Gate console
-    <label style="float:right;font-size:11px;color:var(--ink3);font-weight:500;letter-spacing:0">
-      operator key
-      <input id="op-token" type="password" autocomplete="off"
-        style="margin-left:6px;padding:3px 7px;border-radius:5px;border:1px solid var(--line);background:var(--card2);color:var(--ink)">
-    </label>
-  </div>
+  <div class="eyebrow">Blue Toad Fleet &middot; Gate console</div>
   <h1>Cycle {escape(v.cycle_id)}</h1>
   <p class="sub">Sale {escape(v.auction_date)} &middot; absentee cutoff
      {escape(v.deadline)} &middot; budget cap ${v.budget_cap:,.2f} &middot;
@@ -491,6 +605,7 @@ def render_console(v: CycleView, pitch_text: str = "") -> str:
     ${s.committed_all_in:,.2f} committed of ${v.budget_cap:,.2f} cap
     ({used:.0f}%)</div>
 </header>
+{_cycle_control_block(v.cycle_controls)}
 {_map_block(v)}
 {_pitch_block(pitch_text, v.voice)}
 {_question_block(v)}
@@ -503,4 +618,5 @@ def render_console(v: CycleView, pitch_text: str = "") -> str:
 </footer>
 </div>
 {_ANSWER_JS}
+{_CYCLE_JS if v.cycle_controls else ""}
 </body></html>"""

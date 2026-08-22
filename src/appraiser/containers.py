@@ -23,6 +23,84 @@ MARKET_ROLES = ["alpha", "supporting", "filler"]
 
 
 @dataclass(frozen=True)
+class ContainerValueEvidence:
+    """Evidence-backed lot range after conservative alpha confirmation."""
+    low: float
+    high: float
+    source_count: int
+    citations: tuple[str, ...]
+    alpha_confirmed: bool
+    alpha_name: str | None
+    upside_note: str | None = None
+
+
+def _usable_comp(raw: Mapping | None) -> tuple[float, float, int, tuple[str, ...]] | None:
+    if not isinstance(raw, Mapping):
+        return None
+    try:
+        low = float(raw["low"])
+        high = float(raw["high"])
+        count = int(raw.get("source_count") or raw.get("sources") or 0)
+    except (KeyError, TypeError, ValueError):
+        return None
+    citations = tuple(str(value) for value in raw.get("citations") or () if value)
+    if low <= 0 or high < low or count < 1 or not citations:
+        return None
+    return low, high, count, citations
+
+
+def price_container_evidence(
+    decomposition: Mapping,
+    *,
+    alpha_comp: Mapping | None,
+    bulk_floor: Mapping,
+) -> ContainerValueEvidence:
+    """Price one container as alpha-plus-bulk, or bulk-only when unconfirmed.
+
+    An alpha is confirmed only when the item carries an observed mark and no
+    determining mark/maker/hallmark question remains open. Model prominence or
+    an attractive name alone is upside, never money-bearing evidence.
+    """
+    bulk = _usable_comp(bulk_floor)
+    if bulk is None:
+        raise ValueError("container bulk floor requires cited sold evidence")
+    questions = " ".join(str(value).casefold()
+                         for value in decomposition.get("questions") or ())
+    open_mark_question = any(word in questions for word in (
+        "mark", "hallmark", "signature", "maker",
+    ))
+    alphas = [
+        item for item in decomposition.get("contents") or ()
+        if isinstance(item, Mapping) and item.get("market_role") == "alpha"
+    ]
+    alpha = alphas[0] if len(alphas) == 1 else None
+    alpha_name = (str(alpha.get("item_name") or "").strip() if alpha else None)
+    alpha_confirmed = bool(
+        alpha and alpha_name and alpha.get("marks_observed") and not open_mark_question)
+    confirmed_comp = _usable_comp(alpha_comp) if alpha_confirmed else None
+    bulk_low, bulk_high, bulk_count, bulk_citations = bulk
+    if confirmed_comp is None:
+        return ContainerValueEvidence(
+            low=bulk_low,
+            high=bulk_high,
+            source_count=bulk_count,
+            citations=bulk_citations,
+            alpha_confirmed=False,
+            alpha_name=alpha_name,
+            upside_note=(f"Unconfirmed alpha upside: {alpha_name}" if alpha_name else None),
+        )
+    alpha_low, alpha_high, alpha_count, alpha_citations = confirmed_comp
+    return ContainerValueEvidence(
+        low=round(alpha_low + bulk_low, 2),
+        high=round(alpha_high + bulk_high, 2),
+        source_count=alpha_count + bulk_count,
+        citations=tuple(dict.fromkeys((*alpha_citations, *bulk_citations))),
+        alpha_confirmed=True,
+        alpha_name=alpha_name,
+    )
+
+
+@dataclass(frozen=True)
 class NormalizedBox:
     """A validated rectangular boundary in normalized 0..1000 coordinates."""
 
@@ -146,6 +224,7 @@ def append_visible_contents(description: str, payload: Mapping | None) -> str:
 
 
 __all__ = [
-    "CONTAINER_TYPES", "MARKET_ROLES", "NormalizedBox",
+    "CONTAINER_TYPES", "MARKET_ROLES", "ContainerValueEvidence", "NormalizedBox",
     "crop_to_container", "visible_contents", "append_visible_contents",
+    "price_container_evidence",
 ]

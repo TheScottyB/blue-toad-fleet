@@ -57,7 +57,7 @@ export function readVerifiedFacts(manifest) {
     ['schema_version', 'cycle', 'money', 'tests', 'runtime', 'source_sha256'],
     'submission facts',
   );
-  if (facts.schema_version !== 1) {
+  if (![1, 2].includes(facts.schema_version)) {
     throw new Error(`unsupported submission facts schema_version: ${facts.schema_version}`);
   }
   const stale = [];
@@ -118,16 +118,25 @@ export async function recordPage({ output, contextOptions = {}, action }) {
 }
 
 export async function checkedGoto(page, url, options = {}) {
-  const response = await page.goto(url, options);
+  const { expectedMarkers = [], ...gotoOptions } = options;
+  const response = await page.goto(url, gotoOptions);
   if (response && !response.ok()) {
     throw new Error(`page returned HTTP ${response.status()}: ${url}`);
   }
   const finalUrl = page.url();
-  const challenge = await page.evaluate(() => {
+  const pageState = await page.evaluate(() => {
     const text = `${document.title}\n${document.body?.innerText || ''}`.toLowerCase();
-    return ['captcha', 'verify you are human', 'sign in to continue', 'access denied']
-      .find(marker => text.includes(marker)) || null;
+    return {
+      challenge: ['captcha', 'verify you are human', 'sign in to continue', 'access denied']
+        .find(marker => text.includes(marker)) || null,
+      text,
+      title: document.title,
+    };
   });
-  if (challenge) throw new Error(`challenge page detected (${challenge}): ${finalUrl}`);
+  if (pageState.challenge) {
+    throw new Error(`challenge page detected (${pageState.challenge}): ${finalUrl}`);
+  }
+  const missing = expectedMarkers.filter(marker => !pageState.text.includes(marker.toLowerCase()));
+  if (missing.length) throw new Error(`expected page marker is missing: ${missing.join(', ')}`);
   return response;
 }

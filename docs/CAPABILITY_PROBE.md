@@ -249,12 +249,16 @@ these models needs backoff built in from the start.
 
 ## Open, and honestly unresolved
 
-1. **The SSIM implementation is unvalidated against a reference.** It is a direct
-   numpy implementation (11x11 Gaussian, σ=1.5, C1/C2 per Wang et al. 2004) because
-   scipy is not in `.venv`. The re-analysis reuses that same module, so it inherits
-   any error in it. Nothing here has checked it against a known fixture.
-2. **The repeat run has not happened** — one stochastic sample per arm, as above.
-3. **11 of 14 Task-3 pairs rest on the caption**, not on visual confirmation.
+1. **The repeat run has not happened** — one stochastic sample per arm, as above.
+2. **11 of 14 Task-3 pairs rest on the caption**, not on visual confirmation.
+
+The SSIM implementation is now validated against the exact constant-field
+closed form of the Wang et al. equation at 1e-12 tolerance
+(`artifacts/signature_upscale_probe/ssim_reference_fixture.json`, enforced by
+`tests/test_capability_probes.py`). The embedding baseline runner now consumes the
+committed `embeddings.json`, records its input hashes, and fails with a recovery
+command if the sanctioned image cache is incomplete; it no longer depends on an
+uncommitted NPZ.
 
 ## What follows from this
 

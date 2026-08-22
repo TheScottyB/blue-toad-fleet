@@ -26,6 +26,11 @@ _PRICING = {  # USD per 1M tokens (input, output)
 }
 
 
+def rate_snapshot_usd_per_million() -> dict[str, tuple[float, float]]:
+    """The versioned list-rate snapshot used by estimates and telemetry."""
+    return dict(_PRICING)
+
+
 class ModelTier(str, Enum):
     TRIAGE = "triage"
     APPRAISAL = "appraisal"

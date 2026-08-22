@@ -35,6 +35,10 @@ from src.appraiser.containers import (
     NormalizedBox, crop_to_container, visible_contents, append_visible_contents,
 )
 from src.appraiser.engine import AppraisalEngine
+from src.appraiser.grounded_batch import (
+    GroundedPricingPipeline, grounded_reference_comps,
+    grounded_status_reason, price_one_grounded, run_grounded_pricing_batch,
+)
 
 __all__ = [
     "ModelTier", "model_for", "TRIAGE_MODEL", "APPRAISAL_MODEL",
@@ -45,4 +49,7 @@ __all__ = [
     "build_container_location_prompt", "build_container_decomposition_prompt",
     "NormalizedBox", "crop_to_container", "visible_contents", "append_visible_contents",
     "AppraisalEngine",
+    "GroundedPricingPipeline",
+    "grounded_reference_comps", "grounded_status_reason", "price_one_grounded",
+    "run_grounded_pricing_batch",
 ]

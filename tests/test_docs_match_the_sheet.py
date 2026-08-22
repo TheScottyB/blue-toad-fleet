@@ -17,16 +17,13 @@ editing a document to disagree with the video it describes. Its recording note
 carries both sets and says which is which.
 """
 
-import re
 from pathlib import Path
 
-import pytest
+ROOT = Path(__file__).resolve().parents[1]
+README = ROOT / "README.md"
+DEVPOST = ROOT / "docs/DEVPOST.md"
 
-README = Path("README.md")
-DEVPOST = Path("docs/DEVPOST.md")
 
-
-@pytest.fixture(scope="module")
 def sheet():
     from src.bidmath import summarize
     from src.server import get_aug22_state
@@ -34,99 +31,27 @@ def sheet():
     return summarize(decisions)
 
 
-@pytest.fixture(scope="module")
-def resale(sheet):
-    """Gross resale range for exactly the lots carrying committed money.
-
-    A per-unit auction mechanic multiplies the hammer exposure, not the
-    appraiser's group comp. BT-002's photograph and comp cover all three trays,
-    so counting its $65-$75 range three times would double-count the goods.
-    """
-    from src.server import get_aug22_state
-    _, _, lots, decisions, _, _, _ = get_aug22_state()
-    allocated = {d.lot_id for d in decisions if d.allocated}
-    selected = [lot for lot in lots if lot.lot_id in allocated]
-
-    assert len(selected) == sheet.allocated
-    assert all(lot.comp.low is not None and lot.comp.high is not None
-               for lot in selected)
-
-    low = sum(lot.comp.low for lot in selected)
-    high = sum(lot.comp.high for lot in selected)
-    return low, high, low / sheet.committed_all_in, high / sheet.committed_all_in
+def test_readme_labels_local_money_as_historical_and_non_publishable():
+    current = sheet()
+    text = README.read_text()
+    assert "Historical August fixture reconciliation" in text
+    assert f"**{current.allocated} allocated bids (${current.committed_max:,.2f} max)**" in text
+    assert f"**${current.committed_all_in:,.2f}** all-in" in text
+    assert "historical local fixture" in text
+    assert "publishable current cycle" in text
 
 
-# The badge states a bare count, not "N Passing", and that is deliberate.
-# A guard living inside the suite cannot count its own passes, and the two
-# modules carrying a module-level skipif (test_live_cache_parity.py,
-# test_absentee_email.py) skip conditionally — subtracting them is wrong
-# whenever their condition is false. Collected is the only number this guard
-# can defend, so the badge claims exactly that and the pass/skip split lives
-# in prose in the README quickstart, where a human reads it.
-#
-# The badge used to read "570 Passing" against this collected count while 7 of
-# those 570 never ran. Do not reintroduce the word.
+def test_devpost_labels_local_money_as_historical_and_blocked():
+    current = sheet()
+    text = DEVPOST.read_text()
+    assert "Historical August fixture, honestly bounded" in text
+    assert f"**{current.allocated} allocations" in text
+    assert f"${current.committed_max:,.2f} max / ${current.committed_all_in:,.2f} all-in" in text
+    assert "not current release evidence" in text
 
 
-@pytest.fixture(scope="module")
-def suite_size():
-    """Every test in the tree, counted the way pytest counts them."""
-    import subprocess
-    # WITHOUT -q. Under -q this pytest prints per-file counts and no summary
-    # line, so the obvious regex matched nothing and the guard skipped itself
-    # into decoration — which is the failure mode this whole file exists to
-    # catch, found in this file first.
-    out = subprocess.run(
-        [".venv/bin/pytest", "tests/", "--collect-only"],
-        capture_output=True, text=True).stdout
-    m = re.search(r"(\d+) tests? collected", out)
-    return int(m.group(1)) if m else None
-
-
-class TestTheReadmeQuotesTheRealSheet:
-    def test_the_committed_max_is_current(self, sheet):
-        assert f"${sheet.committed_max:,.2f} max" in README.read_text(), (
-            f"README does not quote the live committed max of "
-            f"${sheet.committed_max:,.2f}")
-
-    def test_the_all_in_is_current(self, sheet, resale):
-        text = README.read_text()
-        assert f"**${sheet.committed_all_in:,.2f}**" in text, (
-            f"README does not quote the live all-in of ${sheet.committed_all_in:,.2f}")
-        low, high, low_multiple, high_multiple = resale
-        assert f"**${low:,.0f}–${high:,.0f} estimated gross resale**" in text
-        assert f"**{low_multiple:.2f}–{high_multiple:.2f}x**" in text
-
-    def test_the_lot_count_is_current(self, sheet):
-        assert f"{sheet.allocated} approved bids" in README.read_text()
-
-
-class TestTheDevpostQuotesTheRealSheet:
-    def test_the_money_line_is_current(self, sheet, resale):
-        text = DEVPOST.read_text()
-        assert (f"${sheet.committed_max:,.2f} max / "
-                f"${sheet.committed_all_in:,.2f} all-in") in text
-        low, high, low_multiple, high_multiple = resale
-        assert f"**${low:,.0f}–${high:,.0f} estimated gross resale**" in text
-        assert f"**{low_multiple:.2f}–{high_multiple:.2f}x**" in text
-
-    def test_the_lot_count_is_current(self, sheet):
-        assert f"{sheet.allocated} laser-targeted bids" in DEVPOST.read_text()
-
-
-class TestTheTestCountIsWhatAJudgeWouldSee:
-    """The badge is the first number a judge reads, and it used to be reachable
-    only from a machine with the gallery cached — the 22 image guards skipped on
-    a clean clone, so a judge saw 445 where the badge claimed 298. The twelve
-    candidate photos are tracked now precisely so this number is honest."""
-
-    def test_the_readme_badge_matches_the_suite(self, suite_size):
-        if suite_size is None:
-            pytest.skip("could not collect")
-        assert f"Unit%20Tests-{suite_size}-" in README.read_text(), (
-            f"badge disagrees with the {suite_size}-test suite")
-
-    def test_the_devpost_count_matches_the_suite(self, suite_size):
-        if suite_size is None:
-            pytest.skip("could not collect")
-        assert f"{suite_size} collected" in DEVPOST.read_text()
+def test_judged_copy_does_not_freeze_test_counts():
+    combined = README.read_text() + "\n" + DEVPOST.read_text()
+    assert "Unit%20Tests-release--gated" in combined
+    for stale in ("298 passing", "565 passing", "730 unit tests", "737 collected"):
+        assert stale not in combined.lower()

@@ -4,7 +4,7 @@ __pycache__/
 .env
 .venv/
 demo/out/
-data/**/images/
+data/**/images/*
 # ...but the twelve appraised candidate photos ARE repo artifacts. The guards in
 # tests/test_images.py that prove no lot was appraised against a thumbnail can
 # only run if the images they guard are present, so on a clean clone the tests

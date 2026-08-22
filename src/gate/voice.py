@@ -13,6 +13,7 @@ from typing import Any
 
 from src.appraiser.routing import GEMMA_MODEL
 from src.appraiser.schema import to_vertex
+from src.gate.challenge import challenge_text_is_trusted
 from src.gate.pitch import PitchFacts, PitchLot, invented_amounts
 
 VOICE_SYSTEM = (
@@ -22,8 +23,9 @@ VOICE_SYSTEM = (
     "would hear Friday afternoon — prose, not a JSON echo of the facts. "
     "Use only lot ids, captions, and dollar figures supplied in the user JSON. "
     "Never invent a price, comp, or lot. "
-    "Pushback only if a SKIP rule and a matching allocated lot are in the payload; "
-    "otherwise set pushback to null."
+    "Pushback only if the payload contains challenge_facts. Phrase its "
+    "REVIEW_CONFLICT action without recommending a buy or bid and without adding "
+    "a lot, figure, margin, velocity, or citation. Otherwise set pushback to null."
 )
 
 VOICE_SCHEMA = {
@@ -64,6 +66,9 @@ def _payload(facts: PitchFacts) -> dict:
         "ruled_out": list(facts.ruled_out),
         "committed_max": f"${facts.committed_max:,.2f}",
         "committed_all_in": f"${facts.committed_all_in:,.2f}",
+        "challenge_facts": (
+            facts.challenge.as_prompt_dict() if facts.challenge else None
+        ),
     }
 
 
@@ -86,7 +91,7 @@ def template_voice(facts: PitchFacts) -> PitchVoice:
         alpha=alpha or "None this cycle.",
         fast_smalls=smalls,
         wildcard=ruled,
-        pushback=None,
+        pushback=(facts.challenge.deterministic_text() if facts.challenge else None),
         fallback=True,
     )
 
@@ -103,7 +108,11 @@ def _trusted(voice: PitchVoice, facts: PitchFacts) -> bool:
         p for p in (voice.alpha, voice.fast_smalls, voice.wildcard, voice.pushback or "")
         if p
     )
-    return not invented_amounts(blob, facts.allowed_amounts)
+    if invented_amounts(blob, facts.allowed_amounts):
+        return False
+    if facts.challenge is None:
+        return voice.pushback is None
+    return challenge_text_is_trusted(voice.pushback, facts.challenge)
 
 
 def _from_model(data: dict) -> PitchVoice | None:
@@ -137,17 +146,23 @@ def _parse_text(text: str) -> dict | None:
     return data if isinstance(data, dict) else None
 
 
-def _call_gemma(client: Any, user: str) -> str:
+def _call_gemma(client: Any, user: str, telemetry=None) -> str:
     from google.genai import types
-    resp = client.models.generate_content(
-        model=GEMMA_MODEL,
-        contents=user,
-        config=types.GenerateContentConfig(
+    config = types.GenerateContentConfig(
             system_instruction=VOICE_SYSTEM,
             response_mime_type="application/json",
             response_schema=to_vertex(VOICE_SCHEMA),
             temperature=0.2,
-        ),
+    )
+    invoke = lambda: client.models.generate_content(
+        model=GEMMA_MODEL, contents=user, config=config,
+    )
+    resp = (
+        telemetry.call(
+            stage="curator", model=GEMMA_MODEL, retry_index=0,
+            fallback=False, invoke=invoke,
+        )
+        if telemetry is not None else invoke()
     )
     return getattr(resp, "text", None) or ""
 
@@ -157,6 +172,7 @@ def write_pitch_voice(
     *,
     client: Any = None,
     cache_path: str | Path | None = None,
+    telemetry=None,
 ) -> PitchVoice:
     """Gemma writes copy. Invented dollars, missing client, or JSON echo → template."""
     fallback = template_voice(facts)
@@ -195,7 +211,7 @@ def write_pitch_voice(
         + ", ".join(f"${a:,.2f}" for a in sorted(facts.allowed_amounts))
     )
     try:
-        text = _call_gemma(client, user)
+        text = _call_gemma(client, user, telemetry=telemetry)
     except Exception:
         return fallback
 

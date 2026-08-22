@@ -30,7 +30,7 @@ DISTRIBUTIONS = {
     "PIL": {"pillow"},
     "google": {
         "google-genai", "google-auth", "google-cloud-aiplatform",
-        "google-cloud-firestore",
+        "google-cloud-firestore", "google-cloud-storage",
     },
     "yaml": {"pyyaml"},
     "dateutil": {"python-dateutil"},

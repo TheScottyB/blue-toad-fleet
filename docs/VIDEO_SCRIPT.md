@@ -41,11 +41,11 @@
 
 ---
 
-## 🎬 Beat 3: The Gate Console, Choice-Lot Sniper & Proactive Pushback (1:45 – 2:45)
+## 🎬 Beat 3: The Gate Console, Choice-Lot Guard & Bounded Challenge (1:45 – 2:45)
 
 * **Visual on Screen:**
   1. Switch to the live Cloud Run Gate Console ([https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app)).
-  2. Show the **Curator's Negotiation Banner**, **Question Queue**, bid sheet, and skip reasons.
+  2. Show the **Curator's Read**, **Question Queue**, bid sheet, and skip reasons.
 * **Voiceover:**
   > *"On Friday afternoon, the fleet doesn't dump an unconstrained wishlist on the owner. It opens the Gate Console, serving serverless on Google Cloud Run.*
   >
@@ -61,14 +61,14 @@
 
 * **Visual on Screen:**
   1. Open Google Cloud Console showing the currently ready Cloud Run revision and service URL.
-  2. Tab to `/api/lots` and open the sealed [`data/aug22_absentee_bid_email.txt`](../data/aug22_absentee_bid_email.txt).
+  2. Tab to `/api/lots` and open the cycle output named by the sealed artifact manifest.
   3. Show the current test run in terminal (`make test`).
 * **Voiceover:**
   > *"Everything runs in production on Google Cloud Run and Vertex AI. The repository collects {{tests.collected}} tests; {{tests.passed}} pass locally and {{tests.skipped}} skip by policy.*
   >
   > *The final sheet commits {{money.committed_max|usd}} across {{cycle.approved_bids}} approved bids—{{money.committed_all_in|usd}} all-in with the mandatory fifteen-percent absentee fee, strictly formatted to standard five-dollar auction increments.*
   >
-  > *The system compiles the final sealed email draft ready for info@bluetoadauctions.com while Richmond General stays open for business.*
+  > *The system compiles an operator-reviewed email draft and publishes it only with the same sealed cycle manifest as the workbook and decision state. Sending remains a human action.*
   >
   > *Blue Toad Fleet: Velocity to distill the information. Collaboration on the judgment."*
 
@@ -82,6 +82,6 @@
 - [ ] Grounded-research / structured-extraction split explained.
 - [ ] Live Cloud Run Gate Console demonstrated ([https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app)).
 - [ ] BT-002 ×3 ruling and clerk instruction shown.
-- [ ] Proactive Pushback on 1959–69 Topps cards highlighted.
+- [ ] Bounded challenge contract shown; if the verified cycle has no eligible conflict, say so.
 - [ ] Google Cloud Console (`threebatdrone-prod-420`) and unit tests displayed.
 - [ ] Total time: Under 4 minutes.

@@ -17,9 +17,7 @@ something the pipeline can swallow without noticing.
 
 import argparse
 import json
-import ssl
 import sys
-import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
@@ -27,39 +25,11 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from src.appraiser.images import full_size_url, image_dimensions, is_appraisal_grade
+from scripts.cache_gallery import DownloadResult, _atomic_json, download_image
+from src.appraiser.images import full_size_url
 
-_UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
-       "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-
-
-def fetch(url: str, dest: Path, retries: int = 3) -> tuple[bool, str]:
-    if url.startswith("//"):
-        url = "https:" + url
-    ctx = ssl.create_default_context()
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
-
-    for attempt in range(retries):
-        try:
-            req = urllib.request.Request(url, headers={"User-Agent": _UA})
-            with urllib.request.urlopen(req, context=ctx, timeout=20) as resp:
-                data = resp.read()
-        except Exception as e:
-            if attempt == retries - 1:
-                return False, f"fetch failed: {e}"
-            continue
-
-        if not is_appraisal_grade(data):
-            dims = image_dimensions(data)
-            size = f"{dims[0]}x{dims[1]}" if dims else f"{len(data)} unreadable bytes"
-            return False, f"served {size}, below appraisal grade"
-
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        dest.write_bytes(data)
-        return True, ""
-
-    return False, "exhausted retries"
+def fetch(url: str, dest: Path, retries: int = 3) -> DownloadResult:
+    return download_image(url, dest, max_retries=retries)
 
 
 def main() -> int:
@@ -76,8 +46,7 @@ def main() -> int:
     # Record the full-size URL for every photo, whether or not we fetch it now.
     for p in photos:
         p["full_url"] = full_size_url(p["thumb_url"])
-    manifest_path.write_text(json.dumps(manifest, indent=2))
-    print(f"[+] Recorded full_url for {len(photos)} photo(s) in {manifest_path}")
+    print(f"[+] Prepared full_url for {len(photos)} photo(s)")
 
     targets = photos
     if args.only:
@@ -96,11 +65,27 @@ def main() -> int:
         }
         for f in as_completed(futures):
             p = futures[f]
-            success, why = f.result()
-            if success:
+            result = f.result()
+            if result.ok:
                 ok += 1
+                p.update({
+                    "sha256": result.sha256,
+                    "mime_type": result.mime_type,
+                    "width": result.width,
+                    "height": result.height,
+                    "byte_size": result.byte_size,
+                    "download_status": "usable",
+                })
+                p.pop("download_error", None)
             else:
-                failures.append((f"BT-{p['sequence']:03d}", why))
+                p.update({
+                    "download_status": "failed",
+                    "download_error": result.error,
+                })
+                failures.append((f"BT-{p['sequence']:03d}", result.error))
+
+    _atomic_json(manifest_path, manifest)
+    print(f"[+] Published verified manifest metadata to {manifest_path}")
 
     print(f"[{'✓' if not failures else '!'}] {ok}/{len(targets)} at appraisal grade")
     for lot_id, why in sorted(failures)[:20]:

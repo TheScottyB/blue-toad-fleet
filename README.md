@@ -3,17 +3,21 @@
 <div align="center">
   <img src="docs/app_icon.png" width="140" alt="Blue Toad Fleet Logo" style="border-radius: 24px; margin-bottom: 12px;" />
   <h3>Velocity to distill the information. Collaboration on the judgment.</h3>
-  <p><b>An autonomous multimodal agent fleet turning rural uncataloged estate auctions into disciplined, high-velocity sourcing sheets on Google Cloud.</b></p>
+  <p><b>A supervised multimodal sourcing pipeline that turns uncataloged rural-auction galleries into reviewable, budget-bounded bid drafts on Google Cloud.</b></p>
 
   [![Google Cloud Run](https://img.shields.io/badge/Google%20Cloud%20Run-Live%20Service-34d399?style=flat-square&logo=googlecloud)](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app)
   [![Vertex AI](https://img.shields.io/badge/Vertex%20AI-Gemini%203.6%20Flash-a78bfa?style=flat-square&logo=google)](https://cloud.google.com/vertex-ai)
-  [![Unit Tests](https://img.shields.io/badge/Unit%20Tests-692-38bdf8?style=flat-square&logo=pytest)](https://github.com/TheScottyB/blue-toad-fleet)
+  [![Unit Tests](https://img.shields.io/badge/Unit%20Tests-release--gated-38bdf8?style=flat-square&logo=pytest)](https://github.com/TheScottyB/blue-toad-fleet)
   [![License: MIT](https://img.shields.io/badge/License-MIT-fbbf24?style=flat-square)](LICENSE)
 </div>
 
 ---
 
-## Live Google Cloud Deployment (Project: `threebatdrone-prod-420`)
+## Public Google Cloud Endpoint (Project: `threebatdrone-prod-420`)
+
+The endpoint exists, but repository revision parity is a release-gated fact. Do
+not treat the public service as evidence for this working tree until
+`make release-check` records a matching deployed revision.
 
 * **Live Gate Console & UI:** [https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app)
 * **Live Health Endpoint:** [https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/health](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/health)
@@ -26,8 +30,6 @@
 ## Demo Video
 
 [`media/blue_toad_fleet_demo.mp4`](media/blue_toad_fleet_demo.mp4) — a narrated, four-beat walkthrough covering the commercial problem, evidence-backed photo grouping, the live Gate Console, and Cloud Run/test-suite proof. The checked-in cut was recorded on 2026-08-20 and contains that run's historical figures; it is not current submission evidence.
-
-The absentee email Blue Toad accepted is a closed artifact: **9 lots, $275.00 max, $316.25 all-in** (`data/aug22_absentee_bid_email_REVISED.txt`). The live console is the full processed set — every lot with a usable grounded comp, not the 12 hand-entered samples that produced that email. Current live sheet: **53 approved bids ($520.00 max)** / **$598.00** all-in, **$1,570–$4,189 estimated gross resale**, **2.63–7.01x**.
 
 The replacement workflow is declared in [`media/video_manifest.json`](media/video_manifest.json), derives mutable copy from a verified evidence snapshot, isolates every browser recording, and has one authoritative final assembler. See [`docs/VIDEO_WORKFLOW.md`](docs/VIDEO_WORKFLOW.md) before rebuilding. `make video-verify` checks dimensions, duration, size, and audio without changing the MP4.
 
@@ -48,7 +50,7 @@ make demo
 # 3. Watch cross-cycle memory collapse the clarification queue
 make cycles
 
-# 4. Run the unit suite — 684 pass, 8 policy/network tests skip by default (~5s)
+# 4. Run the unit suite (the command reports the current count)
 make test
 ```
 
@@ -74,13 +76,13 @@ Capital is not the constraint — **time and visual throughput are**. The goal i
   <img src="docs/architecture_diagram.png" width="100%" alt="Blue Toad Fleet Architecture Diagram" style="border-radius: 12px; margin: 16px 0;" />
 </div>
 
-### 1. The Spatial Room Graph (Reconstructing the Pole Barn)
-* **Why We Do It:** Auction galleries drop 450+ unlabelled photos with zero lot numbers. Treating photos as isolated images causes duplicate bids on multi-angle shots, misses multi-box estate runs, and leaves the buyer blind during Saturday's 1-hour preview window.
-* **How It Works:** Auctioneers walk a room; photos are not a bag. Production grouping is caption / `same_lot_as_previous` plus embedding reshoot edges (seq 2↔181). Unplaced lots stay on a holding strip. The barn drawing is a walk-order map, not a surveyed floor plan.
+### 1. Evidence-Gated Spatial Grouping
+* **Why We Do It:** Auction galleries drop hundreds of unlabelled photos with zero lot numbers. Treating each frame as a separate item can create duplicate bids on repeat views and split a multi-photo lot.
+* **How It Works:** Natural capture order and auctioneer captions form the conservative baseline. Reviewed similarity edges may merge non-adjacent repeat views. Physical zones are accepted only from a validated `spatial_observations.json` sidecar bound to the exact manifest and model; when that evidence is absent, the Gate says **walk-order grouping** and renders no physical topology. The checked-in August fixture has no such sidecar, so no pole-barn layout is claimed for it.
 
 ### 2. Container Lot Decomposition ("Mining for Gold")
-* **Why Spatial Isolation is Required:** High-margin gold in rural auctions (e.g., 11–12 Edison Blue Amberol cylinders, 1959–69 Topps baseball cards, estate costume jewelry trays) is dumped into cardboard boxes or plastic tubs on crowded utility tables. Without spatial mapping to isolate the container and mask out surrounding room noise, vision models blend the box with adjacent table clutter (clocks, lamps, tools) and generate dirty, hallucinated comps.
-* **How It Works:** Relying directly on the Spatial Room Graph, the agent isolates the container boundary, suppresses background table noise, and itemizes the individual high-velocity assets inside the bin. It separates genuine alpha from filler, unlocking hidden margin while maintaining clean pricing boundaries.
+* **Why It Exists:** Boxes and trays mix a possible high-value item with bulk material and surrounding table clutter.
+* **How It Works:** A bounded-container pass lists only visible contents. Pricing uses a confirmed alpha only when its identifying mark is observed and no mark question remains open; otherwise the lot is priced from its bulk floor and the possible alpha is named only as upside. This path is tested independently of physical-room inference.
 
 ### 3. Multi-Tiered Model Routing on Vertex AI (Google GenAI SDK)
 Every call to a model goes through the **Google GenAI SDK** (`google-genai`) in
@@ -89,9 +91,10 @@ for application-default-credential auth that runs unchanged on a laptop and insi
 Cloud Run, `types.Part.from_bytes` to assemble the photo alongside the prompt, and
 `types.GenerateContentConfig(response_schema=...)` for constrained decoding.
 
-* **Triage Fan-out (`gemini-3.5-flash-lite`):** Ingests 460+ raw photos in seconds for ~$0.30 per cycle, filtering out low-margin clutter and background filler.
+* **Triage Fan-out (`gemini-3.5-flash-lite`):** Filters low-margin clutter and background filler. Per-call tokens, latency, retries, fallback use, errors, rate snapshots, and measured cost are now recorded; no speed or full-cycle cost is claimed until a fresh corpus run produces that telemetry.
 * **Deep Multimodal Appraisal (`gemini-3.6-flash`):** Evaluates high-conviction survivors using structured OpenAPI 3.0 schemas on the `global` Vertex endpoint.
-* **Honest Refusal Rule:** The appraisal model is forbidden from naming any price at all (`APPRAISAL_SYSTEM`: *"NEVER state or imply a price, estimate or value range"*). The refusal is decided downstream and is deterministic, not model-dependent — `price_lot` ([`src/bidmath/__init__.py`](src/bidmath/__init__.py)) returns any lot whose `CompEstimate` has no sources with `max_bid=None` and the reason `no external comp — human pricing required`, and `allocate` can never allocate it. On the live Aug-22 cycle this refuses **83 of 353 lots**.
+* **Per-lot stage handoff:** Ordinary lots enter appraisal immediately; container lots enter as soon as their own spatial decomposition finishes. Each completed appraisal can start grounded comp research while other lots are still being appraised.
+* **Honest Refusal Rule:** The appraisal model is forbidden from naming any price at all (`APPRAISAL_SYSTEM`: *"NEVER state or imply a price, estimate or value range"*). The refusal is decided downstream and is deterministic, not model-dependent — `price_lot` ([`src/bidmath/__init__.py`](src/bidmath/__init__.py)) returns a lot whose `CompEstimate` has no sources with `max_bid=None` and the workflow state `pending deep comps`, and `allocate` can never allocate it before verified sold-price evidence arrives. The current local August fixture routes **190 of 414** grouped lots to human pricing, but that historical fixture is not release-eligible under the new publication gate.
 
 ### 3a. Grounded Pricing Without Losing the Evidence
 Live Vertex validation exposed a failure at the boundary between Google Search grounding and structured output: adding `response_schema` preserved the search queries but returned **zero `grounding_chunks`**; the same call without the schema returned six citation chunks. Blue Toad therefore separates the work. The first call performs grounded research in free text and preserves Google-supplied citations; a second call, with no tools or search, is instructed to extract only the figures in that research note into the pricing schema. Three independent grounded samples are then medianed, and the lot is refused if the calls disagree too widely, contain fewer than two sold comps, or provide no usable citation. See [`price_lot_grounded`](src/appraiser/engine.py) and [`price_is_usable`](src/appraiser/pricing.py).
@@ -114,29 +117,32 @@ Grouped assets sold "Choice / Times the Money" are the classic clerk-multiplicat
 
 BT-002 closed this loop on real money. Gemini saw three labeled jewelry trays and asked whether the bid covered one tray or all three. The auctioneer confirmed, *"Yes, that is a ×3 bid."* Recorded as the text ruling *"take all three trays at ×3,"* it resolved to `TIMES_THE_MONEY, 3`: the owner's **$25 per-unit cap became $75 committed max / $86.25 all-in**, and `clerk_directive` produced an explicit instruction to take all three. Without that ruling, the sheet would have understated its own exposure by $50 before fees.
 
-### 5. The Collaborative Partner & Proactive Pushback
-The fleet acts as an expert commercial peer. On Friday afternoon, the agent presents a 3-tier pitch (Alpha Picks, Fast Smalls, and a Wildcard Challenge). When the owner asked to drop sports cards and tools due to store backlog, the sheet kept the **13 Golden Era 1959–1969 Topps baseball cards at a $100 cap** on his written ruling — not a live eBay API. The intended velocity gate is public sold+active counts over ~90 days: implied days of supply ≤ 14 (the two-week cadence). That pass has not yet been run on the full lot set.
+### 5. The Collaborative Partner & Bounded Challenge
+The Gate presents a three-tier pitch (Alpha Picks, Fast Smalls, and ruled-out
+items). A challenge is allowed only when a typed standing rule conflicts with
+fresh, lot-matched evidence carrying its own source and observation window. The
+model may phrase `REVIEW_CONFLICT`; it may not invent a lot, dollar figure,
+margin, velocity, or buy recommendation. Without those facts, pushback is null.
+The checked-in Seller Hub evidence supports BT-235's exact annual absorption
+calculation (46 sold / 46 active = 1.0); it does not support a sports-card claim.
 
 ### 6. Pure Deterministic BidMath Engine
 Appraisals feed into pure, unit-tested valuation logic implementing the store's documented **35–40% buy-in band** (applied at its 37.5% midpoint), condition discounts, standard **$5.00 bidding increments**, and the mandatory **15% absentee fee**.
 
 ---
 
-## Ground-Truth A/B Benchmark Reconciliation
+## Historical August fixture reconciliation
 
-| Metric | July 11 Historical Benchmark | August 22 Live Sourcing Cycle |
-| :--- | :--- | :--- |
-| **Raw Photos Ingested** | 452 raw photos (324 captioned) | 462 raw photos (304 captioned) |
-| **Lots Appraised on Vertex AI** | — | **228** (Stage 1 triage filtered the rest) |
-| **Multi-Angle Duplicates Merged** | **95 duplicate photos merged** | walk grouping + embedding reshoots → **353 lots from 462 photos** |
-| **Consolidated Physical Lots** | 357 physical lots | **353 physical lots** |
-| **Legacy V1 Wishlist Chaos** | 88 unranked rows (**$14,340.00 max sum**) | N/A (Displaced by Fleet V2) |
-| **Fleet V2 Approved Sourcing** | **67 bids allocated ($1,910.00 max)** | **53 approved bids ($520.00 max)** |
-| **Total Committed All-In (w/ 15% Fee)**| **$2,196.50** (strictly under $2,205 cap) | **$598.00** (strictly under $600 cap) |
-| **Estimated Gross Resale** | — | **$1,570–$4,189 estimated gross resale** |
-| **Gross Resale-to-Cost Multiple** | — | **2.63–7.01x** before selling costs |
-| **Increment Discipline** | $5.00 standard increments | $5.00 standard increments |
-| **Execution Artifacts** | `BlueToad_2026-07-11_Benchmark_Comparison.xlsx` | `BlueToad_2026-08-22_BidSheet.xlsx` & `aug22_absentee_bid_email.txt` |
+The checked-in August 22 fixture computes **9 allocated bids ($275.00 max)** and
+**$316.25** all-in exposure under the operator's $600 cap. Their selected lots
+carry **$713–$879 estimated gross resale**, or **2.25–2.78x** gross cost before
+selling expenses. These figures describe the historical local fixture and are
+not a publishable current cycle: its old pipeline state lacks the sealed artifact
+manifest and still has unresolved allocated lots. The allocation invariant is
+tested directly, and the new publisher refuses either condition.
+
+The former July A/B workbook is quarantined as historical and unverified. It is
+not used as submission evidence or as an input to the current pipeline.
 
 ---
 
@@ -150,8 +156,20 @@ Appraisals feed into pure, unit-tested valuation logic implementing the store's 
 ### The Output: Live Gate Console UI (Google Cloud Run)
 <div align="center">
   <img src="docs/screenshots/01-gate-console.png" width="48%" alt="Gate Console Header" style="border-radius: 8px;" />
-  <img src="docs/screenshots/02-showroom-topology.png" width="48%" alt="Showroom Topology Map" style="border-radius: 8px;" />
+  <img src="docs/screenshots/02-showroom-topology.png" width="48%" alt="Historical Gate capture; replace after the release gate passes" style="border-radius: 8px;" />
 </div>
+
+### Cloud-backed cycle kickoff
+
+The repository now includes a cloud-backed path so a new auction does not need
+to be processed from the same disk that captured it. The operator stages the
+sanctioned manifest and every
+full-resolution photograph in a private Cloud Storage cycle prefix. A READY
+marker written last is the explicit kickoff: Eventarc delivers it to the Cloud
+Run service, which idempotently launches a Cloud Run Job. The job processes the
+cloud copy with Vertex AI, publishes its JSON/workbook/email artifacts back to
+the same cycle, and marks it active only after success. Bid transmission remains
+a human action. See [`docs/CLOUD_CYCLES.md`](docs/CLOUD_CYCLES.md).
 <div align="center" style="margin-top: 8px;">
   <img src="docs/screenshots/03-curator-challenge.png" width="48%" alt="Curator Challenge Pitch" style="border-radius: 8px;" />
   <img src="docs/screenshots/05-the-sheet.png" width="48%" alt="Allocated Bid Sheet" style="border-radius: 8px;" />
@@ -164,9 +182,8 @@ Appraisals feed into pure, unit-tested valuation logic implementing the store's 
 ```
 blue-toad-fleet/
 ├── data/                       # Verified cycle data, manifests, and bid sheets
-│   ├── aug22_absentee_bid_email.txt            # Final sealed absentee bid email draft
-│   ├── BlueToad_2026-08-22_BidSheet.xlsx       # 8-column approved bid workbook
-│   └── BlueToad_2026-07-11_Benchmark_Comparison.xlsx # 10-column benchmark workbook
+│   ├── aug22_absentee_bid_email.txt            # Historical absentee draft
+│   ├── BlueToad_2026-08-22_BidSheet.xlsx       # Historical workbook
 ├── demo/                       # Credential-free reproducible demo runners
 │   ├── run_demo.py             # Pure decision pipeline demo
 │   ├── run_cycles.py           # 2-cycle cross-cycle learning demo
@@ -179,20 +196,22 @@ blue-toad-fleet/
 │   ├── VIDEO_WORKFLOW.md       # Reproducible evidence-backed media workflow
 │   └── screenshots/            # High-resolution UI captures
 ├── infra/                      # Cloud Run deployment scripts
-│   └── deploy.sh               # Idempotent Cloud Run deployment script
+│   ├── deploy.sh               # Deploy service plus cycle infrastructure
+│   └── provision_cycles.sh     # Bucket, processor job, IAM, Eventarc
 ├── scripts/                    # Live cycle runners & verification tools
-│   ├── run_aug22_cycle.py      # Production sourcing cycle compiler
-│   ├── run_july11_benchmark.py # Historical A/B benchmark reconciler
+│   ├── run_aug22_cycle.py      # Retired legacy writer (refuses with guidance)
+│   ├── run_july11_benchmark.py # Quarantined historical entry point (refuses)
 │   └── capture_screenshots.mjs # Automated Playwright dark-mode screenshot capture
 ├── src/                        # Core application code
 │   ├── appraisal/              # Question queue & cross-cycle keyed memory
 │   ├── appraiser/              # Vertex AI client, OpenAPI 3.0 schemas, prompts
 │   ├── assemble/               # Lot assembly & multi-angle merging
 │   ├── bidmath/                # Pure deterministic valuation & greedy allocator
+│   ├── cycles/                 # Cloud Storage contract and Cloud Run Job worker
 │   ├── gate/                   # Gate Console UI renderer (pure HTML/CSS)
 │   ├── intake/                 # Manifest parsing, natural sort & spatial clustering
 │   └── server.py               # Cloud Run FastAPI server & API endpoints
-├── tests/                      # Comprehensive pytest unit suite (692 tests)
+├── tests/                      # Comprehensive pytest suite; count reported by make test
 ├── Dockerfile                  # Container definition for Google Cloud Run
 ├── LICENSE                     # MIT License
 ├── Makefile                    # Standard developer workflow targets

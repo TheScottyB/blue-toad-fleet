@@ -18,6 +18,8 @@ computed. The guard is code, not a sentence in a prompt.
 import re
 from dataclasses import dataclass, field
 
+from src.gate.challenge import ChallengeFacts
+
 ALPHA_PICKS = 3
 
 # Money in prose: $1,250.00 / $100 / $25.50. Requires the dollar sign, so a
@@ -45,6 +47,7 @@ class PitchFacts:
     ruled_out: list[str] = field(default_factory=list)
     committed_max: float = 0.0
     committed_all_in: float = 0.0
+    challenge: ChallengeFacts | None = None
 
     @property
     def allowed_amounts(self) -> set[float]:
@@ -53,11 +56,13 @@ class PitchFacts:
         for l in (*self.alpha, *self.fast_smalls):
             out.add(l.max_bid)
             out.add(l.committed_max)
+        if self.challenge:
+            out.update(self.challenge.allowed_amounts)
         return {round(v, 2) for v in out if v}
 
 
 def build_pitch(decisions, captions: dict[str, str],
-                standing_rules=()) -> PitchFacts:
+                standing_rules=(), challenge: ChallengeFacts | None = None) -> PitchFacts:
     """
     Sort the allocated sheet into what the owner is actually asked to weigh in on.
 
@@ -98,7 +103,7 @@ def build_pitch(decisions, captions: dict[str, str],
 
     return PitchFacts(alpha=alpha, fast_smalls=fast, ruled_out=ruled_out,
                       committed_max=committed_max,
-                      committed_all_in=committed_all_in)
+                      committed_all_in=committed_all_in, challenge=challenge)
 
 
 def invented_amounts(text: str, allowed: set[float]) -> list[float]:

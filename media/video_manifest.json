@@ -1,5 +1,19 @@
 {
   "schema_version": 1,
+  "producers": {
+    "facts": "scripts/build_submission_facts.py",
+    "cards": "scripts/make_title_cards.mjs",
+    "architecture_diagram": "scripts/generate_architecture_diagram.py",
+    "gallery_page": "scripts/build_local_gallery.py",
+    "beat2_page": "scripts/build_beat2.py",
+    "terminal_replay": "scripts/build_terminal_replay.py",
+    "recordings": "scripts/video_recording.mjs",
+    "beat1": "scripts/build_beat1.py",
+    "beat2": "scripts/transcode_recording.py",
+    "beat3": "scripts/build_beat3.py",
+    "beat4": "scripts/transcode_recording.py",
+    "final": "scripts/assemble_final.py"
+  },
   "facts": "media/submission_facts.json",
   "final_output": "media/blue_toad_fleet_demo.mp4",
   "final_contract": {
@@ -53,6 +67,7 @@
     "embedding_cache": "data/aug22_gallery_4160518/embeddings.json",
     "reshoot_edges": "data/aug22_gallery_4160518/reshoot_edges.json",
     "pipeline_state": "data/aug22_gallery_4160518/pipeline_state.json",
+    "absorption_evidence": "data/aug22_gallery_4160518/absorption_evidence.json",
     "video_script": "docs/VIDEO_SCRIPT.md"
   },
   "recordings": {
@@ -87,8 +102,8 @@
       ],
       "steps": [
         {"label": "hero", "anchor": null, "glide_ms": 0, "hold_ms": 5500},
-        {"label": "topology", "anchor": "POLE BARN SHOWROOM TOPOLOGY", "glide_ms": 2100, "hold_ms": 6800},
-        {"label": "curator", "anchor": "Curator's Negotiation", "glide_ms": 1700, "hold_ms": 6600},
+        {"label": "topology", "anchor": "WALK-ORDER GROUPING", "glide_ms": 2100, "hold_ms": 6800},
+        {"label": "curator", "anchor": "CURATOR’S READ", "glide_ms": 1700, "hold_ms": 6600},
         {"label": "memory", "anchor": "ANSWERED FROM MEMORY", "glide_ms": 1700, "hold_ms": 6800},
         {"label": "sheet", "anchor": "BT-001", "glide_ms": 2100, "hold_ms": 7900, "offset": 150},
         {"label": "bids", "anchor": "BT-021", "glide_ms": 3900, "hold_ms": 4600},

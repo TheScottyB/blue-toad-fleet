@@ -81,6 +81,7 @@ class Appraisal:
 # Kinds whose questions are about a specific cluster of photos, not a whole
 # category. Two unrelated shelves of stoneware are two questions, not one.
 _CLUSTER_SCOPED = frozenset({QuestionKind.LOT_GROUPING, QuestionKind.SCOPE})
+_STANDING_POLICY_KINDS = frozenset({QuestionKind.POLICY, QuestionKind.APPETITE})
 
 
 # What a person can actually answer at a desk on Friday night, holding nothing
@@ -131,8 +132,19 @@ class Question:
 
     @property
     def rule_key(self) -> tuple[str, str]:
-        """How an answer generalises into memory. Always (kind, category)."""
+        """Lookup key for the correct authority type.
+
+        Policy/appetite answers generalise by category. Grouping/scope answers
+        are rulings on the exact cluster or lot set and never share that key.
+        """
+        if self.kind in _CLUSTER_SCOPED:
+            return self.ruling_key
         return (self.kind.value, self.category)
+
+    @property
+    def ruling_key(self) -> tuple[str, str]:
+        scope = self.cluster_id or ",".join(sorted(self.lot_ids))
+        return (self.kind.value, scope)
 
     @property
     def impact(self) -> float:
@@ -165,10 +177,32 @@ class StandingRule:
         return (self.kind.value, self.category)
 
 
+@dataclass(frozen=True)
+class LotRuling:
+    """A cycle/cluster answer that is forbidden from becoming category policy."""
+    kind: QuestionKind
+    answer: str
+    learned_cycle: str
+    lot_ids: tuple[str, ...]
+    cluster_id: str | None = None
+
+    def __post_init__(self):
+        if self.kind not in _CLUSTER_SCOPED:
+            raise ValueError(f"{self.kind.value} is not a lot/cluster ruling kind")
+        if not self.lot_ids:
+            raise ValueError("lot ruling requires at least one stable lot id")
+
+    @property
+    def ruling_key(self) -> tuple[str, str]:
+        scope = self.cluster_id or ",".join(sorted(self.lot_ids))
+        return (self.kind.value, scope)
+
+
 @dataclass
 class QueueResult:
     asked: list[Question] = field(default_factory=list)
-    auto_answered: list[tuple[Question, StandingRule]] = field(default_factory=list)
+    auto_answered: list[tuple[Question, StandingRule | LotRuling]] = field(
+        default_factory=list)
     dropped: list[Question] = field(default_factory=list)
     deferred: list[Question] = field(default_factory=list)
 
@@ -185,6 +219,30 @@ class QueueResult:
         for q in (*self.dropped, *self.deferred):
             out.update(q.lot_ids)
         return out
+
+    @property
+    def unresolved(self) -> list[Question]:
+        """Every question that still needs evidence or an operator decision."""
+        return [*self.asked, *self.deferred, *self.dropped]
+
+    @property
+    def unresolved_lot_ids(self) -> set[str]:
+        return {lot_id for question in self.unresolved for lot_id in question.lot_ids}
+
+    def accounting(self) -> dict:
+        def lots(rows):
+            return sorted({lot_id for question in rows for lot_id in question.lot_ids})
+
+        return {
+            "asked": {"count": len(self.asked), "lot_ids": lots(self.asked)},
+            "auto_answered": {
+                "count": len(self.auto_answered),
+                "lot_ids": lots([question for question, _ in self.auto_answered]),
+            },
+            "deferred": {"count": len(self.deferred), "lot_ids": lots(self.deferred)},
+            "dropped": {"count": len(self.dropped), "lot_ids": lots(self.dropped)},
+            "unresolved_lot_ids": sorted(self.unresolved_lot_ids),
+        }
 
 
 def group(questions: Iterable[Question]) -> list[Question]:
@@ -221,6 +279,7 @@ def build_queue(
     standing_rules: Iterable[StandingRule] = (),
     cap: int = MAX_QUESTIONS_PER_CYCLE,
     desk_answerable: frozenset[QuestionKind] = DESK_ANSWERABLE,
+    lot_rulings: Iterable[LotRuling] = (),
 ) -> QueueResult:
     """
     Group, suppress anything a standing rule already answers, set aside what the
@@ -232,10 +291,12 @@ def build_queue(
     grouping question that actually decides how the sheet is built.
     """
     rules = {r.rule_key: r for r in standing_rules}
+    rulings = {r.ruling_key: r for r in lot_rulings}
     result = QueueResult()
 
     for q in sorted(group(questions), key=lambda x: x.impact, reverse=True):
-        rule = rules.get(q.rule_key)
+        rule = (rulings.get(q.ruling_key) if q.kind in _CLUSTER_SCOPED
+                else rules.get(q.rule_key))
         if rule is not None:
             result.auto_answered.append((q, rule))
         elif q.kind not in desk_answerable:
@@ -248,23 +309,10 @@ def build_queue(
     return result
 
 
-# House conventions: grouping/scope answers may generalise across clusters
-# in the two-cycle demo. Durable shop memory must not: a "these two lanterns
-# are separate lots" answer would suppress every future railroad grouping
-# question. Firestore / the Gate only persist POLICY and APPETITE.
-CONVENTION_GENERALISABLE = frozenset({
-    QuestionKind.POLICY, QuestionKind.LOT_GROUPING,
-    QuestionKind.SCOPE, QuestionKind.APPETITE,
-})
-SHOP_MEMORY_GENERALISABLE = frozenset({
-    QuestionKind.POLICY, QuestionKind.APPETITE,
-})
-
-
 def learn(
     answered: Iterable[tuple[Question, str]],
     cycle: str,
-    generalisable: frozenset[QuestionKind] = CONVENTION_GENERALISABLE,
+    generalisable: frozenset[QuestionKind] = _STANDING_POLICY_KINDS,
 ) -> list[StandingRule]:
     """
     Promote answers to standing rules.
@@ -278,4 +326,22 @@ def learn(
         StandingRule(kind=q.kind, category=q.category, answer=a, learned_cycle=cycle)
         for q, a in answered
         if q.kind in generalisable
+    ]
+
+
+def learn_rulings(
+    answered: Iterable[tuple[Question, str]],
+    cycle: str,
+) -> list[LotRuling]:
+    """Persist cluster-specific grouping/scope answers without generalising."""
+    return [
+        LotRuling(
+            kind=q.kind,
+            answer=answer,
+            learned_cycle=cycle,
+            lot_ids=q.lot_ids,
+            cluster_id=q.cluster_id,
+        )
+        for q, answer in answered
+        if q.kind in _CLUSTER_SCOPED
     ]

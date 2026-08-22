@@ -8,6 +8,7 @@ getting it wrong quietly poisons the sheet downstream.
 """
 
 from dataclasses import dataclass, field
+import html
 import re
 
 # "Preview image for {caption}" is how AuctionZip embeds captions in the gallery
@@ -61,7 +62,9 @@ class WorkItem:
 
 
 def clean_caption(raw: str) -> str:
-    cleaned = _PREVIEW.sub("", (raw or "").strip()).strip()
+    # AuctionZip supplies HTML text. Decode it exactly once here; every renderer
+    # is responsible for escaping the resulting plain text for its own boundary.
+    cleaned = html.unescape(_PREVIEW.sub("", (raw or "").strip()).strip())
     cleaned = re.sub(r"\bnon-spoprt\b", "non-sport", cleaned, flags=re.IGNORECASE)
     return cleaned
 

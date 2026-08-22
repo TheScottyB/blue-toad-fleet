@@ -3,8 +3,11 @@
 The model names the surface and zone. This module clusters photos along the
 auctioneer's walk so multi-angle and under-table runs become one lot.
 """
+import hashlib
+import json
 from dataclasses import dataclass
 from enum import Enum
+from pathlib import Path
 
 from src.intake.manifest import LotGroup, TriagedPhoto
 
@@ -50,6 +53,50 @@ class PhotoObservation:
     same_lot_as_previous: bool = False
     margin_neighbors: tuple[str, ...] = ()
     adjacencies: tuple[AdjacencyClaim, ...] = ()
+
+
+def load_observations(
+    path: str | Path,
+    *,
+    expected_photo_ids: set[str],
+    expected_manifest_sha256: str,
+) -> list[PhotoObservation]:
+    """Load a complete listing-level observation set with source identity."""
+    source = Path(path)
+    raw = json.loads(source.read_text())
+    if not isinstance(raw, dict) or raw.get("schema_version") != 1:
+        raise ValueError("spatial observations have an unsupported schema")
+    if raw.get("manifest_sha256") != expected_manifest_sha256:
+        raise ValueError("spatial observations are stale for the source manifest")
+    if raw.get("model") != "gemini-3.6-flash":
+        raise ValueError("spatial observations were not produced by the required model")
+    rows = raw.get("observations")
+    if not isinstance(rows, list):
+        raise ValueError("spatial observations must be a list")
+    ids = [str(row.get("photo_id") or "") for row in rows if isinstance(row, dict)]
+    if len(ids) != len(set(ids)) or set(ids) != expected_photo_ids:
+        raise ValueError("spatial observation coverage does not match the manifest")
+
+    observations = []
+    for row in rows:
+        claims = []
+        for claim in row.get("adjacencies") or []:
+            edge = str(claim.get("edge") or "")
+            from_id = str(claim.get("from_id") or "")
+            to_id = str(claim.get("to_id") or "")
+            if (from_id != row["photo_id"] or to_id not in expected_photo_ids
+                    or edge not in {"left", "right", "behind", "below", "above"}):
+                raise ValueError(f"invalid adjacency claim for {row['photo_id']}")
+            claims.append(AdjacencyClaim(from_id, edge, to_id))
+        observations.append(PhotoObservation(
+            photo_id=str(row["photo_id"]),
+            zone=Zone(row.get("zone") or Zone.UNKNOWN.value),
+            surface=SurfaceSignature(row.get("surface_signature") or "other"),
+            summary=str(row.get("summary") or ""),
+            margin_neighbors=tuple(str(value) for value in row.get("margin_neighbors") or ()),
+            adjacencies=tuple(claims),
+        ))
+    return observations
 
 
 @dataclass(frozen=True)

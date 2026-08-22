@@ -13,6 +13,8 @@ sources in a schema field, it wrote bare domains — "https://www.bssauction.com
 citations come from grounding_metadata, which the model does not author.
 """
 
+from threading import Event
+
 import pytest
 
 from src.appraiser.pricing import (
@@ -80,6 +82,155 @@ class TestWhenAPriceMayBeBidOn:
 
     def test_low_above_high_is_refused(self):
         assert not price_is_usable([gp(90, 40) for _ in range(3)])
+
+
+class TestGroundedBatchBecomesSheetEvidence:
+    def test_unpriced_workflow_states_distinguish_waiting_retry_and_inconclusive(self):
+        from src.appraiser.grounded_batch import grounded_status_reason
+
+        assert grounded_status_reason(None).startswith("pending deep comps")
+        assert grounded_status_reason({"attempt_complete": False}).startswith(
+            "deep comps retry pending"
+        )
+        assert grounded_status_reason({"attempt_complete": True}).startswith(
+            "needs deeper comps"
+        )
+
+    def test_pricing_starts_before_every_appraisal_finishes(self, tmp_path):
+        from src.appraiser import AppraisalEngine
+        from src.appraiser.grounded_batch import GroundedPricingPipeline
+
+        pricing_started = Event()
+        engine = AppraisalEngine()
+        engine._client = object()
+
+        def appraise(lot_id, **kwargs):
+            if lot_id == "BT-002":
+                assert pricing_started.wait(timeout=2), (
+                    "grounded pricing waited for the whole appraisal batch"
+                )
+            return {
+                "lot_id": lot_id,
+                "identification": f"identified {lot_id}",
+                "category": "advertising",
+                "fit_score": 0.85,
+            }
+
+        class PricingEngine:
+            def price_lot_grounded(self, _identification, _category):
+                pricing_started.set()
+                return gp(40, 60, comps=4)
+
+        engine.appraise_lot = appraise
+        pricing = GroundedPricingPipeline(
+            tmp_path / "prices.json", workers=1, engine_factory=PricingEngine,
+        )
+        try:
+            appraisals, _ = engine.run_enrichment_appraisal_pipeline(
+                [
+                    {"lot_id": "BT-001", "caption": "first"},
+                    {"lot_id": "BT-002", "caption": "second"},
+                ],
+                force_refresh=True,
+                appraisal_workers=2,
+                appraisal_result_callback=pricing.submit,
+            )
+            prices = pricing.finish()
+        except Exception:
+            pricing.shutdown()
+            raise
+
+        assert [row["lot_id"] for row in appraisals] == ["BT-001", "BT-002"]
+        assert [row["lot_id"] for row in prices] == ["BT-001", "BT-002"]
+
+    def test_only_complete_usable_rows_cross_the_comp_seam(self, tmp_path):
+        from src.appraiser.grounded_batch import (
+            grounded_reference_comps, run_grounded_pricing_batch,
+        )
+
+        class Engine:
+            def price_lot_grounded(self, _identification, _category):
+                return gp(40, 60, comps=4)
+
+        appraisals = [
+            {"lot_id": "BT-001", "identification": "old sign",
+             "category": "advertising", "fit_score": 0.85},
+            {"lot_id": "BT-002", "identification": "filler",
+             "category": "other", "fit_score": 0.30},
+        ]
+        rows = run_grounded_pricing_batch(
+            appraisals, tmp_path / "prices.json", workers=1,
+            engine_factory=Engine,
+        )
+        assert [row["lot_id"] for row in rows] == ["BT-001"]
+        assert rows[0]["attempt_complete"] and rows[0]["usable"]
+        refs = grounded_reference_comps(rows)
+        assert refs["BT-001"]["provenance"] == "grounded_search"
+        assert refs["BT-001"]["citations"] == ["https://www.ebay.com/itm/1234"]
+
+    def test_grounded_comp_reaches_bid_allocation_and_clerk_email(self):
+        from src.appraiser.grounded_batch import grounded_reference_comps
+        from src.assemble.email import compile_absentee_email
+        from src.bidmath import CompEstimate, Confidence, Lot, allocate, price_lot
+
+        rows = [{
+            "lot_id": "BT-001", "identification": "old advertising sign",
+            "category": "advertising", "usable": True,
+            "attempt_complete": True, "errors": [],
+            "low": 80, "high": 120, "sold_comp_count": 4,
+            "sources": ["https://www.ebay.com/itm/1234"],
+        }]
+        record = grounded_reference_comps(rows)["BT-001"]
+        lot = Lot(
+            lot_id="BT-001", caption=record["desc"], category=record["cat"],
+            fit_score=0.90, condition_penalty=0.0,
+            comp=CompEstimate(
+                record["low"], record["high"], record["sources"],
+                Confidence.MEDIUM,
+            ),
+        )
+        decisions = allocate([price_lot(lot)], budget_cap=600,
+                             auto_send_threshold=0)
+        assert decisions[0].allocated and decisions[0].max_bid == 30.0
+        email = compile_absentee_email(
+            to="auction@example.com", subject="test", auction_date="test date",
+            venue="test venue", lots=[lot], decisions=decisions,
+        )
+        assert "[BT-001]" in email and "MAX $30.00" in email
+
+    def test_transient_errors_are_not_reused_as_a_completed_refusal(self, tmp_path):
+        import json
+        from src.appraiser.grounded_batch import (
+            attempt_history_path, run_grounded_pricing_batch,
+        )
+
+        class Broken:
+            def price_lot_grounded(self, _identification, _category):
+                raise RuntimeError("quota")
+
+        calls = {"count": 0}
+
+        class Recovered:
+            def price_lot_grounded(self, _identification, _category):
+                calls["count"] += 1
+                return gp(40, 60)
+
+        lot = {"lot_id": "BT-001", "identification": "old sign",
+               "category": "advertising", "fit_score": 0.85}
+        cache = tmp_path / "prices.json"
+        first = run_grounded_pricing_batch(
+            [lot], cache, workers=1, engine_factory=Broken)
+        assert not first[0]["attempt_complete"] and not first[0]["usable"]
+        second = run_grounded_pricing_batch(
+            [lot], cache, workers=1, engine_factory=Recovered)
+        assert second[0]["attempt_complete"] and second[0]["usable"]
+        assert calls["count"] == 3
+        history = json.loads(attempt_history_path(cache).read_text())
+        assert len(history) == 2
+        assert history[0]["errors"] and history[0]["attempt_complete"] is False
+        assert history[1]["errors"] == [] and history[1]["attempt_complete"] is True
+        assert history[0]["attempt_id"] != history[1]["attempt_id"]
+        assert all(row["method"] == "vertex_google_search_grounding" for row in history)
 
 
 class TestCitations:

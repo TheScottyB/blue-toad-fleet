@@ -153,6 +153,75 @@ def _group_counts(
     return len(groups), len(photos) - len(groups), len(edges)
 
 
+def _decision_facts(pipeline_state: dict) -> tuple[dict, list[str]]:
+    """Derive money/resale from the exact allocated decision records."""
+    decisions = pipeline_state.get("decisions")
+    if not isinstance(decisions, list):
+        raise VideoBuildError(
+            "pipeline state predates decision provenance; rerun the canonical pipeline"
+        )
+    allocated = [
+        row for row in decisions
+        if row.get("allocated") and not row.get("speculative")
+    ]
+    ids = [str(row.get("lot_id") or "") for row in allocated]
+    if not ids or len(ids) != len(set(ids)):
+        raise VideoBuildError("allocated decision ids are empty or duplicated")
+    resale_low = 0.0
+    resale_high = 0.0
+    for row in allocated:
+        comp = row.get("comp") or {}
+        try:
+            low = float(comp["low"])
+            high = float(comp["high"])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise VideoBuildError(
+                f"allocated lot {row.get('lot_id')} has no resale provenance"
+            ) from exc
+        if low <= 0 or high < low or not comp.get("provenance"):
+            raise VideoBuildError(
+                f"allocated lot {row.get('lot_id')} has invalid resale provenance"
+            )
+        resale_low += low
+        resale_high += high
+    committed_max = round(sum(float(row.get("committed_max") or 0) for row in allocated), 2)
+    committed_all_in = round(
+        sum(float(row.get("committed_all_in") or 0) for row in allocated), 2
+    )
+    if committed_all_in <= 0:
+        raise VideoBuildError("allocated decisions have no committed all-in exposure")
+    return ({
+        "committed_max": committed_max,
+        "committed_all_in": committed_all_in,
+        "estimated_gross_resale_low": round(resale_low, 2),
+        "estimated_gross_resale_high": round(resale_high, 2),
+        "gross_resale_multiple_low": round(resale_low / committed_all_in, 2),
+        "gross_resale_multiple_high": round(resale_high / committed_all_in, 2),
+    }, ids)
+
+
+def _publication_facts(video_manifest: dict, source_paths: dict[str, Path]) -> dict:
+    value = (video_manifest.get("sources") or {}).get("artifact_manifest")
+    if not value:
+        return {
+            "status": "unpublished_local_snapshot",
+            "release_eligible": False,
+            "reason": "no sealed artifact manifest is declared",
+        }
+    artifact = load_json_object(value, "artifact manifest")
+    if artifact.get("schema_version") != 2:
+        raise VideoBuildError("artifact manifest has an unsupported schema")
+    gallery_sha = sha256_file(source_paths["gallery_manifest"])
+    if artifact.get("source_manifest_sha256") != gallery_sha:
+        raise VideoBuildError("artifact manifest does not seal the gallery manifest")
+    return {
+        "status": "published",
+        "release_eligible": True,
+        "artifact_manifest_sha256": sha256_file(value),
+        "cycle_id": artifact.get("cycle_id"),
+    }
+
+
 def collect(manifest_value: str, output_value: str | None, junit_value: str | None) -> Path:
     video_manifest = load_json_object(manifest_value, "video manifest")
     require_keys(video_manifest, ["schema_version", "facts", "sources"], "video manifest")
@@ -169,7 +238,10 @@ def collect(manifest_value: str, output_value: str | None, junit_value: str | No
         ],
         "video sources",
     )
-    source_paths = {name: require_file(value, f"video source {name}") for name, value in sources.items()}
+    source_paths = {
+        name: require_file(value, f"video source {name}")
+        for name, value in sources.items()
+    }
 
     gallery = load_json_object(source_paths["gallery_manifest"], "gallery manifest")
     pipeline_state = load_json_object(source_paths["pipeline_state"], "pipeline state")
@@ -198,6 +270,13 @@ def collect(manifest_value: str, output_value: str | None, junit_value: str | No
         "needs_human_pricing",
     ]
     require_keys(summary, required_summary, "pipeline summary")
+    money, allocated_ids = _decision_facts(pipeline_state)
+    if (
+        round(float(summary["committed_max"]), 2) != money["committed_max"]
+        or round(float(summary["committed_all_in"]), 2) != money["committed_all_in"]
+        or int(summary["allocated"]) != len(allocated_ids)
+    ):
+        raise VideoBuildError("pipeline decisions do not reconcile to their summary")
     state_groups = int(summary.get("total_lots", pipeline_state.get("total_lots_count", -1)))
     if state_groups != groups:
         raise VideoBuildError(
@@ -226,10 +305,32 @@ def collect(manifest_value: str, output_value: str | None, junit_value: str | No
 
     commit = _git("rev-parse", "HEAD")
     dirty = bool(_git("status", "--porcelain"))
+    source_sha256 = {
+        name: sha256_file(path) for name, path in sorted(source_paths.items())
+    }
+    input_identity = __import__("hashlib").sha256(json.dumps(
+        source_sha256, sort_keys=True, separators=(",", ":"),
+    ).encode()).hexdigest()
+    external = pipeline_state.get("external_evidence") or {}
+    performance = pipeline_state.get("performance_and_cost") or {}
+    spatial = pipeline_state.get("spatial") or {"mode": "walk-only"}
+    queue = pipeline_state.get("queue") or {}
+    unresolved = set(queue.get("unresolved_lot_ids") or [])
+    release_blocking_lots = sorted(unresolved & set(allocated_ids))
+    publication = _publication_facts(video_manifest, source_paths)
+    if release_blocking_lots:
+        publication = {
+            **publication,
+            "release_eligible": False,
+            "reason": "allocated lots have unresolved questions",
+            "blocking_lot_ids": release_blocking_lots,
+        }
     snapshot = {
-        "schema_version": 1,
+        "schema_version": 2,
         "generated_at": datetime.now(timezone.utc).isoformat(),
+        "snapshot_identity_sha256": input_identity,
         "git": {"commit": commit, "dirty": dirty},
+        "publication": publication,
         "cycle": {
             "cycle_id": pipeline_state.get("cycle_id"),
             "listing_id": pipeline_state.get("listing_id"),
@@ -243,11 +344,11 @@ def collect(manifest_value: str, output_value: str | None, junit_value: str | No
             "approved_bids": int(summary["allocated"]),
             "skipped": int(summary["skipped"]),
             "needs_human_pricing": int(summary["needs_human_pricing"]),
+            "allocated_lot_ids": allocated_ids,
+            "queue": queue,
         },
-        "money": {
+        "money": {**money,
             "budget_cap": float(pipeline_state["budget_cap"]),
-            "committed_max": float(summary["committed_max"]),
-            "committed_all_in": float(summary["committed_all_in"]),
         },
         "tests": {**tests, "command": test_command},
         "runtime": {
@@ -257,10 +358,52 @@ def collect(manifest_value: str, output_value: str | None, junit_value: str | No
                 "appraisal": APPRAISAL_MODEL,
                 "curator": CURATOR_MODEL,
             },
+            "backend": pipeline_state.get("runtime_backend") or "local-snapshot",
         },
-        "source_sha256": {
-            name: sha256_file(path) for name, path in sorted(source_paths.items())
+        "performance_and_cost": {
+            "planning_estimate": performance.get("planning_estimate"),
+            "measured": performance.get("measured") or {
+                "cost_status": "unavailable",
+                "duration_status": "unavailable",
+            },
         },
+        "feature_evidence": {
+            "spatial_room_graph": {
+                "status": ("verified" if spatial.get("mode") == "validated-listing-graph"
+                           else "walk_only_current_snapshot"),
+                **spatial,
+            },
+            "seller_hub_absorption": (
+                external.get("absorption")
+                or {"status": "unavailable", "days_on_market_used": False}
+            ),
+            "container_decomposition": {
+                "requested": len((pipeline_state.get("coverage") or {}).get(
+                    "decomposition_requested_ids") or []),
+                "successful": len((pipeline_state.get("coverage") or {}).get(
+                    "decomposition_success_ids") or []),
+            },
+            "curator_challenge": {
+                "contract": "src/gate/challenge.py",
+                "cycle_status": "available only for a matched current evidence revision",
+            },
+        },
+        "stories": {
+            "grounding_two_call": {
+                "contract": "src/appraiser/engine.py:price_lot_grounded",
+                "test": "tests/test_pricing.py",
+                "claim": "grounded search and schema extraction are separate calls",
+            },
+            "bt_002_answer_to_money": {
+                "lot_id": "BT-002",
+                "per_unit_max": 25.0,
+                "units": 3,
+                "committed_max": 75.0,
+                "committed_all_in": 86.25,
+                "test": "tests/test_ruling_to_mechanic.py",
+            },
+        },
+        "source_sha256": source_sha256,
     }
     output = output_value or str(video_manifest["facts"])
     return atomic_write_text(output, json.dumps(snapshot, indent=2, sort_keys=True) + "\n")
