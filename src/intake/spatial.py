@@ -229,3 +229,50 @@ def reshoot_edges(
             continue
         edges.add(frozenset({i, j}))
     return edges
+
+
+def merge_reshoots(
+    groups: list[LotGroup],
+    edges: set[frozenset[str]],
+) -> list[LotGroup]:
+    parent = {id(g): g for g in groups}
+
+    def group_of(photo_id: str) -> LotGroup | None:
+        for g in groups:
+            if photo_id in g.photo_ids:
+                return g
+        return None
+
+    unions: dict[LotGroup, LotGroup] = {g: g for g in groups}
+
+    def find(g: LotGroup) -> LotGroup:
+        while unions[g] is not g:
+            unions[g] = unions[unions[g]]
+            g = unions[g]
+        return g
+
+    for edge in edges:
+        a, b = tuple(edge)
+        ga, gb = group_of(a), group_of(b)
+        if ga is None or gb is None:
+            continue
+        ra, rb = find(ga), find(gb)
+        if ra is rb:
+            continue
+        earlier, later = (ra, rb) if ra.lot_key <= rb.lot_key else (rb, ra)
+        unions[later] = earlier
+
+    buckets: dict[LotGroup, list[str]] = {}
+    order: list[LotGroup] = []
+    for g in groups:
+        root = find(g)
+        if root not in buckets:
+            buckets[root] = []
+            order.append(root)
+        for pid in g.photo_ids:
+            if pid not in buckets[root]:
+                buckets[root].append(pid)
+    return [
+        LotGroup(lot_key=root.lot_key, photo_ids=tuple(buckets[root]))
+        for root in order
+    ]
