@@ -122,8 +122,18 @@ to be softened to match the code. The code comes up to meet it.
       generalised beyond the hand-entered `OPERATOR_APPROVED["ruling"]` field.
 
 - [ ] **C4. Velocity — via the operator's own eBay Seller Hub, through the
-      browser connection.** `README.md:113`, defined in full in `NOTES.md`
-      (commit `dce15ed`), implemented nowhere; `fit_score` stands in for it.
+      browser connection.** `README.md:113`. Implemented nowhere; `fit_score`
+      stands in for it.
+
+      **The definition is NOT in NOTES.md — read it out of git history.**
+      `dce15ed` (2026-08-20 01:06) added a 60-line "VELOCITY — the definition
+      behind `fit_score`" section; `99e2b19` (2026-08-20 11:55, *"distilled
+      NOTES.md into clean Engineering Logbook & ADR record"*) deleted it ten
+      hours later. The formula `velocity = gross margin $ / holding period (days
+      on market)` survives in no file in the working tree — verified by grep.
+      Recover it with `git show dce15ed -- NOTES.md` before building C4, and
+      consider restoring it: the target function this item implements currently
+      exists only in a commit nobody reading the repo would find.
 
       **The route is settled and is NOT Google-Search grounding.** Operator,
       2026-08-21: *"for the ebay velocity claim, we use the users ebay seller
