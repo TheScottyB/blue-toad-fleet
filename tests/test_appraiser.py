@@ -27,7 +27,8 @@ class TestRouting:
         assert per_triage_photo < per_appraisal
 
     def test_full_cycle_stays_under_two_dollars(self):
-        c = estimate_cost_usd(photo_count=428, candidate_count=61)
+        c = estimate_cost_usd(photo_count=428, candidate_count=61, container_count=12)
+        assert c["decomposition_usd"] > 0
         assert c["total_usd"] < 2.00, c
 
     def test_cost_scales_with_volume(self):

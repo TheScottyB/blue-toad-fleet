@@ -25,18 +25,26 @@ except ImportError:
     GENAI_AVAILABLE = False
 
 from src.appraisal import Appraisal, Confidence, Question, QuestionKind, StandingRule
-from src.appraiser.images import assert_appraisal_grade, read_local_image
+from src.appraiser.images import assert_appraisal_grade, image_mime_type, read_local_image
+from src.appraiser.containers import CONTAINER_TYPES, NormalizedBox, crop_to_container
 from src.appraiser.routing import TRIAGE_MODEL, APPRAISAL_MODEL, CURATOR_MODEL
 from src.appraiser.pricing import (
     PRICE_SCHEMA, PRICING_SYSTEM, build_pricing_prompt,
     sources_from_response, parse_price_payload,
 )
-from src.appraiser.schema import TRIAGE_SCHEMA, APPRAISAL_SCHEMA, to_vertex
+from src.appraiser.schema import (
+    TRIAGE_SCHEMA, APPRAISAL_SCHEMA, CONTAINER_LOCATION_SCHEMA,
+    CONTAINER_DECOMPOSITION_SCHEMA, to_vertex,
+)
 from src.appraiser.prompts import (
     TRIAGE_SYSTEM,
     APPRAISAL_SYSTEM,
+    CONTAINER_LOCATION_SYSTEM,
+    CONTAINER_DECOMPOSITION_SYSTEM,
     build_triage_prompt,
     build_appraisal_prompt,
+    build_container_location_prompt,
+    build_container_decomposition_prompt,
 )
 
 
@@ -116,7 +124,8 @@ class AppraisalEngine:
         prompt_text = build_triage_prompt(caption=caption, previous_summary=previous_summary)
         contents = [prompt_text]
         if image_bytes:
-            contents.append(types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg"))
+            contents.append(types.Part.from_bytes(
+                data=image_bytes, mime_type=image_mime_type(image_bytes) or "image/jpeg"))
 
         vertex_schema = to_vertex(TRIAGE_SCHEMA)
         models_to_try = [self.triage_model, "gemini-2.5-flash"]
@@ -151,6 +160,7 @@ class AppraisalEngine:
         image_bytes: Optional[bytes] = None,
         category_hint: Optional[str] = None,
         standing_rules: Optional[list[StandingRule]] = None,
+        container_decomposition: Optional[dict] = None,
     ) -> dict:
         """
         Execute Stage 2 detailed structured appraisal on a candidate lot.
@@ -168,10 +178,12 @@ class AppraisalEngine:
             caption=caption,
             category_hint=category_hint,
             standing_rules=standing_rules,
+            container_decomposition=container_decomposition,
         )
         contents = [prompt_text]
         if image_bytes:
-            contents.append(types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg"))
+            contents.append(types.Part.from_bytes(
+                data=image_bytes, mime_type=image_mime_type(image_bytes) or "image/jpeg"))
 
         vertex_schema = to_vertex(APPRAISAL_SCHEMA)
         models_to_try = [self.appraisal_model, "gemini-2.5-flash"]
@@ -192,12 +204,148 @@ class AppraisalEngine:
                 data = json.loads(resp.text)
                 data["lot_id"] = lot_id
                 data["model_used"] = model
+                if container_decomposition and container_decomposition.get("is_container_lot"):
+                    # This is evidence supplied to the appraisal, not model output
+                    # from APPRAISAL_SCHEMA, so preserve it beside the response.
+                    data["container_decomposition"] = container_decomposition
                 return data
             except Exception as e:
                 last_err = e
                 continue
 
         raise RuntimeError(f"Appraisal failed for lot {lot_id}: {last_err}")
+
+    def locate_container(
+        self,
+        lot_id: str,
+        caption: str,
+        image_bytes: Optional[bytes] = None,
+        spatial_context: Optional[str] = None,
+    ) -> dict:
+        """Find one defensible physical inclusion boundary in the full photo."""
+        assert_appraisal_grade(image_bytes, lot_id=lot_id)
+        if not self.client:
+            raise RuntimeError("Vertex AI client is not available.")
+
+        contents = [build_container_location_prompt(caption, spatial_context)]
+        contents.append(types.Part.from_bytes(
+            data=image_bytes, mime_type=image_mime_type(image_bytes) or "image/jpeg"))
+        last_err = None
+        for model in [self.appraisal_model, "gemini-2.5-flash"]:
+            try:
+                resp = self.client.models.generate_content(
+                    model=model,
+                    contents=contents,
+                    config=types.GenerateContentConfig(
+                        system_instruction=CONTAINER_LOCATION_SYSTEM,
+                        response_mime_type="application/json",
+                        response_schema=to_vertex(CONTAINER_LOCATION_SCHEMA),
+                        temperature=0.0,
+                    ),
+                )
+                data = json.loads(resp.text)
+                if not data.get("is_container_lot"):
+                    data.update(container_type="none", boundary=None)
+                elif NormalizedBox.from_mapping(data.get("boundary")) is None:
+                    raise ValueError("model returned an invalid container boundary")
+                elif data.get("container_type") not in set(CONTAINER_TYPES) - {"none"}:
+                    raise ValueError("model returned an invalid container type")
+                data["lot_id"] = lot_id
+                data["model_used"] = model
+                return data
+            except Exception as e:
+                last_err = e
+        raise RuntimeError(f"Container location failed for lot {lot_id}: {last_err}")
+
+    def decompose_container(
+        self,
+        lot_id: str,
+        caption: str,
+        image_bytes: Optional[bytes] = None,
+        spatial_boundary: Optional[dict | NormalizedBox] = None,
+        spatial_context: Optional[str] = None,
+        container_type: Optional[str] = None,
+    ) -> dict:
+        """Crop one container out of room clutter, then itemize only that crop.
+
+        ``spatial_boundary`` is the handoff from a Spatial Room Graph when one
+        exists.  With no handoff, the locator pass derives it from the photo.
+        The return value describes one auction lot; its ``contents`` are not
+        independently priceable lots.
+        """
+        assert_appraisal_grade(image_bytes, lot_id=lot_id)
+
+        supplied = (spatial_boundary if isinstance(spatial_boundary, NormalizedBox)
+                    else NormalizedBox.from_mapping(spatial_boundary))
+        if spatial_boundary is not None and supplied is None:
+            raise ValueError(f"{lot_id}: supplied spatial boundary is invalid")
+        if (supplied is not None and container_type is not None
+                and container_type not in set(CONTAINER_TYPES) - {"none"}):
+            raise ValueError(f"{lot_id}: supplied container type is invalid")
+
+        if supplied is None:
+            location = self.locate_container(
+                lot_id=lot_id,
+                caption=caption,
+                image_bytes=image_bytes,
+                spatial_context=spatial_context,
+            )
+            if not location.get("is_container_lot"):
+                return {
+                    **location,
+                    "contents": [],
+                    "background_exclusions": [],
+                    "hidden_extent": "none",
+                    "questions": [],
+                }
+            boundary = NormalizedBox.from_mapping(location["boundary"])
+            resolved_type = location.get("container_type") or "other"
+        else:
+            boundary = supplied
+            resolved_type = container_type or "other"
+            location = {
+                "lot_id": lot_id,
+                "is_container_lot": True,
+                "container_type": resolved_type,
+                "boundary": boundary.as_dict(),
+                "confidence": "high",
+                "reason": spatial_context or "Boundary supplied by Spatial Room Graph.",
+                "model_used": "spatial-room-graph",
+            }
+
+        cropped = crop_to_container(image_bytes, boundary)
+        if not self.client:
+            raise RuntimeError("Vertex AI client is not available.")
+
+        contents = [build_container_decomposition_prompt(caption, resolved_type)]
+        contents.append(types.Part.from_bytes(data=cropped, mime_type="image/jpeg"))
+        last_err = None
+        for model in [self.appraisal_model, "gemini-2.5-flash"]:
+            try:
+                resp = self.client.models.generate_content(
+                    model=model,
+                    contents=contents,
+                    config=types.GenerateContentConfig(
+                        system_instruction=CONTAINER_DECOMPOSITION_SYSTEM,
+                        response_mime_type="application/json",
+                        response_schema=to_vertex(CONTAINER_DECOMPOSITION_SCHEMA),
+                        temperature=0.1,
+                    ),
+                )
+                data = json.loads(resp.text)
+                return {
+                    **location,
+                    **data,
+                    "lot_id": lot_id,
+                    "is_container_lot": True,
+                    "container_type": resolved_type,
+                    "boundary": boundary.as_dict(),
+                    "boundary_model_used": location.get("model_used"),
+                    "model_used": model,
+                }
+            except Exception as e:
+                last_err = e
+        raise RuntimeError(f"Container decomposition failed for lot {lot_id}: {last_err}")
 
     def write_curator_voice(self, prompt: str, system: str = "") -> str:
         """
@@ -312,6 +460,7 @@ class AppraisalEngine:
                     "summary": caption[:40] if caption else "Uncaptioned item",
                     "fit_score": 0.20,
                     "worth_appraising": False,
+                    "needs_decomposition": False,
                     "error": str(e),
                 }
 
@@ -360,15 +509,16 @@ class AppraisalEngine:
                 caption = item.get("caption", "")
                 cat_hint = item.get("category_hint")
                 img_bytes = read_local_image(item.get("local_path"))
-
-                f = executor.submit(
-                    self.appraise_lot,
-                    lot_id=lot_id,
-                    caption=caption,
-                    image_bytes=img_bytes,
-                    category_hint=cat_hint,
-                    standing_rules=standing_rules,
-                )
+                kwargs = {
+                    "lot_id": lot_id,
+                    "caption": caption,
+                    "image_bytes": img_bytes,
+                    "category_hint": cat_hint,
+                    "standing_rules": standing_rules,
+                }
+                if item.get("container_decomposition"):
+                    kwargs["container_decomposition"] = item["container_decomposition"]
+                f = executor.submit(self.appraise_lot, **kwargs)
                 future_to_lot[f] = lot_id
 
             for f in as_completed(future_to_lot):
@@ -404,6 +554,71 @@ class AppraisalEngine:
             p.parent.mkdir(parents=True, exist_ok=True)
             p.write_text(json.dumps(results, indent=2))
 
+        return results
+
+    def run_decomposition_batch(
+        self,
+        candidates: list[dict],
+        cache_path: Optional[Path | str] = None,
+        force_refresh: bool = False,
+        max_workers: int = 4,
+        progress_callback: Optional[Callable[[int, int], None]] = None,
+    ) -> list[dict]:
+        """Spatially isolate and itemize every selected container candidate."""
+        if not candidates:
+            return []
+        required = {c["lot_id"] for c in candidates if c.get("lot_id")}
+        if self.will_use_cache(cache_path, force_refresh, required_ids=required):
+            return json.loads(Path(cache_path).read_text())
+        if not self.client:
+            raise RuntimeError(
+                "Vertex AI client not available and no cache covering all "
+                f"{len(required)} requested container lot(s).")
+
+        results = []
+        completed = 0
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            future_to_lot = {}
+            for item in candidates:
+                kwargs = {
+                    "lot_id": item["lot_id"],
+                    "caption": item.get("caption", ""),
+                    "image_bytes": read_local_image(item.get("local_path")),
+                    "spatial_context": item.get("spatial_context"),
+                }
+                if item.get("spatial_boundary") is not None:
+                    kwargs["spatial_boundary"] = item["spatial_boundary"]
+                if item.get("container_type"):
+                    kwargs["container_type"] = item["container_type"]
+                future = executor.submit(self.decompose_container, **kwargs)
+                future_to_lot[future] = item["lot_id"]
+
+            for future in as_completed(future_to_lot):
+                lot_id = future_to_lot[future]
+                try:
+                    result = future.result()
+                except Exception as e:
+                    result = {
+                        "lot_id": lot_id,
+                        "is_container_lot": False,
+                        "container_type": "none",
+                        "boundary": None,
+                        "contents": [],
+                        "background_exclusions": [],
+                        "hidden_extent": "unknown",
+                        "questions": [],
+                        "error": str(e),
+                    }
+                results.append(result)
+                completed += 1
+                if progress_callback:
+                    progress_callback(completed, len(candidates))
+
+        results.sort(key=lambda r: r.get("lot_id", ""))
+        if cache_path:
+            path = Path(cache_path)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(results, indent=2))
         return results
 
     @staticmethod

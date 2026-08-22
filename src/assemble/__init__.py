@@ -63,6 +63,9 @@ class AppraisedPhoto:
     condition_penalty: float = 0.0
     fit_score: float = 0.0
     confidence: Confidence = Confidence.NONE
+    # Spatially isolated alpha/supporting contents from this physical lot.
+    # These refine the clerk line; they are not independently priceable lots.
+    contents: tuple[str, ...] = ()
 
 
 def assemble_lots(
@@ -102,9 +105,26 @@ def assemble_lots(
         worst = max(m.condition_penalty for m in members)
         penalty = min(max(worst, 0.0), 1.0)
 
+        contents: list[str] = []
+        seen_contents: set[str] = set()
+        for member in members:
+            for item in member.contents:
+                item = " ".join(str(item).split())
+                key = item.casefold()
+                if item and key not in seen_contents:
+                    seen_contents.add(key)
+                    contents.append(item)
+
+        description = best.identification or primary.caption
+        new_contents = [item for item in contents
+                        if item.casefold() not in description.casefold()]
+        if new_contents:
+            prefix = f"{description} — " if description else ""
+            description = prefix + f"contents: {', '.join(new_contents)}"
+
         lots.append(Lot(
             lot_id=group.lot_key,
-            caption=best.identification or primary.caption,
+            caption=description,
             category=best.category,
             fit_score=best.fit_score,
             condition_penalty=penalty,

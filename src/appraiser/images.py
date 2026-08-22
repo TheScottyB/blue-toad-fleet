@@ -61,6 +61,17 @@ def image_dimensions(data: bytes | None) -> tuple[int, int] | None:
     return None
 
 
+def image_mime_type(data: bytes | None) -> str | None:
+    """MIME type from image bytes, independent of the CDN's misleading suffix."""
+    if not data:
+        return None
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return "image/webp"
+    if data[:2] == b"\xff\xd8":
+        return "image/jpeg"
+    return None
+
+
 def _webp_dimensions(data: bytes) -> tuple[int, int] | None:
     """Canvas size from a VP8 (lossy), VP8L (lossless) or VP8X (extended) chunk."""
     fourcc = data[12:16]

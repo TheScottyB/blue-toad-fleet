@@ -6,6 +6,8 @@ returning prose where the pipeline expects a field, and it is why a missing
 maker's mark becomes `null` plus a question rather than a confident invention.
 """
 
+from src.appraiser.containers import CONTAINER_TYPES, MARKET_ROLES
+
 CATEGORIES = [
     "breweriana", "railroad", "advertising", "travel posters", "stoneware",
     "native american", "vintage toys", "cameras", "other", "unsorted",
@@ -74,9 +76,108 @@ TRIAGE_SCHEMA = {
             "type": "boolean",
             "description": "True if a closer appraisal pass is warranted.",
         },
+        "needs_decomposition": {
+            "type": "boolean",
+            "description": "True when the sale subject is a box, tub, tray, case, "
+                           "basket, or similarly bounded group whose visible contents "
+                           "should be spatially isolated and itemized.",
+        },
     },
     "required": ["is_lot", "same_lot_as_previous", "category", "summary",
-                 "fit_score", "worth_appraising"],
+                 "fit_score", "worth_appraising", "needs_decomposition"],
+}
+
+
+_BOUNDARY_SCHEMA = {
+    "type": ["object", "null"],
+    "description": "Tight physical container boundary in normalized 0..1000 image coordinates.",
+    "properties": {
+        "x_min": {"type": "number", "minimum": 0, "maximum": 1000},
+        "y_min": {"type": "number", "minimum": 0, "maximum": 1000},
+        "x_max": {"type": "number", "minimum": 0, "maximum": 1000},
+        "y_max": {"type": "number", "minimum": 0, "maximum": 1000},
+    },
+    "required": ["x_min", "y_min", "x_max", "y_max"],
+}
+
+
+CONTAINER_LOCATION_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "is_container_lot": {
+            "type": "boolean",
+            "description": "True only when a physical boundary separates the sale subject's "
+                           "contents from adjacent room or table clutter.",
+        },
+        "container_type": {"type": "string", "enum": CONTAINER_TYPES},
+        "boundary": _BOUNDARY_SCHEMA,
+        "confidence": {"type": "string", "enum": CONFIDENCE},
+        "reason": {
+            "type": "string",
+            "description": "Brief visual evidence for the boundary, or why no boundary exists.",
+        },
+    },
+    "required": ["is_container_lot", "container_type", "boundary", "confidence", "reason"],
+}
+
+
+CONTAINER_DECOMPOSITION_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "contents": {
+            "type": "array",
+            "description": "Visible objects inside the isolated boundary. Group true duplicates; "
+                           "do not invent objects hidden beneath the top layer.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "item_name": {
+                        "type": "string",
+                        "description": "Conservative checkable identification; maker only if visible.",
+                    },
+                    "quantity": {
+                        "type": "integer", "minimum": 1,
+                        "description": "Visible count, or conservative lower bound when overlapping.",
+                    },
+                    "maker_or_series": {"type": ["string", "null"]},
+                    "period": {"type": ["string", "null"]},
+                    "marks_observed": {"type": "array", "items": {"type": "string"}},
+                    "market_role": {
+                        "type": "string", "enum": MARKET_ROLES,
+                        "description": "alpha for distinctive high-velocity assets; supporting for "
+                                       "identifiable secondary goods; filler for generic residue.",
+                    },
+                    "confidence": {"type": "string", "enum": CONFIDENCE},
+                    "condition_notes": {"type": "array", "items": {"type": "string"}},
+                },
+                "required": ["item_name", "quantity", "maker_or_series", "period",
+                             "marks_observed", "market_role", "confidence", "condition_notes"],
+            },
+        },
+        "background_exclusions": {
+            "type": "array",
+            "description": "Objects visible only beyond the rim or at crop margins; never lot contents.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "item_name": {"type": "string"},
+                    "reason": {"type": "string"},
+                },
+                "required": ["item_name", "reason"],
+            },
+        },
+        "hidden_extent": {
+            "type": "string",
+            "enum": ["none", "minor", "substantial", "unknown"],
+            "description": "How much of the in-boundary contents are obscured or layered.",
+        },
+        "questions": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Only questions that would materially change the contents itemization.",
+        },
+    },
+    "required": ["contents", "background_exclusions", "hidden_extent", "questions"],
 }
 
 

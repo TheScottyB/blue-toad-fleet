@@ -26,6 +26,7 @@ from src.appraisal import (
     Appraisal, Confidence as AppConfidence
 )
 from src.appraiser import AppraisalEngine
+from src.appraiser.containers import visible_contents
 from src.gate import CycleView, render_console
 from src.gate.pitch import build_pitch, curator_voice, _CURATOR_SYSTEM
 from scripts.run_vertex_pipeline import (
@@ -204,9 +205,9 @@ def get_aug22_state():
 
         # Determine appraisal attributes
         app_pair = appraisals_by_lot.get(lot_tag)
+        raw_app = app_pair[1] if app_pair else {}
         if lot_tag in REFERENCE_COMPS:
             comp_info = REFERENCE_COMPS[lot_tag]
-            raw_app = app_pair[1] if app_pair else {}
             ident = raw_app.get("identification", comp_info["desc"])
             cat = comp_info["cat"]
             # The owner's decision carries the fit; the appraiser's own condition
@@ -216,7 +217,7 @@ def get_aug22_state():
             conf = (AppConfidence(conf_str)
                     if conf_str in AppConfidence._value2member_map_ else AppConfidence.LOW)
         elif app_pair:
-            app_obj, raw_app = app_pair
+            app_obj, _ = app_pair
             ident = raw_app.get("identification", cap)
             cat = raw_app.get("category", "general estate")
             fit = float(raw_app.get("fit_score", 0.50))
@@ -240,6 +241,7 @@ def get_aug22_state():
             condition_penalty=penalty,
             fit_score=fit,
             confidence=conf,
+            contents=visible_contents(raw_app.get("container_decomposition")),
         ))
 
     # 3. Comps Mapping & Seam Assembly (assemble_lots)
@@ -493,6 +495,34 @@ def appraise_live(payload: dict = Body(...)):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Vertex AI appraisal failed: {e}")
+
+
+@app.post("/api/decompose")
+def decompose_live(payload: dict = Body(...)):
+    """Spatially isolate and itemize one cached gallery photo."""
+    lot_id = payload.get("lot_id")
+    if not lot_id:
+        raise HTTPException(status_code=400, detail="Missing lot_id")
+    photo_bytes = cached_photo_bytes(lot_id)
+    if photo_bytes is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No cached photo for {lot_id}; cannot decompose from a caption alone.",
+        )
+    try:
+        result = engine.decompose_container(
+            lot_id=lot_id,
+            caption=payload.get("caption", ""),
+            image_bytes=photo_bytes,
+            spatial_boundary=payload.get("spatial_boundary"),
+            spatial_context=payload.get("spatial_context"),
+            container_type=payload.get("container_type"),
+        )
+        return {"status": "success", "decomposition": result}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Vertex AI decomposition failed: {e}")
 
 
 @app.get("/api/email", response_class=PlainTextResponse)

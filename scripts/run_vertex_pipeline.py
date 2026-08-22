@@ -33,6 +33,7 @@ from src.appraisal import (
     StandingRule, build_queue
 )
 from src.appraiser import AppraisalEngine
+from src.appraiser.containers import append_visible_contents
 from src.appraiser.routing import TRIAGE_MODEL, estimate_cost_usd
 from src.bidmath import (
     Lot, CompEstimate, Confidence as BidConfidence, Priority, Decision,
@@ -200,6 +201,43 @@ def select_appraisal_candidates(
     return out
 
 
+def select_decomposition_candidates(
+    triage_results: list[dict],
+    photos: list[dict],
+    appraised_lot_ids: set[str] | None = None,
+) -> list[dict]:
+    """Select bounded collection lots for the spatial isolation pass.
+
+    This consumes an explicit structured triage signal rather than guessing
+    from plural words in captions.  A Spatial Room Graph may attach a trusted
+    boundary to a manifest photo; otherwise the decomposer locates it before
+    cropping.  Only lots continuing to appraisal need the extra pass.
+    """
+    verdicts = {t.get("photo_id"): t for t in triage_results}
+    out = []
+    for p in sorted(photos, key=lambda x: x.get("sequence", 0)):
+        verdict = verdicts.get(p.get("photo_id")) or {}
+        if not verdict.get("needs_decomposition"):
+            continue
+        lot_id = f"BT-{p.get('sequence', 0):03d}"
+        if appraised_lot_ids is not None and lot_id not in appraised_lot_ids:
+            continue
+        candidate = {
+            "lot_id": lot_id,
+            "caption": p.get("caption") or verdict.get("summary") or "(uncaptioned)",
+            "local_path": p.get("local_path"),
+        }
+        boundary = p.get("spatial_boundary") or p.get("container_boundary")
+        if boundary is not None:
+            candidate["spatial_boundary"] = boundary
+        if p.get("spatial_context"):
+            candidate["spatial_context"] = p["spatial_context"]
+        if p.get("container_type"):
+            candidate["container_type"] = p["container_type"]
+        out.append(candidate)
+    return out
+
+
 def operator_lot_inputs(lot_id: str, raw_appraisal: dict) -> tuple[float, float]:
     """
     (fit_score, condition_penalty) for a candidate lot.
@@ -343,6 +381,41 @@ def run_pipeline(
     candidate_items = select_appraisal_candidates(
         triage_results, lot_photos, always_include=set(REFERENCE_COMPS))
 
+    # 1c/2a. A bounded collection earns a two-pass spatial isolation before
+    # appraisal: locate the physical rim, crop away room noise, then itemize.
+    # Decomposition enriches one lot description; it never expands the lot or
+    # participates in cross-lot duplicate detection.
+    decomposition_candidates = select_decomposition_candidates(
+        triage_results,
+        lot_photos,
+        appraised_lot_ids={c["lot_id"] for c in candidate_items},
+    )
+    decomposition_by_lot = {}
+    if decomposition_candidates:
+        decomposition_cache = Path(data_dir) / "decomposition_results.json"
+        from_decomposition_cache = engine.will_use_cache(
+            decomposition_cache, force_live_vertex,
+            required_ids={c["lot_id"] for c in decomposition_candidates})
+        source = ("cached results" if from_decomposition_cache
+                  else "LIVE Vertex AI spatial isolation")
+        print(f"[*] Container Decomposition: {len(decomposition_candidates)} lots from {source}...")
+        try:
+            decompositions = engine.run_decomposition_batch(
+                decomposition_candidates,
+                cache_path=decomposition_cache,
+                force_refresh=force_live_vertex,
+                max_workers=4,
+            )
+        except Exception as e:
+            print(f"[!] Container decomposition unavailable ({e}); appraisals remain un-enriched.")
+            decompositions = []
+        decomposition_by_lot = {d.get("lot_id"): d for d in decompositions}
+
+    for candidate in candidate_items:
+        decomposition = decomposition_by_lot.get(candidate["lot_id"])
+        if decomposition and decomposition.get("is_container_lot"):
+            candidate["container_decomposition"] = decomposition
+
     from_cache = engine.will_use_cache(
         appraisal_cache, force_live_vertex,
         required_ids={c["lot_id"] for c in candidate_items})
@@ -420,7 +493,10 @@ def run_pipeline(
                 raw_app = {}
             fit, penalty = operator_lot_inputs(lot_id, raw_app)
             cat = comp_info["cat"]
-            ident = raw_app.get("identification", comp_info["desc"])
+            ident = append_visible_contents(
+                raw_app.get("identification", comp_info["desc"]),
+                raw_app.get("container_decomposition"),
+            )
 
             comp_est = CompEstimate(
                 low=comp_info["low"],

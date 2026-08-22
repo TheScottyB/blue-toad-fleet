@@ -22,6 +22,7 @@ from src.appraiser.images import (
     assert_appraisal_grade,
     full_size_url,
     image_dimensions,
+    image_mime_type,
     is_appraisal_grade,
     read_local_image,
 )
@@ -61,13 +62,17 @@ class TestImageDimensions:
     """Read dimensions with the stdlib — Pillow is a dev dependency, not a runtime one."""
 
     def test_reads_a_webp_which_is_what_the_gallery_serves(self):
-        assert image_dimensions(webp_of(560, 420)) == (560, 420)
+        image = webp_of(560, 420)
+        assert image_dimensions(image) == (560, 420)
+        assert image_mime_type(image) == "image/webp"
 
     def test_reads_a_webp_thumbnail(self):
         assert image_dimensions(webp_of(140, 105)) == (140, 105)
 
     def test_reads_a_jpeg(self):
-        assert image_dimensions(jpeg_of(560, 420)) == (560, 420)
+        image = jpeg_of(560, 420)
+        assert image_dimensions(image) == (560, 420)
+        assert image_mime_type(image) == "image/jpeg"
 
     @drop_is_cached
     def test_reads_the_real_cached_gallery_files(self):

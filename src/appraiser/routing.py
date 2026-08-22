@@ -16,6 +16,8 @@ CURATOR_MODEL = "gemma-4-26b-a4b-it-maas"
 EST_INPUT_TOKENS_PER_PHOTO = 1_500
 EST_OUTPUT_TOKENS_TRIAGE = 120
 EST_OUTPUT_TOKENS_APPRAISAL = 400
+EST_OUTPUT_TOKENS_CONTAINER_LOCATION = 120
+EST_OUTPUT_TOKENS_CONTAINER_ITEMIZATION = 600
 
 _PRICING = {  # USD per 1M tokens (input, output)
     TRIAGE_MODEL: (0.30, 2.50),
@@ -32,7 +34,11 @@ def model_for(tier: ModelTier) -> str:
     return TRIAGE_MODEL if tier is ModelTier.TRIAGE else APPRAISAL_MODEL
 
 
-def estimate_cost_usd(photo_count: int, candidate_count: int) -> dict[str, float]:
+def estimate_cost_usd(
+    photo_count: int,
+    candidate_count: int,
+    container_count: int = 0,
+) -> dict[str, float]:
     """
     What one cycle costs. Printed in the run log so the operator always knows,
     and so 'is this affordable' is never a question anyone has to guess at.
@@ -48,8 +54,18 @@ def estimate_cost_usd(photo_count: int, candidate_count: int) -> dict[str, float
         candidate_count * EST_INPUT_TOKENS_PER_PHOTO / 1e6 * a_in
         + candidate_count * EST_OUTPUT_TOKENS_APPRAISAL / 1e6 * a_out
     )
+    # One full-photo boundary call plus one cropped itemization call per
+    # selected container. Both use the appraisal model.
+    decomposition = (
+        container_count * 2 * EST_INPUT_TOKENS_PER_PHOTO / 1e6 * a_in
+        + container_count * (
+            EST_OUTPUT_TOKENS_CONTAINER_LOCATION
+            + EST_OUTPUT_TOKENS_CONTAINER_ITEMIZATION
+        ) / 1e6 * a_out
+    )
     return {
         "triage_usd": round(triage, 4),
         "appraisal_usd": round(appraisal, 4),
-        "total_usd": round(triage + appraisal, 4),
+        "decomposition_usd": round(decomposition, 4),
+        "total_usd": round(triage + appraisal + decomposition, 4),
     }

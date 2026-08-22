@@ -21,14 +21,25 @@ output is a question, not a guess.
 """
 
 from src.appraiser.routing import ModelTier, model_for, TRIAGE_MODEL, APPRAISAL_MODEL
-from src.appraiser.schema import TRIAGE_SCHEMA, APPRAISAL_SCHEMA, to_vertex
-from src.appraiser.prompts import build_triage_prompt, build_appraisal_prompt
+from src.appraiser.schema import (
+    TRIAGE_SCHEMA, APPRAISAL_SCHEMA, CONTAINER_LOCATION_SCHEMA,
+    CONTAINER_DECOMPOSITION_SCHEMA, to_vertex,
+)
+from src.appraiser.prompts import (
+    build_triage_prompt, build_appraisal_prompt,
+    build_container_location_prompt, build_container_decomposition_prompt,
+)
+from src.appraiser.containers import (
+    NormalizedBox, crop_to_container, visible_contents, append_visible_contents,
+)
 from src.appraiser.engine import AppraisalEngine
 
 __all__ = [
     "ModelTier", "model_for", "TRIAGE_MODEL", "APPRAISAL_MODEL",
-    "TRIAGE_SCHEMA", "APPRAISAL_SCHEMA", "to_vertex",
+    "TRIAGE_SCHEMA", "APPRAISAL_SCHEMA", "CONTAINER_LOCATION_SCHEMA",
+    "CONTAINER_DECOMPOSITION_SCHEMA", "to_vertex",
     "build_triage_prompt", "build_appraisal_prompt",
+    "build_container_location_prompt", "build_container_decomposition_prompt",
+    "NormalizedBox", "crop_to_container", "visible_contents", "append_visible_contents",
     "AppraisalEngine",
 ]
-
