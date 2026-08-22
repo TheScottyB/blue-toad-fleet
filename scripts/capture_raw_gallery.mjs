@@ -1,27 +1,55 @@
+import { execFileSync } from 'child_process';
+import { existsSync, mkdirSync, renameSync, rmSync } from 'fs';
+import { dirname } from 'path';
 import { chromium } from 'playwright';
-import { execSync } from 'child_process';
-import { existsSync } from 'fs';
+import {
+  checkedGoto,
+  fileUrl,
+  manifestArgument,
+  projectPath,
+  readJsonObject,
+  requireKeys,
+} from './video_recording.mjs';
 
-async function capture() {
-  if (!existsSync('/tmp/gallery_local.html')) {
-    console.log('Generating /tmp/gallery_local.html...');
-    execSync('python3 scripts/build_local_gallery.py', { stdio: 'inherit' });
-  }
-
-  const b = await chromium.launch({ channel: 'chrome', headless: true });
-  const p = await b.newPage({ viewport: { width: 1600, height: 1000 }, deviceScaleFactor: 2 });
-  const url = process.env.BTF_GALLERY || 'file:///tmp/gallery_local.html';
-
-  console.log(`Navigating to ${url}...`);
-  await p.goto(url, { waitUntil: 'domcontentloaded' });
-  await p.waitForTimeout(3000); // allow photo grid to load
-
-  const outPath = 'docs/screenshots/00-raw-auction-gallery.png';
-  await p.screenshot({ path: outPath, fullPage: false });
-  console.log(`[✓] Raw AuctionZip gallery screenshot saved: ${outPath}`);
-
-  await b.close();
+const manifestPath = manifestArgument();
+const manifest = readJsonObject(manifestPath, 'video manifest');
+const gallery = manifest.recordings?.gallery;
+requireKeys(gallery || {}, ['page'], 'gallery recording');
+const source = readJsonObject(manifest.sources.gallery_manifest, 'gallery manifest');
+const expectedImages = source.photos?.length;
+if (!Number.isInteger(expectedImages) || expectedImages <= 0) {
+  throw new Error('gallery manifest has no photos');
 }
 
-capture().catch(console.error);
+const configuredPython = process.env.BTF_PYTHON;
+const venvPython = projectPath('.venv/bin/python');
+const python = configuredPython || (existsSync(venvPython) ? venvPython : 'python3');
+execFileSync(
+  python,
+  [projectPath('scripts/build_local_gallery.py'), '--manifest', projectPath(manifestPath)],
+  { cwd: projectPath('.'), stdio: 'inherit' },
+);
 
+const destination = projectPath('docs/screenshots/00-raw-auction-gallery.png');
+const partial = projectPath('docs/screenshots/.00-raw-auction-gallery.partial.png');
+mkdirSync(dirname(destination), { recursive: true });
+const browser = await chromium.launch({ channel: 'chrome', headless: true });
+try {
+  const page = await browser.newPage({ viewport: { width: 1600, height: 1000 }, deviceScaleFactor: 2 });
+  await checkedGoto(page, process.env.BTF_GALLERY || fileUrl(gallery.page), {
+    waitUntil: 'domcontentloaded',
+  });
+  await page.waitForFunction(
+    count => [...document.images].filter(image => image.complete && image.naturalWidth > 0).length === count,
+    expectedImages,
+    { timeout: 120000 },
+  );
+  const actual = await page.evaluate(() => document.images.length);
+  if (actual !== expectedImages) throw new Error(`gallery has ${actual}/${expectedImages} images`);
+  await page.screenshot({ path: partial, fullPage: false });
+  renameSync(partial, destination);
+  console.log(`wrote ${destination}`);
+} finally {
+  rmSync(partial, { force: true });
+  await browser.close();
+}

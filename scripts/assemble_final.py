@@ -1,71 +1,363 @@
 #!/usr/bin/env python3
-"""Assemble the final narrated submission video.
+"""Build and verify the one authoritative narrated submission video.
 
-Previous version muxed each beat's video+mp3 into its own mp4 (encoding
-audio to AAC), then decoded and re-encoded ALL of those at the final concat
-(a second AAC encode), for 5 total audio join points. That double-transcode
-plus per-segment AAC frame-boundary rounding is the likely source of the
-audible clicks/dropouts reported after review.
-
-This version feeds each beat's *original* mp3 directly into a single
-concat filter alongside its video-only footage, so audio is encoded to AAC
-exactly once. It also drops the standalone "open" title card entirely --
-Beat 1 already opens with its own title card (per the script), so the old
-version showed the card, faded it out, then faded the *same* card back in
-for Beat 1's internal title -- a duplicate, not a design choice.
-
-Run order: build Beat 1/3 raw footage -> assemble_final.py
+Every input and output comes from ``media/video_manifest.json``. Audio and
+video durations are probed at build time, short footage is padded only within
+its declared allowance, and the prior final cut remains untouched unless the
+new file passes the stream, dimensions, duration, and size contract.
 """
-import subprocess
 
-run = lambda a: subprocess.run(a, check=True)
+from __future__ import annotations
 
-# (video path, mp3 path, target duration = mp3's own length, needs padding?)
-BEATS = [
-    ('media/raw/beat1_video.mp4', 'media/vo/beat1.mp3', 68.498866, False),
-    ('media/beat2_intake.mp4', 'media/vo/beat2.mp3', 63.111837, False),
-    ('media/raw/beat3_console.mp4', 'media/vo/beat3.mp3', 57.817687, False),
-    ('media/beat4_cloud_proof.mp4', 'media/vo/beat4.mp3', 38.127166, True),
-]
-CLOSE_SECS = 4.2
+import argparse
+import sys
+import tempfile
+from pathlib import Path
 
-ins = []
-for video, mp3, _dur, _pad in BEATS:
-    ins += ['-i', video]
-ins += ['-loop', '1', '-t', str(CLOSE_SECS), '-i', 'media/cards/close.png']
-for video, mp3, _dur, _pad in BEATS:
-    ins += ['-i', mp3]
-ins += ['-f', 'lavfi', '-t', str(CLOSE_SECS), '-i', 'anullsrc=r=44100:cl=stereo']
+from video_common import (
+    VideoBuildError,
+    atomic_media_output,
+    display_path,
+    load_json_object,
+    media_duration,
+    project_path,
+    require_file,
+    require_keys,
+    run,
+    validate_video,
+)
 
-n = len(BEATS)
-f, vlabels, alabels = [], [], []
-for i, (video, mp3, dur, pad) in enumerate(BEATS):
-    pad_step = f'tpad=stop_mode=clone:stop_duration=5.0,' if pad else ''
-    f.append(f'[{i}:v]scale=1920:1080:flags=lanczos,fps=30,setsar=1,format=yuv420p,'
-              f'{pad_step}trim=duration={dur:.6f},setpts=PTS-STARTPTS[v{i}]')
-    a_idx = n + 1 + i  # +1 for the close card video input ahead of the audio inputs
-    f.append(f'[{a_idx}:a]aresample=44100,aformat=channel_layouts=stereo,'
-              f'atrim=duration={dur:.6f},asetpts=PTS-STARTPTS[a{i}]')
-    vlabels.append(f'[v{i}]')
-    alabels.append(f'[a{i}]')
 
-close_v_idx = n
-close_a_idx = n + 1 + n
-f.append(f'[{close_v_idx}:v]scale=1920:1080:flags=lanczos,fps=30,setsar=1,format=yuv420p,'
-          f'fade=in:st=0:d=0.6,fade=out:st={CLOSE_SECS - 0.6:.2f}:d=0.6[v{n}]')
-f.append(f'[{close_a_idx}:a]aresample=44100,aformat=channel_layouts=stereo[a{n}]')
-vlabels.append(f'[v{n}]')
-alabels.append(f'[a{n}]')
+DEFAULT_MANIFEST = "media/video_manifest.json"
 
-pairs = ''.join(v + a for v, a in zip(vlabels, alabels))
-f.append(f'{pairs}concat=n={n + 1}:v=1:a=1[outv][outa]')
 
-# crf 30: this version feeds raw, less-precompressed source footage (the
-# original beat2/beat4 recordings) straight into the encoder instead of
-# already-round-tripped intermediates, so it needs a higher crf than before
-# to land under GitHub's 100MB non-LFS push limit for this ~3:48 1080p30 video.
-run(['ffmpeg', '-y', '-hide_banner', '-loglevel', 'error', *ins,
-     '-filter_complex', ';'.join(f), '-map', '[outv]', '-map', '[outa]',
-     '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '30', '-preset', 'slow',
-     '-c:a', 'aac', '-b:a', '128k', 'media/blue_toad_fleet_demo.mp4'])
-print('media/blue_toad_fleet_demo.mp4')
+def _positive_number(value, label: str) -> float:
+    try:
+        number = float(value)
+    except (TypeError, ValueError) as exc:
+        raise VideoBuildError(f"{label} must be a number") from exc
+    if number <= 0:
+        raise VideoBuildError(f"{label} must be positive")
+    return number
+
+
+def verify(manifest_path: str, output_override: str | None = None) -> None:
+    manifest = load_json_object(manifest_path, "video manifest")
+    require_keys(
+        manifest,
+        ["beats", "close", "final_contract", "final_output"],
+        "video manifest",
+    )
+    contract = manifest["final_contract"]
+    require_keys(
+        contract,
+        ["width", "height", "max_bytes", "duration_tolerance_seconds"],
+        "final contract",
+    )
+    beats = manifest["beats"]
+    if not isinstance(beats, list) or not beats:
+        raise VideoBuildError("video manifest must declare at least one beat")
+    expected_duration = sum(
+        media_duration(require_file(beat["audio"], f"{beat.get('name', 'beat')} audio"))
+        for beat in beats
+    ) + _positive_number(manifest["close"]["duration_seconds"], "close.duration_seconds")
+    output = require_file(output_override or manifest["final_output"], "final video")
+    validate_video(
+        output,
+        width=int(contract["width"]),
+        height=int(contract["height"]),
+        require_audio=True,
+        expected_duration=expected_duration,
+        duration_tolerance=float(contract["duration_tolerance_seconds"]),
+        max_bytes=int(contract["max_bytes"]),
+    )
+    print(
+        f"verified {display_path(output)}: {expected_duration:.3f}s expected, "
+        f"{output.stat().st_size:,} bytes, video+audio present"
+    )
+
+
+def build(manifest_path: str, output_override: str | None = None) -> None:
+    manifest = load_json_object(manifest_path, "video manifest")
+    require_keys(
+        manifest,
+        ["schema_version", "beats", "close", "encoder", "final_contract", "final_output"],
+        "video manifest",
+    )
+    if manifest["schema_version"] != 1:
+        raise VideoBuildError(
+            f"unsupported video manifest schema_version: {manifest['schema_version']}"
+        )
+    beats = manifest["beats"]
+    if not isinstance(beats, list) or not beats:
+        raise VideoBuildError("video manifest must declare at least one beat")
+
+    close = manifest["close"]
+    encoder = manifest["encoder"]
+    contract = manifest["final_contract"]
+    require_keys(close, ["card", "duration_seconds"], "close-card configuration")
+    require_keys(
+        encoder,
+        ["video_codec", "crf", "preset", "audio_codec", "audio_bitrate"],
+        "encoder configuration",
+    )
+    require_keys(
+        contract,
+        ["width", "height", "fps", "max_bytes", "duration_tolerance_seconds"],
+        "final contract",
+    )
+
+    width = int(contract["width"])
+    height = int(contract["height"])
+    fps = _positive_number(contract["fps"], "final_contract.fps")
+    close_duration = _positive_number(close["duration_seconds"], "close.duration_seconds")
+    close_card = require_file(close["card"], "close card")
+    output = project_path(output_override or manifest["final_output"])
+
+    inputs: list[str] = []
+    filters: list[str] = []
+    video_labels: list[str] = []
+    audio_labels: list[str] = []
+    probed: list[dict] = []
+
+    for index, beat in enumerate(beats):
+        if not isinstance(beat, dict):
+            raise VideoBuildError(f"beat {index + 1} must be an object")
+        require_keys(
+            beat,
+            ["name", "video", "audio", "max_video_pad_seconds"],
+            f"beat {index + 1}",
+        )
+        video = require_file(beat["video"], f"{beat['name']} video")
+        audio = require_file(beat["audio"], f"{beat['name']} audio")
+        video_duration = media_duration(video)
+        audio_duration = media_duration(audio)
+        allowance = float(beat["max_video_pad_seconds"])
+        if allowance < 0:
+            raise VideoBuildError(f"{beat['name']} max_video_pad_seconds cannot be negative")
+        deficit = max(0.0, audio_duration - video_duration)
+        if deficit > allowance + 0.02:
+            raise VideoBuildError(
+                f"{beat['name']} footage is {deficit:.3f}s shorter than its narration; "
+                f"declared allowance is {allowance:.3f}s"
+            )
+        probed.append(
+            {
+                "name": beat["name"],
+                "video": video,
+                "audio": audio,
+                "video_duration": video_duration,
+                "audio_duration": audio_duration,
+                "pad": deficit,
+            }
+        )
+    work_directory = tempfile.TemporaryDirectory(
+        dir=output.parent, prefix=".video-build-"
+    )
+    try:
+        # Normalize every beat before concatenation. Screen recordings can change
+        # color metadata midstream; feeding those files directly to concat makes
+        # FFmpeg rebuild the graph and can silently discard the close card.
+        for beat in probed:
+            normalized = Path(work_directory.name) / f"{beat['name']}.mp4"
+            video_filters = [
+                f"scale={width}:{height}:flags=lanczos",
+                f"fps={fps:g}",
+                "setsar=1",
+                "format=yuv420p",
+            ]
+            if beat["pad"] > 0:
+                video_filters.append(
+                    f"tpad=stop_mode=clone:stop_duration={beat['pad'] + 0.1:.6f}"
+                )
+            video_filters.extend(
+                [
+                    f"trim=duration={beat['audio_duration']:.6f}",
+                    "setpts=PTS-STARTPTS",
+                ]
+            )
+            run(
+                [
+                    "ffmpeg",
+                    "-y",
+                    "-hide_banner",
+                    "-loglevel",
+                    "error",
+                    "-reinit_filter",
+                    "0",
+                    "-i",
+                    str(beat["video"]),
+                    "-vf",
+                    ",".join(video_filters),
+                    "-an",
+                    "-c:v",
+                    "libx264",
+                    "-pix_fmt",
+                    "yuv420p",
+                    "-crf",
+                    "18",
+                    "-preset",
+                    "fast",
+                    str(normalized),
+                ]
+            )
+            if media_duration(normalized) + 0.05 < beat["audio_duration"]:
+                raise VideoBuildError(
+                    f"failed to normalize {beat['name']} footage to its narration duration"
+                )
+            beat["video"] = normalized
+
+        close_video = Path(work_directory.name) / "close.mp4"
+        run(
+            [
+                "ffmpeg",
+                "-y",
+                "-hide_banner",
+                "-loglevel",
+                "error",
+                "-loop",
+                "1",
+                "-i",
+                str(close_card),
+                "-t",
+                str(close_duration),
+                "-vf",
+                f"scale={width}:{height}:flags=lanczos,fps={fps:g},setsar=1,format=yuv420p",
+                "-an",
+                "-c:v",
+                "libx264",
+                "-pix_fmt",
+                "yuv420p",
+                "-crf",
+                "18",
+                "-preset",
+                "fast",
+                str(close_video),
+            ]
+        )
+        if abs(media_duration(close_video) - close_duration) > 0.1:
+            raise VideoBuildError("failed to materialize the declared close-card duration")
+    except BaseException:
+        work_directory.cleanup()
+        raise
+
+    for beat in probed:
+        inputs.extend(["-i", str(beat["video"])])
+
+    inputs.extend(["-i", str(close_video)])
+    for beat in probed:
+        inputs.extend(["-i", str(beat["audio"])])
+    inputs.extend(
+        [
+            "-f",
+            "lavfi",
+            "-i",
+            f"anullsrc=r=44100:cl=stereo:d={close_duration}",
+        ]
+    )
+
+    count = len(probed)
+    for index, beat in enumerate(probed):
+        duration = beat["audio_duration"]
+        filters.append(
+            f"[{index}:v]scale={width}:{height}:flags=lanczos,fps={fps:g},"
+            f"setsar=1,format=yuv420p,trim=duration={duration:.6f},"
+            f"setpts=PTS-STARTPTS[v{index}]"
+        )
+        audio_index = count + 1 + index
+        filters.append(
+            f"[{audio_index}:a]aresample=44100,aformat=channel_layouts=stereo,"
+            f"atrim=duration={duration:.6f},asetpts=PTS-STARTPTS[a{index}]"
+        )
+        video_labels.append(f"[v{index}]")
+        audio_labels.append(f"[a{index}]")
+
+    close_video_index = count
+    close_audio_index = count + 1 + count
+    fade_duration = min(0.6, close_duration / 3)
+    filters.append(
+        f"[{close_video_index}:v]scale={width}:{height}:flags=lanczos,fps={fps:g},"
+        f"setsar=1,format=yuv420p,fade=in:st=0:d={fade_duration:.3f},"
+        f"fade=out:st={close_duration - fade_duration:.3f}:d={fade_duration:.3f},"
+        f"trim=duration={close_duration:.6f},setpts=PTS-STARTPTS[v{count}]"
+    )
+    filters.append(
+        f"[{close_audio_index}:a]aresample=44100,aformat=channel_layouts=stereo,"
+        f"atrim=duration={close_duration:.6f},asetpts=PTS-STARTPTS[a{count}]"
+    )
+    video_labels.append(f"[v{count}]")
+    audio_labels.append(f"[a{count}]")
+    pairs = "".join(v + a for v, a in zip(video_labels, audio_labels))
+    filters.append(f"{pairs}concat=n={count + 1}:v=1:a=1[outv][outa]")
+
+    expected_duration = sum(item["audio_duration"] for item in probed) + close_duration
+    try:
+        with atomic_media_output(output) as temporary:
+            run(
+                [
+                    "ffmpeg",
+                    "-y",
+                    "-hide_banner",
+                    "-loglevel",
+                    "error",
+                    *inputs,
+                    "-filter_complex",
+                    ";".join(filters),
+                    "-map",
+                    "[outv]",
+                    "-map",
+                    "[outa]",
+                    "-c:v",
+                    str(encoder["video_codec"]),
+                    "-pix_fmt",
+                    "yuv420p",
+                    "-crf",
+                    str(encoder["crf"]),
+                    "-preset",
+                    str(encoder["preset"]),
+                    "-c:a",
+                    str(encoder["audio_codec"]),
+                    "-b:a",
+                    str(encoder["audio_bitrate"]),
+                    "-movflags",
+                    "+faststart",
+                    str(temporary),
+                ]
+            )
+            validate_video(
+                temporary,
+                width=width,
+                height=height,
+                require_audio=True,
+                expected_duration=expected_duration,
+                duration_tolerance=float(contract["duration_tolerance_seconds"]),
+                max_bytes=int(contract["max_bytes"]),
+            )
+    finally:
+        work_directory.cleanup()
+
+    print(
+        f"built {display_path(output)}: {expected_duration:.3f}s, "
+        f"{output.stat().st_size:,} bytes, video+audio verified"
+    )
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--manifest", default=DEFAULT_MANIFEST)
+    parser.add_argument("--output", help="override final_output for a verification build")
+    parser.add_argument("--verify-only", action="store_true")
+    args = parser.parse_args(argv)
+    try:
+        if args.verify_only:
+            verify(args.manifest, args.output)
+        else:
+            build(args.manifest, args.output)
+    except VideoBuildError as exc:
+        print(f"video build failed: {exc}", file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

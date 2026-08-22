@@ -1,0 +1,124 @@
+{
+  "schema_version": 1,
+  "facts": "media/submission_facts.json",
+  "final_output": "media/blue_toad_fleet_demo.mp4",
+  "final_contract": {
+    "width": 1920,
+    "height": 1080,
+    "fps": 30,
+    "max_bytes": 100000000,
+    "duration_tolerance_seconds": 0.75
+  },
+  "encoder": {
+    "video_codec": "libx264",
+    "crf": 30,
+    "preset": "slow",
+    "audio_codec": "aac",
+    "audio_bitrate": "128k"
+  },
+  "close": {
+    "card": "media/cards/close.png",
+    "duration_seconds": 4.2
+  },
+  "beats": [
+    {
+      "name": "beat1",
+      "video": "media/raw/beat1_video.mp4",
+      "audio": "media/vo/beat1.mp3",
+      "max_video_pad_seconds": 0.25
+    },
+    {
+      "name": "beat2",
+      "video": "media/beat2_intake.mp4",
+      "audio": "media/vo/beat2.mp3",
+      "max_video_pad_seconds": 0.25
+    },
+    {
+      "name": "beat3",
+      "video": "media/raw/beat3_console.mp4",
+      "audio": "media/vo/beat3.mp3",
+      "max_video_pad_seconds": 0.25
+    },
+    {
+      "name": "beat4",
+      "video": "media/beat4_cloud_proof.mp4",
+      "audio": "media/vo/beat4.mp3",
+      "max_video_pad_seconds": 5.0
+    }
+  ],
+  "sources": {
+    "gallery_manifest": "data/aug22_gallery_4160518/manifest.json",
+    "triage_results": "data/aug22_gallery_4160518/triage_results.json",
+    "appraisal_results": "data/aug22_gallery_4160518/appraisal_results.json",
+    "embedding_cache": "data/aug22_gallery_4160518/embeddings.json",
+    "reshoot_edges": "data/aug22_gallery_4160518/reshoot_edges.json",
+    "pipeline_state": "data/aug22_gallery_4160518/pipeline_state.json",
+    "video_script": "docs/VIDEO_SCRIPT.md"
+  },
+  "recordings": {
+    "gallery": {
+      "page": "media/raw/video_pages/gallery.html",
+      "output": "media/raw/gallery.webm",
+      "composited_output": "media/raw/beat1_video.mp4",
+      "title_card": "media/cards/open.png",
+      "title_duration_seconds": 4.4,
+      "duration_seconds": 55,
+      "top_hold_seconds": 3,
+      "bottom_hold_seconds": 4
+    },
+    "beat2": {
+      "page": "media/raw/video_pages/beat2.html",
+      "output": "media/raw/beat2.webm",
+      "composited_output": "media/beat2_intake.mp4"
+    },
+    "walkthrough": {
+      "url_env": "BTF_URL",
+      "default_url": "https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app",
+      "output": "media/raw/walkthrough.webm",
+      "markers": "media/raw/beats.json",
+      "composited_output": "media/raw/beat3_console.mp4",
+      "overlays": [
+        {"card": "lt-hero", "start": "hero", "start_offset": 0.4, "end": "topology", "end_offset": -0.5},
+        {"card": "lt-topology", "start": "topology", "start_offset": 0.7, "end": "curator", "end_offset": -0.6},
+        {"card": "lt-curator", "start": "curator", "start_offset": 0.7, "end": "memory", "end_offset": -0.6},
+        {"card": "lt-memory", "start": "memory", "start_offset": 0.7, "end": "sheet", "end_offset": -0.6},
+        {"card": "lt-sheet", "start": "sheet", "start_offset": 0.7, "end": "bids", "end_offset": -0.6},
+        {"card": "lt-skips", "start": "skips", "start_offset": 0.5, "end": "end", "end_offset": -0.4}
+      ],
+      "steps": [
+        {"label": "hero", "anchor": null, "glide_ms": 0, "hold_ms": 5500},
+        {"label": "topology", "anchor": "POLE BARN SHOWROOM TOPOLOGY", "glide_ms": 2100, "hold_ms": 6800},
+        {"label": "curator", "anchor": "Curator's Negotiation", "glide_ms": 1700, "hold_ms": 6600},
+        {"label": "memory", "anchor": "ANSWERED FROM MEMORY", "glide_ms": 1700, "hold_ms": 6800},
+        {"label": "sheet", "anchor": "BT-001", "glide_ms": 2100, "hold_ms": 7900, "offset": 150},
+        {"label": "bids", "anchor": "BT-021", "glide_ms": 3900, "hold_ms": 4600},
+        {"label": "skips", "anchor": "BT-003", "glide_ms": 2400, "hold_ms": 5500}
+      ]
+    },
+    "terminal": {
+      "steps": "media/video_inputs/terminal_steps.json",
+      "page": "media/raw/video_pages/terminal.html",
+      "output": "media/raw/terminal.webm",
+      "composited_output": "media/beat4_cloud_proof.mp4",
+      "commands": [
+        {
+          "display": "gcloud run services describe blue-toad-fleet --region us-central1",
+          "argv": [
+            "gcloud",
+            "run",
+            "services",
+            "describe",
+            "blue-toad-fleet",
+            "--region",
+            "us-central1",
+            "--format=value(status.latestReadyRevisionName,status.url)"
+          ]
+        },
+        {
+          "display": "python -m pytest -q",
+          "argv": [".venv/bin/python", "-m", "pytest", "-q"]
+        }
+      ]
+    }
+  }
+}

@@ -1,29 +1,23 @@
-// Beat 4 footage: replay of the real gcloud / pytest session at 1080p.
-import { chromium } from 'playwright';
-import { readdirSync, renameSync, statSync } from 'fs';
+// Beat 4: record the declared, previously captured proof session.
+import {
+  checkedGoto,
+  fileUrl,
+  manifestArgument,
+  readJsonObject,
+  recordPage,
+  requireKeys,
+} from './video_recording.mjs';
 
-const DIR = 'media/raw';
-const b = await chromium.launch({ channel: 'chrome' });
-const ctx = await b.newContext({
-  viewport: { width: 1600, height: 900 },
-  colorScheme: 'dark',
-  recordVideo: { dir: DIR, size: { width: 1600, height: 900 } },
+const manifest = readJsonObject(manifestArgument(), 'video manifest');
+const config = manifest.recordings?.terminal;
+requireKeys(config || {}, ['page', 'output', 'steps'], 'terminal recording');
+
+const output = await recordPage({
+  output: config.output,
+  action: async page => {
+    await checkedGoto(page, fileUrl(config.page), { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => document.title === 'done', null, { timeout: 180000 });
+    await page.waitForTimeout(1500);
+  },
 });
-const p = await ctx.newPage();
-await p.goto('file:///tmp/terminal.html');
-// NOTE: arg 2 is the polling argument, not options -- passing {timeout} there
-// is silently ignored and the 30s default applies.
-await p.waitForFunction(() => document.title === 'done', null, { timeout: 180000 });
-await p.waitForTimeout(1500);
-await ctx.close();
-await b.close();
-
-const OUTPUTS = new Set(['walkthrough.webm', 'gallery.webm', 'terminal.webm']);
-const webm = readdirSync(DIR)
-  .filter(f => f.endsWith('.webm') && !OUTPUTS.has(f))
-  .map(f => ({ f, t: statSync(`${DIR}/${f}`).mtimeMs }))
-  .sort((a, b) => a.t - b.t)
-  .pop()?.f;
-if (!webm) throw new Error('no new recording found in ' + DIR);
-renameSync(`${DIR}/${webm}`, `${DIR}/terminal.webm`);
-console.log('media/raw/terminal.webm');
+console.log(output);

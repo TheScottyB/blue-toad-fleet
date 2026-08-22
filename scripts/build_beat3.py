@@ -1,42 +1,149 @@
 #!/usr/bin/env python3
-"""Composite the live Gate Console walkthrough with lower-third overlays.
+"""Composite the recorded Gate Console walkthrough with declared lower thirds."""
 
-Beat 3 footage only -- adapted from build_video.py's overlay logic so it can
-be muxed with beat3.mp3 independently of the open/close teaser assembly.
-Run order: record_walkthrough.mjs -> build_beat3.py
-"""
-import json, subprocess
+from __future__ import annotations
 
-beats = {b['label']: b['t'] for b in json.load(open('media/raw/beats.json'))}
-dur = float(subprocess.check_output(
-    ['ffprobe', '-v', 'error', '-show_entries', 'format=duration',
-     '-of', 'csv=p=0', 'media/raw/walkthrough.webm']).strip())
-off = dur - beats['end']          # recorder starts before the first beat
-V = {k: v + off for k, v in beats.items()}
+import argparse
+import json
+import sys
 
-wins = [('lt-hero',     V['hero'] + 0.4,     V['topology'] - 0.5),
-        ('lt-topology', V['topology'] + 0.7, V['curator'] - 0.6),
-        ('lt-curator',  V['curator'] + 0.7,  V['memory'] - 0.6),
-        ('lt-memory',   V['memory'] + 0.7,   V['sheet'] - 0.6),
-        ('lt-sheet',    V['sheet'] + 0.7,    V['bids'] - 0.6),
-        ('lt-skips',    V['skips'] + 0.5,    V['end'] - 0.4)]
+from video_common import (
+    VideoBuildError,
+    atomic_media_output,
+    display_path,
+    load_json_object,
+    media_duration,
+    project_path,
+    require_file,
+    require_keys,
+    run,
+    validate_video,
+)
 
-ins = ['-i', 'media/raw/walkthrough.webm']
-for c, _, _ in wins:
-    ins += ['-loop', '1', '-i', f'media/cards/{c}.png']
 
-f = ['[0:v]scale=1920:1080:flags=lanczos,fps=30,setsar=1[base]']
-prev = 'base'
-for i, (c, s, e) in enumerate(wins, 1):
-    f.append(f'[{i}:v]format=rgba,fade=in:st={s:.2f}:d=0.45:alpha=1,'
-             f'fade=out:st={e-0.45:.2f}:d=0.45:alpha=1[c{i}]')
-    f.append(f"[{prev}][c{i}]overlay=0:0:enable='between(t,{s-0.1:.2f},{e:.2f})'[v{i}]")
-    prev = f'v{i}'
-f.append(f'[{prev}]trim=duration={dur:.2f},setpts=PTS-STARTPTS[main]')
+def build(manifest_value: str, output_value: str | None) -> None:
+    manifest = load_json_object(manifest_value, "video manifest")
+    walkthrough = manifest.get("recordings", {}).get("walkthrough", {})
+    contract = manifest.get("final_contract", {})
+    require_keys(
+        walkthrough,
+        ["output", "markers", "composited_output", "overlays"],
+        "walkthrough recording",
+    )
+    require_keys(contract, ["width", "height", "fps"], "final contract")
+    source = require_file(walkthrough["output"], "walkthrough recording")
+    marker_path = require_file(walkthrough["markers"], "walkthrough markers")
+    try:
+        raw_markers = json.loads(marker_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise VideoBuildError(f"invalid walkthrough markers: {exc}") from exc
+    if not isinstance(raw_markers, list):
+        raise VideoBuildError("walkthrough markers must be a list")
+    markers = {
+        item.get("label"): float(item["t"])
+        for item in raw_markers
+        if isinstance(item, dict) and item.get("label") and "t" in item
+    }
+    duration = media_duration(source)
+    if "end" not in markers:
+        raise VideoBuildError("walkthrough markers are missing end")
+    offset = duration - markers["end"]
+    if offset < -0.25:
+        raise VideoBuildError(
+            f"walkthrough end marker ({markers['end']:.3f}s) exceeds video ({duration:.3f}s)"
+        )
+    adjusted = {name: timestamp + max(0.0, offset) for name, timestamp in markers.items()}
 
-run = lambda a: subprocess.run(a, check=True)
-run(['ffmpeg', '-y', '-hide_banner', '-loglevel', 'error', *ins,
-     '-filter_complex', ';'.join(f), '-map', '[main]',
-     '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '18', '-preset', 'slow',
-     'media/raw/beat3_console.mp4'])
-print(f'media/raw/beat3_console.mp4 ({dur:.2f}s)')
+    overlays = walkthrough["overlays"]
+    if not isinstance(overlays, list) or not overlays:
+        raise VideoBuildError("walkthrough must declare at least one lower-third overlay")
+    inputs = ["-i", str(source)]
+    windows: list[tuple[str, float, float]] = []
+    for index, overlay in enumerate(overlays, 1):
+        require_keys(
+            overlay,
+            ["card", "start", "start_offset", "end", "end_offset"],
+            f"walkthrough overlay {index}",
+        )
+        if overlay["start"] not in adjusted or overlay["end"] not in adjusted:
+            raise VideoBuildError(
+                f"overlay {overlay['card']} references a missing walkthrough marker"
+            )
+        start = adjusted[overlay["start"]] + float(overlay["start_offset"])
+        end = adjusted[overlay["end"]] + float(overlay["end_offset"])
+        if start < 0 or end <= start or end > duration + 0.1:
+            raise VideoBuildError(
+                f"invalid overlay window for {overlay['card']}: {start:.3f}s..{end:.3f}s"
+            )
+        card = require_file(f"media/cards/{overlay['card']}.png", "lower-third card")
+        inputs.extend(["-loop", "1", "-i", str(card)])
+        windows.append((str(overlay["card"]), start, end))
+
+    width, height, fps = int(contract["width"]), int(contract["height"]), float(contract["fps"])
+    filters = [f"[0:v]scale={width}:{height}:flags=lanczos,fps={fps:g},setsar=1[base]"]
+    previous = "base"
+    for index, (_, start, end) in enumerate(windows, 1):
+        fade = min(0.45, (end - start) / 3)
+        filters.append(
+            f"[{index}:v]format=rgba,fade=in:st={start:.3f}:d={fade:.3f}:alpha=1,"
+            f"fade=out:st={end - fade:.3f}:d={fade:.3f}:alpha=1[card{index}]"
+        )
+        filters.append(
+            f"[{previous}][card{index}]overlay=0:0:enable='between(t,{start - 0.1:.3f},"
+            f"{end:.3f})'[video{index}]"
+        )
+        previous = f"video{index}"
+    filters.append(
+        f"[{previous}]trim=duration={duration:.6f},setpts=PTS-STARTPTS[main]"
+    )
+
+    output = project_path(output_value or walkthrough["composited_output"])
+    with atomic_media_output(output) as temporary:
+        run(
+            [
+                "ffmpeg",
+                "-y",
+                "-hide_banner",
+                "-loglevel",
+                "error",
+                *inputs,
+                "-filter_complex",
+                ";".join(filters),
+                "-map",
+                "[main]",
+                "-c:v",
+                "libx264",
+                "-pix_fmt",
+                "yuv420p",
+                "-crf",
+                "18",
+                "-preset",
+                "slow",
+                str(temporary),
+            ]
+        )
+        validate_video(
+            temporary,
+            width=width,
+            height=height,
+            require_audio=False,
+            expected_duration=duration,
+        )
+    print(f"built {display_path(output)} ({duration:.3f}s)")
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--manifest", default="media/video_manifest.json")
+    parser.add_argument("--output")
+    args = parser.parse_args(argv)
+    try:
+        build(args.manifest, args.output)
+    except (OSError, ValueError, VideoBuildError) as exc:
+        print(f"Beat 3 build failed: {exc}", file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

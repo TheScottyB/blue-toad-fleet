@@ -1,33 +1,50 @@
+import { mkdirSync, renameSync, rmSync } from 'fs';
+import { dirname } from 'path';
 import { chromium } from 'playwright';
-const URL='https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app';
-const OUT='docs/screenshots';
-const b=await chromium.launch({channel:'chrome'});
-const p=await b.newPage({viewport:{width:1600,height:1000},deviceScaleFactor:2,colorScheme:'dark'});
-await p.goto(URL,{waitUntil:'networkidle'});
-const shots=[
- ['01-gate-console',null],
- ['02-showroom-topology','POLE BARN SHOWROOM TOPOLOGY'],
- ['03-curator-challenge',"Curator's Negotiation"],
- ['04-memory-and-questions','ANSWERED FROM MEMORY'],
- ['05-the-sheet','BT-001',150],
- ['06-skip-reasoning','BT-003',80],
+import { checkedGoto, projectPath } from './video_recording.mjs';
+
+const url = process.env.BTF_URL || 'https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app';
+const shots = [
+  ['01-gate-console', null, 24],
+  ['02-showroom-topology', 'POLE BARN SHOWROOM TOPOLOGY', 24],
+  ['03-curator-challenge', "Curator's Negotiation", 24],
+  ['04-memory-and-questions', 'ANSWERED FROM MEMORY', 24],
+  ['05-the-sheet', 'BT-001', 150],
+  ['06-skip-reasoning', 'BT-003', 80],
 ];
-for(const [name,anchor,off=24] of shots){
-  if(anchor){
-    const y=await p.evaluate(([t,o])=>{
-      const all=[...document.querySelectorAll('body *')];
-      const hits=all.filter(e=>e.textContent&&e.textContent.toLowerCase().includes(t.toLowerCase()));
-      if(!hits.length) return null;
-      let el=hits[hits.length-1];
-      let n=el; while(n&&n.getBoundingClientRect().width<400) n=n.parentElement;
-      if(!n) n=el;
-      return Math.max(0,n.getBoundingClientRect().top+window.scrollY-o);
-    },[anchor,off]);
-    if(y===null){console.log('MISS',name);continue;} console.log('  y=',y,name);
-    await p.evaluate(v=>scrollTo(0,v),y);
-    await p.waitForTimeout(400);
+const browser = await chromium.launch({ channel: 'chrome' });
+try {
+  const page = await browser.newPage({
+    viewport: { width: 1600, height: 1000 },
+    deviceScaleFactor: 2,
+    colorScheme: 'dark',
+  });
+  await checkedGoto(page, url, { waitUntil: 'networkidle', timeout: 120000 });
+  for (const [name, anchor, offset] of shots) {
+    if (anchor) {
+      const y = await page.evaluate(([text, adjustment]) => {
+        const hits = [...document.querySelectorAll('body *')]
+          .filter(element => element.textContent?.toLowerCase().includes(text.toLowerCase()));
+        if (!hits.length) return null;
+        let node = hits[hits.length - 1];
+        while (node && node.getBoundingClientRect().width < 400) node = node.parentElement;
+        return Math.max(0, node.getBoundingClientRect().top + window.scrollY - adjustment);
+      }, [anchor, offset]);
+      if (y === null) throw new Error(`required screenshot anchor is missing: ${anchor}`);
+      await page.evaluate(value => scrollTo(0, value), y);
+      await page.waitForTimeout(400);
+    }
+    const destination = projectPath(`docs/screenshots/${name}.png`);
+    const partial = projectPath(`docs/screenshots/.${name}.partial.png`);
+    mkdirSync(dirname(destination), { recursive: true });
+    try {
+      await page.screenshot({ path: partial });
+      renameSync(partial, destination);
+      console.log(`wrote ${destination}`);
+    } finally {
+      rmSync(partial, { force: true });
+    }
   }
-  await p.screenshot({path:`${OUT}/${name}.png`});
-  console.log('ok',name);
+} finally {
+  await browser.close();
 }
-await b.close();

@@ -7,7 +7,7 @@
 
   [![Google Cloud Run](https://img.shields.io/badge/Google%20Cloud%20Run-Live%20Service-34d399?style=flat-square&logo=googlecloud)](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app)
   [![Vertex AI](https://img.shields.io/badge/Vertex%20AI-Gemini%203.6%20Flash-a78bfa?style=flat-square&logo=google)](https://cloud.google.com/vertex-ai)
-  [![Unit Tests](https://img.shields.io/badge/Unit%20Tests-682-38bdf8?style=flat-square&logo=pytest)](https://github.com/TheScottyB/blue-toad-fleet)
+  [![Unit Tests](https://img.shields.io/badge/Unit%20Tests-692-38bdf8?style=flat-square&logo=pytest)](https://github.com/TheScottyB/blue-toad-fleet)
   [![License: MIT](https://img.shields.io/badge/License-MIT-fbbf24?style=flat-square)](LICENSE)
 </div>
 
@@ -25,8 +25,11 @@
 
 ## Demo Video
 
-[`media/blue_toad_fleet_demo.mp4`](media/blue_toad_fleet_demo.mp4) — a narrated, 4-beat walkthrough (~3:48) covering the commercial problem, the Spatial Room Graph on the real Aug-22 gallery, the live Gate Console's Curator's Negotiation, and the live Cloud Run / test-suite proof. Recorded end to end from the real manifest, the real deployed console, and a real terminal session — see `docs/VIDEO_SCRIPT.md` for the shot-by-shot script.
+[`media/blue_toad_fleet_demo.mp4`](media/blue_toad_fleet_demo.mp4) — a narrated, four-beat walkthrough covering the commercial problem, evidence-backed photo grouping, the live Gate Console, and Cloud Run/test-suite proof. The checked-in cut was recorded on 2026-08-20 and contains that run's historical figures; it is not current submission evidence.
+
 The absentee email Blue Toad accepted is a closed artifact: **9 lots, $275.00 max, $316.25 all-in** (`data/aug22_absentee_bid_email_REVISED.txt`). The live console is the full processed set — every lot with a usable grounded comp, not the 12 hand-entered samples that produced that email. Current live sheet: **53 approved bids ($520.00 max)** / **$598.00** all-in, **$1,570–$4,189 estimated gross resale**, **2.63–7.01x**.
+
+The replacement workflow is declared in [`media/video_manifest.json`](media/video_manifest.json), derives mutable copy from a verified evidence snapshot, isolates every browser recording, and has one authoritative final assembler. See [`docs/VIDEO_WORKFLOW.md`](docs/VIDEO_WORKFLOW.md) before rebuilding. `make video-verify` checks dimensions, duration, size, and audio without changing the MP4.
 
 ---
 
@@ -45,7 +48,7 @@ make demo
 # 3. Watch cross-cycle memory collapse the clarification queue
 make cycles
 
-# 4. Run the unit suite — 675 pass, 7 network tests skip by default (~5s)
+# 4. Run the unit suite — 684 pass, 8 policy/network tests skip by default (~5s)
 make test
 ```
 
@@ -173,6 +176,7 @@ blue-toad-fleet/
 │   ├── app_icon.png
 │   ├── DEVPOST.md              # Complete Devpost submission story
 │   ├── VIDEO_SCRIPT.md         # 4-minute video walkthrough script
+│   ├── VIDEO_WORKFLOW.md       # Reproducible evidence-backed media workflow
 │   └── screenshots/            # High-resolution UI captures
 ├── infra/                      # Cloud Run deployment scripts
 │   └── deploy.sh               # Idempotent Cloud Run deployment script
@@ -188,7 +192,7 @@ blue-toad-fleet/
 │   ├── gate/                   # Gate Console UI renderer (pure HTML/CSS)
 │   ├── intake/                 # Manifest parsing, natural sort & spatial clustering
 │   └── server.py               # Cloud Run FastAPI server & API endpoints
-├── tests/                      # Comprehensive pytest unit suite (682 tests)
+├── tests/                      # Comprehensive pytest unit suite (692 tests)
 ├── Dockerfile                  # Container definition for Google Cloud Run
 ├── LICENSE                     # MIT License
 ├── Makefile                    # Standard developer workflow targets

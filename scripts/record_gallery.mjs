@@ -1,47 +1,52 @@
-// Beat 1 footage: the raw 462-photo gallery drop, scrolled top to bottom.
-import { chromium } from 'playwright';
-import { readdirSync, renameSync, statSync } from 'fs';
+// Beat 1: record the manifest-backed local gallery from an isolated Playwright run.
+import {
+  checkedGoto,
+  fileUrl,
+  manifestArgument,
+  readJsonObject,
+  recordPage,
+  requireKeys,
+} from './video_recording.mjs';
 
-// The live gallery serves 403 to automated clients (see src/intake/__init__.py),
-// so Beat 1 renders the cached drop from the manifest the pipeline actually ingests.
-const URL = process.env.BTF_GALLERY || 'file:///tmp/gallery_local.html';
-const DIR = 'media/raw';
+const manifest = readJsonObject(manifestArgument(), 'video manifest');
+requireKeys(manifest, ['recordings', 'sources'], 'video manifest');
+const config = manifest.recordings.gallery;
+requireKeys(
+  config,
+  ['page', 'output', 'duration_seconds', 'top_hold_seconds', 'bottom_hold_seconds'],
+  'gallery recording',
+);
+const source = readJsonObject(manifest.sources.gallery_manifest, 'gallery manifest');
+const expectedImages = source.photos?.length;
+if (!Number.isInteger(expectedImages) || expectedImages <= 0) {
+  throw new Error('gallery manifest has no photos');
+}
 
-const b = await chromium.launch({ channel: 'chrome' });
-const ctx = await b.newContext({
-  viewport: { width: 1600, height: 900 },
-  recordVideo: { dir: DIR, size: { width: 1600, height: 900 } },
+const output = await recordPage({
+  output: config.output,
+  contextOptions: { colorScheme: 'light' },
+  action: async page => {
+    await checkedGoto(page, fileUrl(config.page), { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(
+      count => [...document.images].filter(image => image.complete && image.naturalWidth > 0).length === count,
+      expectedImages,
+      { timeout: 120000 },
+    );
+    const actual = await page.evaluate(() => document.images.length);
+    if (actual !== expectedImages) {
+      throw new Error(`gallery page has ${actual}/${expectedImages} expected images`);
+    }
+    await page.waitForTimeout(Number(config.top_hold_seconds) * 1000);
+    await page.evaluate(duration => new Promise(resolve => {
+      const end = document.body.scrollHeight - innerHeight;
+      const started = performance.now();
+      (function step(now) {
+        const progress = Math.min(1, (now - started) / duration);
+        scrollTo(0, end * (progress * progress * (3 - 2 * progress)));
+        progress < 1 ? requestAnimationFrame(step) : resolve();
+      })(performance.now());
+    }), Number(config.duration_seconds) * 1000);
+    await page.waitForTimeout(Number(config.bottom_hold_seconds) * 1000);
+  },
 });
-const p = await ctx.newPage();
-await p.goto(URL, { waitUntil: 'domcontentloaded' });
-await p.waitForTimeout(2000);                    // let thumbnails paint
-
-const count = await p.evaluate(() => document.images.length);
-console.log('images:', count);
-
-await p.waitForTimeout(3000);                    // hold on the top of the wall
-// accelerating scroll: slow at first, then the overwhelm
-await p.evaluate(() => new Promise(res => {
-  const end = document.body.scrollHeight - innerHeight, t0 = performance.now(), dur = 55000;
-  (function step(now) {
-    const k = Math.min(1, (now - t0) / dur);
-    scrollTo(0, end * (k * k * (3 - 2 * k)));    // smoothstep
-    k < 1 ? requestAnimationFrame(step) : res();
-  })(performance.now());
-}));
-await p.waitForTimeout(4000);                    // hold on the bottom of the wall
-
-await ctx.close();
-await b.close();
-const OUTPUTS = new Set(['walkthrough.webm', 'gallery.webm']);
-// Sort by mtime, not by name: playwright's filenames are random hex, so a
-// lexicographic sort picks an arbitrary file -- often a leftover from an
-// earlier run -- and the fresh recording is silently thrown away.
-const webm = readdirSync(DIR)
-  .filter(f => f.endsWith('.webm') && !OUTPUTS.has(f))
-  .map(f => ({ f, t: statSync(`${DIR}/${f}`).mtimeMs }))
-  .sort((a, b) => a.t - b.t)
-  .pop()?.f;
-if (!webm) throw new Error('no new recording found in ' + DIR);
-renameSync(`${DIR}/${webm}`, `${DIR}/gallery.webm`);
-console.log('media/raw/gallery.webm');
+console.log(output);

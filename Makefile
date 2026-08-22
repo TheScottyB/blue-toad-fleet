@@ -1,4 +1,4 @@
-.PHONY: demo test install clean deploy cycles console
+.PHONY: demo test install clean deploy cycles console video video-verify video-prepare video-record video-compose
 
 VENV ?= .venv
 PYTHON = $(if $(wildcard $(VENV)/bin/python),$(VENV)/bin/python,python3)
@@ -25,3 +25,18 @@ clean:
 
 deploy:           ## Deploy to Cloud Run (requires gcloud auth + PROJECT_ID)
 	./infra/deploy.sh
+
+video-prepare:    ## Verify facts and render declared video pages/cards (runs tests + gcloud proof)
+	$(PYTHON) scripts/video_pipeline.py prepare
+
+video-record:     ## Record all four declared browser/terminal beats
+	$(PYTHON) scripts/video_pipeline.py record
+
+video-compose:    ## Normalize the four recordings into final beat footage
+	$(PYTHON) scripts/video_pipeline.py compose
+
+video:            ## Rebuild the complete facts-driven narrated submission video
+	$(PYTHON) scripts/video_pipeline.py all
+
+video-verify:     ## Verify final dimensions, duration, size, and audio presence
+	$(PYTHON) scripts/video_pipeline.py verify
