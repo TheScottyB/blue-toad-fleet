@@ -276,3 +276,29 @@ def merge_reshoots(
         LotGroup(lot_key=root.lot_key, photo_ids=tuple(buckets[root]))
         for root in order
     ]
+
+
+@dataclass(frozen=True)
+class Seat:
+    lot_id: str
+    zone: Zone
+    walk_index: int
+    photo_ids: tuple[str, ...]
+
+
+def seats_from_groups(
+    groups: list[LotGroup],
+    sequences: dict[str, int],
+    zones: dict[str, Zone] | None = None,
+) -> list[Seat]:
+    zones = zones or {}
+    seats = []
+    for g in groups:
+        walk = min(sequences.get(pid, 10**9) for pid in g.photo_ids)
+        zone = zones.get(g.lot_key, Zone.UNKNOWN)
+        seats.append(Seat(
+            lot_id=g.lot_key, zone=zone, walk_index=walk,
+            photo_ids=g.photo_ids,
+        ))
+    seats.sort(key=lambda s: s.walk_index)
+    return seats

@@ -1,5 +1,8 @@
 from src.intake.manifest import LotGroup
-from src.intake.spatial import merge_reshoots, nearest_neighbor, reshoot_edges, SANITY_FLOOR
+from src.intake.spatial import (
+    Seat, Zone, merge_reshoots, nearest_neighbor, reshoot_edges,
+    SANITY_FLOOR, seats_from_groups,
+)
 from src.bidmath import BidMechanic, CompEstimate, Confidence, Lot
 
 P2, P180, P181, P87 = "838421481", "838424264", "838424282", "838422448"
@@ -81,3 +84,21 @@ class TestMergeReshoots:
         assert len(photo_ids) == 2
         assert lot.unit_count == 3
         assert lot.unit_count != len(photo_ids)
+
+
+class TestSeats:
+    def test_merged_group_is_one_seat_two_thumbs(self):
+        g = LotGroup(lot_key="BT-002", photo_ids=(P2, P181))
+        seats = seats_from_groups([g], {P2: 2, P181: 181})
+        assert len(seats) == 1
+        assert seats[0].photo_ids == (P2, P181)
+        assert seats[0].walk_index == 2
+        assert seats[0].zone is Zone.UNKNOWN
+
+    def test_unplaced_seats_sorted_by_walk_index(self):
+        groups = [
+            LotGroup(lot_key="BT-087", photo_ids=(P87,)),
+            LotGroup(lot_key="BT-002", photo_ids=(P2,)),
+        ]
+        seats = seats_from_groups(groups, {P2: 2, P87: 87})
+        assert [s.lot_id for s in seats] == ["BT-002", "BT-087"]
