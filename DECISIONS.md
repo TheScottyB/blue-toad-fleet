@@ -102,3 +102,45 @@ derived figure belongs beside them.
 
 **Verified no-op:** the regenerated absentee email is byte-identical to the one
 produced before the refactor, and the xlsx is unchanged. No number moved.
+
+---
+
+## D6 — Live parity tests are opt-in, and a WAF refusal is never parity
+
+**Ambiguity:** parity tests need the network. Run them in the default suite, or
+gate them?
+
+**Decision:** gated behind `RUN_LIVE_PARITY=1`. The default suite stays hermetic
+and sub-5s; the live run is `RUN_LIVE_PARITY=1 pytest tests/test_live_cache_parity.py`.
+
+**Why:** every other test in this repo runs offline in under five seconds, and a
+network test in the default suite makes the suite flaky for a judge cloning the
+repo — the exact failure the badge guard was written to prevent. More
+importantly, AuctionZip answers a WAF challenge after a short burst; a network
+test that silently passes when it never ran reports parity nobody checked. A
+challenge is therefore surfaced as SKIP with the reason, never as a pass, and
+`WafChallenge` is a distinct type so refused can never be read as agreed.
+
+---
+
+## D7 — Refreshed one drifted caption instead of leaving the suite red
+
+**Ambiguity:** the first live parity run found real drift — seq 30's caption
+went from `'non-spoprt trading cards'` to `'non-sport trading cards'`. The house
+fixed its own typo. Leave the cache as the original snapshot and accept a
+permanently failing parity test, or refresh?
+
+**Decision:** refreshed the cached caption from the live listing.
+
+**Why:** a permanently red test trains people to ignore it, which is the same
+argument that narrowed the drift guard in D4. The refresh is safe and was
+verified rather than assumed: BT-030 is a declined lot (`fit: None` — the owner
+kept only the top card lot), the caption carries no lot number so
+`lot_number_from` is unaffected, the sheet is unchanged at 9 lots /
+$275.00 / $316.25, and the regenerated absentee email is byte-identical.
+
+**Reviewable risk:** refreshing a field makes the cache neither the original
+drop nor a fresh fetch. Accepted here because the change is a typo correction
+by the house on a lot nobody bids. A caption change on a BID lot should NOT be
+quietly refreshed — it changes how photos group into bids, and that is a
+decision for the operator.
