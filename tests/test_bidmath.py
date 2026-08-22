@@ -167,6 +167,18 @@ class TestAllocate:
         assert not any(d.auto_send for d in ds)
 
 
+def test_allocate_does_not_spend_skip_leftovers():
+    from src.bidmath import Decision, Priority, allocate, all_in_cost
+    skip = Decision(
+        lot_id="S", category="c", priority=Priority.SKIP,
+        max_bid=50.0, all_in=all_in_cost(50.0), bid_fraction=0.375,
+        reason="fit", needs_human_pricing=False,
+    )
+    out = allocate([skip], budget_cap=10_000.0)
+    assert out[0].allocated is False
+    assert out[0].auto_send is False
+
+
 class TestSummarize:
     def test_counts_and_totals(self):
         ds = allocate(

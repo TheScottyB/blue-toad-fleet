@@ -446,6 +446,9 @@ def allocate(
     spent = 0.0
     out: list[Decision] = []
     for d in priced:
+        if d.priority is Priority.SKIP:
+            out.append(replace(d, allocated=False, auto_send=False))
+            continue
         if spent + d.committed_all_in <= budget_cap:
             spent = round(spent + d.committed_all_in, 2)
             out.append(replace(
