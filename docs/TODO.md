@@ -94,6 +94,20 @@ Submission deadline **Aug 31 2026 5:00pm PDT**. Deploy drop-dead **Aug 27**.
       was deliberately NOT rewritten — it transcribes a recording.
       **Operator's call.**
 
+- [ ] **B4. Validate the probe's SSIM against a reference fixture.**
+      `scripts/probes/rescore_upscaling.py` carries a hand-rolled SSIM (scipy is
+      not in `.venv`). Every SSIM figure in `docs/CAPABILITY_PROBE.md` inherits
+      any error in it, and none of them has been checked. Cheap: one known
+      fixture, or add scipy/skimage to a dev extra and diff.
+
+- [ ] **B5. Repeat the upscaling-appraisal arms to get a fabrication RATE.**
+      `src/appraiser/engine.py:201` runs at `temperature=0.1` with no seed, and
+      the probe took one sample per arm — enough to prove fabrication *can* reach
+      a record undetected, not how often. ~27 appraisal-tier calls in randomized
+      order, reporting field-level exact-match. **Spends Vertex quota — operator's
+      call.** Does not block the do-not-deploy decision, which rests on a
+      zero-tolerance rule, not on a rate.
+
 ## C. Feature floor — build up to the claims, never down
 
 The operator's instruction, verbatim: *"dont lower the floor of the feature set
@@ -101,9 +115,12 @@ proposed in this repo, elevate it."* No claim in README.md or docs/DEVPOST.md is
 to be softened to match the code. The code comes up to meet it.
 
 - [ ] **C1. Spatial Room Graph** — `README.md:74`. **[lane: grok / intake]**
-      Step 0 sees the listing, not the photo. Build on `gemini-embedding-2`
-      (recall@25 85.7% vs dHash 0.0%), not dHash. Do NOT add an upscaling stage
-      — it fabricated a lens serial the 560px original had read correctly.
+      Step 0 sees the listing, not the photo. Build on `gemini-embedding-2`, not
+      dHash: recall@25 85.7% vs 0.0% for dHash, 0.0% for sequence proximity and
+      35.7% for a colour-histogram baseline (`docs/CAPABILITY_PROBE.md`). Do NOT
+      add an upscaling stage — it fabricated a lens serial the 560px original had
+      read correctly, and `appraise_lot` transcribed the fabrication at unchanged
+      confidence.
 
 - [ ] **C2. Container Lot Decomposition** — `README.md:81`. **Unowned as of this
       writing; another lane began `src/appraiser/containers.py` mid-review.**

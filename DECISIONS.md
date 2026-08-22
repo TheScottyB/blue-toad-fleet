@@ -180,6 +180,52 @@ places disagree about how many units the operator wants.
 
 ---
 
+## D9 — Kept the do-not-upscale verdict, withdrew the numbers that supported it
+
+An external review of the capability probe raised six findings. Four were real,
+two were not, and acting on the real ones changed two published figures without
+changing the recommendation.
+
+**Rejected, with reason.** The review's headline finding was that the embedding
+recommendation "has no supporting experiment" and should be downgraded to
+"promising". It was reading a truncated paste — 5,898 bytes of an 11,305-byte
+report, cut mid-Task-2. Task 3 exists, with method, N, ground-truth definition,
+distance metric, adjacency handling, a discriminator control and a stated caveat.
+The review also called `models.list()` proof of nothing; true in principle, but 5
+of the 6 models had completed real inference, so the honest fix was to name the
+one that had not (`gemini-3.7-flash`) rather than to hedge all six.
+
+**Taken, and it mattered.** The scorer resized every image to 1200x900
+unconditionally. Model outputs are 1200x896 and 2400x1792; truth and the bicubic
+baseline are 4:3. So the model arms were stretched and the baseline was not —
+a bias in favour of the conclusion the probe reached. Re-scored on a common crop,
+the PSNR deficit falls from 4.5–5.2 dB to 1.0–2.9 dB, and the headline "0 of 24,
+not one, on any lot" becomes 47 of 48: `gemini-3-pro-image` beats bicubic on
+BT-001. Both figures are withdrawn in `docs/CAPABILITY_PROBE.md` rather than
+quietly edited, because both had already been cited elsewhere.
+
+**Why the verdict survives anyway.** The reason to reject enhancement was never
+the pixel margin. It is that a generated image wrote a false lens serial into
+`marks_observed` at unchanged confidence, on a lot the 560px original had read
+correctly. That is a zero-tolerance condition, and D9 states it as the decision
+rule explicitly — which is also the honest answer to the review's point that one
+stochastic sample per arm cannot estimate a fabrication *rate*. It cannot, and
+the report now says so.
+
+**The baselines the review asked for made the other half stronger.** dHash is a
+near-duplicate hash, so beating it proves little. Adding sequence proximity and a
+colour-histogram baseline: embeddings still win every row, and sequence proximity
+never places a partner in the top 25 — which kills "adjacency does the work"
+outright. Downgrading embeddings to "promising" would have been the wrong call.
+
+**NOT taken, and why:** the repeat run for a fabrication rate spends Vertex quota
+and is logged as TODO B5 for the operator, not run unilaterally. The hand-rolled
+SSIM is still unvalidated against a reference — logged as B4 and stated as an open
+item in the report rather than papered over, since the re-analysis reuses that same
+module and inherits any error in it.
+
+---
+
 ## Recurring friction worth fixing later
 
 `tests/test_docs_match_the_sheet.py` pins the README badge and DEVPOST counts to
