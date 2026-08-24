@@ -70,7 +70,10 @@ server = MCPServer(
         "only). Cheap — no model calls, no screenshots. Returns the window "
         "the page actually printed, which is the authority on what was "
         "measured. Raises rather than returning 0 when the page renders "
-        "empty without eBay's own zero-results message."))
+        "empty without eBay's own zero-results message. `filters_as_printed` "
+        "lists the scope markers the page showed (sticky Seller Hub filters "
+        "survive manual sessions): non-empty = the read was scoped, [] = "
+        "clean bar, null = the page printed no filter bar (scope unknown)."))
 def ebay_absorption(query: str) -> dict:
     sold = live.read_sold(query)
     active = live.read_active(query)
@@ -79,6 +82,7 @@ def ebay_absorption(query: str) -> dict:
         "query": query,
         "channel": "eBay only — not store or other channels",
         "window_as_printed": sold.window,
+        "filters_as_printed": {"sold": sold.filters, "active": active.filters},
         "sold_units_365d": sold.sold_units,
         "sold_listings_365d": len(sold.rows),
         "active_now": active.total_active,
@@ -97,7 +101,9 @@ def ebay_absorption(query: str) -> dict:
         "(price does NOT survive a dirty set), and optional screenshot "
         "evidence written under data/comps/. `identification` is the "
         "appraiser's description of the item; `query` defaults to it. When "
-        "selection is unavailable the result says UNFILTERED explicitly."))
+        "selection is unavailable the result says UNFILTERED explicitly. "
+        "`filters_as_printed` lists any sticky Seller Hub filter markers the "
+        "pages showed — non-empty means every figure was scoped by them."))
 def ebay_comps(identification: str, query: str | None = None,
                with_evidence: bool = False) -> dict:
     q = query or identification

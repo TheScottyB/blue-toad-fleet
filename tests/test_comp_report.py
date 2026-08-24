@@ -22,6 +22,10 @@ from src.comps import live
 UNFILTERED = "UNAVAILABLE — figures above are UNFILTERED"
 
 
+SOLD_FILTERS = ["Filter Applied", "Condition filter (1 Selected)", "Used"]
+ACTIVE_FILTERS = ["Filter Applied"]
+
+
 @pytest.fixture
 def two_row_market(monkeypatch):
     sold = SoldPage(
@@ -34,11 +38,14 @@ def two_row_market(monkeypatch):
         ],
         avg_price=24.11,
         avg_shipping=8.83,
+        filters=SOLD_FILTERS,
     )
+    active = ActivePage(total_active=46, filters=ACTIVE_FILTERS)
     monkeypatch.setattr(live, "read_sold", lambda query: sold)
+    monkeypatch.setattr(live, "read_active", lambda query: active)
 
     async def fake_active(query):
-        return ActivePage(total_active=46)
+        return active
 
     monkeypatch.setattr(live, "_read_active", fake_active)
     return sold
@@ -81,3 +88,23 @@ class TestPartialSelection:
         assert sel["comp_units"] == 6
         assert sel["excluded_count"] == 1
         assert sel["comp_price_band"] == [33.30, 33.30]
+
+
+class TestFilterSurfacing:
+    """Sticky Seller Hub filters scope every number silently (measured
+    2026-08-24: a leftover Used condition filter). Both tools must surface
+    the page-printed markers so a scoped read is a labelled read."""
+
+    def test_comp_report_carries_the_printed_filters(
+            self, two_row_market, monkeypatch):
+        monkeypatch.setattr(live, "select_comps", lambda ident, titles: None)
+        out = live.comp_report("Boston Champion sharpener", "boston champion")
+        assert out["filters_as_printed"] == {
+            "sold": SOLD_FILTERS, "active": ACTIVE_FILTERS}
+
+    def test_ebay_absorption_carries_the_printed_filters(
+            self, two_row_market):
+        from scripts import comps_mcp_server
+        out = comps_mcp_server.ebay_absorption("boston champion")
+        assert out["filters_as_printed"] == {
+            "sold": SOLD_FILTERS, "active": ACTIVE_FILTERS}

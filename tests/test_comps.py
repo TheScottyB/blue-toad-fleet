@@ -22,7 +22,7 @@ import pytest
 
 from src.comps import (
     ChallengePage, SuspectEmpty, absorption, months_of_supply,
-    parse_active_page, parse_sold_page,
+    parse_active_page, parse_filters, parse_sold_page,
 )
 
 # --- fixtures shaped exactly like document.body.innerText -------------------
@@ -182,6 +182,51 @@ CHALLENGE = """Pardon Our Interruption...
 As you were browsing something about your browser made us think you were a bot.
 """
 
+# The filter bar as document.body.innerText actually renders it, captured live
+# 2026-08-24 with a sticky "Used" condition filter left over from a manual
+# Seller Hub session. The SOLD tab printed all three markers; a fresh ACTIVE
+# render printed only the page-level badge with a plain button label.
+
+FILTERED_BAR = """Category selected:
+All Categories
+Filter Applied
+Select a different category
+Lock selected filters
+Condition filter (1 Selected)
+Filter Applied
+Format filter
+Price filter
+Top rated
+More filters
+Used
+Sold​Active
+"""
+
+BADGE_ONLY_BAR = """Category selected:
+All Categories
+Filter Applied
+Select a different category
+Lock selected filters
+Condition filter
+Format filter
+Price filter
+Top rated
+More filters
+Sold​Active
+"""
+
+CLEAN_BAR = """Category selected:
+All Categories
+Select a different category
+Lock selected filters
+Condition filter
+Format filter
+Price filter
+Top rated
+More filters
+Sold​Active
+"""
+
 
 class TestSoldParsing:
     def test_reads_the_window_the_page_printed(self):
@@ -241,6 +286,44 @@ class TestActiveParsing:
     def test_challenge_raises(self):
         with pytest.raises(ChallengePage):
             parse_active_page(CHALLENGE)
+
+
+class TestFilterScope:
+    """Sticky Seller Hub filters silently scope every number on the page.
+    The page's own printed markers are the only visibility we have, so they
+    must be surfaced — and an absent filter bar is UNKNOWN, never 'clean'."""
+
+    def test_reports_every_marker_the_sold_page_printed(self):
+        page = parse_sold_page(FILTERED_BAR + SOLD_PAGE)
+        assert page.filters == [
+            "Filter Applied", "Condition filter (1 Selected)", "Used"]
+
+    def test_badge_alone_is_still_a_scoped_read(self):
+        page = parse_active_page(BADGE_ONLY_BAR + ACTIVE_PAGE)
+        assert page.filters == ["Filter Applied"]
+
+    def test_a_clean_bar_is_an_empty_list(self):
+        page = parse_sold_page(CLEAN_BAR + SOLD_PAGE)
+        assert page.filters == []
+
+    def test_no_bar_printed_is_unknown_not_clean(self):
+        """SOLD_PAGE has no filter bar at all. That is 'the page did not
+        print its filter state', which must never read as 'unfiltered'."""
+        page = parse_sold_page(SOLD_PAGE)
+        assert page.filters is None
+
+    def test_a_genuine_zero_still_carries_the_scope(self):
+        """A scoped zero is not the same fact as an unscoped zero."""
+        page = parse_sold_page(FILTERED_BAR + GENUINE_ZERO)
+        assert page.genuine_zero is True
+        assert page.filters == [
+            "Filter Applied", "Condition filter (1 Selected)", "Used"]
+
+    def test_parse_filters_directly(self):
+        assert parse_filters(FILTERED_BAR) == [
+            "Filter Applied", "Condition filter (1 Selected)", "Used"]
+        assert parse_filters(CLEAN_BAR) == []
+        assert parse_filters("no bar here at all") is None
 
 
 class TestAbsorption:

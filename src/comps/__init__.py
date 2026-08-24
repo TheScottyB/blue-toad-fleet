@@ -40,8 +40,8 @@ from dataclasses import dataclass, field
 
 __all__ = [
     "ChallengePage", "SuspectEmpty", "SoldRow", "SoldPage", "ActiveRow",
-    "ActivePage", "parse_sold_page", "parse_active_page", "absorption",
-    "months_of_supply",
+    "ActivePage", "parse_sold_page", "parse_active_page", "parse_filters",
+    "absorption", "months_of_supply",
 ]
 
 
@@ -67,6 +67,13 @@ _CHALLENGE = re.compile(
     r"|sign in or register", re.I)
 _QTY_ANCHOR = re.compile(r"% Free shipping$")
 _DATE = re.compile(r"^\w{3} \d+, \d{4}$")
+_FILTER_COUNTED = re.compile(r"^[A-Z][A-Za-z ]* filter \(\d+ Selected\)$")
+_FILTER_APPLIED = "Filter Applied"
+_MORE_FILTERS = "More filters"
+# The tab strip renders with or without a zero-width space between the words.
+_TAB_STRIP = re.compile(r"^Sold​?Active$")
+_MAX_CHIPS = 12
+_MAX_CHIP_LEN = 40
 
 
 def _money(text: str, label: str) -> float | None:
@@ -84,6 +91,38 @@ def _require_research_page(text: str) -> None:
         raise ChallengePage(
             "this text is a challenge or signin page, not research data — "
             "no number on it is a comp")
+
+
+def parse_filters(text: str) -> list[str] | None:
+    """The scope markers the page printed, as printed.
+
+    Sticky Seller Hub filters survive from manual sessions and silently
+    scope every number on a research page (measured 2026-08-24: a leftover
+    Used condition filter on a live read). The URL cannot clear them, so the
+    only honest move is to surface what the page itself printed: the
+    "Filter Applied" badge, any "<name> filter (N Selected)" button, and the
+    chip labels rendered between "More filters" and the Sold/Active tab
+    strip. Returns [] for a bar with none of those, and None when no filter
+    bar was printed at all — an absent bar is UNKNOWN scope, never "clean".
+    """
+    lines = [ln.strip() for ln in text.split("\n")]
+    try:
+        more_i = lines.index(_MORE_FILTERS)
+    except ValueError:
+        return None
+    printed: list[str] = []
+    if _FILTER_APPLIED in lines:
+        printed.append(_FILTER_APPLIED)
+    printed.extend(ln for ln in lines[:more_i] if _FILTER_COUNTED.match(ln))
+    chips = 0
+    for ln in lines[more_i + 1:]:
+        if not ln:
+            continue
+        if _TAB_STRIP.match(ln) or len(ln) > _MAX_CHIP_LEN or chips >= _MAX_CHIPS:
+            break
+        printed.append(ln)
+        chips += 1
+    return printed
 
 
 @dataclass(frozen=True)
@@ -109,6 +148,7 @@ class SoldPage:
     avg_shipping: float | None = None
     total_sellers: int | None = None
     genuine_zero: bool = False
+    filters: list[str] | None = None
 
     @property
     def sold_units(self) -> int:
@@ -131,6 +171,7 @@ class ActivePage:
     rows: list[ActiveRow] = field(default_factory=list)
     avg_price: float | None = None
     avg_shipping: float | None = None
+    filters: list[str] | None = None
 
 
 def _split_rows(text: str) -> list[list[str]]:
@@ -142,9 +183,10 @@ def _split_rows(text: str) -> list[list[str]]:
 
 def parse_sold_page(text: str) -> SoldPage:
     _require_research_page(text)
+    filters = parse_filters(text)
 
     if _ZERO_MSG.search(text):
-        return SoldPage(window=None, genuine_zero=True)
+        return SoldPage(window=None, genuine_zero=True, filters=filters)
 
     rows: list[SoldRow] = []
     for lines in _split_rows(text):
@@ -181,14 +223,16 @@ def parse_sold_page(text: str) -> SoldPage:
         price_high=float(range_m.group(2).replace(",", "")) if range_m else None,
         avg_shipping=_money(text, "Avg shipping"),
         total_sellers=_int_before(text, "Total sellers"),
+        filters=filters,
     )
 
 
 def parse_active_page(text: str) -> ActivePage:
     _require_research_page(text)
+    filters = parse_filters(text)
 
     if _ZERO_MSG.search(text):
-        return ActivePage(total_active=0)
+        return ActivePage(total_active=0, filters=filters)
 
     rows = [ActiveRow(title=lines[0])
             for lines in _split_rows(text)
@@ -207,6 +251,7 @@ def parse_active_page(text: str) -> ActivePage:
         rows=rows,
         avg_price=_money(text, "Avg listing price"),
         avg_shipping=_money(text, "Avg shipping"),
+        filters=filters,
     )
 
 
