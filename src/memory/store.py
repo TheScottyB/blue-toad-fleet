@@ -469,6 +469,19 @@ def open_rule_store() -> RuleStore:
             from src.memory.firestore import FirestoreRuleStore
             return FirestoreRuleStore(shop_id=shop, seed=seed)
         except Exception as e:
+            # An EXPLICIT firestore request fails closed, mirroring the cycle
+            # worker. The silent fall-through meant a Firestore outage at boot
+            # let POST /api/answer report "applied" for a standing rule living
+            # on container disk — durable=False on Cloud Run — so the
+            # auctioneer's own ruling could evaporate on the next instance
+            # recycle while the operator was told it was saved. Only the
+            # unconfigured-on-Cloud-Run preference may still degrade, and it
+            # says so on /health via memory_durable.
+            if backend == "firestore":
+                raise RuntimeError(
+                    f"Firestore standing-rule memory was explicitly requested "
+                    f"and is unavailable ({e}); refusing to downgrade to "
+                    f"non-durable storage") from e
             print(f"[!] Firestore memory unavailable ({e}); file store")
     path = Path(os.environ.get(
         "BTF_MEMORY_PATH", "data/memory/rules.json",

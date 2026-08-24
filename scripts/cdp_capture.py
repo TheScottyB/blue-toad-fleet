@@ -63,9 +63,20 @@ class CaptureRejected(RuntimeError):
     """The browser rendered a different or unsafe page."""
 
 
-CHALLENGE_MARKERS = (
+# Three tiers of challenge detection, because WHERE a marker appears decides
+# whether it means anything. "sign in" as a bare body substring refused every
+# sold page containing a listing like "vintage tin sign in original frame" —
+# advertising signs are a live category for this shop, so the guard was
+# blocking exactly the evidence it existed to protect. A guard that cries wolf
+# gets suppressed; scope each marker to the narrowest surface that is actually
+# diagnostic.
+CHALLENGE_URL_PATHS = ("/signin", "/login", "/splashui", "/challenge")
+CHALLENGE_TITLE_MARKERS = (
     "captcha", "security measure", "pardon our interruption",
     "sign in", "verify you are human", "access denied",
+)
+CHALLENGE_BODY_MARKERS = (
+    "pardon our interruption", "verify you are human",
 )
 
 
@@ -84,10 +95,18 @@ def validate_capture_landing(
         raise CaptureRejected(
             f"capture redirected to another host: {landed.hostname or landed_url}"
         )
-    visible = f"{title}\n{body}".casefold()
-    challenge = next((marker for marker in CHALLENGE_MARKERS if marker in visible), None)
+    path = (landed.path or "").casefold()
+    if any(seg in path for seg in CHALLENGE_URL_PATHS):
+        raise CaptureRejected(f"challenge or sign-in page detected: url path {path!r}")
+    title_cf = title.casefold()
+    challenge = next((m for m in CHALLENGE_TITLE_MARKERS if m in title_cf), None)
+    if challenge:
+        raise CaptureRejected(f"challenge or sign-in page detected in title: {challenge}")
+    body_cf = body.casefold()
+    challenge = next((m for m in CHALLENGE_BODY_MARKERS if m in body_cf), None)
     if challenge:
         raise CaptureRejected(f"challenge or sign-in page detected: {challenge}")
+    visible = f"{title_cf}\n{body_cf}"
     missing = [marker for marker in expected_markers if marker.casefold() not in visible]
     if missing:
         raise CaptureRejected("expected page marker is missing: " + ", ".join(missing))

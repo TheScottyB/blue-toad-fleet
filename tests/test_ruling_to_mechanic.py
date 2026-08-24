@@ -168,8 +168,27 @@ class TestItDoesNotReadMoneyAsAMultiplier:
         assert mech is BidMechanic.UNKNOWN or n == 3
 
     def test_dimensions_are_not_unit_counts(self):
-        assert mechanic_from_ruling("buyer's choice of the 8 x 10 frames",
-                                    units_available=4)[1] != 8
+        """A reviewer caught this test asserting the wrong number: it pinned
+        `!= 8` while the actual misread yielded 10 — the dimension's SECOND
+        number — because the lookahead let bare whitespace satisfy the unit-word
+        boundary. The fabricated x10 then OVERRODE an explicit buyer's-choice
+        reading and the photograph's own count. Assert the full correct triple,
+        and both dimension numbers as forbidden."""
+        mech, n, k = mechanic_from_ruling("buyer's choice of the 8 x 10 frames",
+                                          units_available=4)
+        assert mech is BidMechanic.CHOICE
+        assert n == 4 and k is None
+        assert n not in (8, 10)
+
+    @pytest.mark.parametrize("text", [
+        "8 x 10 frames", "16 x 20 print", "9 x 12 rug",
+    ])
+    def test_a_bare_dimension_is_not_a_ruling_at_all(self, text):
+        assert mechanic_from_ruling(text)[0] is BidMechanic.UNKNOWN
+
+    def test_a_real_multiplier_survives_next_to_a_dimension(self):
+        assert mechanic_from_ruling("9 x 12 rug, that is a x3 bid")[:2] == (
+            BidMechanic.TIMES_THE_MONEY, 3)
 
     def test_a_real_multiplier_still_reads(self):
         assert mechanic_from_ruling("that is a x3 bid")[:2] == (
@@ -249,9 +268,18 @@ class TestDisagreeingMultipliersRefuse:
     that disagree is the same shape.
     """
 
-    def test_disagreeing_multipliers_are_not_settled_by_position(self):
+    def test_a_label_chain_no_longer_masks_the_real_ruling(self):
+        """UPDATED with the dimension-chain fix: "12 x 14 x 16" is recognised
+        as a label chain and stripped, so the genuine x3 is read instead of
+        refusing on a fabricated disagreement. Previously pinned UNKNOWN, which
+        was the safe answer to a problem the parser had created for itself."""
         assert mechanic_from_ruling(
-            "trays 12 x 14 x 16 go as a x3 bid")[0] is BidMechanic.UNKNOWN
+            "trays 12 x 14 x 16 go as a x3 bid")[:2] == (
+            BidMechanic.TIMES_THE_MONEY, 3)
+
+    def test_genuinely_disagreeing_multipliers_still_refuse(self):
+        assert mechanic_from_ruling(
+            "x2 bid, x3 the money")[0] is BidMechanic.UNKNOWN
 
     def test_a_repeated_agreeing_multiplier_still_reads(self):
         assert mechanic_from_ruling("x3 bid, that is x3 the money")[:2] == (

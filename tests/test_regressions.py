@@ -79,9 +79,18 @@ class TestMoneyDefects:
 
     def test_disagreeing_multipliers_do_not_let_position_decide(self):
         """"trays 12 x 14 x 16 go as a x3 bid" took the FIRST match, read 14
-        units, and discarded the x3 that was the ruling."""
-        assert mechanic_from_ruling(
-            "trays 12 x 14 x 16 go as a x3 bid")[0] is BidMechanic.UNKNOWN
+        units, and discarded the x3 that was the ruling.
+
+        UPDATED 2026-08-22 with the dimension-chain fix: "12 x 14 x 16" is now
+        recognised as a label chain and stripped before the multiplier scan, so
+        the sentence parses to the genuine x3 rather than refusing on a
+        disagreement the parser had manufactured for itself. The original
+        defect stays forbidden — 14 must never be the count — and a genuine
+        disagreement (two bare xN that conflict) still refuses; that case is
+        pinned in tests/test_ruling_to_mechanic.py."""
+        mech, n, _ = mechanic_from_ruling("trays 12 x 14 x 16 go as a x3 bid")
+        assert (mech, n) == (BidMechanic.TIMES_THE_MONEY, 3)
+        assert n != 14
 
     def test_an_unreadable_ruling_refuses_instead_of_pricing(self):
         """FAILED OPEN. The parser cannot establish a count from a ruling it

@@ -598,6 +598,14 @@ _TTM_RE = re.compile(r"times[\s-]+the[\s-]+money|times[\s-]+money", re.I)
 # as 8 units; "3 xylophones" as 3. A currency lookbehind alone does not fix it:
 # `$30 x 2` still yields 30, because \b matches after a dollar sign.
 _UNIT_WORD = r"(?:units?|trays?|lots?|shel(?:f|ves)|pieces?|items?|boxes|bins?|money|times?|bids?)"
+# Digits on BOTH sides of an x is a dimension or a label chain — "8 x 10
+# frames", "9 x 12 rug", "trays 12 x 14 x 16" — never a per-unit ruling, which
+# always reads xN with a bare N. These are stripped before the multiplier scan
+# because the lookahead approach failed three times running: the last version
+# let bare whitespace satisfy the boundary, so "8 x 10 frames" parsed as
+# TIMES_THE_MONEY x10 and OVERRODE an explicit buyer's-choice reading, with the
+# guard test asserting the wrong number (!= 8 while the misread yields 10).
+_DIMENSION_CHAIN = re.compile(r"\b\d{1,3}(?:\s*[x×]\s*\d{1,3})+\b", re.I)
 _MULT_RE = re.compile(
     rf"(?:^|[^a-z0-9$.])(?:x|×)\s*(\d{{1,3}})(?=\s*(?:{_UNIT_WORD}\b|$|[^\w$]))"
     rf"|(?<![\d.$])\b(\d{{1,3}})\s*(?:x|×)\s*(?=(?:the\s+)?{_UNIT_WORD}\b)",
@@ -668,13 +676,18 @@ def mechanic_from_ruling(
     if _NEGATED_MECHANIC_RE.search(text):
         return unknown
 
-    # Collect EVERY multiplier, not the first. Taking the first meant
-    # "trays 12 x 14 x 16 go as a x3 bid" read 14 units and silently discarded
-    # the x3 that was the actual ruling. Two multipliers that disagree is the
-    # same shape as two mechanics named at once — the sentence has not settled
-    # the count, and letting position break the tie decides money on word order.
+    # Dimensions and label chains out first (see _DIMENSION_CHAIN above), so
+    # "trays 12 x 14 x 16 go as a x3 bid" now reads the genuine x3 instead of
+    # refusing on a fabricated disagreement, and "8 x 10 frames" contributes no
+    # multiplier at all.
+    scan_text = _DIMENSION_CHAIN.sub(" ", text)
+
+    # Collect EVERY multiplier, not the first. Two multipliers that disagree is
+    # the same shape as two mechanics named at once — the sentence has not
+    # settled the count, and letting position break the tie decides money on
+    # word order.
     found = []
-    for m in _MULT_RE.finditer(text):
+    for m in _MULT_RE.finditer(scan_text):
         n = _as_count(m.group(1) or m.group(2))
         if n is None:                          # x0, x900 — a misread, not a lot
             return unknown
