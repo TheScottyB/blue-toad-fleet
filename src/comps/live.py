@@ -158,7 +158,9 @@ def select_comps(identification: str, titles: list[str]):
 
     None means the selection could not be made (no client, call failed,
     unparseable response) and the caller must report the comp set as
-    UNFILTERED rather than silently pretending it was screened.
+    UNFILTERED rather than silently pretending it was screened. A returned
+    list may carry None holes for titles the model skipped; a hole is the
+    same failure and the caller must treat it as one, whole-set.
     """
     try:
         from src.appraiser import AppraisalEngine
@@ -222,7 +224,10 @@ def comp_report(identification: str, query: str,
 
     verdicts = select_comps(identification, [r.title for r in sold.rows]) \
         if sold.rows else None
-    if verdicts is None:
+    if verdicts is None or any(v is None for v in verdicts):
+        # A hole means the model never judged that row. A partially screened
+        # set posing as screened drops rows from the band AND the exclusion
+        # accounting with no trace — so a hole is a failure, whole-set.
         out["comp_selection"] = "UNAVAILABLE — figures above are UNFILTERED"
     else:
         comp_rows = [r for r, v in zip(sold.rows, verdicts)
