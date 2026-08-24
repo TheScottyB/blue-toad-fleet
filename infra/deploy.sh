@@ -39,6 +39,21 @@ else
   echo "==> Browser mutation controls will stay disabled"
 fi
 
+# The runtime roles must exist BEFORE the service boots, not after. They used
+# to be granted only by provision_cycles.sh at step 3 — downstream of the
+# deploy — which worked only while the server silently downgraded a failed
+# Firestore init to container disk. With memory failing closed (as it must:
+# the silent path was telling the operator "applied" for standing rules that
+# evaporated on instance recycle), the first boot needs datastore.user or the
+# revision dies on startup and step 3 is never reached. Idempotent; the same
+# loop in provision_cycles.sh simply re-asserts them.
+echo "==> [1b/4] Granting runtime roles to $RUNTIME_ACCOUNT..."
+for role in roles/aiplatform.user roles/datastore.user roles/logging.logWriter; do
+  gcloud projects add-iam-policy-binding "$GOOGLE_CLOUD_PROJECT" \
+    --member="serviceAccount:${RUNTIME_ACCOUNT}" \
+    --role="$role" --condition=None >/dev/null
+done
+
 echo "==> [2/4] Building and deploying $SERVICE_NAME to Cloud Run ($REGION)..."
 gcloud run deploy "$SERVICE_NAME" \
   --source . \
