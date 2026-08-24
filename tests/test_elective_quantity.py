@@ -151,12 +151,22 @@ class TestRemainderOpportunity:
         assert r.max_bid == 5.0
         assert r.committed_all_in == pytest.approx(round(all_in_cost(5.0) * 3, 2))
 
-    def test_the_floor_never_exceeds_the_primary_bid(self):
-        """A remainder bid above the lot's own max is not a bargain, it is a bug."""
-        d = price_lot(elect(lot(mechanic=BidMechanic.CHOICE, unit_count=4,
-                                c=comp(low=20.0, high=24.0)), 1))
+    def test_a_floor_above_the_max_clamps_to_the_max(self):
+        """The old assertion here (`r is None or r.max_bid <= d.max_bid`) was
+        tautological — the min() in remainder_opportunity makes it unfalsifiable,
+        so it certified nothing. Assert the actual clamp semantics instead."""
+        # The comp must survive the per-unit divide: a $20-24 group comp over
+        # four units prices below one $5 increment and price_lot correctly
+        # refuses, leaving nothing to clamp. The default $100-140 comp yields a
+        # $10 per-unit max, which is what the clamp must return.
+        d = price_lot(elect(lot(mechanic=BidMechanic.CHOICE, unit_count=4), 1))
+        assert d.max_bid is not None
         r = remainder_opportunity(d, floor=1_000.0)
-        assert r is None or r.max_bid <= d.max_bid
+        assert r is not None and r.max_bid == d.max_bid
+
+    def test_a_floor_below_one_increment_refuses(self):
+        d = price_lot(elect(lot(mechanic=BidMechanic.CHOICE, unit_count=4), 1))
+        assert remainder_opportunity(d, floor=3.0) is None
 
     def test_nothing_is_offered_when_the_election_takes_everything(self):
         d = price_lot(elect(lot(mechanic=BidMechanic.CHOICE, unit_count=3), 3))

@@ -82,7 +82,9 @@ def build_pitch(decisions, captions: dict[str, str],
         return PitchLot(lot_id=d.lot_id,
                         caption=captions.get(d.lot_id, "") or d.category,
                         category=d.category, max_bid=float(d.max_bid),
-                        committed_max=float(d.committed_max or d.max_bid))
+                        committed_max=float(
+                            d.committed_max if d.committed_max is not None
+                            else d.max_bid))
 
     alpha = [as_lot(d) for d in ranked[:ALPHA_PICKS]]
     alpha_ids = {l.lot_id for l in alpha}

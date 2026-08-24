@@ -308,11 +308,11 @@ def price_lot(
         return Decision(
             lot_id=lot.lot_id, category=lot.category, priority=priority,
             max_bid=None, all_in=None, bid_fraction=None,
-            reason=(f"{lot.unit_count} units and the bid mechanic is not "
-                    f"established — needs a ruling before pricing"),
+            reason=(f"{lot.unit_count} unit{'s' if lot.unit_count != 1 else ''} "
+                    f"and the bid mechanic is not established — needs a "
+                    f"ruling before pricing"),
             needs_human_pricing=True, needs_mechanic_ruling=True, **carry,
         )
-
 
     if not lot.comp.has_external_comp:
         return Decision(
@@ -378,8 +378,11 @@ def price_lot(
             f"{lot.comp.source_count} source(s), {lot.comp.confidence.value} confidence"
         ),
         needs_human_pricing=False,
-        needs_election=(lot.mechanic is BidMechanic.CHOICE
-                        and lot.unit_count > 1 and lot.units_wanted is None),
+        # The CHOICE-without-election case returned above, so by here an
+        # election is never outstanding. A live-looking predicate that is
+        # always False invites someone to edit one copy of the rule and
+        # expect both to move.
+        needs_election=False,
         **carry,
     )
 
@@ -551,7 +554,11 @@ def remainder_opportunity(decision: Decision,
         return None
 
     bid = snap_to_increment(min(floor, decision.max_bid))
-    if bid < BID_INCREMENT or bid > decision.max_bid:
+    # bid is snap(min(floor, max)) — it cannot exceed max by construction, so
+    # the only refusal left is a floor below one callable increment. An earlier
+    # `or bid > decision.max_bid` clause here was unreachable and its test was
+    # tautological; both removed rather than left reading as live protection.
+    if bid < BID_INCREMENT:
         return None
 
     return Decision(
