@@ -147,10 +147,18 @@ class TestUnitsCommitted:
     def test_straight_ignores_units_and_election(self, n, k):
         assert units_committed(BidMechanic.STRAIGHT, n, k) == 1
 
-    @given(mech=st.sampled_from([BidMechanic.CHOICE, BidMechanic.TIMES_THE_MONEY]),
-           n=units, k=units)
-    def test_an_election_is_honoured_and_never_exceeds_the_lot(self, mech, n, k):
-        assert units_committed(mech, n, k) == min(k, n)
+    @given(n=units, k=units)
+    def test_a_choice_election_is_honoured_and_never_exceeds_the_lot(self, n, k):
+        assert units_committed(BidMechanic.CHOICE, n, k) == min(k, n)
+
+    @given(n=units, k=units)
+    def test_times_the_money_ignores_any_election(self, n, k):
+        """UPDATED 2026-08-22 by operator ruling: "all or nothing, take all N.
+        Which is different than buyers choice, dont confuse the two." The old
+        property asserted the confusion for BOTH mechanics — an election
+        capping times-the-money books fewer units than the house charges.
+        Only CHOICE elects; TTM's quantity is fixed at N."""
+        assert units_committed(BidMechanic.TIMES_THE_MONEY, n, k) == max(1, n)
 
     @given(mech=st.sampled_from([BidMechanic.CHOICE, BidMechanic.TIMES_THE_MONEY,
                                  BidMechanic.UNKNOWN]), n=units)

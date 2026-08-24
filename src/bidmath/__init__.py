@@ -144,25 +144,41 @@ def units_committed(mechanic: "BidMechanic", unit_count: int,
                     units_wanted: int | None = None) -> int:
     """How many times the hammer price is charged if this bid wins.
 
-    Blue Toad prices CHOICE and TIMES_THE_MONEY per unit; what differs is who
-    picks the quantity. An election caps it. Absent one, budget the whole group:
-    assuming a single unit books a fifth of the exposure on a lot that could
-    take the entire cap, and the cap exists to stop precisely that.
+    Blue Toad prices CHOICE and TIMES_THE_MONEY per unit, and the difference
+    between them is exactly who picks the quantity — the operator, ruling on
+    this distinction 2026-08-22: "all or nothing, take all N. Which is
+    different than buyers choice, dont confuse the two."
 
-    UNKNOWN reads expensive for the same reason. Guessing STRAIGHT on a lot that
-    turns out to be per-unit breaches the cap at the block where nobody can undo
-    it; guessing dear only under-fills a sheet a human can still fix.
+      CHOICE           the winner ELECTS k in the room; an absentee election
+                       caps the commitment. Absent one, budget the whole group.
+      TIMES_THE_MONEY  quantity is FIXED at N. There is no k. An election
+                       recorded against it is ignored here (and refused
+                       upstream by elect() and the ruling parser) — honouring
+                       it once booked two units of exposure on a x3 lot the
+                       house charges three for.
+      UNKNOWN          budget the worst case, and an election proves nothing
+                       against a mechanic nobody has established.
     """
     if mechanic is BidMechanic.STRAIGHT:
         return 1
     available = max(1, int(unit_count))
-    if units_wanted is None:
+    if mechanic is not BidMechanic.CHOICE or units_wanted is None:
         return available
     return max(1, min(int(units_wanted), available))
 
 
 def elect(lot: "Lot", k: int) -> "Lot":
-    """Record how many units the operator will take. Returns a new Lot."""
+    """Record how many units the operator will take. Returns a new Lot.
+
+    Only CHOICE has an election. Times-the-money is all or nothing — take all
+    N — so electing fewer is refused loudly here rather than silently ignored
+    at budget time: an operator who thinks he elected 2 of 3 should find out
+    now, not at the block."""
+    if (lot.mechanic is BidMechanic.TIMES_THE_MONEY
+            and int(k) != max(1, lot.unit_count)):
+        raise ValueError(
+            f"{lot.lot_id}: times-the-money is all or nothing — the house "
+            f"charges all {lot.unit_count} units; there is no taking {k}.")
     if not 1 <= int(k) <= max(1, lot.unit_count):
         raise ValueError(
             f"{lot.lot_id}: cannot take {k} of {lot.unit_count} available. "
@@ -751,7 +767,12 @@ def mechanic_from_ruling(
             return unknown
         if wanted is None and _ALL_RE.search(text):
             wanted = n
-        return (BidMechanic.TIMES_THE_MONEY, n, min(wanted, n) if wanted else None)
+        # All or nothing: a stated take SMALLER than the multiplier is not a
+        # ruling, it is a contradiction ("x3 bid, take 2"), and reading either
+        # number commits money on a coin flip.
+        if wanted is not None and wanted != n:
+            return unknown
+        return (BidMechanic.TIMES_THE_MONEY, n, wanted)
 
     if says_choice:
         n = units_available if units_available and units_available > 0 else mult

@@ -277,6 +277,16 @@ class TestDisagreeingMultipliersRefuse:
             "trays 12 x 14 x 16 go as a x3 bid")[:2] == (
             BidMechanic.TIMES_THE_MONEY, 3)
 
+    def test_a_partial_take_on_times_the_money_is_a_contradiction(self):
+        """"x3 bid, take 2" — a per-unit x3 charge with a stated take of two is
+        not a ruling, it is a contradiction of the all-or-nothing rule, and
+        reading either number commits money on a coin flip."""
+        assert mechanic_from_ruling("x3 bid, take 2")[0] is BidMechanic.UNKNOWN
+
+    def test_take_all_n_on_times_the_money_still_reads(self):
+        assert mechanic_from_ruling("take all three trays at x3") == (
+            BidMechanic.TIMES_THE_MONEY, 3, 3)
+
     def test_genuinely_disagreeing_multipliers_still_refuse(self):
         assert mechanic_from_ruling(
             "x2 bid, x3 the money")[0] is BidMechanic.UNKNOWN

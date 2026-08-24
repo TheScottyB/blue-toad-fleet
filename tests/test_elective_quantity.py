@@ -72,8 +72,27 @@ class TestUnitsCommittedHonoursTheElection:
     def test_times_the_money_defaults_to_taking_them_all(self):
         assert units_committed(BidMechanic.TIMES_THE_MONEY, 3) == 3
 
-    def test_times_the_money_respects_a_smaller_election(self):
-        assert units_committed(BidMechanic.TIMES_THE_MONEY, 3, units_wanted=2) == 2
+    def test_times_the_money_is_all_or_nothing(self):
+        """CORRECTED 2026-08-22 by the operator's own ruling: "all or nothing,
+        take all N. Which is different than buyers choice, dont confuse the
+        two." This test previously pinned the confusion — it asserted an
+        election could CAP a times-the-money lot at 2 of 3 units, booking two
+        units of exposure where the house charges three. Only CHOICE has an
+        election; times-the-money's quantity is fixed at N."""
+        assert units_committed(BidMechanic.TIMES_THE_MONEY, 3, units_wanted=2) == 3
+
+    def test_an_election_on_unknown_proves_nothing(self):
+        """An election recorded against an unestablished mechanic cannot lower
+        the budgeted exposure — budget the worst case until somebody rules."""
+        assert units_committed(BidMechanic.UNKNOWN, 4, units_wanted=1) == 4
+
+    def test_elect_refuses_to_take_fewer_on_times_the_money(self):
+        with pytest.raises(ValueError):
+            elect(lot(mechanic=BidMechanic.TIMES_THE_MONEY, unit_count=3), 2)
+
+    def test_elect_taking_all_n_on_times_the_money_is_a_harmless_noop(self):
+        assert elect(lot(mechanic=BidMechanic.TIMES_THE_MONEY, unit_count=3),
+                     3).units_wanted == 3
 
     def test_an_unelected_choice_lot_budgets_for_the_whole_group(self):
         """No election yet means no ceiling yet. Budget the expensive reading.
