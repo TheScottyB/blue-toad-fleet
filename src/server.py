@@ -158,6 +158,26 @@ def reset_operator_sheet() -> None:
     """Tests only. Clears in/out and human caps on the full desk."""
     OPERATOR_SHEET.reset()
 
+
+class WalkEdits:
+    """Cycle-scoped membership rulings. Never applied to sheet='sent'."""
+
+    def __init__(self):
+        self.approved: set[frozenset[str]] = set()
+        self.rejected: set[frozenset[str]] = set()
+
+    def reset(self) -> None:
+        self.approved.clear()
+        self.rejected.clear()
+
+
+WALK_EDITS = WalkEdits()
+
+
+def reset_walk_edits() -> None:
+    """Tests only. Clears operator walk same-lot / not-same rulings."""
+    WALK_EDITS.reset()
+
 engine = AppraisalEngine()
 
 
@@ -383,6 +403,8 @@ def get_aug22_state(*, sheet: str = "full"):
     except Exception as e:
         print(f"[!] Warning: Could not parse embedding cache: {e}")
         edges = set()
+    if sheet != "sent":
+        edges = (set(edges) | WALK_EDITS.approved) - WALK_EDITS.rejected
 
     triaged_photos = [
         TriagedPhoto(
@@ -405,7 +427,10 @@ def get_aug22_state(*, sheet: str = "full"):
             for pid in pids
         }
 
-    proposal = walk_proposal_edges(triaged_photos) | {
+    walk_edges = walk_proposal_edges(triaged_photos)
+    if sheet != "sent":
+        walk_edges -= WALK_EDITS.rejected
+    proposal = walk_edges | {
         frozenset(e) if not isinstance(e, frozenset) else e for e in edges
     }
     clusters = puzzle_loop(
@@ -979,6 +1004,55 @@ def price_sheet_lot(
             before["committed_all_in"] != after["committed_all_in"]
             or before["decisions"][lot_id]["max_bid"] != after["decisions"][lot_id]["max_bid"]
         ),
+    }
+
+
+def _bt_id_for_seq(seq) -> str:
+    try:
+        n = int(seq)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="seq_a and seq_b must be integers")
+    if _manifest_by_sequence().get(n) is None:
+        raise HTTPException(status_code=404, detail="no such photo in the manifest")
+    return f"BT-{n:03d}"
+
+
+def _same_lot(seats, photo_a: str, photo_b: str) -> bool:
+    lots = {pid: seat.lot_id for seat in seats for pid in seat.photo_ids}
+    return lots.get(photo_a) is not None and lots.get(photo_a) == lots.get(photo_b)
+
+
+@app.post("/api/walk/edge")
+def walk_edge(
+    payload: dict = Body(...),
+    x_operator_token: str | None = Header(default=None),
+):
+    _require_operator(x_operator_token)
+    status = (payload.get("status") or "").strip()
+    if status not in {"approved", "rejected"}:
+        raise HTTPException(status_code=400, detail="status must be approved or rejected")
+    a = _bt_id_for_seq(payload.get("seq_a"))
+    b = _bt_id_for_seq(payload.get("seq_b"))
+    if a == b:
+        raise HTTPException(status_code=400, detail="need two distinct photos")
+    pair = frozenset({a, b})
+    _, seats, *_ = get_aug22_state()
+    before = {"same_lot": _same_lot(seats, a, b), "photo_a": a, "photo_b": b}
+    if status == "approved":
+        WALK_EDITS.rejected.discard(pair)
+        WALK_EDITS.approved.add(pair)
+    else:
+        WALK_EDITS.approved.discard(pair)
+        WALK_EDITS.rejected.add(pair)
+    _, seats, *_ = get_aug22_state()
+    after = {"same_lot": _same_lot(seats, a, b), "photo_a": a, "photo_b": b}
+    return {
+        "status": "applied",
+        "seq_a": int(payload["seq_a"]),
+        "seq_b": int(payload["seq_b"]),
+        "edge_status": status,
+        "before": before,
+        "after": after,
     }
 
 

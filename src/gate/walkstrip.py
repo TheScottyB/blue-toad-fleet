@@ -92,8 +92,20 @@ white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tile .badge{position:absolute;top:-9px;right:-6px;background:var(--accent);
 color:var(--bg);font:700 9px/1 ui-monospace,Menlo,monospace;padding:3px 5px;
 border-radius:8px}
+.tile.selected{outline:2px solid var(--accent);outline-offset:1px}
+.desk{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 16px}
+.desk button{font:12px ui-sans-serif,system-ui,sans-serif;padding:6px 10px;
+border:1px solid var(--line);border-radius:6px;background:var(--tile);color:var(--ink);
+cursor:pointer}
+.desk button:disabled{opacity:.45;cursor:not-allowed}
+.desk input{padding:6px 8px;border:1px solid var(--line);border-radius:6px;
+background:var(--tile);color:var(--ink)}
+.desk .note{color:var(--muted);font-size:12px}
 .closures{margin:18px 0 0;color:var(--muted);font-size:12px}
 .closures b{color:var(--accent)}
+.closures button{margin-left:8px;font:11px ui-sans-serif,system-ui,sans-serif;
+padding:3px 8px;border:1px solid var(--line);border-radius:6px;background:var(--tile);
+color:var(--ink);cursor:pointer}
 """
 
 
@@ -106,7 +118,7 @@ def _tile(photo: dict, lot_id: str | None, run_class: str,
     lot_html = f'<span class="lot">{lot}</span>' if (lot and label) else ""
     cls = f"tile {run_class}" if lot else "tile ungrouped"
     return (
-        f'<figure class="{cls}" title="{caption}">'
+        f'<figure class="{cls}" data-seq="{seq}" title="{caption}">'
         f'{badge_html}'
         f'<img src="/walk/photo/{seq}" alt="{seq}" loading="lazy">'
         f'<span class="seq">{seq:03d}</span> {lot_html}'
@@ -156,7 +168,10 @@ def render_walk_strip(photos: list[dict], seats: list[Seat], *,
     closure_lines = "".join(
         f"<div><b>&#10554; {escape(lot)}</b>: shot at {anchor:03d}, "
         f"the walk returned at {seq:03d} "
-        f"({seq - anchor} frames later)</div>"
+        f"({seq - anchor} frames later)"
+        f'<button type="button" data-act="same" data-seq-a="{anchor}" data-seq-b="{seq}">confirm</button>'
+        f'<button type="button" data-act="not-same" data-seq-a="{anchor}" data-seq-b="{seq}">reject</button>'
+        "</div>"
         for lot, anchor, seq in sorted(closures, key=lambda c: c[1])
     ) or "<div>No walk returns detected in this grouping.</div>"
 
@@ -179,7 +194,65 @@ walk returned to this lot</span>
 <span><span class="swatch" style="border:2px dashed var(--muted);background:none">
 </span>not grouped</span>
 </div>
+<div class="desk">
+<button type="button" data-act="same">same lot</button>
+<button type="button" data-act="not-same">not the same</button>
+<label>operator token <input id="cycle-token" type="password" autocomplete="off"></label>
+<span class="note" id="walk-result">Select two tiles, then same lot or not the same.</span>
+</div>
 <div class="strip">{"".join(rows)}</div>
 <div class="closures"><b>Walk returns</b> &mdash; far-apart frames the grouping
 identified as the same lot:{closure_lines}</div>
+<script>
+(function(){{
+  var selected = [];
+  var note = document.getElementById("walk-result");
+  function headers() {{
+    var h = {{"Content-Type": "application/json"}};
+    var token = document.getElementById("cycle-token");
+    if (token && token.value.trim()) h["X-Operator-Token"] = token.value.trim();
+    return h;
+  }}
+  function postEdge(seqA, seqB, status) {{
+    return fetch("/api/walk/edge", {{
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({{seq_a: seqA, seq_b: seqB, status: status}})
+    }}).then(function(r){{
+      return r.json().then(function(j){{ return {{ok: r.ok, j: j}}; }});
+    }}).then(function(x){{
+      if (note) note.textContent = x.ok
+        ? (x.j.status + " · " + x.j.edge_status + " · same_lot " + x.j.after.same_lot)
+        : (x.j.detail || "failed");
+      if (x.ok) setTimeout(function(){{ location.reload(); }}, 600);
+    }}).catch(function(){{
+      if (note) note.textContent = "network error";
+    }});
+  }}
+  document.addEventListener("click", function(ev){{
+    var tile = ev.target.closest("figure.tile");
+    if (tile && tile.hasAttribute("data-seq")) {{
+      var seq = tile.getAttribute("data-seq");
+      var i = selected.indexOf(seq);
+      if (i >= 0) {{ selected.splice(i, 1); tile.classList.remove("selected"); }}
+      else {{
+        if (selected.length >= 2) {{
+          var drop = document.querySelector('figure.tile[data-seq="'+selected[0]+'"]');
+          if (drop) drop.classList.remove("selected");
+          selected.shift();
+        }}
+        selected.push(seq);
+        tile.classList.add("selected");
+      }}
+      return;
+    }}
+    var btn = ev.target.closest("[data-act=same], [data-act=not-same]");
+    if (!btn) return;
+    var a = btn.getAttribute("data-seq-a") || selected[0];
+    var b = btn.getAttribute("data-seq-b") || selected[1];
+    if (!a || !b) {{ if (note) note.textContent = "Select two tiles first."; return; }}
+    postEdge(Number(a), Number(b), btn.getAttribute("data-act") === "same" ? "approved" : "rejected");
+  }});
+}})();
+</script>
 </body></html>"""
