@@ -16,8 +16,10 @@
 ## Public Google Cloud Endpoint (Project: `threebatdrone-prod-420`)
 
 The endpoint exists, but repository revision parity is a release-gated fact. Do
-not treat the public service as evidence for this working tree until
-`make release-check` records a matching deployed revision.
+not treat the public service as evidence for this working tree: `make release-check`
+records the audited commit, tree state, and gate results in `docs/evidence/RELEASE.md`,
+and does not yet compare against the deployed revision — live parity is confirmed
+only by deploying a release build and recording that deployment.
 
 * **Live Gate Console & UI:** [https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app)
 * **Live Health Endpoint:** [https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/health](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/health)
@@ -31,7 +33,7 @@ not treat the public service as evidence for this working tree until
 
 [`media/blue_toad_fleet_demo.mp4`](media/blue_toad_fleet_demo.mp4) — a narrated, four-beat walkthrough covering the commercial problem, evidence-backed photo grouping, the live Gate Console, and Cloud Run/test-suite proof. The checked-in cut was recorded on 2026-08-20 and contains that run's historical figures; it is not current submission evidence.
 
-The replacement workflow is declared in [`media/video_manifest.json`](media/video_manifest.json), derives mutable copy from a verified evidence snapshot, isolates every browser recording, and has one authoritative final assembler. See [`docs/VIDEO_WORKFLOW.md`](docs/VIDEO_WORKFLOW.md) before rebuilding. `make video-verify` checks dimensions, duration, size, and audio without changing the MP4.
+The replacement workflow is declared in [`media/video_manifest.json`](media/video_manifest.json), derives mutable copy from a verified evidence snapshot, isolates every browser recording, and has one authoritative final assembler. See [`docs/VIDEO_WORKFLOW.md`](docs/VIDEO_WORKFLOW.md) before rebuilding. `make video-verify` checks dimensions, duration, size, and audio against the declared facts snapshot without changing the MP4 (run `make video-prepare` first to produce that snapshot).
 
 ---
 
@@ -78,7 +80,7 @@ Capital is not the constraint — **time and visual throughput are**. The goal i
 
 ### 1. Evidence-Gated Spatial Grouping
 * **Why We Do It:** Auction galleries drop hundreds of unlabelled photos with zero lot numbers. Treating each frame as a separate item can create duplicate bids on repeat views and split a multi-photo lot.
-* **How It Works:** Natural capture order and auctioneer captions form the conservative baseline. Reviewed similarity edges may merge non-adjacent repeat views. Physical zones are accepted only from a validated `spatial_observations.json` sidecar bound to the exact manifest and model; when that evidence is absent, the Gate says **walk-order grouping** and renders no physical topology. The checked-in August fixture has no such sidecar, so no pole-barn layout is claimed for it.
+* **How It Works:** Natural capture order and auctioneer captions form the conservative baseline. Reviewed similarity edges may merge non-adjacent repeat views. Physical zones are accepted only from a validated `spatial_observations.json` sidecar bound to the exact manifest and model, and no shipped surface renders them yet — the hosted Gate shows **walk-order grouping** and no physical topology. The checked-in August fixture has no such sidecar, so no pole-barn layout is claimed for it.
 
 ### 2. Container Lot Decomposition ("Mining for Gold")
 * **Why It Exists:** Boxes and trays mix a possible high-value item with bulk material and surrounding table clutter.
@@ -97,7 +99,7 @@ Cloud Run, `types.Part.from_bytes` to assemble the photo alongside the prompt, a
 * **Honest Refusal Rule:** The appraisal model is forbidden from naming any price at all (`APPRAISAL_SYSTEM`: *"NEVER state or imply a price, estimate or value range"*). The refusal is decided downstream and is deterministic, not model-dependent — `price_lot` ([`src/bidmath/__init__.py`](src/bidmath/__init__.py)) returns a lot whose `CompEstimate` has no sources with `max_bid=None` and the workflow state `pending deep comps`, and `allocate` can never allocate it before verified sold-price evidence arrives. The current local August fixture routes **190 of 414** grouped lots to human pricing, but that historical fixture is not release-eligible under the new publication gate.
 
 ### 3a. Grounded Pricing Without Losing the Evidence
-Live Vertex validation exposed a failure at the boundary between Google Search grounding and structured output: adding `response_schema` preserved the search queries but returned **zero `grounding_chunks`**; the same call without the schema returned six citation chunks. Blue Toad therefore separates the work. The first call performs grounded research in free text and preserves Google-supplied citations; a second call, with no tools or search, is instructed to extract only the figures in that research note into the pricing schema. Three independent grounded samples are then medianed, and the lot is refused if the calls disagree too widely, contain fewer than two sold comps, or provide no usable citation. See [`price_lot_grounded`](src/appraiser/engine.py) and [`price_is_usable`](src/appraiser/pricing.py).
+Live Vertex validation exposed a failure at the boundary between Google Search grounding and structured output: adding `response_schema` preserved the search queries but stripped the `grounding_chunks` citations, while the same call without the schema returned them (a live-session observation; the raw responses were not archived in this repository). Blue Toad therefore separates the work. The first call performs grounded research in free text and preserves Google-supplied citations; a second call, with no tools or search, is instructed to extract only the figures in that research note into the pricing schema. Three independent grounded samples are then medianed ([`grounded_batch.py`](src/appraiser/grounded_batch.py)), and the lot is refused if the calls disagree too widely, contain fewer than two sold comps, or provide no usable citation. See [`price_lot_grounded`](src/appraiser/engine.py) and [`price_is_usable`](src/appraiser/pricing.py).
 
 ### 3b. The Curator's Read (Gemma 4 on Vertex AI)
 The Gate console's pitch banner is written by **Gemma 4** (`gemma-4-26b-a4b-it-maas`),
@@ -109,13 +111,14 @@ already set, and asked to phrase them. It never sees a comparable sale.
 
 Telling a model not to invent a figure is not the same as it not inventing one, so
 `invented_amounts` checks the prose against the sheet's own numbers before display.
-A figure the system did not compute means the sentence is discarded and the
-deterministic line renders instead — as it does if Gemma is unreachable.
+A figure the system did not compute means the model's entire read is discarded and
+the deterministic template ([`template_voice`](src/gate/voice.py)) renders instead —
+as it does if Gemma is unreachable.
 
 ### 4. The "Choice-Lot Sniper" (Walls, Table Lines & Shelves)
 Grouped assets sold "Choice / Times the Money" are the classic clerk-multiplication trap — bid on the group and the clerk multiplies the hammer by the count. The fleet models the mechanic explicitly rather than guessing at it: `mechanic_from_ruling` parses the auctioneer's own written ruling into a `BidMechanic` and a unit count, and a choice lot with no election is budgeted at the **full group** exposure and flagged `needs_election=True` rather than silently assumed to be a single unit.
 
-BT-002 closed this loop on real money. Gemini saw three labeled jewelry trays and asked whether the bid covered one tray or all three. The auctioneer confirmed, *"Yes, that is a ×3 bid."* Recorded as the text ruling *"take all three trays at ×3,"* it resolved to `TIMES_THE_MONEY, 3`: the owner's **$25 per-unit cap became $75 committed max / $86.25 all-in**, and `clerk_directive` produced an explicit instruction to take all three. Without that ruling, the sheet would have understated its own exposure by $50 before fees.
+BT-002 closed this loop on real money. Gemini saw three labeled jewelry trays and asked whether the bid covered one tray or all three. The auctioneer confirmed, *"Yes, that is a ×3 bid."* Recorded as the text ruling *"take all three trays at ×3,"* it resolved to `TIMES_THE_MONEY, 3`: the owner's **$25 per-unit cap became $75 committed max / $86.25 all-in**, and `clerk_directive` wrote: *"BT-002 — times the money: $25.00 per unit x 3. All-in $86.25."* — with `compile_absentee_email` adding the explicit exception line, *"BT-002 is an exception to the one-unit rule: take 3 of the 3 at the per-unit price."* Without that ruling, the sheet would have understated its own exposure by $50 before fees.
 
 ### 5. The Collaborative Partner & Bounded Challenge
 The Gate presents a three-tier pitch (Alpha Picks, Fast Smalls, and ruled-out
@@ -139,7 +142,9 @@ carry **$713–$879 estimated gross resale**, or **2.25–2.78x** gross cost bef
 selling expenses. These figures describe the historical local fixture and are
 not a publishable current cycle: its old pipeline state lacks the sealed artifact
 manifest and still has unresolved allocated lots. The allocation invariant is
-tested directly, and the new publisher refuses either condition.
+tested directly, and the new publisher refuses either condition — though this
+particular fixture is stopped one gate earlier still: its pre-provenance pipeline
+state is rejected outright.
 
 The former July A/B workbook is quarantined as historical and unverified. It is
 not used as submission evidence or as an input to the current pipeline.
@@ -168,8 +173,9 @@ full-resolution photograph in a private Cloud Storage cycle prefix. A READY
 marker written last is the explicit kickoff: Eventarc delivers it to the Cloud
 Run service, which idempotently launches a Cloud Run Job. The job processes the
 cloud copy with Vertex AI, publishes its JSON/workbook/email artifacts back to
-the same cycle, and marks it active only after success. Bid transmission remains
-a human action. See [`docs/CLOUD_CYCLES.md`](docs/CLOUD_CYCLES.md).
+the same cycle, and marks it active only after success. The chain is provisioned
+and test-covered end to end; no production cycle has yet been processed through it.
+Bid transmission remains a human action. See [`docs/CLOUD_CYCLES.md`](docs/CLOUD_CYCLES.md).
 <div align="center" style="margin-top: 8px;">
   <img src="docs/screenshots/03-curator-challenge.png" width="48%" alt="Curator Challenge Pitch" style="border-radius: 8px;" />
   <img src="docs/screenshots/05-the-sheet.png" width="48%" alt="Allocated Bid Sheet" style="border-radius: 8px;" />
