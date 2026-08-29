@@ -412,21 +412,13 @@ class AppraisalEngine:
         )
         return (resp.text or "").strip()
 
-    def price_lot_grounded(self, identification: str, category: str = ""):
+    def grounded_search(self, identification: str, category: str = "") -> dict | None:
         """
-        One grounded price. Two calls, because Vertex will not give both at once.
+        One Google-Search pass. Returns the research note even when extract fails.
 
-        With a response_schema attached, grounding_metadata comes back with zero
-        grounding_chunks — the search still runs and the queries are recorded,
-        but the retrieved pages are not returned. Drop the schema and the same
-        call yields six. Verified on the live endpoint both ways.
-
-        Citations are not optional here: an uncited price is the model's opinion,
-        and opinions are what this system exists not to bid on. So the grounded
-        call runs free-text and keeps its chunks, and a second call — cheap, no
-        tools, no search — reads the numbers out of that text into the schema.
-        The second call sees only the first's prose, so it cannot introduce a
-        figure the grounded pass did not find.
+        Two Vertex calls, because a response_schema on the search call yields
+        zero grounding_chunks. Search runs free-text and keeps citations; a
+        second, no-search call only reads numbers out of that prose.
         """
         if not self.client:
             raise RuntimeError("Vertex AI client is not available.")
@@ -446,22 +438,43 @@ class AppraisalEngine:
         if not prose:
             return None
 
-        extracted = self._generate(
-            stage="grounding.extract",
-            model=self.appraisal_model,
-            contents=["Read the completed-sale figures out of this research note. "
-                      "Report only what it states; invent nothing.\n\n" + prose],
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=to_vertex(PRICE_SCHEMA),
-                temperature=0.0,
-            ),
-        )
+        price = None
         try:
+            extracted = self._generate(
+                stage="grounding.extract",
+                model=self.appraisal_model,
+                contents=["Read the completed-sale figures out of this research note. "
+                          "Report only what it states; invent nothing.\n\n" + prose],
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    response_schema=to_vertex(PRICE_SCHEMA),
+                    temperature=0.0,
+                ),
+            )
             payload = json.loads(extracted.text)
+            price = parse_price_payload(payload, sources)
         except Exception:
-            return None
-        return parse_price_payload(payload, sources)
+            price = None
+        return {"prose": prose, "sources": sources, "price": price}
+
+    def price_lot_grounded(self, identification: str, category: str = ""):
+        """
+        One grounded price. Two calls, because Vertex will not give both at once.
+
+        With a response_schema attached, grounding_metadata comes back with zero
+        grounding_chunks — the search still runs and the queries are recorded,
+        but the retrieved pages are not returned. Drop the schema and the same
+        call yields six. Verified on the live endpoint both ways.
+
+        Citations are not optional here: an uncited price is the model's opinion,
+        and opinions are what this system exists not to bid on. So the grounded
+        call runs free-text and keeps its chunks, and a second call — cheap, no
+        tools, no search — reads the numbers out of that text into the schema.
+        The second call sees only the first's prose, so it cannot introduce a
+        figure the grounded pass did not find.
+        """
+        hit = self.grounded_search(identification, category)
+        return None if hit is None else hit["price"]
 
     def run_triage_batch(
         self,

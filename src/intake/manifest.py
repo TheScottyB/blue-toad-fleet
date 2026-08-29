@@ -123,8 +123,8 @@ def group_into_lots(triaged) -> list[LotGroup]:
          angle is usually `is_lot=False` AND `same_lot_as_previous=True`; it is
          not its own lot but it IS evidence about the previous one, so it joins
          that group rather than being dropped.
-      3. `is_lot=False` with no same-lot flag is signage or gallery filler and
-         never reaches the sheet.
+      3. `is_lot=False` with no same-lot flag is a singleton cluster, not a
+         filler discard — a banner might be a panel they are selling.
     """
     groups: list[dict] = []
     by_number: dict[str, dict] = {}
@@ -144,9 +144,6 @@ def group_into_lots(triaged) -> list[LotGroup]:
 
         if p.same_lot_as_previous and last is not None:
             last["photos"].append(p.photo_id)
-            continue
-
-        if not p.is_lot:
             continue
 
         g = {"key": f"seq:{p.photo_id}", "photos": [p.photo_id]}

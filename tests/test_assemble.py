@@ -37,12 +37,13 @@ class TestGrouping:
         lots = assemble_lots([ap("p1", "Lot 47 Tonka crane")])
         assert lots[0].lot_id == "47"
 
-    def test_filler_photos_produce_no_lot(self):
+    def test_unmatched_non_lot_photo_is_a_singleton(self):
+        """Unmatched is_lot=False becomes its own lot, not a discard."""
         lots = assemble_lots([
             ap("p1", "Tonka crane"),
             ap("p2", "Blue Toad banner", is_lot=False),
         ])
-        assert len(lots) == 1
+        assert {lot.lot_id for lot in lots} == {"seq:p1", "seq:p2"}
 
     def test_empty_input_yields_no_lots(self):
         assert assemble_lots([]) == []

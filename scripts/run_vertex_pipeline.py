@@ -26,11 +26,12 @@ from openpyxl.styles import Font, PatternFill
 from openpyxl.utils import get_column_letter
 
 from src.intake.embed import load_reshoot_edges, sha256_file
-from src.intake.manifest import parse_drop, group_into_lots, TriagedPhoto
+from src.intake.manifest import parse_drop, TriagedPhoto
 from src.intake.spatial import (
     SpatiallyTaggedPhoto, Zone, SurfaceSignature, apply_trajectory,
-    load_observations, merge_reshoots,
+    load_observations,
 )
+from src.intake.puzzle import as_lot_groups, puzzle_loop, walk_proposal_edges
 from src.appraisal import (
     Appraisal, Confidence as AppConfidence, Question, QuestionKind,
     StandingRule, build_queue
@@ -265,16 +266,8 @@ def select_appraisal_candidates(
     """
     Which lots earn a slow, expensive look.
 
-    Stage 1 runs a cheap model over every photograph and says whether each is
-    worth appraising. Two rules sit on top of it:
-
-    A photo with no triage verdict is appraised anyway. An untriaged photo is
-    unknown, not junk, and silently dropping it would make the coverage claim a
-    lie in exactly the cases nobody checks.
-
-    A lot the owner selected is appraised whatever triage thought. The costume
-    jewellery he buys for the storefront triages at 0.1 — he overrules that
-    knowingly, and a cheaper model upstream must not undo his decision.
+    Every photo is a candidate. Triage may still emit worth_appraising; it does
+    not decide coverage. always_include remains accepted but is no longer a gate.
     """
     verdicts = {t.get("photo_id"): t for t in triage_results}
     category_hints = category_hints or {}
@@ -282,9 +275,6 @@ def select_appraisal_candidates(
     for p in sorted(photos, key=lambda x: x.get("sequence", 0)):
         lot_id = f"BT-{p.get('sequence', 0):03d}"
         verdict = verdicts.get(p.get("photo_id"))
-        if verdict is not None and not verdict.get("worth_appraising", True):
-            if lot_id not in always_include:
-                continue
         summary = (verdict or {}).get("summary", "")
         out.append({
             "lot_id": lot_id,
@@ -649,7 +639,6 @@ def run_pipeline(
             ))
         triaged_photos = apply_trajectory(spatial_input)
         spatial_mode = "validated-listing-graph"
-    lot_groups = group_into_lots(triaged_photos)
     cache = cache_path / "embeddings.json"
     photo_by_seq = {p["sequence"]: p["photo_id"] for p in photos}
     sequences = {p["photo_id"]: p["sequence"] for p in photos}
@@ -659,7 +648,41 @@ def run_pipeline(
         sequences,
         expected_manifest_sha256=manifest_identity_sha256,
     )
-    lot_groups = merge_reshoots(lot_groups, edges)
+
+    # Identify from cached appraisals / captions only. Never call Vertex here.
+    pid_to_lot = {p["photo_id"]: f"BT-{p['sequence']:03d}" for p in photos}
+    photo_by_id = {p.photo_id: p for p in triaged_photos}
+    cached_appraisals: dict = {}
+    appraisal_cache_for_identify = data_path / "appraisal_results.json"
+    if appraisal_cache_for_identify.exists():
+        try:
+            for raw in json.loads(appraisal_cache_for_identify.read_text()):
+                lid = raw.get("lot_id")
+                if lid:
+                    cached_appraisals[lid] = raw
+        except Exception as e:
+            print(f"[!] Warning: Could not parse appraisal cache for puzzle identify: {e}")
+
+    def identify(pids):
+        out = {}
+        for pid in pids:
+            raw = cached_appraisals.get(pid_to_lot.get(pid, pid), {})
+            cap = photo_by_id[pid].caption if pid in photo_by_id else ""
+            out[pid] = (
+                raw.get("identification") or cap,
+                raw.get("category") or "unsorted",
+            )
+        return out
+
+    proposal = walk_proposal_edges(triaged_photos) | {
+        frozenset(e) if not isinstance(e, frozenset) else e for e in edges
+    }
+    clusters = puzzle_loop(
+        triaged_photos,
+        proposal_edges=proposal,
+        identify=identify,
+    )
+    lot_groups = as_lot_groups(clusters)
     print(f"[+] Grouped {len(photos)} photos into {len(lot_groups)} distinct lots.")
 
     # 2. Vertex AI Engine Setup

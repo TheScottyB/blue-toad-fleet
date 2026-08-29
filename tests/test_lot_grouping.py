@@ -60,14 +60,13 @@ def test_explicit_lot_number_beats_a_wrong_same_lot_flag():
     assert len(groups) == 2
 
 
-def test_filler_photos_are_not_lots():
-    """Signage and gallery filler must never reach the bid sheet."""
+def test_an_unmatched_non_lot_photo_is_a_singleton():
+    """A banner might be a panel they are selling. Unmatched → singleton."""
     groups = group_into_lots([
         photo("p1", "Tonka crane"),
         photo("p2", "Blue Toad Auctions banner", is_lot=False),
     ])
-    assert len(groups) == 1
-    assert groups[0].photo_ids == ("p1",)
+    assert {g.photo_ids for g in groups} == {("p1",), ("p2",)}
 
 
 def test_non_lot_photo_flagged_same_as_previous_still_attaches():

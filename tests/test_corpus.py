@@ -33,10 +33,10 @@ class TestSelection:
             [triaged("p1")], [photo(1, "p1", "crock")], always_include=set())
         assert [c["lot_id"] for c in got] == ["BT-001"]
 
-    def test_a_photo_triage_rejected_is_skipped(self):
+    def test_a_photo_triage_rejected_is_still_appraised(self):
         got = select_appraisal_candidates(
             [triaged("p1", worth=False)], [photo(1, "p1")], always_include=set())
-        assert got == []
+        assert [c["lot_id"] for c in got] == ["BT-001"]
 
     def test_an_owner_selected_lot_is_appraised_even_if_triage_rejected_it(self):
         """
