@@ -146,10 +146,10 @@ def build_report(
     status = "READY FOR OPERATOR HOLD POINTS" if not blockers else "NOT READY"
     report = f"""# Release evidence
 
-**Status:** {status}  
-**Generated:** {datetime.now(timezone.utc).isoformat()}  
-**Commit:** `{commit}`  
-**Python:** `{platform.python_version()}`
+- **Status:** {status}
+- **Generated:** {datetime.now(timezone.utc).isoformat()}
+- **Commit:** `{commit}`
+- **Python:** `{platform.python_version()}`
 
 ## Test invocation
 

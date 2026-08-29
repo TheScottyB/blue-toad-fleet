@@ -283,10 +283,22 @@ def collect(manifest_value: str, output_value: str | None, junit_value: str | No
             f"pipeline state reports {state_groups} groups but canonical grouping produces "
             f"{groups}; rerun the canonical pipeline before rendering video facts"
         )
+    # Abundance added a fourth class the summary does not carry: priced,
+    # honest, and crowded out by the cap. Post-reseal 2026-08-29 the sealed
+    # state holds 38 of them; without this term the partition read 377/415
+    # and the guard refused a state that reconciles perfectly.
+    priced_over_cap = sum(
+        1 for row in pipeline_state["decisions"]
+        if not row.get("allocated")
+        and row.get("max_bid") is not None
+        and not row.get("needs_human_pricing")
+        and row.get("priority") != "SKIP"
+    )
     classified_groups = (
         int(summary["allocated"])
         + int(summary["skipped"])
         + int(summary["needs_human_pricing"])
+        + priced_over_cap
     )
     if classified_groups != groups:
         raise VideoBuildError(
