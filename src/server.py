@@ -444,6 +444,7 @@ def healthz():
         "service": "blue-toad-fleet",
         "project": os.environ.get("GOOGLE_CLOUD_PROJECT", "threebatdrone-prod-420"),
         "version": "2.0.0",
+        "git_commit": os.environ.get("GIT_COMMIT", "unknown"),
         "vertex_client": bool(engine.client),
         "gemma_model": GEMMA_MODEL,
         "gemma_ok": bool(engine.client) and "gemma" in GEMMA_MODEL.lower(),

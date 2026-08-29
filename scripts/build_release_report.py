@@ -10,11 +10,14 @@ import platform
 import subprocess
 import sys
 import tempfile
+import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
 from scripts.collect_submission_facts import _test_counts, collect
 from scripts.video_common import VideoBuildError, atomic_write_text, project_path
+
+DEPLOYED_HEALTH_URL = "https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/health"
 
 
 def _git(*args: str) -> tuple[int, str]:
@@ -27,6 +30,36 @@ def _git(*args: str) -> tuple[int, str]:
 
 def _sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _fetch_deployed_commit(url: str, timeout: float = 10.0) -> tuple[str | None, str | None]:
+    """Return (deployed_commit, error); exactly one side is set."""
+    try:
+        with urllib.request.urlopen(url, timeout=timeout) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except (OSError, ValueError) as exc:
+        return None, str(exc) or exc.__class__.__name__
+    commit = payload.get("git_commit") if isinstance(payload, dict) else None
+    if not commit or commit == "unknown":
+        return None, "the deployed /health payload does not carry a git commit"
+    return str(commit), None
+
+
+def _revision_parity(
+    local_commit: str, deployed_commit: str | None, error: str | None,
+) -> tuple[str, str | None]:
+    """Compare the audited commit against the deployed one, failing closed.
+
+    Anything short of two known, equal commits is UNVERIFIED or MISMATCH —
+    "could not check" must never resolve to the permissive verdict.
+    """
+    if local_commit == "unknown":
+        return "UNVERIFIED", "the local commit could not be resolved"
+    if deployed_commit is None:
+        return "UNVERIFIED", error or "no deployed commit and no recorded error"
+    if deployed_commit == local_commit:
+        return "MATCH", None
+    return "MISMATCH", None
 
 
 def _facts_blockers(snapshot: dict) -> list[str]:
@@ -48,6 +81,7 @@ def build_report(
     output_path: str | Path,
     *,
     manifest_path: str | Path = "media/video_manifest.json",
+    health_url: str = DEPLOYED_HEALTH_URL,
 ) -> tuple[Path, list[str]]:
     root = project_path(".")
     junit = Path(junit_path)
@@ -63,6 +97,17 @@ def build_report(
     commit_code, commit = _git("rev-parse", "HEAD")
     if commit_code:
         commit = "unknown"
+
+    deployed_commit, parity_error = _fetch_deployed_commit(health_url)
+    parity, parity_detail = _revision_parity(commit, deployed_commit, parity_error)
+    if parity == "MISMATCH":
+        blockers.append(
+            "the deployed revision does not match the audited commit",
+        )
+    elif parity == "UNVERIFIED":
+        blockers.append(
+            f"deployed revision parity is unverified: {parity_detail}",
+        )
 
     facts: dict | None = None
     facts_error: str | None = None
@@ -90,6 +135,14 @@ def build_report(
         if facts else f"- Blocked: {facts_error or 'unknown facts error'}"
     )
     blocker_lines = "\n".join(f"- {item}" for item in blockers) or "- None."
+    parity_lines = (
+        f"- Verdict: {parity}\n"
+        f"- Local commit: `{commit}`\n"
+        f"- Deployed commit: `{deployed_commit or 'unavailable'}`\n"
+        f"- Health endpoint: `{health_url}`"
+    )
+    if parity_detail:
+        parity_lines += f"\n- Detail: {parity_detail}"
     status = "READY FOR OPERATOR HOLD POINTS" if not blockers else "NOT READY"
     report = f"""# Release evidence
 
@@ -100,7 +153,7 @@ def build_report(
 
 ## Test invocation
 
-- Command: `{sys.executable} -m pytest tests/ -q --junitxml=artifacts/release/pytest.xml`
+- Command: `python -m pytest tests/ -q --junitxml=artifacts/release/pytest.xml`
 - Collected: {counts['collected']}
 - Passed: {counts['passed']}
 - Skipped: {counts['skipped']}
@@ -115,6 +168,10 @@ def build_report(
 
 {facts_lines}
 
+## Deployed revision parity
+
+{parity_lines}
+
 ## Release blockers
 
 {blocker_lines}
@@ -124,10 +181,13 @@ def build_report(
 - `git diff --check`: {'pass' if diff_code == 0 else 'fail'}
 - Full local pytest report: {'pass' if not counts['failed'] and not counts['errors'] else 'fail'}
 - Canonical facts seal: {'pass' if facts is not None else 'fail'}
+- Deployed revision parity: {parity}
 
-This command does not deploy, transmit a bid, perform the paid repeated Vertex
-probe, capture authenticated Seller Hub data, or replace the final media. Those
-remain explicit operator hold points.
+Revision parity is a single read-only GET against the deployed /health
+endpoint; an unreachable or unstamped deployment is recorded as UNVERIFIED,
+never as a pass. This command does not deploy, transmit a bid, perform the
+paid repeated Vertex probe, capture authenticated Seller Hub data, or replace
+the final media. Those remain explicit operator hold points.
 """
     output = atomic_write_text(output_path, report)
     return output, blockers
@@ -138,10 +198,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--junitxml", required=True)
     parser.add_argument("--output", default="docs/evidence/RELEASE.md")
     parser.add_argument("--manifest", default="media/video_manifest.json")
+    parser.add_argument("--health-url", default=DEPLOYED_HEALTH_URL)
     args = parser.parse_args(argv)
     try:
         output, blockers = build_report(
             args.junitxml, args.output, manifest_path=args.manifest,
+            health_url=args.health_url,
         )
     except (OSError, ValueError, VideoBuildError) as exc:
         print(f"release report failed: {exc}", file=sys.stderr)

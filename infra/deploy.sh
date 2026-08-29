@@ -10,7 +10,14 @@ BUCKET="${BTF_CYCLE_BUCKET:-${GOOGLE_CLOUD_PROJECT}-blue-toad-cycles}"
 RUNTIME_ACCOUNT_NAME="${BTF_RUNTIME_ACCOUNT_NAME:-blue-toad-fleet-runtime}"
 RUNTIME_ACCOUNT="${RUNTIME_ACCOUNT_NAME}@${GOOGLE_CLOUD_PROJECT}.iam.gserviceaccount.com"
 OPERATOR_SECRET="${BTF_OPERATOR_SECRET:-operator-token}"
-SERVICE_ENV="GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT},VERTEX_LOCATION=global,BTF_MEMORY_BACKEND=firestore,BTF_FIRESTORE_DATABASE=blue-toad,BTF_CYCLE_BUCKET=${BUCKET},BTF_CYCLE_JOB=${JOB_NAME},BTF_SHOP_ID=richmond-general,OPERATOR_ACTOR=richmond-general-owner,CLOUD_RUN_REGION=${REGION}"
+# --source . uploads the working tree, not HEAD, so a dirty tree must not be
+# stamped as a clean commit — release-check compares this value against the
+# audited local HEAD, and a false stamp would manufacture parity evidence.
+GIT_COMMIT="$(git rev-parse HEAD)"
+if [ -n "$(git status --porcelain)" ]; then
+  GIT_COMMIT="${GIT_COMMIT}-dirty"
+fi
+SERVICE_ENV="GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT},VERTEX_LOCATION=global,BTF_MEMORY_BACKEND=firestore,BTF_FIRESTORE_DATABASE=blue-toad,BTF_CYCLE_BUCKET=${BUCKET},BTF_CYCLE_JOB=${JOB_NAME},BTF_SHOP_ID=richmond-general,OPERATOR_ACTOR=richmond-general-owner,CLOUD_RUN_REGION=${REGION},GIT_COMMIT=${GIT_COMMIT}"
 SECRET_ARGS=()
 
 echo "==> [1/4] Enabling Google Cloud Services on project: $GOOGLE_CLOUD_PROJECT"

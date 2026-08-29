@@ -29,6 +29,16 @@ def test_health_names_the_gemma_bonus_model(client):
     assert not data["gemma_model"].startswith("gemini-")
     assert "gemma_ok" in data
 
+
+def test_health_reports_the_stamped_git_commit(client, monkeypatch):
+    monkeypatch.setenv("GIT_COMMIT", "abc123def456")
+    assert client.get("/health").json()["git_commit"] == "abc123def456"
+
+
+def test_health_git_commit_is_unknown_when_unstamped(client, monkeypatch):
+    monkeypatch.delenv("GIT_COMMIT", raising=False)
+    assert client.get("/health").json()["git_commit"] == "unknown"
+
 def test_root_console_renders(client):
     r = client.get("/")
     assert r.status_code == 200

@@ -18,8 +18,10 @@
 The endpoint exists, but repository revision parity is a release-gated fact. Do
 not treat the public service as evidence for this working tree: `make release-check`
 records the audited commit, tree state, and gate results in `docs/evidence/RELEASE.md`,
-and does not yet compare against the deployed revision — live parity is confirmed
-only by deploying a release build and recording that deployment.
+and compares the audited commit against the deployed revision — the deploy stamps
+`GIT_COMMIT` into the service, `/health` reports it, and the release report records
+the comparison as MATCH, MISMATCH, or UNVERIFIED (an unreachable or unstamped
+deployment is UNVERIFIED, never a pass).
 
 * **Live Gate Console & UI:** [https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app)
 * **Live Health Endpoint:** [https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/health](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/health)
