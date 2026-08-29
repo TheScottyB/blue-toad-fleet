@@ -2,7 +2,20 @@ from pathlib import Path
 
 import pytest
 
-from scripts.run_vertex_pipeline import PipelineConfig, PipelineResult
+from scripts.run_vertex_pipeline import (
+    AppraisalStageResult,
+    DecisionStageResult,
+    IntakeStageResult,
+    PipelineConfig,
+    PipelineResult,
+    run_appraisal_stage,
+    run_decision_stage,
+    run_intake_stage,
+    write_bid_sheet_artifact,
+    write_email_artifact,
+    write_pipeline_state_artifact,
+    exact_requested_rows,
+)
 
 
 def config(**changes):
@@ -47,3 +60,35 @@ def test_runner_core_has_no_process_exit_or_import_path_mutation():
 def test_pipeline_result_is_a_named_typed_boundary():
     assert "pipeline_state_path" in PipelineResult.__dataclass_fields__
     assert "decisions" in PipelineResult.__dataclass_fields__
+
+
+def test_pipeline_orchestration_has_explicit_typed_stages():
+    assert IntakeStageResult.__dataclass_params__.frozen
+    assert AppraisalStageResult.__dataclass_params__.frozen
+    assert DecisionStageResult.__dataclass_params__.frozen
+    assert all(callable(stage) for stage in (
+        run_intake_stage,
+        run_appraisal_stage,
+        run_decision_stage,
+        write_email_artifact,
+        write_bid_sheet_artifact,
+        write_pipeline_state_artifact,
+    ))
+
+
+def test_batch_boundary_filters_superset_cache_and_rejects_missing_or_duplicate():
+    rows = [
+        {"lot_id": "BT-002", "value": 2},
+        {"lot_id": "BT-001", "value": 1},
+        {"lot_id": "BT-999", "value": 999},
+    ]
+    assert [row["lot_id"] for row in exact_requested_rows(
+        rows, {"BT-001", "BT-002"}, label="test batch",
+    )] == ["BT-001", "BT-002"]
+    with pytest.raises(RuntimeError, match="missing"):
+        exact_requested_rows(rows, {"BT-003"}, label="test batch")
+    with pytest.raises(RuntimeError, match="duplicate"):
+        exact_requested_rows(
+            [{"lot_id": "BT-001"}, {"lot_id": "BT-001"}],
+            {"BT-001"}, label="test batch",
+        )

@@ -8,21 +8,22 @@ install:          ## Install dev dependencies into virtual environment
 	python3 -m venv $(VENV) && $(VENV)/bin/pip install -r requirements.txt -r requirements-dev.txt
 
 demo:             ## Run the full decision pipeline on seeded data. No GCP, no OAuth, no keys.
-	$(PYTHON) demo/run_demo.py
+	$(PYTHON) -m demo.run_demo
 
 cycles:           ## Show the intake clarification loop learning across two cycles
-	$(PYTHON) demo/run_cycles.py
+	$(PYTHON) -m demo.run_cycles
 
 console:          ## Render the Gate console to demo/out/console.html
-	$(PYTHON) demo/build_console.py
+	$(PYTHON) -m demo.build_console
 
 test:             ## Run the unit suite
 	$(PYTEST) tests/ -q
 
 release-check:    ## Non-mutating full release gate; writes docs/evidence/RELEASE.md
 	mkdir -p artifacts/release docs/evidence
+	$(PYTHON) -m ruff check scripts/run_vertex_pipeline.py
 	$(PYTEST) tests/ -q --junitxml=artifacts/release/pytest.xml
-	$(PYTHON) scripts/build_release_report.py --junitxml artifacts/release/pytest.xml --output docs/evidence/RELEASE.md
+	$(PYTHON) -m scripts.build_release_report --junitxml artifacts/release/pytest.xml --output docs/evidence/RELEASE.md
 
 clean:
 	find . -name __pycache__ -type d -exec rm -rf {} + 2>/dev/null || true
@@ -32,22 +33,22 @@ deploy:           ## Deploy to Cloud Run (requires gcloud auth + PROJECT_ID)
 	./infra/deploy.sh
 
 stage-cycle:      ## Upload SOURCE_DIR as immutable cloud input (no processing)
-	$(PYTHON) scripts/stage_cycle.py --source-dir "$(SOURCE_DIR)" --cycle-id "$(CYCLE_ID)" --auction-title "$(AUCTION_TITLE)" --auction-date "$(AUCTION_DATE)" --timezone "$(TIMEZONE_NAME)" --venue "$(VENUE)" --deadline "$(DEADLINE)"
+	$(PYTHON) -m scripts.stage_cycle --source-dir "$(SOURCE_DIR)" --cycle-id "$(CYCLE_ID)" --auction-title "$(AUCTION_TITLE)" --auction-date "$(AUCTION_DATE)" --timezone "$(TIMEZONE_NAME)" --venue "$(VENUE)" --deadline "$(DEADLINE)"
 
 start-cycle:      ## Upload SOURCE_DIR and write READY to start the Cloud Run Job
-	$(PYTHON) scripts/stage_cycle.py --source-dir "$(SOURCE_DIR)" --cycle-id "$(CYCLE_ID)" --auction-title "$(AUCTION_TITLE)" --auction-date "$(AUCTION_DATE)" --timezone "$(TIMEZONE_NAME)" --venue "$(VENUE)" --deadline "$(DEADLINE)" --start
+	$(PYTHON) -m scripts.stage_cycle --source-dir "$(SOURCE_DIR)" --cycle-id "$(CYCLE_ID)" --auction-title "$(AUCTION_TITLE)" --auction-date "$(AUCTION_DATE)" --timezone "$(TIMEZONE_NAME)" --venue "$(VENUE)" --deadline "$(DEADLINE)" --start
 
 video-prepare:    ## Verify facts and render declared video pages/cards (runs tests + gcloud proof)
-	$(PYTHON) scripts/build_media.py prepare
+	$(PYTHON) -m scripts.build_media prepare
 
 video-record:     ## Record all four declared browser/terminal beats
-	$(PYTHON) scripts/build_media.py record
+	$(PYTHON) -m scripts.build_media record
 
 video-compose:    ## Normalize the four recordings into final beat footage
-	$(PYTHON) scripts/build_media.py compose
+	$(PYTHON) -m scripts.build_media compose
 
 video:            ## Rebuild the complete facts-driven narrated submission video
-	$(PYTHON) scripts/build_media.py all
+	$(PYTHON) -m scripts.build_media all
 
 video-verify:     ## Verify final dimensions, duration, size, and audio presence
-	$(PYTHON) scripts/build_media.py verify
+	$(PYTHON) -m scripts.build_media verify

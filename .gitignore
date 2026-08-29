@@ -38,3 +38,4 @@ pyrightconfig.json
 data/dryruns/
 data/**/estatesales_images/
 data/memory/
+artifacts/release/
