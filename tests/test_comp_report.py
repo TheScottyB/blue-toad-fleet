@@ -91,9 +91,9 @@ class TestPartialSelection:
 
 
 class TestFilterSurfacing:
-    """Sticky Seller Hub filters scope every number silently (measured
-    2026-08-24: a leftover Used condition filter). Both tools must surface
-    the page-printed markers so a scoped read is a labelled read."""
+    """Both tools surface the page-printed filter markers — the page's own
+    claim about its scope, which can be a display-only ghost (measured
+    2026-08-29). A claimed scope must reach the caller as printed."""
 
     def test_comp_report_carries_the_printed_filters(
             self, two_row_market, monkeypatch):

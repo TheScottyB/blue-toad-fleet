@@ -210,9 +210,10 @@ def comp_report(identification: str, query: str,
         "channel_note": ("eBay velocity only — the rate this item sells ON "
                         "EBAY, not in the store or other channels"),
         "window_as_printed": sold.window,
-        # Sticky Seller Hub filters from manual sessions scope every number
-        # on the page and the URL cannot clear them; None = the page printed
-        # no filter bar at all (scope unknown), [] = bar printed clean.
+        # What the filter bar claimed. Measured 2026-08-29: a sticky chip
+        # can be display-only (page data matched the unfiltered API), so
+        # non-empty = the page CLAIMED scope — verify before trusting the
+        # figures as scoped. None = no bar printed, [] = bar printed clean.
         "filters_as_printed": {"sold": sold.filters, "active": active.filters},
         "sold_units_365d": sold.sold_units,
         "sold_listings_365d": len(sold.rows),

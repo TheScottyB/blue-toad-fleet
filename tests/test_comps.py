@@ -289,9 +289,10 @@ class TestActiveParsing:
 
 
 class TestFilterScope:
-    """Sticky Seller Hub filters silently scope every number on the page.
-    The page's own printed markers are the only visibility we have, so they
-    must be surfaced — and an absent filter bar is UNKNOWN, never 'clean'."""
+    """The page's printed filter markers are surfaced as printed — they are
+    the page's CLAIM about its own scope (a sticky chip can even be a
+    display-only ghost, measured 2026-08-29). An absent bar is UNKNOWN,
+    never 'clean'."""
 
     def test_reports_every_marker_the_sold_page_printed(self):
         page = parse_sold_page(FILTERED_BAR + SOLD_PAGE)

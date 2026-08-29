@@ -96,14 +96,18 @@ def _require_research_page(text: str) -> None:
 def parse_filters(text: str) -> list[str] | None:
     """The scope markers the page printed, as printed.
 
-    Sticky Seller Hub filters survive from manual sessions and silently
-    scope every number on a research page (measured 2026-08-24: a leftover
-    Used condition filter on a live read). The URL cannot clear them, so the
-    only honest move is to surface what the page itself printed: the
-    "Filter Applied" badge, any "<name> filter (N Selected)" button, and the
-    chip labels rendered between "More filters" and the Sold/Active tab
-    strip. Returns [] for a bar with none of those, and None when no filter
-    bar was printed at all — an absent bar is UNKNOWN scope, never "clean".
+    Sticky Seller Hub filter UI survives from manual sessions (measured
+    2026-08-24: a leftover Used condition chip on a live read). Measured
+    2026-08-29: that chip can be a DISPLAY GHOST — the page's own data
+    requests carried only the URL's params (no conditionId), and the page's
+    aggregates matched the unfiltered API read, not the Used-scoped one. So
+    printed markers mean "the page CLAIMS this scope"; the data may or may
+    not be scoped (an explicit conditionId in the URL, by contrast, does
+    scope it). Surfaced as printed: the "Filter Applied" badge, any
+    "<name> filter (N Selected)" button, and the chip labels rendered
+    between "More filters" and the Sold/Active tab strip. Returns [] for a
+    bar with none of those, and None when no filter bar was printed at
+    all — an absent bar is UNKNOWN, never "clean".
     """
     lines = [ln.strip() for ln in text.split("\n")]
     try:
