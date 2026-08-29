@@ -66,9 +66,17 @@ walk's one confirmed loop closure — the auctioneer returned to the costume
 jewelry trays 179 frames later — badged at both endpoints. That closure was
 found by `gemini-embedding-2`, where sequence proximity cannot find it by
 construction (recall@25 85.7% for embeddings vs 0.0% for sequence proximity on
-the reshoot corpus — `docs/CAPABILITY_PROBE.md`). The one photo the current
-grouping pass drops is rendered as a visibly ungrouped tile rather than
-hidden: the page shows the system's coverage honestly, gap included.
+the reshoot corpus — `docs/CAPABILITY_PROBE.md`).
+
+Grouping itself is a puzzle loop, not a funnel. Caption lot numbers are hard
+constraints; walk adjacency and the approved embedding edges are proposals
+that can be wrong and are revisited; merges and splits iterate to a stable
+membership under a deterministic, round-capped loop; and a photo that matches
+nothing becomes a singleton cluster instead of a silent drop. The earlier
+funnel pass discarded exactly one of the 462 photos — the walk strip rendered
+it as a visibly ungrouped tile rather than hiding it — and the puzzle loop's
+first result was to seat it: the August fixture now groups all 462 photos
+into 415 clusters with nothing left off the board.
 
 ### 2. Container Lot Decomposition ("Mining for Gold")
 A bounded-container pass lists only visible contents. A possible alpha changes
@@ -188,7 +196,7 @@ this stream does not stop.
     allocator is tested never to exceed the operator-supplied cap.
   * Historical July A/B output is quarantined and is not presented as evidence.
 * **Historical August fixture, honestly bounded:**
-  * The local fixture computes 462 photos, 414 groups, and **9 allocations
+  * The local fixture computes 462 photos, 415 groups, and **9 allocations
     ($275.00 max / $316.25 all-in)** under a $600 cap.
   * It is not current release evidence: its legacy state has unresolved
     allocated lots and no sealed artifact manifest, both of which now block
