@@ -31,23 +31,27 @@ def sheet():
     return summarize(decisions)
 
 
-def test_readme_labels_local_money_as_historical_and_non_publishable():
+def test_readme_labels_local_money_as_sealed_and_distinct_from_sent():
+    """The 2026-08-29 reseal made the fixture provenance-bearing, so the old
+    'not publishable / blocked' labels became false. The contract now: the
+    README's figures derive from the live sheet, name the seal, and keep the
+    sent sheet unmistakably separate from the full-coverage computation."""
     current = sheet()
     text = README.read_text()
     assert "Historical August fixture reconciliation" in text
     assert f"**{current.allocated} allocated bids (${current.committed_max:,.2f} max)**" in text
     assert f"**${current.committed_all_in:,.2f}** all-in" in text
-    assert "historical local fixture" in text
-    assert "publishable current cycle" in text
+    assert "provenance-sealed" in text
+    assert "only artifact ever sent" in " ".join(text.split())
 
 
-def test_devpost_labels_local_money_as_historical_and_blocked():
+def test_devpost_labels_local_money_as_sealed_and_distinct_from_sent():
     current = sheet()
     text = DEVPOST.read_text()
-    assert "Historical August fixture, honestly bounded" in text
+    assert "Historical August fixture, provenance-sealed" in text
     assert f"**{current.allocated} allocations" in text
     assert f"${current.committed_max:,.2f} max / ${current.committed_all_in:,.2f} all-in" in text
-    assert "not current release evidence" in text
+    assert "seat" in text and "first by design" in text
 
 
 def test_judged_copy_does_not_freeze_test_counts():

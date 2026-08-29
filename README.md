@@ -138,15 +138,17 @@ Appraisals feed into pure, unit-tested valuation logic implementing the store's 
 
 ## Historical August fixture reconciliation
 
-The checked-in August 22 fixture computes **9 allocated bids ($275.00 max)** and
-**$316.25** all-in exposure under the operator's $600 cap. Their selected lots
-carry **$713–$879 estimated gross resale**, or **2.25–2.78x** gross cost before
-selling expenses. These figures describe the historical local fixture and are
-not a publishable current cycle: its old pipeline state lacks the sealed artifact
-manifest and still has unresolved allocated lots. The allocation invariant is
-tested directly, and the new publisher refuses either condition — though this
-particular fixture is stopped one gate earlier still: its pre-provenance pipeline
-state is rejected outright.
+The checked-in August 22 fixture computes **46 allocated bids ($520.00 max)**
+and **$598.00** all-in exposure under the operator's $600 cap, from the
+provenance-sealed pipeline state (415 decision rows, resealed 2026-08-29 with
+full appraisal coverage). The owner's nine kept lots — the sheet that actually
+went to Blue Toad, $275.00/$316.25, archived with its mailbox receipt in
+`docs/evidence/` — seat first by design; the allocator fills 37 more lots
+around them. The 46 carry **$1,458.81–$3,308.67 estimated gross resale**
+(**2.44–5.53x** all-in cost before selling expenses), derived from the sealed
+decisions' own comp provenance. The sent sheet remains the only artifact ever
+sent; the full-coverage figures roll whenever the evidence caches change, and
+the allocation invariant (never exceed the operator's cap) is tested directly.
 
 The former July A/B workbook is quarantined as historical and unverified. It is
 not used as submission evidence or as an input to the current pipeline.

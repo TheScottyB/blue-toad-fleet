@@ -161,9 +161,15 @@ in the mailbox:
   sold-comp cluster on the deepest market comped that cycle — a ceiling the
   room can beat only by paying at or above market. The recorded lesson for the
   next cycle is to revisit the cap, not the comp.
-* The spend-to-return shape the sheet committed to, derived from the allocated
-  decisions' own comp provenance on the live API: **$713–$879 estimated resale
-  against $316.25 all-in — 2.25×–2.78×** if every cap had held.
+* The spend-to-return shape the sent sheet committed to, derived from its nine
+  decisions' own comp provenance: **$713–$879 estimated resale against $316.25
+  all-in — 2.25×–2.78×** if every cap had held.
+* And the full-coverage counterpart, from the provenance-sealed state the live
+  API now serves: with every photo appraised, the allocator seats the owner's
+  nine first and fills the envelope to **46 lots — $520.00 committed / $598.00
+  all-in — carrying $1,458.81–$3,308.67 estimated resale (2.44×–5.53×)**.
+  Partial coverage left half the envelope idle; full coverage keeps every
+  human decision and puts the rest of the budget to work.
 
 And the next cycle is already in flight: Blue Toad's September 5 auction was
 posted with 414 photos live as of August 29, on the same bi-weekly Saturday
@@ -210,12 +216,13 @@ this stream does not stop.
   * Every authorized mechanic is reconciled into one all-in exposure, and the
     allocator is tested never to exceed the operator-supplied cap.
   * Historical July A/B output is quarantined and is not presented as evidence.
-* **Historical August fixture, honestly bounded:**
-  * The local fixture computes 462 photos, 415 groups, and **9 allocations
-    ($275.00 max / $316.25 all-in)** under a $600 cap.
-  * It is not current release evidence: its legacy state has unresolved
-    allocated lots and no sealed artifact manifest, both of which now block
-    publication.
+* **Historical August fixture, provenance-sealed:**
+  * The local fixture computes 462 photos, 415 groups, and **46 allocations
+    ($520.00 max / $598.00 all-in)** under a $600 cap, from a pipeline state
+    resealed 2026-08-29 with full appraisal coverage and per-decision
+    provenance.
+  * The owner's nine kept lots — the sheet that was actually sent — seat
+    first by design; the machine fills the remaining envelope around them.
 * **Release-gated Cloud proof:**
   * The public Cloud Run endpoint is listed above, but deployment revision
     parity, recorded latency, and final media are claims only after the release
