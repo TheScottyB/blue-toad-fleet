@@ -1,15 +1,15 @@
 # Release evidence
 
-**Status:** NOT READY  
-**Generated:** 2026-08-29T21:59:00.031287+00:00  
-**Commit:** `b938a220300f077f0b6bee6c01b793f4cc6ed267`  
-**Python:** `3.14.4`
+- **Status:** NOT READY
+- **Generated:** 2026-08-29T23:40:35.029321+00:00
+- **Commit:** `a1f41ae74ec4e506cec4c18435748561cbdd840f`
+- **Python:** `3.14.4`
 
 ## Test invocation
 
 - Command: `python -m pytest tests/ -q --junitxml=artifacts/release/pytest.xml`
-- Collected: 885
-- Passed: 878
+- Collected: 949
+- Passed: 942
 - Skipped: 7
 - Failed: 0
 - Errors: 0
@@ -21,26 +21,28 @@
 
 ## Canonical cycle facts
 
-- Blocked: pipeline state predates decision provenance; rerun the canonical pipeline
+- Snapshot identity: `8680532cfd9fa2891f86b5ac63e34121ac6f10bc985411f5b1dc7d9b307a62ee`
+- Artifact manifest: `unavailable`
 
 ## Deployed revision parity
 
-- Verdict: MISMATCH
-- Local commit: `b938a220300f077f0b6bee6c01b793f4cc6ed267`
-- Deployed commit: `eb1c1ac19b0dc099bbcc709880a0386ed1aabca6`
+- Verdict: MATCH
+- Local commit: `a1f41ae74ec4e506cec4c18435748561cbdd840f`
+- Deployed commit: `a1f41ae74ec4e506cec4c18435748561cbdd840f`
 - Health endpoint: `https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/health`
 
 ## Release blockers
 
-- the deployed revision does not match the audited commit
-- canonical submission facts could not be sealed
+- allocated lots have unresolved questions
+- unresolved allocated lots: BT-001, BT-002, BT-021, BT-038, BT-039, BT-041, BT-043, BT-048, BT-050, BT-066, BT-081, BT-082, BT-087, BT-113, BT-143, BT-159, BT-165, BT-179, BT-187, BT-203, BT-213, BT-235, BT-242, BT-247, BT-256, BT-274, BT-329, BT-332, BT-337, BT-348, BT-362, BT-372, BT-373, BT-384, BT-385, BT-388, BT-394, BT-398, BT-404, BT-432, BT-434, BT-436, BT-441, BT-447, BT-450, BT-457
+- facts snapshot was generated from a dirty working tree
 
 ## Non-mutating checks
 
 - `git diff --check`: pass
 - Full local pytest report: pass
-- Canonical facts seal: fail
-- Deployed revision parity: MISMATCH
+- Canonical facts seal: pass
+- Deployed revision parity: MATCH
 
 Revision parity is a single read-only GET against the deployed /health
 endpoint; an unreachable or unstamped deployment is recorded as UNVERIFIED,
