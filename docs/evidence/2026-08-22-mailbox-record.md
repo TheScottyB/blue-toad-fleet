@@ -152,3 +152,70 @@ Retrieval provenance: Gmail API `get_message` on id `1a02b9171cc30d2a`,
 `.eml` deliberately — full RFC headers add routing metadata to a public
 repository without adding evidentiary value; the id, thread id, timestamps,
 and verbatim body are what the cited claims rest on.
+
+---
+
+# The ×3 confirmation — the auctioneer's own words, in the earlier thread
+
+The narrative's remaining gap was Bill's literal confirmation, which NOTES.md
+cites to "email 2026-08-21 21:43 UTC" without an archived artifact. That message
+lives in a separate, earlier thread than the one above — the operator's
+pre-submission question about the jewelry trays. Retrieved verbatim from the
+mailbox via the Gmail API on 2026-08-29 and recorded here; the timestamp matches
+the NOTES.md citation to the minute.
+
+| | |
+|---|---|
+| Gmail message id | `1a026475c2a03ae2` |
+| Thread id | `1a026396d37c5e51` |
+| Subject | `Re: Question on 2nd picture 8/22 auction` |
+| From | `bluetoadauctionhouse@gmail.com` (Bill & Gina Theesfield, Blue Toad Auctions) |
+| To | `beilsco@gmail.com` |
+| Date | `2026-08-21T21:43:12Z` (internalDate `1787348592000`) |
+| In reply to | Scott's question, sent `2026-08-21T21:31:55Z` (message `1a0263cd46eb404c`) |
+
+The reply quotes the question inside itself, so one message carries both beats:
+the operator asking whether the trays sell ×3, and the auctioneer confirming.
+Eleven minutes after this confirmation, the REVISED sheet (archived above) went
+out carrying the ×3 ruling.
+
+## Verbatim plaintext body (as returned by the Gmail API)
+
+```text
+Yes, that is a x3 bid.
+
+Thank you
+
+Bill & Gina Theesfield
+Blue Toad Auctions
+www.bluetoadauctions.com
+847-707-9446
+
+On Fri, Aug 21, 2026 at 4:32 PM Scott Beilfuss <beilsco@gmail.com> wrote:
+
+> The Assorted lot of vintage and modern estate costume jewelry including
+> goldtone
+> and silver-tone necklaces, beaded strands, rhinestone and enamel
+> brooches (including Christmas tree pins), bracelets, and wristwatches
+> across multiple trays marked 12, 14, and 16.
+>
+> Is that a x3 at bid?
+>
+> I'm submitting some prebids and would like to include this lot.
+>
+> Thanks You,
+>
+> --
+> Scott Beilfuss
+> Richmond General
+>
+```
+
+Retrieval provenance: Gmail API `get_message` on id `1a026475c2a03ae2`,
+2026-08-29, from the operator's own account; the block above is the API's
+`plaintextBody` field unmodified. With this thread archived, the full BT-002
+loop is artifact-backed end to end: the model's disambiguation question
+(`data/aug22_gallery_4160518/appraisal_results.json`, lot BT-002) → the
+operator's question (21:31Z) → the auctioneer's "Yes, that is a x3 bid"
+(21:43Z) → the REVISED sheet (21:54Z, above) → "Got it, thanks!" (00:10Z) →
+"sorry you did not win" (22:22Z).

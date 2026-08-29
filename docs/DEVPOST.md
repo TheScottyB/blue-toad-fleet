@@ -34,9 +34,9 @@
 
 Richmond General is a one-person heritage resale shop in Richmond, Illinois (McHenry County). Blue Toad Auctions is located at 200 Elizabeth Lane, Genoa City, Wisconsin (Walworth County), 2.3 miles north via US-12 (5-minute drive / 53-minute walk across the state line).
 
-Blue Toad is not a modern online auction with lot numbers or bidding apps. Every two weeks, the auction house publishes a single webpage with 450+ unlabelled, uncataloged photographs of estate goods and a list of SEO keywords. 
+Blue Toad is not a modern online auction with lot numbers or bidding apps. Every two weeks, the auction house publishes a single webpage with 400+ unlabelled, uncataloged photographs of estate goods and a list of SEO keywords. 
 
-For a solo shop owner, preparing absentee proxy bids before the strict Friday 8:00 PM cutoff is practically impossible. It requires clicking through 450 raw photos, identifying obscure makers, researching pricing comps, calculating margin math, and formatting a proxy bid email while running the retail floor.
+For a solo shop owner, preparing absentee proxy bids before the Friday 8:00 PM deadline he works to is practically impossible. It requires clicking through hundreds of raw photos, identifying obscure makers, researching pricing comps, calculating margin math, and formatting a proxy bid email while running the retail floor.
 
 Every cycle had two outcomes, and both cost the business:
 1. **When the owner attends in person:** He rushes over at 9:00 AM for the single one-hour preview window and comes back with an uncurated $300 truckload of low-margin goods that takes an entire year to clear.

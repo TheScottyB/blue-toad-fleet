@@ -17,9 +17,9 @@
   1. **(0:00 – 0:03)** Title card: `Blue Toad Fleet — Built solo, in 13 days, by one person.`
   2. **(0:03 – 0:45)** Open browser tab showing the raw 462-photo uncataloged gallery drop (`docs/screenshots/00-raw-auction-gallery.png` or `manifest.json`). Scroll through the uncataloged, unlabelled photos.
 * **Voiceover:**
-  > *"I run Richmond General, a one-person resale shop in Richmond, Illinois. Five minutes up US-12 across the Wisconsin line in Genoa City, Blue Toad Auctions publishes 450 uncataloged photos every two weeks for a Saturday estate sale. There are no lot numbers, no online bidding app, and a strict Friday 8:00 PM absentee cutoff.
+  > *"I run Richmond General, a one-person resale shop in Richmond, Illinois. Five minutes up US-12 across the Wisconsin line in Genoa City, Blue Toad Auctions publishes over four hundred uncataloged photos every other Saturday for an estate sale. There are no lot numbers and no online bidding app, and I have to get my absentee bids in by email before eight o'clock Friday night.
   >
-  > Because the listing site blocks automated scrapers, our pipeline begins with a sanctioned gallery drop. For a solo shopkeeper running the counter, reviewing 450 unlabelled photos, identifying obscure makers, and researching comps by hand is impossible.
+  > Our pipeline begins with a sanctioned gallery drop — we work from the auction house's own published gallery by agreement rather than scraping it. For a solo shopkeeper running the counter, reviewing over four hundred unlabelled photos, identifying obscure makers, and researching comps by hand is impossible.
   >
   > Every two weeks I faced the same dilemma: either rush over at 9:00 AM on Saturday for a 1-hour preview and get stuck with an uncurated $300 truckload of low-margin junk, or freeze from the fear of making an embarrassing $500 pricing blunder and miss the sale completely.
   >
@@ -37,7 +37,7 @@
   >
   > *A reviewed image-similarity sidecar then catches repeat views that are far apart in the walk. This run turns {{cycle.photos}} photos into {{cycle.groups}} groups; {{cycle.duplicate_or_non_lot_photos}} duplicate-angle or non-lot views never become independent bids.*
   >
-  > *For bounded trays and boxes, a second pass locates the physical container and itemizes only what is inside it. Live Vertex testing also exposed a grounding trap: structured output kept the search queries but dropped every citation. Blue Toad separates grounded research from schema extraction, takes the median of three samples, and refuses any price it cannot cite or reproduce."*
+  > *For bounded trays and boxes, a second pass locates the physical container and itemizes only what is inside it. Our own live Vertex testing also hit a grounding trap: with structured output, the search queries survived but our citations disappeared. Blue Toad separates grounded research from schema extraction, takes the median of three samples, and refuses any price it cannot cite or reproduce."*
 
 ---
 
@@ -51,7 +51,7 @@
   >
   > *On BT-002, Gemini saw three labeled jewelry trays and asked whether the bid applied once or three times. The auctioneer confirmed x3. Blue Toad carried that written ruling into a seventy-five-dollar committed ceiling, eighty-six dollars and twenty-five cents all-in, and an explicit instruction telling the clerk to take all three.*
   >
-  > *The curator can push back on a standing rule, but the operator still owns the decision. Evidence, the budget impact, and the resulting allocation stay visible instead of being hidden inside a model response.*
+  > *The curator cannot invent a pushback: without typed, lot-matched evidence, a challenge is discarded and silence ships — a guarantee enforced in code. Evidence, the budget impact, and the resulting allocation stay visible instead of being hidden inside a model response, and the operator owns every decision.*
   >
   > *And with deterministic keyed memory, answers to house policy questions are learned permanently, shrinking repetitive friction cycle after cycle."*
 
@@ -77,7 +77,7 @@
 ## Summary Checklist for Recording
 
 - [ ] Opening Title Card shown for 3 seconds (`Built solo, in 13 days, by one person.`).
-- [ ] Messy AuctionZip 450-photo gallery shown.
+- [ ] Messy AuctionZip gallery (400+ photos) shown.
 - [ ] Architecture diagram and evidence-backed photo grouping explained.
 - [ ] Grounded-research / structured-extraction split explained.
 - [ ] Live Cloud Run Gate Console demonstrated ([https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app)).
