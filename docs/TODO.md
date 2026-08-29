@@ -1,9 +1,9 @@
-# TODO — open work, 2026-08-21
+# TODO — authoritative remediation inventory, 2026-08-22
 
-**Originally verified against `d622862`; re-reviewed against HEAD `8ef89bc` on
-2026-08-22.** Line numbers move, and several older status notes below still
-describe the earlier tree. Re-grep before trusting a citation and complete B8
-before treating this file as the authoritative submission checklist.
+The table below is the current verdict for every stable finding id. The longer
+descriptions are the original audit record and may contain historical line
+numbers or counts. Reproduction notes and present evidence live in
+[`docs/evidence/2026-08-22-todo-rebaseline.md`](evidence/2026-08-22-todo-rebaseline.md).
 
 Ranked by consequence. Every item names a file:line and what goes wrong if it
 stays. Items marked **[lane: X]** belong to another session — do not take them
@@ -16,14 +16,73 @@ Master remediation documents:
 - Design: `docs/superpowers/specs/2026-08-22-repository-remediation-design.md`
 - Execution plan: `docs/superpowers/plans/2026-08-22-repository-remediation.md`
 
-The design and plan cover every finding below. They do not mark a finding closed;
-closure still requires the rebaseline and evidence called for in B8/Task 1.
+## Current verdicts
+
+| Finding | Verdict | Evidence / remaining hold |
+|---|---|---|
+| A1 | closed-with-evidence | scoped mechanic negation tests |
+| A2 | closed-with-evidence | shared clerk directive protects speculative email |
+| A3 | closed-with-evidence | one directive path; election/remainder production callers |
+| A4 | closed-with-evidence | implausible multiplier/election both refuse |
+| A5 | closed-with-evidence | contingent exposure is separated from committed cap |
+| A6 | closed-with-evidence | typed answer changes mechanic, money, and revision |
+| A7 | closed-with-evidence | object-scoped lot rulings; policy memory remains categorical |
+| B0 | closed-with-evidence | July runner/workbook quarantined from release evidence |
+| B1 | closed-with-evidence | clean-index re-add test |
+| B2 | closed-with-evidence | interpreter/root-independent doc guard |
+| B3 | intentionally-deferred | operator hold: deploy only after a ready release report |
+| B4-video | intentionally-deferred | operator hold: fresh release-eligible cycle and final review |
+| B4-SSIM | closed-with-evidence | reference fixture and identity case |
+| B5 | intentionally-deferred | operator hold: paid repeated Vertex calls |
+| B6 | closed-with-evidence | authenticated mutations and revision conflict tests |
+| B7 | closed-with-evidence | claim inventory and corrected judged copy; old media labeled historical |
+| B8 | closed-with-evidence | this table, evidence ledger, and inventory test |
+| C1 | closed-with-evidence | manifest/model-bound spatial sidecar; walk-only fail-closed state |
+| C2 | closed-with-evidence | two-pass container isolation and confirmed-alpha/bulk-floor seam |
+| C3 | closed-with-evidence | lot answer applies mechanic/election before pricing |
+| C4 | closed-with-evidence | typed Seller Hub importer; BT-235 evidence verifies 46/46 = 1.0 |
+| C5 | closed-with-evidence | cited grounded result reaches allocation/email |
+| C6 | closed-with-evidence | validated spatial observations call `apply_trajectory` in production |
+| C7 | closed-with-evidence | typed, stale-aware, prose-validated challenge facts |
+| C8 | intentionally-deferred | instrumentation exists; fresh full-corpus measurement not authorized/run |
+| C9 | closed-with-evidence | per-call usage, rate snapshot, retries, latency, and measured aggregate |
+| D1 | closed-with-evidence | two-call grounding discovery in README/Devpost/video facts |
+| D2 | closed-with-evidence | BT-002 ruling-to-money story in judged copy and facts |
+| D3 | closed-with-evidence | resale/multiple derived from allocated decision provenance |
+| E1 | intentionally-deferred | unresolved questions remain visible and block allocated-lot publication |
+| E2 | superseded | incomplete comps route to human pricing; allocated lots require provenance |
+| E3 | closed-with-evidence | reviewed schema-2 non-adjacent edges bound to manifest/model |
+| F0 | closed-with-evidence | legacy Aug writer refuses; ownership test |
+| F1 | closed-with-evidence | complete coverage/publication validation and last-good preservation |
+| F2 | closed-with-evidence | typed metadata and empty generic comp/approval defaults |
+| F3 | closed-with-evidence | one canonical final assembler and ownership test |
+| F4 | closed-with-evidence | schema-2 facts snapshot drives renderers and refuses stale state |
+| F5 | closed-with-evidence | validate staged capture before atomic replacement |
+| F6 | closed-with-evidence | default TLS verification restored |
+| F7 | closed-with-evidence | byte/MIME/decode/hash validation and atomic downloads |
+| F8 | closed-with-evidence | immutable grounded attempt history beside current result |
+| F9 | closed-with-evidence | embeddings and edge sidecar swap transactionally |
+| F10 | closed-with-evidence | only reviewed, revisioned edge sidecar changes grouping |
+| F11 | closed-with-evidence | isolated recording directory and page-owned video path |
+| F12 | closed-with-evidence | missing markers/outputs fail capture commands |
+| F13 | closed-with-evidence | all media inputs declared in the repository manifest |
+| F14 | closed-with-evidence | ffprobe-derived durations and bounded padding |
+| F15 | closed-with-evidence | appraisal-grade image validation and fail-closed live probe |
+| F16 | closed-with-evidence | decode-once intake and escaped HTML renderers |
+| F17 | closed-with-evidence | committed embeddings plus hashed machine probe report |
+| F18 | closed-with-evidence | destructive/script/capture/publication tests and release command |
+| F19 | closed-with-evidence | published manifest keeps durable source-object references |
+| F20 | closed-with-evidence | generic cycles default to no historic questions |
+| F21 | closed-with-evidence | frozen intake/appraisal/decision stages, artifact writers, typed result, and Ruff release gate |
+
+Checkboxes below mirror this table: checked means closed-with-evidence or
+superseded; unchecked means open or intentionally deferred.
 
 ---
 
 ## A. Money-path bugs (bidmath lane — mine)
 
-- [ ] **A1. The negation guard refuses the operator's own phrasing.**
+- [x] **A1. The negation guard refuses the operator's own phrasing.**
       `src/bidmath/__init__.py:580,616`. `_NEGATION_RE` matches a bare `not`
       anywhere in the string, and the sent email's register is literally
       *"Please do NOT limit me to one unit on this lot."* Verified:
@@ -33,7 +92,7 @@ closure still requires the rebaseline and evidence called for in B8/Task 1.
       **Fix:** only fire when the negation scopes the mechanic phrase itself
       ("that is NOT a x3 bid"), not anywhere in the sentence.
 
-- [ ] **A2. A speculative remainder would go to the auctioneer as a firm bid.**
+- [x] **A2. A speculative remainder would go to the auctioneer as a firm bid.**
       `scripts/run_vertex_pipeline.py:594,602`.
       `remainder_opportunity` sets `speculative=True` and `clerk_directive`
       guards it with "ONLY IF IT COMES BACK UP".
@@ -43,7 +102,7 @@ closure still requires the rebaseline and evidence called for in B8/Task 1.
       ALL 3 <<" for a contingent bid, to the auctioneer.
       **Fix:** route the email through `clerk_directive` too (see A3).
 
-- [ ] **A3. Two implementations of the clerk sentence; two APIs still uncalled.**
+- [x] **A3. Two implementations of the clerk sentence; two APIs still uncalled.**
       **Partly closed at `d622862`:** `clerk_directive` is now wired into the
       console at `src/gate/render.py:286`. But `scripts/run_vertex_pipeline.py:594,602`
       still hand-builds the same sentence in a different format, so the console
@@ -54,7 +113,7 @@ closure still requires the rebaseline and evidence called for in B8/Task 1.
       and either give the other two a caller or delete them. Do not leave tests
       standing against an API nothing calls.
 
-- [ ] **A4. An implausible count refuses in one path and is dropped in the
+- [x] **A4. An implausible count refuses in one path and is dropped in the
       other.** `src/bidmath/__init__.py` `_as_count`. Narrower than first
       reported: with no `units_available`, `"times the money, take all 900"`
       does return UNKNOWN (re-verified at `d622862`). The asymmetry is still
@@ -63,13 +122,13 @@ closure still requires the rebaseline and evidence called for in B8/Task 1.
       TIMES_THE_MONEY committing all five on the strength of a number the module
       judged implausible. Low severity; the paths should simply agree.
 
-- [ ] **A5. A speculative remainder consumes real cap headroom.**
+- [x] **A5. A speculative remainder consumes real cap headroom.**
       `src/bidmath/__init__.py:484`. `allocate` subtracts `committed_all_in`
       without regard to `speculative`, and `summarize` does not separate
       contingent from committed — so "$327.75 committed of $600" cannot be read
       for how much is hypothetical. Latent until A3 gives it a caller.
 
-- [ ] **A6. An Answer changes the queue, not the sheet.**
+- [x] **A6. An Answer changes the queue, not the sheet.**
       `src/server.py:511-562,321-328`. `/api/answer` persists a rule and calls
       `get_aug22_state()` again, but no standing rule is applied to grouping,
       appraisal, bid mechanic, fit, comps, allocation, or the generated email.
@@ -81,7 +140,7 @@ closure still requires the rebaseline and evidence called for in B8/Task 1.
       apply it before `price_lot`/`allocate`, regenerate the email from that
       resulting state, and test one answer that changes committed money.
 
-- [ ] **A7. Lot-specific grouping and scope answers become category-wide
+- [x] **A7. Lot-specific grouping and scope answers become category-wide
       standing rules.** `src/appraisal/__init__.py:81-84,132-135,251-270`.
       `LOT_GROUPING` and `SCOPE` questions are cluster-scoped for display, but
       `Question.rule_key` discards the cluster/lot id and `learn` promotes both
@@ -94,7 +153,7 @@ closure still requires the rebaseline and evidence called for in B8/Task 1.
 
 ## B. Things a judge runs or reads
 
-- [ ] **B0. Remove or rebuild the entire July 11 benchmark before submission.**
+- [x] **B0. Remove or rebuild the entire July 11 benchmark before submission.**
       `docs/DEVPOST.md`, `README.md`, `NOTES.md`,
       `scripts/run_july11_benchmark.py`, and
       `data/BlueToad_2026-07-11_Benchmark_Comparison.xlsx` present the artifact as
@@ -137,7 +196,7 @@ closure still requires the rebaseline and evidence called for in B8/Task 1.
       Choice-Lot mechanic from state rather than copy; label any synthetic inputs;
       and regenerate every downstream document and workbook.
 
-- [ ] **B1. The `.gitignore` re-inclusion rules do not work.** `.gitignore:12-23`.
+- [x] **B1. The `.gitignore` re-inclusion rules do not work.** `.gitignore:12-23`.
       Git will not descend into an excluded directory, so `!path/file.jpg` under
       `data/**/images/` is inert. Verified: `git add` without `-f` is refused.
       The twelve images are tracked only because they were force-added, so a
@@ -150,7 +209,7 @@ closure still requires the rebaseline and evidence called for in B8/Task 1.
       that measures this is `git rm --cached` then `git add` without `-f`, which
       is still refused at `d622862`.*
 
-- [ ] **B2. The doc-guard fixture errors outside this machine.**
+- [x] **B2. The doc-guard fixture errors outside this machine.**
       `tests/test_docs_match_the_sheet.py:45`. `subprocess.run(['.venv/bin/pytest',
       ...])` raises `FileNotFoundError` — not a skip — if the venv is named
       differently or cwd is not the repo root. That is 2 errors in the file whose
@@ -169,7 +228,7 @@ closure still requires the rebaseline and evidence called for in B8/Task 1.
       was deliberately NOT rewritten — it transcribes a recording.
       **Operator's call.**
 
-- [ ] **B4-SSIM. Validate the probe's SSIM against a reference fixture.**
+- [x] **B4-SSIM. Validate the probe's SSIM against a reference fixture.**
       `scripts/probes/rescore_upscaling.py` carries a hand-rolled SSIM (scipy is
       not in `.venv`). Every SSIM figure in `docs/CAPABILITY_PROBE.md` inherits
       any error in it, and none of them has been checked. Cheap: one known
@@ -191,7 +250,7 @@ closure still requires the rebaseline and evidence called for in B8/Task 1.
       embedded in the generated page. A real identity-backed session/IAP remains
       the preferred post-hackathon replacement for the shared operator token.
 
-- [ ] **B7. Judge-facing copy is stale in more places than README/video.**
+- [x] **B7. Judge-facing copy is stale in more places than README/video.**
       `README.md`, `docs/DEVPOST.md`, `docs/VIDEO_SCRIPT.md`,
       `docs/blog/index.html`, `docs/blog/SOCIAL_POST.md`, `NOTES.md`, and
       `scripts/make_title_cards.mjs` repeat some combination of the unsupported
@@ -205,7 +264,7 @@ closure still requires the rebaseline and evidence called for in B8/Task 1.
       artifact, derive mutable counts from one source, and re-record/rebuild the
       media after the copy is final.
 
-- [ ] **B8. Reconcile this TODO against current HEAD before using it as a launch
+- [x] **B8. Reconcile this TODO against current HEAD before using it as a launch
       checklist.** The file was written against `d622862`; several entries still
       describe that tree. Known examples at `8ef89bc`: B3 says the service is not
       deployed even though `/health` reports the current Python/Firestore build;
@@ -221,7 +280,7 @@ The operator's instruction, verbatim: *"dont lower the floor of the feature set
 proposed in this repo, elevate it."* No claim in README.md or docs/DEVPOST.md is
 to be softened to match the code. The code comes up to meet it.
 
-- [ ] **C1. Spatial Room Graph** — `README.md:74`. **[lane: grok / intake]**
+- [x] **C1. Spatial Room Graph** — `README.md:74`. **[lane: grok / intake]**
       Step 0 sees the listing, not the photo. Build on `gemini-embedding-2`, not
       dHash: recall@25 85.7% vs 0.0% for dHash, 0.0% for sequence proximity and
       35.7% for a colour-histogram baseline (`docs/CAPABILITY_PROBE.md`). Do NOT
@@ -229,7 +288,7 @@ to be softened to match the code. The code comes up to meet it.
       read correctly, and `appraise_lot` transcribed the fabrication at unchanged
       confidence.
 
-- [ ] **C2. Container Lot Decomposition** — `README.md:81`. **Unowned as of this
+- [x] **C2. Container Lot Decomposition** — `README.md:81`. **Unowned as of this
       writing; another lane began `src/appraiser/containers.py` mid-review.**
       Settled design: purpose is find-the-alpha and price the lot on it; alpha
       comp + bulk floor; an unconfirmed alpha bids the bulk and names the alpha
@@ -238,14 +297,14 @@ to be softened to match the code. The code comes up to meet it.
       legible even at 1200x900, so for that lot class the unconfirmed path is the
       only honest outcome.
 
-- [ ] **C3. Choice-lot detection** — `README.md:109`. The mechanic model exists
+- [x] **C3. Choice-lot detection** — `README.md:109`. The mechanic model exists
       and is inert on real data: all 415 lots are STRAIGHT because only one
       `ruling` string exists. The appraiser already asks the right question —
       21 `lot_grouping` questions across the corpus — so the missing wire is
       queue answers → `StandingRule` → `mechanic`/`unit_count`/`units_wanted`,
       generalised beyond the hand-entered `OPERATOR_APPROVED["ruling"]` field.
 
-- [ ] **C4. eBay velocity = absorption rate, from the operator's own Seller Hub.**
+- [x] **C4. eBay velocity = absorption rate, from the operator's own Seller Hub.**
       `README.md:113`. Implemented nowhere; `fit_score` stands in for it.
 
       **The metric, operator 2026-08-21, verbatim:** *"ebay velocity is sold per
@@ -325,7 +384,7 @@ to be softened to match the code. The code comes up to meet it.
       `tests/test_pricing.py` proves one grounded row reaches `price_lot`, budget
       allocation, and the clerk email.
 
-- [ ] **C6. The spatial trajectory library is not in the production path.**
+- [x] **C6. The spatial trajectory library is not in the production path.**
       `src/intake/spatial.py` defines `apply_trajectory`, `adjacency_graph`,
       `LISTING_GRAPH_SCHEMA`, surfaces, zones, and occupancy, but these have no
       non-test callers. Production uses sequential triage/caption flags plus the
@@ -336,7 +395,7 @@ to be softened to match the code. The code comes up to meet it.
       honest walk-order/holding-strip UI and remove physical-zone claims until the
       evidence exists.
 
-- [ ] **C7. Curator pushback is not evidence-based.** `src/gate/pitch.py` denies
+- [x] **C7. Curator pushback is not evidence-based.** `src/gate/pitch.py` denies
       the curator comps, resale bands, margins, and velocity; `src/gate/voice.py`
       can only phrase allocated lots and standing rules. It cannot challenge a
       SKIP with the eBay absorption or comp evidence claimed in README/video.
@@ -351,7 +410,7 @@ to be softened to match the code. The code comes up to meet it.
       change the claim to the measured result, or redesign grouping/context so
       bounded chunks can run concurrently without losing the adjacency signal.
 
-- [ ] **C9. Cycle cost is estimated, not metered.**
+- [x] **C9. Cycle cost is estimated, not metered.**
       `src/appraiser/routing.py:16-71` multiplies assumed tokens by copied list
       rates. The `~$0.30` triage claim is plausible as a planning estimate, but no
       live telemetry reconciles request counts, actual input/output tokens,
@@ -361,18 +420,18 @@ to be softened to match the code. The code comes up to meet it.
 
 ## D. Undersold — real work in no judged artifact
 
-- [ ] **D1. The Vertex grounding discovery.** `src/appraiser/engine.py:221-235`:
+- [x] **D1. The Vertex grounding discovery.** `src/appraiser/engine.py:221-235`:
       attaching a `response_schema` to a Google-Search-grounded call returns zero
       `grounding_chunks` — the search runs, the citations vanish, silently.
       Verified live both ways. The two-call design is the response. This appears
       in no README, no DEVPOST, no video.
 
-- [ ] **D2. The BT-002 end-to-end story.** Appraiser sees three labelled trays →
+- [x] **D2. The BT-002 end-to-end story.** Appraiser sees three labelled trays →
       asks whether that is one lot or three → auctioneer rules "x3 bid" → the
       ruling reaches `committed_max` $75.00 and the clerk line. That is the
       agent loop closing on real money, and it is not in the submission.
 
-- [ ] **D3. Return, not just spend.** The submission states what it committed and
+- [x] **D3. Return, not just spend.** The submission states what it committed and
       never what it returns. From the sheet's own comps: $316.25 all-in against
       $713–$879 estimated resale, 2.25x–2.78x. **Derive at submission time from
       one path and state it once** — a hand-typed figure here recreates exactly
@@ -382,10 +441,10 @@ to be softened to match the code. The code comes up to meet it.
 
 - [ ] **E1. 148 triage questions dropped over cap, never reviewed.** If any of
       those lots deserved a bid, the sheet does not know it.
-- [ ] **E2. Comps are partial** — `grounded_prices.json` covers 46 lots of 142.
+- [x] **E2. Comps are partial** — `grounded_prices.json` covers 46 lots of 142.
       BT-002/BT-087 have none, so their maxes derive from `value_magnitude_hint`,
       a model prior, and the sheet does not surface that distinction.
-- [ ] **E3. Non-adjacent duplicate guard.** **[lane: grok / intake]** Today's
+- [x] **E3. Non-adjacent duplicate guard.** **[lane: grok / intake]** Today's
       sheet is free of double-bids by luck of which lots were approved, not by a
       guard. Long-gap recaptions confirmed at 1↔284, 26↔455, 15↔404, 2↔181.
 
@@ -397,7 +456,7 @@ failures that syntax/tests do not presently catch. The July benchmark defects ar
 already consolidated in **B0**; live-answer and grounded-price integration are in
 **A6/A7/C5**; stale submission claims are in **B7**.
 
-- [ ] **F0. Retire the obsolete Aug-22 runner before it overwrites the
+- [x] **F0. Retire the obsolete Aug-22 runner before it overwrites the
       authoritative money artifacts.** `scripts/run_aug22_cycle.py:34-48,87-99`
       still hard-codes the superseded 12-bid, `$335.00` / `$385.25` schedule,
       including BT-181 even though it is a reshoot merged into BT-002. It writes
@@ -408,7 +467,7 @@ already consolidated in **B0**; live-answer and grounded-price integration are i
       canonical pipeline. Add a guard proving no obsolete entry point can write
       the authoritative sheet paths.
 
-- [ ] **F1. A degraded live model run can publish a final sealed sheet.**
+- [x] **F1. A degraded live model run can publish a final sealed sheet.**
       `scripts/run_vertex_pipeline.py:445-459,594-674` and
       `src/appraiser/engine.py:531-564,605-630`. Per-lot appraisal and
       decomposition exceptions become ordinary cached rows with an `error`
@@ -419,7 +478,7 @@ already consolidated in **B0**; live-answer and grounded-price integration are i
       degraded mode explicitly; write every output to a staging directory and
       atomically promote the complete artifact set only after all gates pass.
 
-- [ ] **F2. The generic runner still defaults to Aug-22 money and email
+- [x] **F2. The generic runner still defaults to Aug-22 money and email
       metadata.** `scripts/run_vertex_pipeline.py:338-364,617-637` and
       `src/assemble/email.py:29`. `run_pipeline` accepts a different cycle,
       listing, and data directory, but omitted `reference_comps` and
@@ -434,7 +493,7 @@ already consolidated in **B0**; live-answer and grounded-price integration are i
       wrapper; require typed auction/message/cutoff metadata; and derive every
       artifact name from the cycle configuration.
 
-- [ ] **F3. Make one video assembler authoritative.**
+- [x] **F3. Make one video assembler authoritative.**
       `scripts/build_video.py:40-48` and `scripts/assemble_final.py:23-70` both
       write `media/blue_toad_fleet_demo.mp4` through incompatible paths. The old
       `build_video.py` concatenates video-only segments and can replace the
@@ -443,7 +502,7 @@ already consolidated in **B0**; live-answer and grounded-price integration are i
       that verifies audio presence, duration, dimensions, and final size before
       atomically replacing the submission MP4.
 
-- [ ] **F4. Derive video facts instead of freezing them into render scripts.**
+- [x] **F4. Derive video facts instead of freezing them into render scripts.**
       `scripts/build_beat2.py:69-86`, `scripts/make_title_cards.mjs:36-63`, and
       `scripts/generate_architecture_diagram.py:33-72` hard-code mutually stale
       figures and claims: 359 lots, 103 duplicates, 12 bids, 173 tests, 572/565
@@ -454,7 +513,7 @@ already consolidated in **B0**; live-answer and grounded-price integration are i
       the canonical pipeline/test collector; reject missing or mismatched facts
       rather than rendering fallback prose.
 
-- [ ] **F5. Do not overwrite valid screenshot evidence before validating the
+- [x] **F5. Do not overwrite valid screenshot evidence before validating the
       page.** `scripts/cdp_capture.py:116-152` writes the requested output PNG,
       then checks whether Chrome landed on a sign-in/CAPTCHA page. Exit code 2
       reports failure only after a previously valid proof image has already been
@@ -463,7 +522,7 @@ already consolidated in **B0**; live-answer and grounded-price integration are i
       page markers, and absence of challenge markers; atomically rename only on
       success. Close the tab in `finally` and test both valid and challenge pages.
 
-- [ ] **F6. Restore TLS verification on all evidence fetches.**
+- [x] **F6. Restore TLS verification on all evidence fetches.**
       `scripts/cache_gallery.py:42-64`, `scripts/recache_full_size.py:36-46`, and
       `scripts/dry_run_single_photo.py:67-77` disable certificate and hostname
       verification. A network intermediary can substitute the manifest or image
@@ -471,7 +530,7 @@ already consolidated in **B0**; live-answer and grounded-price integration are i
       context and fail visibly on certificate errors; if a source-specific CA is
       genuinely required, configure that CA explicitly instead of `CERT_NONE`.
 
-- [ ] **F7. Validate and atomically store initial gallery downloads.**
+- [x] **F7. Validate and atomically store initial gallery downloads.**
       `scripts/cache_gallery.py:58-87,128-149` writes response bytes directly to
       a `.jpg` path and counts the request as successful without checking HTTP
       content type, decodability, dimensions, or appraisal grade. An HTML/WAF
@@ -481,14 +540,14 @@ already consolidated in **B0**; live-answer and grounded-price integration are i
       rename; record hashes and failures in the manifest and return non-zero when
       requested coverage is incomplete.
 
-- [ ] **F8. Preserve grounded-pricing attempt history.** Partially fixed
+- [x] **F8. Preserve grounded-pricing attempt history.** Partially fixed
       2026-08-22: `src/appraiser/grounded_batch.py` now fingerprints the
       decision-bearing identification/category/fit plus a pricing-version key,
       never reuses interrupted attempts, and writes atomically. A successful
       retry currently replaces the transient error row, so attempt history is
       not yet retained separately for audit.
 
-- [ ] **F9. Make forced embedding regeneration transactional.**
+- [x] **F9. Make forced embedding regeneration transactional.**
       `scripts/embed_gallery.py:80-117`. `--force` discards the existing vector
       map before replacements succeed; a missing image, API failure, or process
       interruption can replace a complete cache with a partial one while the old
@@ -497,7 +556,7 @@ already consolidated in **B0**; live-answer and grounded-price integration are i
       coverage and uniform dimensions, then swap both files together. Record
       model/input hashes and preserve the last known-good pair on failure.
 
-- [ ] **F10. Require explicit human approval for reshoot edges used on money.**
+- [x] **F10. Require explicit human approval for reshoot edges used on money.**
       `scripts/embed_gallery.py:113-119`, `scripts/list_reshoot_edges.py:1-2`, and
       `scripts/run_vertex_pipeline.py:393-399`. The listing script says to
       eyeball the 63 inferred edges, but the generated sidecar has no reviewed
@@ -507,7 +566,7 @@ already consolidated in **B0**; live-answer and grounded-price integration are i
       timestamp and evidence, and make the production path accept only approved
       edges. Add negative real-gallery fixtures, not only synthetic vectors.
 
-- [ ] **F11. Bind Playwright recordings to the video created by that page.**
+- [x] **F11. Bind Playwright recordings to the video created by that page.**
       `scripts/record_walkthrough.mjs:71-85`, `record_gallery.mjs:36-46`,
       `record_beat2.mjs:21-28`, and `record_terminal.mjs:21-28` scan the shared
       directory and rename the newest anonymous WebM. A leftover or concurrent
@@ -516,7 +575,7 @@ already consolidated in **B0**; live-answer and grounded-price integration are i
       the directory before recording and require exactly one new file. Use an
       isolated temporary recording directory per run.
 
-- [ ] **F12. Stop capture utilities from reporting success on missing output.**
+- [x] **F12. Stop capture utilities from reporting success on missing output.**
       `scripts/capture_raw_gallery.mjs:5-26` catches and logs errors without
       setting a failing exit code; it also reuses `/tmp/gallery_local.html`
       forever when the file exists, regardless of manifest changes.
@@ -525,7 +584,7 @@ already consolidated in **B0**; live-answer and grounded-price integration are i
       expected page state, require every requested screenshot, and propagate a
       non-zero exit on any missing/stale artifact.
 
-- [ ] **F13. Make the media pipeline reproducible without undocumented `/tmp`
+- [x] **F13. Make the media pipeline reproducible without undocumented `/tmp`
       state.** `scripts/build_beat2.py:11` requires `/tmp/beat2.json` and
       `build_terminal_replay.py:9` requires `/tmp/term.json`, but the repository
       contains no producer for either file. `assemble_final.py:24-29` also
@@ -534,7 +593,7 @@ already consolidated in **B0**; live-answer and grounded-price integration are i
       orchestration command/manifest that declares every input and output; use a
       run-specific temporary directory rather than global filenames.
 
-- [ ] **F14. Probe media durations instead of hard-coding them.**
+- [x] **F14. Probe media durations instead of hard-coding them.**
       `scripts/assemble_final.py:23-29,42-48` claims each target duration is the
       MP3's own length but stores four literal durations. Regenerated narration
       can be truncated or padded against the wrong video without a failed build.
@@ -542,7 +601,7 @@ already consolidated in **B0**; live-answer and grounded-price integration are i
       boundaries, and fail when video coverage is shorter than narration beyond
       the permitted final-frame pad.
 
-- [ ] **F15. Fix the live Vertex gate's image contract.**
+- [x] **F15. Fix the live Vertex gate's image contract.**
       `scripts/test_vertex_live.py:48-64` reads a WebP cached under a `.jpg` name
       but declares it as `image/jpeg`; if neither fixture exists it performs a
       text-only call and can still announce that the multimodal live gate passed.
@@ -551,7 +610,7 @@ already consolidated in **B0**; live-answer and grounded-price integration are i
       assert the exact required model independently, and clearly separate
       fallback diagnostics from a release-gate pass.
 
-- [ ] **F16. Decode and escape gallery text at the ingestion/render boundary.**
+- [x] **F16. Decode and escape gallery text at the ingestion/render boundary.**
       `scripts/cache_gallery.py:38-40,105-125`,
       `scripts/build_local_gallery.py:14-20`, and `scripts/build_beat2.py:18-25`.
       Captions retain HTML entities (`M&amp;Ms`, `&quot;golden&quot;`) and local
@@ -561,7 +620,7 @@ already consolidated in **B0**; live-answer and grounded-price integration are i
       manifest ingestion, escape every value during HTML generation, and add
       fixtures for ampersands, quotes, tags, and malformed captions.
 
-- [ ] **F17. Make the capability probes reproducible from committed inputs.**
+- [x] **F17. Make the capability probes reproducible from committed inputs.**
       `scripts/probes/task3_baselines.py:17-21,58-69` requires an uncommitted
       `embeddings.npz` even though the repository carries `embeddings.json`;
       `rescore_upscaling.py:19-23,108-130` requires uncommitted truth/model
@@ -572,7 +631,7 @@ already consolidated in **B0**; live-answer and grounded-price integration are i
       from machine-readable results. Keep the existing SSIM validation work in
       **B4-SSIM**.
 
-- [ ] **F18. Add script-level tests for destructive and evidence-producing
+- [x] **F18. Add script-level tests for destructive and evidence-producing
       entry points.** Current guards validate canonical bid constants and the
       already-generated sheet, but they do not run `run_aug22_cycle.py`, detect
       the July workbook's seven-ID collision, protect final-video ownership,
@@ -582,7 +641,7 @@ already consolidated in **B0**; live-answer and grounded-price integration are i
       of last-known-good artifacts, correct exit codes, and exactly one owner for
       each authoritative filename.
 
-- [ ] **F19. Do not publish a manifest whose image paths die with the Cloud Run
+- [x] **F19. Do not publish a manifest whose image paths die with the Cloud Run
       job.** `src/cycles/storage.py:319-339`,
       `scripts/run_vertex_pipeline.py:711-715`, and `src/cycles/worker.py:34-39`.
       Materialization rewrites every manifest `local_path` to the job's temporary
@@ -594,7 +653,7 @@ already consolidated in **B0**; live-answer and grounded-price integration are i
       from durable object references. Add an integration test that closes the
       temporary directory and can still resolve every published photo.
 
-- [ ] **F20. Remove Aug-22 lot questions from the generic cycle path.**
+- [x] **F20. Remove Aug-22 lot questions from the generic cycle path.**
       `scripts/run_vertex_pipeline.py:492-520`. Every run constructs questions
       about BT-006, BT-010, BT-073, BT-083, and other historic lots, including a
       fresh cloud cycle whose comps and approvals were deliberately cleared.
@@ -604,7 +663,7 @@ already consolidated in **B0**; live-answer and grounded-price integration are i
       none, and let the explicit Aug-22 wrapper supply the historic question set.
       Test that a new cycle's queue contains only its own lot ids.
 
-- [ ] **F21. Split the 380-line runner into typed, testable pipeline stages.**
+- [x] **F21. Split the 380-line runner into typed, testable pipeline stages.**
       `scripts/run_vertex_pipeline.py:338-717`. One function currently owns input
       validation, live model calls, cache policy, grouping, pricing, allocation,
       console output, email rendering, workbook rendering, JSON publication, and
