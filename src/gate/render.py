@@ -36,6 +36,7 @@ class CycleView:
     voice: PitchVoice | None = None
     seats: list[Seat] = field(default_factory=list)
     cycle_controls: bool = False
+    clerk_draft: str = ""
 
 
 _CSS = """
@@ -86,6 +87,11 @@ align-items:end;margin-top:12px}
 .cycle-control input{width:100%;margin-top:4px;padding:8px 9px;border-radius:7px;
 border:1px solid var(--line);background:var(--card2);color:var(--ink)}
 .cycle-result{min-height:20px;margin-top:9px;color:var(--ink2);font-size:12.5px}
+.desk-stage{margin:28px 0}
+.desk-stage .stage-kicker{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--cyan);margin:0 0 6px}
+.clerk-draft{white-space:pre-wrap;background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:14px;font:12px/1.5 ui-monospace,Menlo,monospace;color:var(--ink2);max-height:28rem;overflow:auto}
+.desk-token{display:flex;gap:8px;align-items:center;margin-top:10px;font-size:12px;color:var(--ink3)}
+.desk-token input{padding:6px 8px;border-radius:7px;border:1px solid var(--line);background:var(--card2);color:var(--ink)}
 @media(max-width:700px){.cycle-control .fields{grid-template-columns:1fr}}
 .tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
 padding:2px 7px;border-radius:5px;border:1px solid var(--line);color:var(--ink3);white-space:nowrap}
@@ -344,10 +350,6 @@ def _cycle_control_block(enabled: bool) -> str:
     <label>Staged cycle ID
       <input id="cycle-id" autocomplete="off" placeholder="2026-09-05">
     </label>
-    <label>Operator token
-      <input id="cycle-token" type="password" autocomplete="off"
-             placeholder="Required in production">
-    </label>
     <button type="button" class="btn p" data-act="start-cycle">
       Start staged auction
     </button>
@@ -515,16 +517,24 @@ def _question_block(v: CycleView) -> str:
                 f'learned {escape(rule.learned_cycle)}</span></div>'
             )
 
-    out.append(f"<h2>Needs your eye &mdash; {len(q.asked)} question(s)</h2>")
+    asked = sorted(
+        q.asked,
+        key=lambda question: (
+            {"lot_grouping": 0, "scope": 1, "policy": 2,
+             "appetite": 3, "mark": 4, "condition": 5}.get(question.kind.value, 9),
+            -question.impact,
+        ),
+    )
+    out.append(f"<h2>Needs your eye &mdash; {len(asked)} question(s)</h2>")
     out.append('<div id="answer-result" hidden></div>')
-    if not q.asked:
+    if not asked:
         # Only say it when it is true. With work still deferred to the preview,
         # "nothing ambiguous" is the console overclaiming on the operator's behalf.
         out.append('<p style="color:var(--ink2)">'
                    + ("Nothing left for the desk &mdash; see below."
                       if q.deferred else "Nothing ambiguous this cycle.")
                    + '</p>')
-    for i, question in enumerate(q.asked, 1):
+    for i, question in enumerate(asked, 1):
         photo = _tag("photo", "photo") if question.wants_photo else ""
         lots = ", ".join(question.lot_ids[:6])
         more = f" +{len(question.lot_ids) - 6}" if len(question.lot_ids) > 6 else ""
@@ -590,6 +600,36 @@ def _refuse_div(d: Decision) -> str:
     text = _REFUSE_COPY.get(
         d.coverage_gap, "No external comp &mdash; human pricing required")
     return f'<div class="refuse">{text}</div>'
+
+
+def _walk_stage(v: CycleView) -> str:
+    seated = {pid for seat in v.seats for pid in seat.photo_ids}
+    ungrouped = max(0, v.photos_ingested - len(seated))
+    return f"""
+<section class="desk-stage" data-stage="walk">
+  <p class="stage-kicker">Friday desk · 1 of 4</p>
+  <h2>Walk membership</h2>
+  <p style="color:var(--ink2)">Confirm same-lot and not-the-same on the walk.
+  Grouping rebuilds from those rulings before questions and the envelope.</p>
+  <p style="color:var(--ink3);font-size:13px">{v.photos_ingested} photos ·
+  {len(v.seats)} lots · {ungrouped} not grouped</p>
+  <p><a href="/walk">Open the walk</a></p>
+  {_map_block(v)}
+</section>
+"""
+
+
+def _clerk_stage(v: CycleView) -> str:
+    draft = escape(v.clerk_draft) if v.clerk_draft else "No clerk draft on this cycle."
+    return f"""
+<section class="desk-stage" data-stage="clerk">
+  <p class="stage-kicker">Friday desk · 4 of 4</p>
+  <h2>Clerk draft</h2>
+  <p style="color:var(--ink2)">Absentee email compiled from the envelope above.
+  Sending remains a human action.</p>
+  <pre class="clerk-draft">{draft}</pre>
+</section>
+"""
 
 
 def _sheet_block(v: CycleView) -> str:
@@ -698,7 +738,7 @@ def render_console(v: CycleView, pitch_text: str = "") -> str:
 <style>{_CSS}</style></head><body><div class="wrap">
 <header>
   {banner}
-  <div class="eyebrow">Blue Toad Fleet &middot; Gate console</div>
+  <div class="eyebrow">Blue Toad Fleet &middot; Friday desk</div>
   <h1>Cycle {escape(v.cycle_id)}</h1>
   <p class="sub">Sale {escape(v.auction_date)} &middot; absentee cutoff
      {escape(v.deadline)} &middot; budget cap ${v.budget_cap:,.2f} &middot;
@@ -708,12 +748,23 @@ def render_console(v: CycleView, pitch_text: str = "") -> str:
   <div style="font-size:12px;color:var(--ink3)">
     ${s.committed_all_in:,.2f} committed of ${v.budget_cap:,.2f} cap
     ({used:.0f}%)</div>
+  <label class="desk-token">Operator token
+    <input id="cycle-token" type="password" autocomplete="off"
+           placeholder="Required in production">
+  </label>
 </header>
 {_cycle_control_block(v.cycle_controls)}
-{_map_block(v)}
+{_walk_stage(v)}
 {_pitch_block(pitch_text, v.voice)}
+<section class="desk-stage" data-stage="questions">
+  <p class="stage-kicker">Friday desk · 2 of 4</p>
 {_question_block(v)}
+</section>
+<section class="desk-stage" data-stage="envelope">
+  <p class="stage-kicker">Friday desk · 3 of 4</p>
 {_sheet_block(v)}
+</section>
+{_clerk_stage(v)}
 <footer>
   The agent manages its own uncertainty budget: it asks when confidence is low,
   sends without asking when value is low, and needs you less every cycle.<br>
