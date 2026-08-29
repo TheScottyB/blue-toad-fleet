@@ -14,7 +14,18 @@ OPERATOR_SECRET="${BTF_OPERATOR_SECRET:-operator-token}"
 # stamped as a clean commit — release-check compares this value against the
 # audited local HEAD, and a false stamp would manufacture parity evidence.
 GIT_COMMIT="$(git rev-parse HEAD)"
-if [ -n "$(git status --porcelain)" ]; then
+# The status check fails closed: set -e does not abort on a command
+# substitution failing inside a condition, so a status error (index.lock
+# contention, permissions) must be caught explicitly or a dirty tree gets
+# stamped as clean. --untracked-files=normal defeats a
+# status.showUntrackedFiles=no config override that would empty the output
+# for an untracked-only dirty tree.
+if ! TREE_STATUS="$(git status --porcelain --untracked-files=normal)"; then
+  echo "==> ERROR: 'git status' failed; the working tree state is unknown" >&2
+  echo "==> Refusing to deploy rather than stamp an unverified tree as clean" >&2
+  exit 1
+fi
+if [ -n "$TREE_STATUS" ]; then
   GIT_COMMIT="${GIT_COMMIT}-dirty"
 fi
 SERVICE_ENV="GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT},VERTEX_LOCATION=global,BTF_MEMORY_BACKEND=firestore,BTF_FIRESTORE_DATABASE=blue-toad,BTF_CYCLE_BUCKET=${BUCKET},BTF_CYCLE_JOB=${JOB_NAME},BTF_SHOP_ID=richmond-general,OPERATOR_ACTOR=richmond-general-owner,CLOUD_RUN_REGION=${REGION},GIT_COMMIT=${GIT_COMMIT}"
