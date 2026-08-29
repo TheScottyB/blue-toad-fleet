@@ -85,7 +85,7 @@ open; otherwise deterministic pricing uses the bulk floor and labels the alpha
 as unconfirmed upside. This boundary is tested without assuming a room map.
 
 ### 3. The Honest Refusal Rule & Uncertainty Budget
-Unlike generic AI tools that hallucinate a price on every photo, Blue Toad Fleet enforces an explicit **uncertainty budget**. On recognizable items (e.g., 1960s Pabst lighted sign), it extracts maker, period, and comps. On items with no grounded comparable, the refusal is made deterministically downstream of the model — `price_lot` returns `max_bid=None` with the reason `no external comp — human pricing required`, and the allocator can never allocate such a lot. Refusing to guess is a production safety feature, and it is enforced in code rather than requested of the model.
+Unlike generic AI tools that hallucinate a price on every photo, Blue Toad Fleet enforces an explicit **uncertainty budget**. On recognizable items (e.g., 1960s Pabst lighted sign), it extracts maker, period, and comps. On items with no grounded comparable, the refusal is made deterministically downstream of the model — `price_lot` returns `max_bid=None` with the reason `pending deep comps — verified sold-price evidence is still needed`, and the allocator can never allocate such a lot. Refusing to guess is a production safety feature, and it is enforced in code rather than requested of the model.
 
 Grounded pricing exposed a live Vertex edge case: combining Google Search with `response_schema` preserved the search queries but stripped the `grounding_chunks` citations, while the same call without the schema returned them (a live-session observation; the raw responses were not archived). Blue Toad splits the operation into a free-text grounded research call that preserves Google-supplied citations and a second, no-tools schema call instructed to extract only figures from that research note. It takes the median of three grounded samples and refuses prices that lack citations, lack two sold comps, or disagree too widely.
 
@@ -95,10 +95,14 @@ Country auctioneers frequently sell grouped assets as "Buyer's Choice / Times th
 BT-002 closed the collaborative loop on real money. Gemini saw three labeled jewelry trays and asked whether the bid covered one tray or all three. The auctioneer confirmed, *"Yes, that is a ×3 bid."* Recorded as the text ruling *"take all three trays at ×3,"* `mechanic_from_ruling` resolved it to `TIMES_THE_MONEY, 3`. The owner's **$25 per-unit cap became $75 committed max / $86.25 all-in**, the allocator budgeted the full exposure, and `clerk_directive` wrote: *"BT-002 — times the money: $25.00 per unit x 3. All-in $86.25."* Without that answer, the sheet would have understated its own commitment by $50 before fees.
 
 ### 5. Bounded Challenge & The Curator's Read
-The curator may surface a `REVIEW_CONFLICT` only when a typed standing rule
-conflicts with fresh, lot-matched evidence. Its prose is rejected if it adds a
-lot, amount, margin, velocity, citation, or buy recommendation that is not in
-that payload. No matching evidence means no pushback. The committed Seller Hub
+The curator's prose is bounded by rejection filters that fire in production:
+text that adds a lot, an amount, a margin, a velocity figure, or a buy
+recommendation not present in the typed evidence payload is rejected and the
+deterministic template renders instead. The evidence-gated challenge seam —
+`select_challenge`, which would surface a `REVIEW_CONFLICT` only when a typed
+standing rule conflicts with fresh lot-matched evidence — is implemented and
+tested as a contract but is not yet wired into the live console; we state
+that plainly rather than presenting it as shipped. The committed Seller Hub
 capture verifies BT-235's annual absorption ratio (46 sold / 46 active = 1.0),
 not the previously drafted sports-card example.
 
@@ -140,7 +144,11 @@ in the mailbox:
   Blue Toad on August 21.
 * The auction house accepted it ("Got it, thanks!"), executed it at the block
   on August 22, and reported the outcome the same evening: *"sorry you did not
-  win."* Zero lots won. Zero dollars spent.
+  win."* Zero lots won. Zero dollars spent. The receipt is in the repository:
+  `docs/evidence/2026-08-22-mailbox-record.md` carries the outcome message
+  verbatim from the mailbox — and its own quoted chain contains the sent
+  sheet and the acceptance, so the whole narrative is checkable from one
+  archived message.
 * Losing every lot is the system working, not failing. The caps are defensive
   by design: BT-041 (Edison cylinder lot) was capped at $25 against a $29–$43
   sold-comp cluster on the deepest market comped that cycle — a ceiling the
@@ -161,7 +169,7 @@ this stream does not stop.
 
 * **Required Stack — what satisfies each requirement:**
   * **Gemini 3.5 or newer:** `gemini-3.6-flash` (multimodal appraisal) and `gemini-3.5-flash-lite` (triage fan-out), both on Vertex AI's `global` endpoint.
-  * **Agent framework — a purpose-built agent loop over the Google GenAI SDK.** The loop is the part that does the work, and it is ours: a triage fan-out narrows 462 photos to candidates ([`run_triage_batch`](../src/appraiser/engine.py)); survivors get a deep multimodal appraisal that is required to emit a *question* wherever a determining attribute is not visible, rather than a guess ([`run_appraisal_batch`](../src/appraiser/engine.py)); those questions are merged, ranked by how much of the sheet they repair, and capped ([`build_queue`](../src/appraisal/__init__.py)); answers the operator gives are promoted to `StandingRule`s keyed `(QuestionKind, Category)` that survive into the next cycle ([`learn`](../src/appraisal/__init__.py)); a question the desk cannot answer — a 2mm hallmark on a clasp — is *deferred* rather than asked ([`DESK_ANSWERABLE`](../src/appraisal/__init__.py)); grounded pricing preserves citations in one search-backed call and uses a second schema-only call instructed to extract the figures from that research note ([`price_lot_grounded`](../src/appraiser/engine.py)); and the result becomes a clerk-facing instruction a human at an auction block can act on ([`clerk_directive`](../src/bidmath/__init__.py)).
+  * **Agent framework — a purpose-built agent loop over the Google GenAI SDK.** The loop is the part that does the work, and it is ours: a triage fan-out narrows 462 photos to candidates ([`run_triage_batch`](../src/appraiser/engine.py)); survivors get a deep multimodal appraisal that is required to emit a *question* wherever a determining attribute is not visible, rather than a guess ([`run_appraisal_batch`](../src/appraiser/engine.py)); those questions are merged, ranked by how much of the sheet they repair, and capped ([`build_queue`](../src/appraisal/__init__.py)); answers the operator gives are remembered at the scope they deserve — policy and appetite answers become durable `StandingRule`s keyed `(QuestionKind, Category)` that survive into the next cycle, while grouping and scope answers are deliberately object-scoped rulings for their specific lots, because a ruling about one jewelry tray must never silently authorize a mechanic on next month's unrelated lot ([`learn`](../src/appraisal/__init__.py)); a question the desk cannot answer — a 2mm hallmark on a clasp — is *deferred* rather than asked ([`DESK_ANSWERABLE`](../src/appraisal/__init__.py)); grounded pricing preserves citations in one search-backed call and uses a second schema-only call instructed to extract the figures from that research note ([`price_lot_grounded`](../src/appraiser/engine.py)); and the result becomes a clerk-facing instruction a human at an auction block can act on ([`clerk_directive`](../src/bidmath/__init__.py)).
     That memory is load-bearing, not decorative: on a bulk costume-jewelry tray, appraising with the operator's standing rules versus without moves `fit_score` from 0.2 to 0.85 and flips the bid gate from SKIP to BID. Cross-cycle memory changes what gets bought.
   * **Google GenAI SDK (`google-genai`) — the model layer under that loop.** `genai.Client(vertexai=True, ...)` for application-default-credential auth that runs unchanged locally and inside Cloud Run, `types.Part.from_bytes` for multimodal request assembly, and `types.GenerateContentConfig(response_schema=...)` for constrained decoding — which is what makes a missing maker's mark come back as `null` plus a question instead of a confident invention. See [`src/appraiser/engine.py`](../src/appraiser/engine.py).
   * **Google Cloud infrastructure — Cloud Run:** single-container serverless hosting on project `threebatdrone-prod-420`.
@@ -169,7 +177,7 @@ this stream does not stop.
   * **Vertex AI:** Multi-tiered model routing utilizing `gemini-3.5-flash-lite` for high-speed, cost-effective triage ($0.30/1M tokens) and `gemini-3.6-flash` for deep multimodal appraisal with structured OpenAPI 3.0 schemas on the `global` endpoint.
   * **Google Cloud Run:** Single-container serverless hosting (`us-central1` on project `threebatdrone-prod-420`) serving the Gate Console UI, Sourcing API, and health endpoints.
 * **Core Software Architecture:**
-  * Pure, decoupled Python backend — no orchestration framework, no vector store, no agent runtime. The loop above is ~3,500 lines of typed Python, of which the decision layer — photo grouping, the question queue, cross-cycle memory and the bid math — is ~1,300 lines that make no model calls and touch no I/O, so every number that reaches a bid sheet is reproducible and unit-tested.
+  * Pure, decoupled Python backend — no orchestration framework, no vector store, no agent runtime. The loop above is ~10,500 lines of typed Python under `src/` as of August 29, and the decision layer — photo grouping, the question queue, cross-cycle memory and the bid math — makes no model calls, so every number that reaches a bid sheet is reproducible and unit-tested.
   * Deterministic keyed memory `(QuestionKind, Category)` that generalises house conventions without vector drift.
   * Automated Excel bid sheet generator (`openpyxl`) and formatted absentee email draft generator.
   * A comprehensive local pytest suite; the release report records the exact
@@ -218,14 +226,16 @@ this stream does not stop.
   confidence. The probe record is `docs/CAPABILITY_PROBE.md`; the rule it
   bought is zero tolerance for enhancement stages between the camera and the
   appraiser.
-* **Fail-Closed Beats Fail-Quiet, Proven in Production:** when durable
+* **Fail-Closed Beats Fail-Quiet — Caught Before It Shipped:** when durable
   Firestore memory was made fail-closed instead of silently downgrading to
-  container disk, the very next deploy crash-looped — and exposed that the
-  runtime service account had held zero project roles all along, meaning the
-  previously live revision had been answering "applied" for standing rules
-  that evaporated on every instance recycle. The fix (`infra/deploy.sh` grants
-  roles before first boot) turned silent data loss into a visible boot failure
-  and then into a true `memory_durable: true`.
+  container disk, the very next deploy crash-looped on its first boot — the
+  newly dedicated runtime service account held zero project roles, because
+  every grant lived downstream of the deploy step. No serving revision was
+  ever affected: earlier revisions had worked only by grace of an over-broad
+  default identity, and the roleless one failed loudly before it served a
+  single request. The fix (`infra/deploy.sh` grants roles before first boot)
+  turned a would-be silent downgrade into a visible boot failure, and
+  `memory_durable: true` into a statement the health endpoint can back.
 * **The Collaborative Partner Paradigm:** Full autonomy on real money is dangerous and unverified. Real commercial value is created when the machine provides visual distillation and the human provides physical intuition and final closure.
 * **Keyed Memory Beats Vector Drift:** Simple, deterministic `(kind, category)` rule keys learn permanent house conventions without prompt drift or embedding degradation.
 

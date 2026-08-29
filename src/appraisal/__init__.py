@@ -317,10 +317,13 @@ def learn(
     """
     Promote answers to standing rules.
 
-    Only some kinds generalise. House policy, grouping, scope, and shop
-    appetite hold next cycle. "Is there a mark on *this* base" is about
-    one object and teaches nothing reusable — asking it again next cycle
-    is correct behaviour, not a failure of memory.
+    Only POLICY and APPETITE generalise — a house convention or shop
+    appetite holds next cycle. Grouping and scope answers are about
+    specific objects and are persisted as lot-scoped rulings elsewhere
+    (see learn_rulings); promoting them here category-wide is exactly the
+    leak A7 closed. "Is there a mark on *this* base" teaches nothing
+    reusable — asking it again next cycle is correct behaviour, not a
+    failure of memory.
     """
     return [
         StandingRule(kind=q.kind, category=q.category, answer=a, learned_cycle=cycle)
