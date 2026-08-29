@@ -473,17 +473,44 @@ def get_aug22_state(*, sheet: str = "full"):
                 reason=grounded_status_reason(grounded_by_lot.get(lot.lot_id)),
             )
         decisions.append(stamp_coverage_gap(decision, grounded_by_lot))
+    pristine = list(decisions)
     if sheet != "sent":
         decisions = [_apply_human_cap(d) for d in decisions]
         decisions = [
             replace(d, priority=Priority.SKIP) if d.lot_id in OPERATOR_SHEET.declined else d
             for d in decisions
         ]
-    allocated_decisions = allocate(
-        decisions,
-        budget_cap=STATE["budget_cap"],
-        auto_send_threshold=STATE["auto_send_threshold"],
-    )
+    desk_edits = sheet != "sent" and (
+        OPERATOR_SHEET.declined or OPERATOR_SHEET.human_caps)
+    if desk_edits:
+        # Envelope edits, not re-optimization: budget the operator frees by
+        # declining a lot is NOT auto-respent on the machine's next-cheapest
+        # picks. The pool is pinned to the PRE-EDIT baseline seats minus
+        # declines, plus lots the operator explicitly priced by hand — under
+        # a full-coverage corpus an open pool refills every freed dollar
+        # instantly, which un-does the human's edit while he watches.
+        baseline = allocate(
+            pristine,
+            budget_cap=STATE["budget_cap"],
+            auto_send_threshold=STATE["auto_send_threshold"],
+        )
+        pool = ({d.lot_id for d in baseline if d.allocated}
+                - OPERATOR_SHEET.declined) | set(OPERATOR_SHEET.human_caps)
+        seated = {d.lot_id: d for d in allocate(
+            [d for d in decisions if d.lot_id in pool],
+            budget_cap=STATE["budget_cap"],
+            auto_send_threshold=STATE["auto_send_threshold"],
+        )}
+        allocated_decisions = [
+            seated.get(d.lot_id, replace(d, allocated=False, auto_send=False))
+            for d in decisions
+        ]
+    else:
+        allocated_decisions = allocate(
+            decisions,
+            budget_cap=STATE["budget_cap"],
+            auto_send_threshold=STATE["auto_send_threshold"],
+        )
     summary = summarize(allocated_decisions)
 
     # 5. Questions Queue (Domain Policies + Model-Emitted)
@@ -768,8 +795,11 @@ def _apply_human_cap(decision: Decision) -> Decision:
     priority = decision.priority
     if priority is Priority.SKIP:
         priority = Priority.C
+    # A price the operator typed IS a kept decision — it seats before the
+    # machine's own picks, evicting the cheapest of them if the cap is full.
     return replace(
         decision,
+        operator_kept=True,
         max_bid=snapped,
         all_in=round(snapped * (1.0 + ABSENTEE_FEE), 2),
         needs_human_pricing=False,

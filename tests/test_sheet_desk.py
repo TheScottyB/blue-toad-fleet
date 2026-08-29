@@ -95,7 +95,17 @@ def test_human_cap_prices_a_pending_lot_and_lets_allocate_consider_it(client):
     assert after_row["max_bid"] == 5.0
     assert after_row["allocated"] is True
     assert data["money_changed"] is True
-    assert client.get("/api/lots").json()["summary"]["committed_all_in"] > before
+    # 2026-08-29, post-reseal: the full-coverage envelope runs at 99.7% of the
+    # $600 cap, so an operator-priced lot cannot GROW the total without
+    # busting his own cap — it seats first (operator_kept) and evicts the
+    # machine's cheapest pick instead. The invariants that survive abundance:
+    # the lot is on the sheet, and the cap still holds.
+    after_summary = client.get("/api/lots").json()["summary"]
+    assert after_summary["committed_all_in"] <= 600.0
+    assert pending["lot_id"] in {
+        lot["lot_id"] for lot in client.get("/api/lots").json()["lots"]
+        if lot.get("allocated")
+    }
     _, _, _, _, sent, _, _ = get_aug22_state(sheet="sent")
     assert sent.allocated == 9
     assert sent.committed_all_in == 316.25
