@@ -24,9 +24,10 @@ from src.intake.puzzle import as_lot_groups, puzzle_loop, walk_proposal_edges
 from src.intake.spatial import seats_from_groups
 from src.assemble import AppraisedPhoto, assemble_lots, NO_COMP, compile_absentee_email
 from src.bidmath import (
-    ABSENTEE_FEE, BidMechanic, CompEstimate, Confidence as BidConfidence,
+    ABSENTEE_FEE, BID_INCREMENT, BidMechanic, CompEstimate, Confidence as BidConfidence,
     CoverageGap, Decision, Lot, Priority, allocate, clerk_directive, elect,
-    mechanic_from_ruling, price_lot, remainder_opportunity, summarize,
+    mechanic_from_ruling, price_lot, remainder_opportunity, snap_to_increment,
+    summarize,
 )
 from src.appraisal import (
     Question, QuestionKind, build_queue, learn, learn_rulings, StandingRule,
@@ -136,6 +137,26 @@ def reset_rule_store(seed=None):
     RULES = InMemoryRuleStore(
         seed=seed_rules() if seed is None else seed, shop_id=SHOP_ID,
     )
+
+
+class OperatorSheet:
+    """Cycle-scoped envelope edits. Never applied to sheet='sent'."""
+
+    def __init__(self):
+        self.declined: set[str] = set()
+        self.human_caps: dict[str, float] = {}
+
+    def reset(self) -> None:
+        self.declined.clear()
+        self.human_caps.clear()
+
+
+OPERATOR_SHEET = OperatorSheet()
+
+
+def reset_operator_sheet() -> None:
+    """Tests only. Clears in/out and human caps on the full desk."""
+    OPERATOR_SHEET.reset()
 
 engine = AppraisalEngine()
 
@@ -427,6 +448,12 @@ def get_aug22_state(*, sheet: str = "full"):
                 reason=grounded_status_reason(grounded_by_lot.get(lot.lot_id)),
             )
         decisions.append(stamp_coverage_gap(decision, grounded_by_lot))
+    if sheet != "sent":
+        decisions = [_apply_human_cap(d) for d in decisions]
+        decisions = [
+            replace(d, priority=Priority.SKIP) if d.lot_id in OPERATOR_SHEET.declined else d
+            for d in decisions
+        ]
     allocated_decisions = allocate(
         decisions,
         budget_cap=STATE["budget_cap"],
@@ -705,6 +732,40 @@ def list_questions():
     }
 
 
+def _apply_human_cap(decision: Decision) -> Decision:
+    cap = OPERATOR_SHEET.human_caps.get(decision.lot_id)
+    if cap is None:
+        return decision
+    snapped = snap_to_increment(cap)
+    if snapped < BID_INCREMENT:
+        return decision
+    priority = decision.priority
+    if priority is Priority.SKIP:
+        priority = Priority.C
+    return replace(
+        decision,
+        max_bid=snapped,
+        all_in=round(snapped * (1.0 + ABSENTEE_FEE), 2),
+        needs_human_pricing=False,
+        reason="operator cap",
+        priority=priority,
+    )
+
+
+def _desk_snapshot(decisions, summary, lot_ids=None) -> dict:
+    wanted = None if lot_ids is None else set(lot_ids)
+    return {
+        "allocated": summary.allocated,
+        "committed_max": summary.committed_max,
+        "committed_all_in": summary.committed_all_in,
+        "decisions": {
+            d.lot_id: {"allocated": d.allocated, "max_bid": d.max_bid}
+            for d in decisions
+            if wanted is None or d.lot_id in wanted
+        },
+    }
+
+
 def _require_operator(x_operator_token: str | None) -> None:
     expected = os.environ.get("OPERATOR_TOKEN")
     if os.environ.get("K_SERVICE") and not expected:
@@ -837,6 +898,88 @@ def cycle_status(cycle_id: str):
                 "ready": repo.is_ready(request)}
     except (CycleNotFound, ValueError) as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.post("/api/sheet/elect")
+def elect_sheet_lot(
+    payload: dict = Body(...),
+    x_operator_token: str | None = Header(default=None),
+):
+    _require_operator(x_operator_token)
+    lot_id = (payload.get("lot_id") or "").strip()
+    if not lot_id or "want" not in payload:
+        raise HTTPException(status_code=400, detail="Missing lot_id or want")
+    want = bool(payload.get("want"))
+    _, _, _, decisions, summary, _, _ = get_aug22_state()
+    by_id = {d.lot_id: d for d in decisions}
+    if lot_id not in by_id:
+        raise HTTPException(status_code=404, detail="lot is not on the current sheet")
+    before = _desk_snapshot(decisions, summary, [lot_id])
+    decision = by_id[lot_id]
+    was_declined = lot_id in OPERATOR_SHEET.declined
+    if want:
+        if decision.max_bid is None and lot_id not in OPERATOR_SHEET.human_caps:
+            raise HTTPException(
+                status_code=409,
+                detail="lot needs a number before it can enter the envelope",
+            )
+        OPERATOR_SHEET.declined.discard(lot_id)
+    else:
+        OPERATOR_SHEET.declined.add(lot_id)
+    _, _, _, after_decisions, after_summary, _, _ = get_aug22_state()
+    after = _desk_snapshot(after_decisions, after_summary, [lot_id])
+    if want and not after["decisions"][lot_id]["allocated"]:
+        if was_declined:
+            OPERATOR_SHEET.declined.add(lot_id)
+        raise HTTPException(
+            status_code=409,
+            detail="allocate refused — over the $600 cap",
+        )
+    return {
+        "status": "applied",
+        "lot_id": lot_id,
+        "want": want,
+        "before": before,
+        "after": after,
+        "money_changed": before["committed_all_in"] != after["committed_all_in"],
+    }
+
+
+@app.post("/api/sheet/price")
+def price_sheet_lot(
+    payload: dict = Body(...),
+    x_operator_token: str | None = Header(default=None),
+):
+    _require_operator(x_operator_token)
+    lot_id = (payload.get("lot_id") or "").strip()
+    try:
+        cap = float(payload.get("max_bid"))
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="max_bid must be a number")
+    if not lot_id:
+        raise HTTPException(status_code=400, detail="Missing lot_id")
+    snapped = snap_to_increment(cap)
+    if snapped < BID_INCREMENT:
+        raise HTTPException(status_code=400, detail="max_bid must be at least $5")
+    _, _, _, decisions, summary, _, _ = get_aug22_state()
+    if lot_id not in {d.lot_id for d in decisions}:
+        raise HTTPException(status_code=404, detail="lot is not on the current sheet")
+    before = _desk_snapshot(decisions, summary, [lot_id])
+    OPERATOR_SHEET.human_caps[lot_id] = snapped
+    OPERATOR_SHEET.declined.discard(lot_id)
+    _, _, _, after_decisions, after_summary, _, _ = get_aug22_state()
+    after = _desk_snapshot(after_decisions, after_summary, [lot_id])
+    return {
+        "status": "applied",
+        "lot_id": lot_id,
+        "max_bid": snapped,
+        "before": before,
+        "after": after,
+        "money_changed": (
+            before["committed_all_in"] != after["committed_all_in"]
+            or before["decisions"][lot_id]["max_bid"] != after["decisions"][lot_id]["max_bid"]
+        ),
+    }
 
 
 @app.post("/api/answer")

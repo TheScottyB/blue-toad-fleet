@@ -72,6 +72,10 @@ border:1px solid var(--line);background:var(--card2);color:var(--ink2);cursor:po
 .answer-text{width:100%;margin-top:8px;padding:7px 9px;border-radius:7px;
 border:1px solid var(--line);background:var(--card2);color:var(--ink);
 font:13px ui-sans-serif,system-ui,sans-serif}
+.desk-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
+.cap-input{width:7rem;padding:6px 8px;border-radius:7px;
+border:1px solid var(--line);background:var(--card2);color:var(--ink);
+font:13px ui-sans-serif,system-ui,sans-serif}
 #answer-result{margin:10px 0;padding:10px 14px;border-radius:8px;
 border:1px solid var(--green);color:var(--green);font-size:13px}
 .cycle-control{background:var(--card);border:1px solid var(--cyan);border-radius:12px;
@@ -170,8 +174,15 @@ _ANSWER_JS = """
       return r.json().then(function(j){ return {ok: r.ok, j: j}; });
     }).then(function(x){
       if (box) {
+        var delta = "";
+        if (x.ok && x.j.money_changed) {
+          delta = " · money_changed $"
+            + Number(x.j.before.committed_all_in).toFixed(2)
+            + " → $"
+            + Number(x.j.after.committed_all_in).toFixed(2);
+        }
         box.textContent = x.ok
-          ? (x.j.status + " · " + ((x.j.rule && x.j.rule.answer) || x.j.reason || "recorded"))
+          ? (x.j.status + " · " + ((x.j.rule && x.j.rule.answer) || x.j.reason || "recorded") + delta)
           : (x.j.detail || "failed");
       }
       if (x.ok) setTimeout(function(){ location.reload(); }, 700);
@@ -185,6 +196,65 @@ _ANSWER_JS = """
 })();
 </script>
 """
+
+_SHEET_JS = """
+<script>
+(function(){
+  var box = document.getElementById("answer-result");
+  function tokenHeaders() {
+    var headers = {"Content-Type": "application/json"};
+    var token = document.getElementById("cycle-token");
+    if (token && token.value.trim()) headers["X-Operator-Token"] = token.value.trim();
+    return headers;
+  }
+  function report(ok, j) {
+    if (!box) return;
+    box.hidden = false;
+    if (!ok) { box.textContent = (j && j.detail) || "failed"; return; }
+    var delta = "";
+    if (j.money_changed) {
+      delta = " · money_changed $"
+        + Number(j.before.committed_all_in).toFixed(2)
+        + " → $"
+        + Number(j.after.committed_all_in).toFixed(2);
+    }
+    box.textContent = (j.status || "applied") + " · " + (j.lot_id || "") + delta;
+  }
+  document.addEventListener("click", function(ev){
+    var btn = ev.target.closest("[data-act=elect], [data-act=price]");
+    if (!btn) return;
+    ev.preventDefault();
+    var card = btn.closest(".card");
+    if (!card) return;
+    var lotId = (card.querySelector("[data-lot-id]") || card).getAttribute("data-lot-id");
+    var act = btn.getAttribute("data-act");
+    var body;
+    if (act === "elect") {
+      body = {lot_id: lotId, want: btn.getAttribute("data-want") === "1"};
+    } else {
+      var input = card.querySelector(".cap-input");
+      body = {lot_id: lotId, max_bid: Number(input && input.value)};
+    }
+    btn.disabled = true;
+    fetch("/api/sheet/" + (act === "elect" ? "elect" : "price"), {
+      method: "POST",
+      headers: tokenHeaders(),
+      body: JSON.stringify(body)
+    }).then(function(r){
+      return r.json().then(function(j){ return {ok: r.ok, j: j}; });
+    }).then(function(x){
+      report(x.ok, x.j);
+      if (x.ok) setTimeout(function(){ location.reload(); }, 700);
+      else btn.disabled = false;
+    }).catch(function(){
+      btn.disabled = false;
+      report(false, {detail: "network error"});
+    });
+  });
+})();
+</script>
+"""
+
 
 _CYCLE_JS = """
 <script>
@@ -574,11 +644,24 @@ def _sheet_block(v: CycleView) -> str:
                      if (d.priority is not Priority.SKIP
                          and (d.mechanic is not BidMechanic.STRAIGHT
                               or d.needs_mechanic_ruling)) else "")
+        want = 0 if d.allocated else 1
+        elect_label = "drop" if d.allocated else "add"
+        actions = [
+            f'<button class="btn" data-act="elect" data-want="{want}">'
+            f'{elect_label}</button>'
+        ]
+        if d.needs_deep_comps or d.needs_human_pricing:
+            actions.append(
+                '<input class="cap-input" type="number" min="5" step="5" placeholder="$ cap">'
+                '<button class="btn" data-act="price">price</button>'
+            )
+        desk = f'<div class="desk-actions">{"".join(actions)}</div>'
         out.append(
-            f'<div class="card {cls}" data-allocated="{int(d.allocated)}"><div class="hd">'
+            f'<div class="card {cls}" data-allocated="{int(d.allocated)}">'
+            f'<div class="hd" data-lot-id="{escape(d.lot_id)}">'
             f'<span class="id">{escape(d.lot_id)}</span>'
             f'<span class="idn">{escape(caption or d.category)}</span>'
-            f'{_tag(d.priority.value)}{_tag(d.labor.value, d.labor.value)}{flag}{money}</div>{body}{directive}</div>'
+            f'{_tag(d.priority.value)}{_tag(d.labor.value, d.labor.value)}{flag}{money}</div>{body}{directive}{desk}</div>'
         )
     return "\n".join(out)
 
@@ -639,5 +722,6 @@ def render_console(v: CycleView, pitch_text: str = "") -> str:
 </footer>
 </div>
 {_ANSWER_JS}
+{_SHEET_JS}
 {_CYCLE_JS if v.cycle_controls else ""}
 </body></html>"""
