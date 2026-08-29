@@ -5,12 +5,86 @@ import re
 import pytest
 from starlette.testclient import TestClient
 
+from src.appraisal import build_queue
+from src.bidmath import CompEstimate, Confidence, Lot, allocate, price_lot, summarize
+from src.gate import CycleView, render_console
+from src.intake.spatial import Seat, Zone
 from src.server import app, get_aug22_state
+from src import server as server_mod
 
 
 @pytest.fixture
 def client():
     return TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def _clean_desk_loop():
+    server_mod.reset_walk_edits()
+    server_mod.reset_operator_sheet()
+    yield
+    server_mod.reset_walk_edits()
+    server_mod.reset_operator_sheet()
+
+
+def _desk_view(seats=()):
+    lot = Lot(
+        lot_id="BT-002", caption="trays", category="stoneware",
+        fit_score=0.85, condition_penalty=0.1,
+        comp=CompEstimate(100.0, 140.0, 3, Confidence.HIGH),
+    )
+    decisions = allocate([price_lot(lot)], 600.0, 40.0)
+    return CycleView(
+        cycle_id="2026-08-22",
+        auction_date="Sat 2026-08-22",
+        photos_ingested=462,
+        queue=build_queue([], []),
+        decisions=decisions,
+        summary=summarize(decisions),
+        budget_cap=600.0,
+        auto_send_threshold=40.0,
+        captions={"BT-002": "trays"},
+        seats=list(seats),
+        clerk_draft="TOTAL COMMITTED PROXY BIDS",
+    )
+
+
+def _walk_stage(html: str) -> str:
+    start = html.find('data-stage="walk"')
+    end = html.find('data-stage="questions"')
+    assert start >= 0 and end > start
+    return html[start:end]
+
+
+def test_walk_stage_renders_return_thumbs_and_edge_controls():
+    """A far-apart pair on one seat is a walk return the operator can rule
+    on the Friday desk, without loading the 462-tile strip."""
+    html = render_console(_desk_view([
+        Seat(lot_id="BT-002", zone=Zone.UNKNOWN, walk_index=2,
+             photo_ids=("BT-002", "BT-003", "BT-181")),
+    ]))
+    walk = _walk_stage(html)
+    assert 'data-seq-a="2"' in walk
+    assert 'data-seq-b="181"' in walk
+    assert 'src="/walk/photo/2"' in walk
+    assert 'src="/walk/photo/181"' in walk
+    assert not re.search(r'src="https?://', walk)
+    assert 'data-act="same"' in walk
+    assert 'data-act="not-same"' in walk
+    assert 'fetch("/api/walk/edge"' in html
+    assert html.count('id="cycle-token"') == 1
+    assert '<figure class="tile' not in html
+    assert walk.count('src="/walk/photo/') == 2
+
+
+def test_adjacent_members_are_not_walk_returns_on_the_desk():
+    html = render_console(_desk_view([
+        Seat(lot_id="BT-005", zone=Zone.UNKNOWN, walk_index=5,
+             photo_ids=("BT-005", "BT-006", "BT-008")),
+    ]))
+    walk = _walk_stage(html)
+    assert 'data-act="same"' not in walk
+    assert 'src="/walk/photo/' not in walk
 
 
 def test_friday_desk_stages_run_in_order(client):
@@ -41,6 +115,37 @@ def test_one_operator_token_on_the_friday_desk(client):
     html = client.get("/").text
     assert html.count('id="cycle-token"') == 1
     assert 'href="/walk"' in html
+
+
+def test_friday_desk_lists_live_walk_returns_not_the_full_strip(client):
+    html = client.get("/").text
+    walk = _walk_stage(html)
+    assert 'data-seq-a="2"' in walk
+    assert 'data-seq-b="181"' in walk
+    assert 'src="/walk/photo/2"' in walk
+    assert 'src="/walk/photo/181"' in walk
+    assert 'data-act="same"' in walk
+    assert 'data-act="not-same"' in walk
+    assert 'fetch("/api/walk/edge"' in html
+    assert '<figure class="tile' not in html
+    assert html.count('src="/walk/photo/') <= 40
+    assert html.count('id="cycle-token"') == 1
+    assert 'href="/walk"' in html
+
+
+def test_rejecting_a_desk_walk_return_drops_it_from_stage_one(client):
+    before = _walk_stage(client.get("/").text)
+    assert 'data-seq-a="2"' in before and 'data-seq-b="181"' in before
+    response = client.post("/api/walk/edge", json={
+        "seq_a": 2, "seq_b": 181, "status": "rejected",
+    })
+    assert response.status_code == 200
+    after = _walk_stage(client.get("/").text)
+    assert not re.search(r'data-seq-a="2"[^>]*data-seq-b="181"', after)
+    _, _, _, _, sent, _, _ = get_aug22_state(sheet="sent")
+    assert sent.allocated == 9
+    assert sent.committed_max == 275.0
+    assert sent.committed_all_in == 316.25
 
 
 def test_sent_sheet_stays_frozen_on_the_friday_desk():
