@@ -44,7 +44,8 @@ if str(ROOT) not in sys.path:
 
 from mcp.server import MCPServer  # noqa: E402
 
-from src.comps import absorption, months_of_supply  # noqa: E402
+from src.comps import (absorption, months_of_supply,  # noqa: E402
+                       require_annual_window)
 from src.comps import live  # noqa: E402
 
 server = MCPServer(
@@ -69,7 +70,11 @@ server = MCPServer(
         "365 days divided by active listings now. Channel-specific (eBay "
         "only). Cheap — no model calls, no screenshots. Returns the window "
         "the page actually printed, which is the authority on what was "
-        "measured. Raises rather than returning 0 when the page renders "
+        "measured — and REFUSES (NonAnnualWindow) when that printed window "
+        "is absent or not ~365 days, rather than serving a mis-windowed "
+        "count as annual. `sold_results_truncated` true means the page cap "
+        "stopped the walk with rows unread: sold figures are a floor. "
+        "Raises rather than returning 0 when the page renders "
         "empty without eBay's own zero-results message. `filters_as_printed` "
         "lists the filter markers the page showed. Measured 2026-08-29: a "
         "sticky chip can be display-only (data unfiltered), so non-empty = "
@@ -77,6 +82,7 @@ server = MCPServer(
         "(unknown)."))
 def ebay_absorption(query: str) -> dict:
     sold = live.read_sold(query)
+    require_annual_window(sold)
     active = live.read_active(query)
     rate = absorption(sold.sold_units, active.total_active or 0)
     return {
@@ -86,6 +92,7 @@ def ebay_absorption(query: str) -> dict:
         "filters_as_printed": {"sold": sold.filters, "active": active.filters},
         "sold_units_365d": sold.sold_units,
         "sold_listings_365d": len(sold.rows),
+        "sold_results_truncated": sold.truncated,
         "active_now": active.total_active,
         "absorption": rate,
         "months_of_supply": months_of_supply(rate),
@@ -101,7 +108,10 @@ def ebay_absorption(query: str) -> dict:
         "'is this THAT item' per listing title, a comp-only price band "
         "(price does NOT survive a dirty set), and optional screenshot "
         "evidence written under data/comps/. `identification` is the "
-        "appraiser's description of the item; `query` defaults to it. When "
+        "appraiser's description of the item; `query` defaults to it. "
+        "REFUSES (NonAnnualWindow) when the sold page's printed window is "
+        "absent or not ~365 days; `sold_results_truncated` true means the "
+        "sold figures are a floor (page cap hit with rows unread). When "
         "selection is unavailable the result says UNFILTERED explicitly. "
         "`filters_as_printed` lists any filter markers the pages showed — "
         "non-empty means the pages CLAIMED that scope (a sticky chip can be "

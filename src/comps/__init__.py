@@ -35,13 +35,15 @@ keeping this layer unit-testable the way src/bidmath is.
 
 from __future__ import annotations
 
+import datetime as _dt
 import re
 from dataclasses import dataclass, field
 
 __all__ = [
-    "ChallengePage", "SuspectEmpty", "SoldRow", "SoldPage", "ActiveRow",
-    "ActivePage", "parse_sold_page", "parse_active_page", "parse_filters",
-    "absorption", "months_of_supply",
+    "ChallengePage", "SuspectEmpty", "NonAnnualWindow", "SoldRow", "SoldPage",
+    "ActiveRow", "ActivePage", "parse_sold_page", "parse_active_page",
+    "parse_filters", "absorption", "months_of_supply", "window_days",
+    "require_annual_window",
 ]
 
 
@@ -55,6 +57,17 @@ class SuspectEmpty(RuntimeError):
     Seen live when ``limit`` exceeds 50 on the SOLD tab: the table renders
     empty with no error and no message. Treating it as a real zero computes
     absorption 0 for a market that may be perfectly healthy.
+    """
+
+
+class NonAnnualWindow(RuntimeError):
+    """The printed sold window is absent or is not a year (playbook G1).
+
+    ``dayRange=365`` sets the dropdown label, not the data: the page can
+    serve a 30-day window under a "Last year" control. The numerator is
+    DEFINED per 365 days, so a non-annual window computes absorption up to
+    ~12x wrong — the printed date line is the only authority, and a read
+    whose line is missing or non-annual must refuse, never normalize.
     """
 
 
@@ -153,6 +166,10 @@ class SoldPage:
     total_sellers: int | None = None
     genuine_zero: bool = False
     filters: list[str] | None = None
+    # Set by the pagination walk, never by a single-page parse: True means
+    # the page cap stopped the walk with the last page still full, so rows
+    # and sold_units are a FLOOR, not the market.
+    truncated: bool = False
 
     @property
     def sold_units(self) -> int:
@@ -257,6 +274,45 @@ def parse_active_page(text: str) -> ActivePage:
         avg_shipping=_money(text, "Avg shipping"),
         filters=filters,
     )
+
+
+_WINDOW_DATES = re.compile(r"(\w{3} \d+, \d{4})\s*[–-]\s*(\w{3} \d+, \d{4})")
+
+
+def window_days(window: str | None) -> int | None:
+    """Days spanned by the window line as the page printed it, or None."""
+    m = _WINDOW_DATES.search(window or "")
+    if not m:
+        return None
+    try:
+        start = _dt.datetime.strptime(m.group(1), "%b %d, %Y").date()
+        end = _dt.datetime.strptime(m.group(2), "%b %d, %Y").date()
+    except ValueError:
+        return None
+    return (end - start).days
+
+
+def require_annual_window(page: SoldPage) -> None:
+    """Refuse a sold read whose printed window is not a year.
+
+    Mirrors evidence/model.py's exactly-365 check on the capture-import
+    path; here 364–366 passes because a span containing Feb 29 prints 366
+    days and is still a year. The genuine-zero page prints no date line at
+    all, so a genuine zero is exempt — its report already states the
+    absence (window None, genuine_zero True). Everything else with a
+    missing or non-annual line raises rather than flowing into a figure
+    labelled 365d.
+    """
+    if page.genuine_zero:
+        return
+    days = window_days(page.window)
+    if days is None or not 364 <= days <= 366:
+        span = "unreadable" if days is None else f"{days} days"
+        raise NonAnnualWindow(
+            f"printed sold window {page.window!r} is {span}, not the "
+            "365-day window the metric is defined on — dayRange sets a "
+            "dropdown label, not the data (playbook G1); re-request with "
+            "startDate/endDate epoch ms and read the printed line")
 
 
 def absorption(sold_units: int, active_now: int) -> float | None:

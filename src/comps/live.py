@@ -38,8 +38,9 @@ from pathlib import Path
 import websockets
 
 from scripts.cdp_capture import capture, close_tab, open_tab
-from src.comps import (ActivePage, SoldPage, absorption, months_of_supply,
-                       parse_active_page, parse_sold_page)
+from src.comps import (ActivePage, SoldPage, SuspectEmpty, absorption,
+                       months_of_supply, parse_active_page, parse_sold_page,
+                       require_annual_window)
 
 _BASE = ("https://www.ebay.com/sh/research?marketplace=EBAY-US"
          "&categoryId=0&offset={offset}&limit={limit}&tabName={tab}"
@@ -92,7 +93,15 @@ def read_sold(query: str) -> SoldPage:
     Pages until a short page (the site has no next-marker and no row total),
     keeps the window and aggregates from page one, and lets page one's
     SuspectEmpty/ChallengePage guards propagate — a silent empty must never
-    become 'sold 0'.
+    become 'sold 0'. Two pagination shapes are normal, not failures:
+
+      - a result set that is an exact multiple of 50 has no short last page;
+        the page past the end renders zero rows with no message, so a
+        SuspectEmpty AFTER >=1 full page is termination, not the limit>50
+        silent render (a ChallengePage mid-walk still propagates);
+      - the page cap can stop the walk with the last page still full — that
+        read is marked ``truncated`` because more rows exist unread, and the
+        caller must surface it, never pose the floor as the market.
     """
     async def walk() -> SoldPage:
         first = parse_sold_page(await _read_text(_sold_url(query, 0)))
@@ -100,9 +109,15 @@ def read_sold(query: str) -> SoldPage:
             return first
         merged = first
         offset = _SOLD_PAGE_LIMIT
-        while (len(merged.rows) % _SOLD_PAGE_LIMIT == 0
-               and offset < _MAX_SOLD_PAGES * _SOLD_PAGE_LIMIT):
-            page = parse_sold_page(await _read_text(_sold_url(query, offset)))
+        while len(merged.rows) % _SOLD_PAGE_LIMIT == 0:
+            if offset >= _MAX_SOLD_PAGES * _SOLD_PAGE_LIMIT:
+                merged.truncated = True
+                break
+            try:
+                page = parse_sold_page(
+                    await _read_text(_sold_url(query, offset)))
+            except SuspectEmpty:
+                break
             merged.rows.extend(page.rows)
             if len(page.rows) < _SOLD_PAGE_LIMIT:
                 break
@@ -198,9 +213,15 @@ def comp_report(identification: str, query: str,
     the same capture path as the manual comp reports, and the returned dict
     says explicitly when selection was unavailable and when evidence capture
     failed — an absent screenshot is reported, never papered over.
+
+    Refuses (NonAnnualWindow) when the sold page's printed window is absent
+    or not a year — the same fact evidence/model.py refuses on the import
+    path. dayRange lies (playbook G1); a 30-day window flowing into
+    ``sold_units_365d`` understates absorption ~12x.
     """
     stamp = _dt.datetime.now().isoformat(timespec="seconds")
     sold = read_sold(query)
+    require_annual_window(sold)
     active = asyncio.run(_read_active(query))
 
     out: dict = {
@@ -217,13 +238,18 @@ def comp_report(identification: str, query: str,
         "filters_as_printed": {"sold": sold.filters, "active": active.filters},
         "sold_units_365d": sold.sold_units,
         "sold_listings_365d": len(sold.rows),
+        # True = the page cap stopped the walk with the last page still
+        # full, so the sold figures (and absorption) are a FLOOR.
+        "sold_results_truncated": sold.truncated,
         "active_now": active.total_active,
         "absorption": absorption(sold.sold_units, active.total_active or 0),
         "months_of_supply": months_of_supply(
             absorption(sold.sold_units, active.total_active or 0)),
-        "avg_sold_price": sold.avg_price,
-        "avg_shipping": sold.avg_shipping,
-        "landed_avg": sold.landed_avg,
+        # Page aggregates over the WHOLE result set, before comp screening —
+        # same _unfiltered convention as the MCP server's landed figure.
+        "avg_sold_price_unfiltered": sold.avg_price,
+        "avg_shipping_unfiltered": sold.avg_shipping,
+        "landed_avg_unfiltered": sold.landed_avg,
         "genuine_zero": sold.genuine_zero,
     }
 

@@ -21,8 +21,9 @@ failure that produced a WRONG NUMBER rather than an error:
 import pytest
 
 from src.comps import (
-    ChallengePage, SuspectEmpty, absorption, months_of_supply,
-    parse_active_page, parse_filters, parse_sold_page,
+    ChallengePage, NonAnnualWindow, SoldPage, SoldRow, SuspectEmpty,
+    absorption, months_of_supply, parse_active_page, parse_filters,
+    parse_sold_page, require_annual_window, window_days,
 )
 
 # --- fixtures shaped exactly like document.body.innerText -------------------
@@ -325,6 +326,53 @@ class TestFilterScope:
             "Filter Applied", "Condition filter (1 Selected)", "Used"]
         assert parse_filters(CLEAN_BAR) == []
         assert parse_filters("no bar here at all") is None
+
+
+class TestWindowAuthority:
+    """GOTCHA 1 as pure code: the date line the page prints is the only
+    authority on the window, and the metric is DEFINED per 365 days. A
+    non-annual print must refuse, mirroring evidence/model.py's exactly-365
+    check on the capture-import path (±1 day here for leap-year spans)."""
+
+    def test_the_annual_print_spans_365_days(self):
+        assert window_days("Aug 21, 2025 – Aug 21, 2026") == 365
+
+    def test_a_30_day_print_is_not_annual(self):
+        """The window the verifier probe fed comp_report on 2026-08-29."""
+        assert window_days("Jul 23, 2026 – Aug 21, 2026") == 29
+
+    def test_an_absent_or_garbled_window_is_none(self):
+        assert window_days(None) is None
+        assert window_days("Show sales trends") is None
+
+    def test_refuses_a_short_window(self):
+        page = SoldPage(window="Jul 23, 2026 – Aug 21, 2026", rows=[
+            SoldRow(title="Synthetic sold listing", price=10.0, qty=1,
+                    date="Aug 12, 2026")])
+        with pytest.raises(NonAnnualWindow):
+            require_annual_window(page)
+
+    def test_refuses_rows_without_any_window(self):
+        page = SoldPage(window=None, rows=[
+            SoldRow(title="Synthetic sold listing", price=10.0, qty=1,
+                    date="Aug 12, 2026")])
+        with pytest.raises(NonAnnualWindow):
+            require_annual_window(page)
+
+    def test_accepts_a_leap_year_span(self):
+        """Feb 29, 2028 sits inside this year: 366 printed days is still a
+        year, not a scope error."""
+        assert window_days("Jul 1, 2027 – Jul 1, 2028") == 366
+        require_annual_window(SoldPage(window="Jul 1, 2027 – Jul 1, 2028",
+                                       rows=[SoldRow(title="Synthetic listing",
+                                                     price=1.0, qty=1,
+                                                     date=None)]))
+
+    def test_a_genuine_zero_prints_no_window_and_is_exempt(self):
+        """The zero-results page prints no date line at all (see
+        GENUINE_ZERO above); its report states the absence explicitly
+        instead of refusing every dead market."""
+        require_annual_window(SoldPage(window=None, genuine_zero=True))
 
 
 class TestAbsorption:
