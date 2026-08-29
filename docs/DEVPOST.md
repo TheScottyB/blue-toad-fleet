@@ -95,14 +95,21 @@ Country auctioneers frequently sell grouped assets as "Buyer's Choice / Times th
 BT-002 closed the collaborative loop on real money. Gemini saw three labeled jewelry trays and asked whether the bid covered one tray or all three. The auctioneer confirmed, *"Yes, that is a ×3 bid."* Recorded as the text ruling *"take all three trays at ×3,"* `mechanic_from_ruling` resolved it to `TIMES_THE_MONEY, 3`. The owner's **$25 per-unit cap became $75 committed max / $86.25 all-in**, the allocator budgeted the full exposure, and `clerk_directive` wrote: *"BT-002 — times the money: $25.00 per unit x 3. All-in $86.25."* Without that answer, the sheet would have understated its own commitment by $50 before fees.
 
 ### 5. Bounded Challenge & The Curator's Read
-The curator's prose is bounded by rejection filters that fire in production:
-text that adds a lot, an amount, a margin, a velocity figure, or a buy
-recommendation not present in the typed evidence payload is rejected and the
-deterministic template renders instead. The evidence-gated challenge seam —
-`select_challenge`, which would surface a `REVIEW_CONFLICT` only when a typed
-standing rule conflicts with fresh lot-matched evidence — is implemented and
-tested as a contract but is not yet wired into the live console; we state
-that plainly rather than presenting it as shipped. The committed Seller Hub
+The curator's prose is bounded by one rejection filter that fires in
+production: a dollar figure the sheet did not compute is rejected and the
+deterministic template renders instead (`invented_amounts` in
+[`src/gate/pitch.py`](../src/gate/pitch.py), enforced on the live path by
+[`src/gate/voice.py`](../src/gate/voice.py)). Four further filters — added
+lot id, margin, velocity, and buy recommendation — are implemented and
+unit-tested in `challenge_text_is_trusted`
+([`src/gate/challenge.py`](../src/gate/challenge.py)), but they inspect only
+the pushback field and run only when a typed challenge is attached; the live
+console builds its pitch without one, so those four do not run in production
+today. The evidence-gated challenge seam — `select_challenge`, which would
+surface a `REVIEW_CONFLICT` only when a typed standing rule conflicts with
+fresh lot-matched evidence — is implemented and tested as a contract but is
+not yet wired into the live console; we state that plainly rather than
+presenting it as shipped. The committed Seller Hub
 capture verifies BT-235's annual absorption ratio (46 sold / 46 active = 1.0),
 not the previously drafted sports-card example.
 
