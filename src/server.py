@@ -76,9 +76,9 @@ CYCLE_JOBS = open_job_launcher()
 STATE = {
     "cycle_id": "2026-08-22",
     "listing_id": "4160518",
-    "budget_cap": 1000.00,
+    "budget_cap": 600.00,
     "auto_send_threshold": 35.00,
-    "user_constraints": {"payment_method": "credit_card", "budget_envelope": 1000.00},
+    "user_constraints": {"payment_method": "credit_card", "budget_envelope": 600.00},
 }
 
 

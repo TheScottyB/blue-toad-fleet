@@ -58,7 +58,7 @@ observe every photo
 ## 2. What is wrong today
 
 Three drop points, measured on the Aug 22 live sheet (353 clusters,
-`$1,000` all-in cap):
+`$600` all-in cap):
 
 1. **Triage funnel.** `worth_appraising=false` never reaches Stage 2
    unless the lot is in `REFERENCE_COMPS`. `group_into_lots` discards
@@ -156,7 +156,7 @@ stable clusters
   → how the house sells it (mechanic, k)
   → valuation attempt (search notes → number, or empty dollar)
   → shop annotations (fit, labor, velocity) — never a drop
-  → allocate against the $1,000 all-in cap
+  → allocate against the $600 all-in cap
   → clerk line, console, pitch
 ```
 
@@ -233,7 +233,7 @@ exist for **every** cluster and have been inspected.
   `scripts/run_grounded_search_remaining.py` into the sidecar
   `data/aug22_gallery_4160518/grounded_search_remaining.json`.
 - The sidecar records notes + samples + a *would-be* `usable` flag.
-  `load_grounded_prices()` does **not** read it. The `$1,000` sheet
+  `load_grounded_prices()` does **not** read it. The `$600` sheet
   does not move.
 - After inspection: decide whether to merge the sidecar, loosen
   `MAX_SPREAD_RATIO`, or keep empty dollars. That decision is out of
@@ -250,7 +250,7 @@ Search is an offline batch. Console `GET /` does not call it.
 | **Fit** | `SKIP` = we will not bid | hide the cluster or erase a price |
 | **Labor** | shelf / list / research tag | drop or unprice |
 | **Velocity** | 14-day public cadence, when it exists | drop from identity |
-| **Budget** | `$1,000` all-in, `$5` increments, 15% fee | change identity |
+| **Budget** | `$600` all-in, `$5` increments, 15% fee | change identity |
 | **Auto-send** | fail-closed | send SKIP, empty dollar, `UNKNOWN` mechanic, speculative remainder |
 
 Operator caps and recorded rulings still win on the lots that have them.

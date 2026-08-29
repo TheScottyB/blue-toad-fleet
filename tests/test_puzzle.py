@@ -107,6 +107,20 @@ class TestLoop:
         puzzle_loop(photos, proposal_edges=set(), identify=identify)
         assert n["i"] <= 2  # one identify on seed set + optional final; never 4
 
+    def test_cannot_link_chain_has_one_canonical_winner(self):
+        """Uncaptioned B between Lot 1 and Lot 2. Sorted edges attach B to A."""
+        photos = [
+            P("A", "Lot 1 truck"),
+            P("B"),
+            P("C", "Lot 2 glass"),
+        ]
+        out = puzzle_loop(
+            photos,
+            proposal_edges={frozenset({"A", "B"}), frozenset({"B", "C"})},
+            identify=lambda pids: {p: ("item", "other") for p in pids},
+        )
+        assert sorted(c.photo_ids for c in out) == [("A", "B"), ("C",)]
+
     def test_round_cap_is_three(self):
         photos = [P("a"), P("b"), P("c")]
         rounds = {"n": 0}

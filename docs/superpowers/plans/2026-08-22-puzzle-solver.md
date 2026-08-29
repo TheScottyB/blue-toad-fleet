@@ -20,7 +20,7 @@
 - Do not overlay the sidecar onto allocate in this plan
 - Sent sheet `get_aug22_state(sheet="sent")` stays 9 / $275 / $316.25
 - `Lot` / `Decision` new fields append last
-- Budget cap stays `$1000.00` all-in
+- Budget cap stays `$600.00` all-in
 - `SANITY_FLOOR = 0.80`; walk-adjacent is `|Δseq| == 1`
 - TDD: failing test first on every task
 - Do not commit unless the operator asked; skip commit steps if the working tree policy is “no commit”
@@ -772,7 +772,7 @@ git commit -m "feat: worth_appraising no longer drops photos from appraisal"
 
 Run: `.venv/bin/python -m pytest tests/ -q --tb=line`
 
-Expected: 0 failures. Sent-sheet tests still 9 / $275. `committed_all_in <= 1000`. Sidecar not in `load_grounded_prices()`.
+Expected: 0 failures. Sent-sheet tests still 9 / $275. `committed_all_in <= 600`. Sidecar not in `load_grounded_prices()`.
 
 - [ ] **Step 2: If docs tests fail on collected count, update badge and DEVPOST `{N} collected` only**
 
@@ -806,6 +806,6 @@ Expected: PASS
 | Sent email closed | 4, 9 |
 | No overlay this slice | 7, 9 (explicit) |
 | No agents, no COLMAP | Global; no task adds them |
-| Labor tags, $1000 cap | Untouched; 9 verifies |
+| Labor tags, $600 cap | Untouched; 9 verifies |
 
 Out of spec on purpose: sidecar overlay, `MAX_SPREAD_RATIO` change, 14-day velocity, fourth 3.6 synthesis call.

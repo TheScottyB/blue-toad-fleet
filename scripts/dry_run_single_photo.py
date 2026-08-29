@@ -221,7 +221,7 @@ def _photo_result(photo_id, caption, img, img_url, panel_src, img_src, total,
 
 
 def run(listing, seq, data_dir, out_dir, force_appraise=False,
-        do_pricing=True, offline=False, budget_cap=1000.0, auto_send_threshold=0.0,
+        do_pricing=True, offline=False, budget_cap=600.0, auto_send_threshold=0.0,
         source="auctionzip", standing_rules=None):
     """
     `standing_rules` defaults to the corpus runner's DEFAULT_STANDING_RULES, and
@@ -468,7 +468,7 @@ def main():
                     help="appraise with NO operator standing rules. Diagnostic only: "
                          "it changes the verdict (jewelry fit 0.85 -> 0.2), it is not "
                          "what a live cycle does")
-    ap.add_argument("--budget-cap", type=float, default=1000.0)
+    ap.add_argument("--budget-cap", type=float, default=600.0)
     args = ap.parse_args()
 
     run(listing=args.listing, seq=args.seq, data_dir=args.data_dir, out_dir=args.out,

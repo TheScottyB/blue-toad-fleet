@@ -197,7 +197,7 @@ def _merge_clusters(
                     out.append(pid)
         return out
 
-    for edge in edges:
+    for edge in sorted(edges, key=lambda e: tuple(sorted(e))):
         if len(edge) != 2:
             continue
         a, b = tuple(edge)

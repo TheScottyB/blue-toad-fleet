@@ -80,7 +80,7 @@ def test_api_lots_summary_and_bids(client):
     assert summary["allocated"] > 0
     assert summary["committed_max"] > 0
     assert abs(summary["committed_all_in"] - summary["committed_max"] * 1.15) < 0.01
-    assert summary["committed_all_in"] <= 1000.0, "sheet exceeds the budget envelope"
+    assert summary["committed_all_in"] <= 600.0, "sheet exceeds the budget envelope"
     assert summary["committed_max"] % 5 == 0, "total is not a sum of $5 increments"
     assert len(data["lots"]) > 0
     assert "contingent_remainder_opportunities" in data
