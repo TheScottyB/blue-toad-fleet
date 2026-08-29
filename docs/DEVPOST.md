@@ -116,6 +116,8 @@ not the previously drafted sports-card example.
 ### 6. Deterministic Greedy Budget Allocation
 Appraisals feed into pure, unit-tested bid math implementing the store's documented 35–40% buy-in band (applied at its 37.5% midpoint), condition discounts, standard $5.00 auction increments, and the mandatory 15% absentee fee. The final absentee email is compiled automatically for `info@bluetoadauctions.com`.
 
+On the live console, that review now runs as a sequenced **Friday desk** — four stages in the order the owner actually works them on deadline day. Stage 1 is walk membership: same-lot / not-the-same rulings confirmed on two photo tiles at `/walk`, from which grouping rebuilds before anything downstream. Stage 2 is the question queue, sorted so lot-grouping and scope questions come before policy and appetite. Stage 3 is the envelope desk: drop or add lots and type a human cap, with freed budget staying freed. Stage 4 is the compiled clerk draft. Sending remains a human action.
+
 ### 7. Channel-Specific Velocity — eBay Absorption from the Operator's Own Seller Hub
 Price alone cannot tell a good buy from a shelf-sitter. The metric that can is
 **absorption**: units sold in the last 365 days divided by active listings now
@@ -190,7 +192,7 @@ this stream does not stop.
   * **Vertex AI:** Multi-tiered model routing utilizing `gemini-3.5-flash-lite` for high-speed, cost-effective triage ($0.30/1M tokens) and `gemini-3.6-flash` for deep multimodal appraisal with structured OpenAPI 3.0 schemas on the `global` endpoint.
   * **Google Cloud Run:** Single-container serverless hosting (`us-central1` on project `threebatdrone-prod-420`) serving the Gate Console UI, Sourcing API, and health endpoints.
 * **Core Software Architecture:**
-  * Pure, decoupled Python backend — no orchestration framework, no vector store, no agent runtime. The loop above is ~10,500 lines of typed Python under `src/` as of August 29, and the decision layer — photo grouping, the question queue, cross-cycle memory and the bid math — makes no model calls, so every number that reaches a bid sheet is reproducible and unit-tested.
+  * Pure, decoupled Python backend — no orchestration framework, no vector store, no agent runtime. The loop above is ~11,900 lines of typed Python under `src/` as of August 29, and the decision layer — photo grouping, the question queue, cross-cycle memory and the bid math — makes no model calls, so every number that reaches a bid sheet is reproducible and unit-tested.
   * Deterministic keyed memory `(QuestionKind, Category)` that generalises house conventions without vector drift.
   * Automated Excel bid sheet generator (`openpyxl`) and formatted absentee email draft generator.
   * A comprehensive local pytest suite; the release report records the exact
