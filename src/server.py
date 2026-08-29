@@ -13,7 +13,8 @@ from pathlib import Path
 from typing import Optional
 from fastapi import FastAPI, HTTPException, Body, Header
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse
+from fastapi.responses import (HTMLResponse, PlainTextResponse, JSONResponse,
+                               RedirectResponse, Response)
 
 from dataclasses import replace
 from src.intake.embed import load_reshoot_edges, sha256_file
@@ -45,6 +46,7 @@ from src.appraiser.grounded_batch import (
 )
 from src.appraiser.routing import GEMMA_MODEL
 from src.gate import CycleView, render_console
+from src.gate.walkstrip import render_walk_strip
 from src.gate.pitch import build_pitch
 from src.gate.voice import write_pitch_voice
 from scripts.run_vertex_pipeline import (
@@ -486,6 +488,73 @@ def get_console():
         ),
     )
     return render_console(view)
+
+
+def _manifest_by_sequence() -> dict[int, dict]:
+    """The gallery manifest indexed by sequence, parsed once per process.
+
+    The walk strip requests up to 462 photos per page load; re-parsing the
+    manifest per request (as the per-lot byte helper does) would multiply one
+    JSON parse by every tile.
+    """
+    global _MANIFEST_BY_SEQ
+    if _MANIFEST_BY_SEQ is None:
+        manifest_path = Path("data/aug22_gallery_4160518/manifest.json")
+        if not manifest_path.exists():
+            manifest_path = Path("/app/data/aug22_gallery_4160518/manifest.json")
+        photos = (json.loads(manifest_path.read_text())["photos"]
+                  if manifest_path.exists() else [])
+        _MANIFEST_BY_SEQ = {int(p["sequence"]): p for p in photos}
+    return _MANIFEST_BY_SEQ
+
+
+_MANIFEST_BY_SEQ: dict[int, dict] | None = None
+
+
+@app.get("/walk", response_class=HTMLResponse)
+def walk_strip():
+    photos, seats, *_ = get_aug22_state()
+    # Seats speak in lot ids (BT-<seq>), the manifest in gallery photo ids.
+    # Translate each seat member back to the manifest id at its sequence so
+    # the strip can join them; a member that is not a BT id passes through.
+    pid_by_seq = {int(p["sequence"]): str(p["photo_id"]) for p in photos}
+
+    def manifest_pid(member: str) -> str:
+        if member.startswith("BT-") and member[3:].isdigit():
+            return pid_by_seq.get(int(member[3:]), member)
+        return member
+
+    translated = [
+        replace(s, photo_ids=tuple(manifest_pid(m) for m in s.photo_ids))
+        for s in seats
+    ]
+    return render_walk_strip(
+        photos, translated,
+        cycle_id=STATE["cycle_id"], listing_id=STATE["listing_id"],
+    )
+
+
+@app.get("/walk/photo/{seq}")
+def walk_photo(seq: int):
+    """One gallery thumbnail: cached bytes when the container has them, else a
+    redirect to the CDN thumb the manifest recorded. A deployed --source build
+    carries only the force-added evidence images, so the redirect is the normal
+    path on Cloud Run; the 404 is reserved for a sequence the manifest never
+    listed."""
+    entry = _manifest_by_sequence().get(seq)
+    if entry is None:
+        raise HTTPException(status_code=404, detail="no such photo in the manifest")
+    path = Path(entry.get("local_path") or "")
+    if path.is_file():
+        payload = path.read_bytes()
+        mime = "image/webp" if payload[:4] == b"RIFF" else "image/jpeg"
+        return Response(content=payload, media_type=mime)
+    thumb = str(entry.get("thumb_url") or "")
+    if thumb.startswith("//"):
+        thumb = "https:" + thumb
+    if thumb.startswith("https://"):
+        return RedirectResponse(thumb, status_code=302)
+    raise HTTPException(status_code=404, detail="no cached bytes and no CDN thumb")
 
 
 @app.get("/api/lots")
