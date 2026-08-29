@@ -38,6 +38,37 @@ def test_root_console_renders(client):
     assert "spatial observations unavailable" in r.text
     assert "Curator" in r.text and "template fallback" in r.text
 
+def test_console_voice_cache_path_is_env_controlled(client, tmp_path, monkeypatch):
+    """A live run caches its Gemma voice, and a matching-key cache entry wins
+    over the credential-free fallback by design. When that cache lived at a
+    hard-coded /tmp path shared with pytest, a live uvicorn run made the next
+    test run render the live voice instead of the template fallback (2026-08-29).
+    BTF_VOICE_CACHE must decide where the console looks, so tests own the path.
+    """
+    import json
+
+    from src.gate.voice import _payload
+    from src.server import build_pitch, current_rules, get_aug22_state
+
+    _, _, _, decisions, _, _, captions_map = get_aug22_state()
+    pitch = build_pitch(decisions, captions_map, current_rules())
+    cache = tmp_path / "voice.json"
+    cache.write_text(json.dumps({
+        "key": json.dumps(_payload(pitch), sort_keys=True),
+        "voice": {
+            "alpha": "SENTINEL-CACHED-VOICE for the alpha tier.",
+            "fast_smalls": "SENTINEL-CACHED-VOICE for the fast smalls.",
+            "wildcard": "SENTINEL-CACHED-VOICE for the wildcard.",
+            "pushback": None,
+        },
+    }))
+    monkeypatch.setenv("BTF_VOICE_CACHE", str(cache))
+
+    html = client.get("/").text
+    assert "SENTINEL-CACHED-VOICE" in html
+    assert "template fallback" not in html
+
+
 def test_api_lots_summary_and_bids(client):
     r = client.get("/api/lots")
     assert r.status_code == 200

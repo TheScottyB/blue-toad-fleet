@@ -463,7 +463,10 @@ def get_console():
     # Unit tests must stay credential-free and fast. Cloud Run has no
     # PYTEST_CURRENT_TEST, so Gemma runs there (then caches).
     live_client = None if os.environ.get("PYTEST_CURRENT_TEST") else engine.client
-    cache = Path("/tmp/btf_gemma_voice.json")
+    # A matching-key cache entry wins even with no client, so the cache location
+    # must be overridable: a local uvicorn run sharing /tmp with pytest would
+    # feed its live voice to the next test run.
+    cache = Path(os.environ.get("BTF_VOICE_CACHE", "/tmp/btf_gemma_voice.json"))
     voice = write_pitch_voice(
         pitch, client=live_client, cache_path=cache, telemetry=engine.telemetry,
     )
