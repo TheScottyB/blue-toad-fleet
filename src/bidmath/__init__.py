@@ -242,6 +242,12 @@ class Decision:
     occur, however cheap it is."""
     labor: "LaborAspect" = LaborAspect.LIST
     coverage_gap: "CoverageGap" = CoverageGap.NONE
+    operator_kept: bool = False
+    """The owner made a decision on this lot — a cap, a ruling, a keep. Kept
+    lots are seated before the machine's picks within the same priority band:
+    under scarcity this never matters, but a full-coverage corpus offers the
+    allocator dozens of cheap lots, and 'most lots for the money' must not
+    crowd out the human judgment the sheet exists to carry."""
 
     @property
     def needs_deep_comps(self) -> bool:
@@ -451,7 +457,10 @@ def allocate(
     # itself at a third of its cost, so it both jumped the value-density queue
     # ahead of straight lots and left the cap looking like it had room it did
     # not have.
-    priced.sort(key=lambda d: (_PRIORITY_RANK[d.priority], d.committed_all_in))
+    # Within a band, the owner's kept lots seat first — their all-in is spoken
+    # for before value-density greed fills the remainder.
+    priced.sort(key=lambda d: (_PRIORITY_RANK[d.priority],
+                               not d.operator_kept, d.committed_all_in))
 
     spent = 0.0
     out: list[Decision] = []

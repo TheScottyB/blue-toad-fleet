@@ -280,6 +280,7 @@ def build_queue(
     cap: int = MAX_QUESTIONS_PER_CYCLE,
     desk_answerable: frozenset[QuestionKind] = DESK_ANSWERABLE,
     lot_rulings: Iterable[LotRuling] = (),
+    kept_lot_ids: frozenset[str] = frozenset(),
 ) -> QueueResult:
     """
     Group, suppress anything a standing rule already answers, set aside what the
@@ -289,12 +290,24 @@ def build_queue(
     it, the kind is beside the point. Deferral comes next, and deliberately does
     not consume the cap — otherwise a dozen hallmark questions crowd out the
     grouping question that actually decides how the sheet is built.
+
+    kept_lot_ids: lots the owner has ruled on carry committed money, so their
+    questions defend the sheet rather than speculate about it. They are seated
+    FIRST, before impact ranks the rest — structurally, not via a stake bonus,
+    because impact scales with the confidence gap and a kept lot's question is
+    exactly the kind the model is fairly sure about while real dollars ride on
+    it (found live 2026-08-29: BT-002's x3 grouping question, a $50 swing on a
+    committed lot, dropped over cap behind scope questions on unpriced lots).
+    A ruling already on file still auto-answers it; deferral still applies.
     """
     rules = {r.rule_key: r for r in standing_rules}
     rulings = {r.ruling_key: r for r in lot_rulings}
     result = QueueResult()
 
-    for q in sorted(group(questions), key=lambda x: x.impact, reverse=True):
+    def kept(q: Question) -> bool:
+        return bool(kept_lot_ids) and any(l in kept_lot_ids for l in q.lot_ids)
+
+    for q in sorted(group(questions), key=lambda x: (not kept(x), -x.impact)):
         rule = (rulings.get(q.ruling_key) if q.kind in _CLUSTER_SCOPED
                 else rules.get(q.rule_key))
         if rule is not None:

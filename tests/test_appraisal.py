@@ -354,3 +354,32 @@ class TestDeskAnswerable:
     def test_deferring_everything_leaves_an_honest_empty_queue(self):
         r = build_queue([q(kind=QuestionKind.MARK), q(kind=QuestionKind.CONDITION)])
         assert r.asked == [] and len(r.deferred) == 2
+
+
+def test_kept_lot_questions_hold_their_queue_seat():
+    """A question on a lot the owner ruled on defends committed money; a
+    full-coverage corpus emits hundreds of zero-stake questions and the cap
+    must not evict it (live 2026-08-29: BT-002's x3 grouping question, a $50
+    swing on a committed lot, dropped over cap behind unpriced-lot scope
+    questions)."""
+    from src.appraisal import Question, QuestionKind, build_queue
+
+    kept_q = Question(kind=QuestionKind.LOT_GROUPING, category="jewelry",
+                      prompt="one lot or three?", lot_ids=("BT-002",),
+                      value_at_stake=0.0, confidence_gap=0.3)
+    filler = [
+        Question(kind=QuestionKind.SCOPE, category="misc",
+                 prompt=f"what else is in box {i}?", lot_ids=(f"BT-{900+i}",),
+                 value_at_stake=60.0, confidence_gap=0.9)
+        for i in range(12)
+    ]
+    res = build_queue([*filler, kept_q], cap=12,
+                      kept_lot_ids=frozenset({"BT-002"}))
+    asked_ids = {lid for q in res.asked for lid in q.lot_ids}
+    assert "BT-002" in asked_ids, "the kept lot's question lost its seat"
+
+    unkept = build_queue([*filler, kept_q], cap=12)
+    dropped_ids = {lid for q in unkept.dropped for lid in q.lot_ids}
+    assert "BT-002" in dropped_ids, (
+        "without the kept boost the zero-stake question should drop — if this "
+        "fails the fixture no longer exercises the boost at all")

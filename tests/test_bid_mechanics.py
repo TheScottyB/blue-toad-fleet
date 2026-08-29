@@ -250,4 +250,4 @@ class TestDefaultsPreserveEveryExistingSheet:
             "allocated"]
         assert names[10:] == ["mechanic", "unit_count", "units_wanted",
                               "needs_mechanic_ruling", "needs_election",
-                              "speculative", "labor", "coverage_gap"]
+                              "speculative", "labor", "coverage_gap", "operator_kept"]

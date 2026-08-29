@@ -531,6 +531,7 @@ def get_aug22_state(*, sheet: str = "full"):
         current_rules(),
         cap=12,
         lot_rulings=current_rulings(),
+        kept_lot_ids=frozenset(OPERATOR_APPROVED),
     )
 
     return photos, seats, lots, allocated_decisions, summary, queue_res, captions_map
@@ -1191,9 +1192,15 @@ def answer_question(
         "after": after,
         "appraisal_source": "cached_sheet",
         "pending_reappraisal": False,
+        # Totals alone cannot see an answer under abundance: the greedy refills
+        # a freed envelope with the next-cheapest lots, so a x3 -> straight
+        # ruling that frees $57.50 leaves the cap exactly as full as before.
+        # Money changed if the totals moved OR any lot's terms or seat did.
         "money_changed": (
             before["committed_max"] != after["committed_max"]
             or before["committed_all_in"] != after["committed_all_in"]
+            or before["allocated"] != after["allocated"]
+            or before["decisions"] != after["decisions"]
         ),
         "standing_rules_count": len(current_rules()),
         "lot_rulings_count": len(current_rulings()),

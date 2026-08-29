@@ -417,7 +417,13 @@ def apply_operator_cap(decision, operator_approved: dict | None = None):
     than your ceiling is how you lose the lot for five dollars.
     """
     decisions = OPERATOR_APPROVED if operator_approved is None else operator_approved
-    cap = decisions.get(decision.lot_id, {}).get("cap")
+    approval = decisions.get(decision.lot_id)
+    if approval is None:
+        return decision
+    # Any lot the owner ruled on is his decision, cap or no cap — mark it so
+    # allocation seats it before the machine's own picks in the same band.
+    decision = replace(decision, operator_kept=True)
+    cap = approval.get("cap")
     if cap is None or decision.max_bid is None or decision.max_bid == cap:
         return decision
     return replace(decision, max_bid=cap,
@@ -883,6 +889,7 @@ def run_decision_stage(
         [*configured_questions, *appraisal.emitted_questions],
         standing_rules,
         cap=12,
+        kept_lot_ids=frozenset(approvals or {}),
     )
     print(f"[+] Question Queue: {len(queue_result.asked)} asked, "
           f"{len(queue_result.auto_answered)} auto-answered from standing rules.")
@@ -1039,6 +1046,25 @@ def sheet_artifact_path(
         output_path / "bid_sheet.xlsx"
         if explicit_output else data_path.parent / "BlueToad_2026-08-22_BidSheet.xlsx"
     )
+
+
+def publish_absorption_evidence(
+    absorption_path: Path, output_path: Path, explicit_output: bool,
+    has_records: bool,
+) -> bool:
+    """Copy the evidence beside a published state; same-file is a no-op.
+
+    output_dir == data_dir crashed the 2026-08-29 paid rerun at its very
+    last step with shutil.SameFileError — after every appraisal was bought.
+    The manifest copy already guarded against this; the evidence copy must
+    too."""
+    if not (explicit_output and has_records):
+        return False
+    destination = output_path / "absorption_evidence.json"
+    if absorption_path.resolve() == destination.resolve():
+        return False
+    shutil.copy2(absorption_path, destination)
+    return True
 
 
 def write_email_artifact(
@@ -1213,9 +1239,9 @@ def write_pipeline_state_artifact(
         load_absorption_evidence(absorption_path) if absorption_path.is_file() else []
     )
     absorption_revision = sha256_file(absorption_path) if absorption_records else None
-    absorption_output = output_path / "absorption_evidence.json"
-    if explicit_output and absorption_records:
-        shutil.copy2(absorption_path, absorption_output)
+    publish_absorption_evidence(
+        absorption_path, output_path, explicit_output, bool(absorption_records),
+    )
     usage_file = output_path / "usage_telemetry.json"
     telemetry_payload = intake.telemetry.aggregate()
     photos = list(intake.photos)
@@ -1318,7 +1344,7 @@ def write_pipeline_state_artifact(
             ),
             "usage_telemetry": usage_file.name,
             "absorption_evidence": (
-                absorption_output.name
+                "absorption_evidence.json"
                 if explicit_output and absorption_records else None
             ),
         },
@@ -1478,6 +1504,9 @@ def main(argv: list[str] | None = None) -> int:
     # on their protected historical paths. Pass --output-dir only to stage a
     # publishable copy elsewhere, as the cloud worker does.
     parser.add_argument("--output-dir", type=Path, default=None)
+    parser.add_argument("--grounded", action="store_true",
+                        help="run the cited-comps grounded pricing stage "
+                             "(per-lot cached; resumes for free)")
     args = parser.parse_args(argv)
     try:
         execute_pipeline(PipelineConfig(
@@ -1498,6 +1527,7 @@ def main(argv: list[str] | None = None) -> int:
             operator_approved=MappingProxyType(OPERATOR_APPROVED),
             standing_rules=tuple(DEFAULT_STANDING_RULES),
             cycle_questions=tuple(AUG22_DOMAIN_QUESTIONS),
+            enable_grounded_pricing=args.grounded,
         ))
     except (OSError, RuntimeError, ValueError) as exc:
         print(f"pipeline failed: {exc}", file=sys.stderr)

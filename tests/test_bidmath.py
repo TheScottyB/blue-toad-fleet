@@ -254,3 +254,35 @@ class TestBidIncrement:
         assert d.max_bid is None
         assert d.priority is Priority.SKIP
         assert "increment" in d.reason
+
+
+class TestOperatorKeptSeatsFirst:
+    """Under abundance, 'most lots for the money' must not crowd out the
+    owner's kept lots. Found live 2026-08-29: the full-coverage corpus
+    offered 56 cheap allocations and the greedy dropped the $100-capped
+    Topps lot the owner explicitly kept."""
+
+    def _decision(self, lot_id, all_in, kept=False):
+        from src.bidmath import BidMechanic, Decision, Priority
+        return Decision(
+            lot_id=lot_id, category="test", priority=Priority.A,
+            max_bid=round(all_in / 1.15, 2), all_in=all_in,
+            bid_fraction=0.375, reason="test", needs_human_pricing=False,
+            operator_kept=kept,
+        )
+
+    def test_kept_lot_seats_before_cheaper_machine_picks(self):
+        from src.bidmath import allocate
+        kept = self._decision("BT-KEPT", 115.0, kept=True)
+        cheap = [self._decision(f"BT-{i:03d}", 10.0) for i in range(20)]
+        out = allocate(cheap + [kept], budget_cap=120.0)
+        seated = {d.lot_id for d in out if d.allocated}
+        assert "BT-KEPT" in seated, "the owner's kept lot was crowded out"
+
+    def test_without_the_flag_cheapest_still_wins(self):
+        from src.bidmath import allocate
+        big = self._decision("BT-BIG", 115.0, kept=False)
+        cheap = [self._decision(f"BT-{i:03d}", 10.0) for i in range(20)]
+        out = allocate(cheap + [big], budget_cap=120.0)
+        seated = {d.lot_id for d in out if d.allocated}
+        assert "BT-BIG" not in seated and len(seated) == 12
