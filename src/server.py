@@ -600,6 +600,14 @@ def get_console():
     voice = write_pitch_voice(
         pitch, client=live_client, cache_path=cache, telemetry=engine.telemetry,
     )
+    clerk_draft = compile_absentee_email(
+        to="info@bluetoadauctions.com",
+        subject="Absentee Bids - August 22 Antique & Estate Auction (Bidder: Richmond General)",
+        auction_date="Saturday, August 22, 2026",
+        venue="200 Elizabeth Lane, Genoa City, WI",
+        lots=lots,
+        decisions=decisions,
+    )
     view = CycleView(
         cycle_id=STATE["cycle_id"],
         auction_date="Saturday, August 22, 2026",
@@ -619,6 +627,7 @@ def get_console():
             CYCLES and CYCLE_JOBS and CYCLE_JOBS.configured
             and (os.environ.get("OPERATOR_TOKEN") or not os.environ.get("K_SERVICE"))
         ),
+        clerk_draft=clerk_draft,
     )
     return render_console(view)
 

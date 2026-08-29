@@ -39,7 +39,8 @@ class TestRenderContract:
     def test_is_self_contained(self):
         h = render_console(_view())
         assert "<style>" in h
-        assert "src=" not in h and "href=" not in h, "no external assets"
+        assert "src=" not in h, "no external assets"
+        assert not re.search(r'href="https?://', h), "no external links"
 
     def test_tags_are_balanced(self):
         h = render_console(_view(questions=[_q()]))
@@ -71,7 +72,8 @@ class TestQuestionQueue:
         assert 'data-question-id="q_' in h
         assert 'data-act="answer"' in h
         assert 'fetch("/api/answer"' in h
-        assert "src=" not in h and "href=" not in h
+        assert "src=" not in h
+        assert not re.search(r'href="https?://', h)
 
     def test_photo_requests_are_marked(self):
         h = render_console(_view(questions=[_q(kind=QuestionKind.SCOPE, photo=True)]))
