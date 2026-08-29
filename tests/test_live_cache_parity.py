@@ -130,10 +130,17 @@ class TestTheGalleryHasNotMovedUnderUs:
     def test_captions_have_not_been_rewritten(self, cached_photos, live_photos):
         """A caption is the only lot-boundary signal this gallery publishes, and
         `group_into_lots` gives it precedence over the model. A re-caption
-        silently changes how photos group into bids."""
-        changed = [(s, cached_photos[s]["caption"], live_photos[s]["caption"])
-                   for s in sorted(set(cached_photos) & set(live_photos))
-                   if cached_photos[s]["caption"] != live_photos[s]["caption"]]
+        silently changes how photos group into bids.
+
+        Both sides are normalized with today's `clean_caption` before comparing:
+        the manifest keeps whatever normalization existed at capture time, so a
+        drop taken before entity decoding landed must read as our skew, not as
+        a rewrite by the house."""
+        from src.intake.manifest import clean_caption
+        pairs = ((s, clean_caption(cached_photos[s]["caption"]),
+                  clean_caption(live_photos[s]["caption"]))
+                 for s in sorted(set(cached_photos) & set(live_photos)))
+        changed = [(s, c, l) for s, c, l in pairs if c != l]
         if changed:
             report = "\n".join(f"  seq {s}: {c!r} -> {l!r}" for s, c, l in changed[:20])
             pytest.fail(
