@@ -184,8 +184,11 @@ class GroundedPricingPipeline:
         with self._lock:
             self._results[lot_id] = row
             _append_attempt(self.path, row)
-            # Keep unrelated old rows during a live run. finish() trims the
-            # cache to the exact set submitted by the current appraisal pass.
+            # Keep unrelated old rows during a live run AND at finish(). A
+            # cycle only re-judges the lots it submits; rows it never touched
+            # are evidence, not leftovers — trimming them erased the operator's
+            # alpha-lot comps on 2026-08-29 and dropped his kept lots from the
+            # sheet downstream.
             snapshot = {**self._cached, **self._results}
             _atomic_json(self.path, [snapshot[key] for key in sorted(snapshot)])
             if self.progress_callback:
@@ -203,7 +206,8 @@ class GroundedPricingPipeline:
             key=lambda lot: (-float(lot.get("fit_score") or 0), str(lot["lot_id"])),
         )
         rows = [self._results[lot["lot_id"]] for lot in ordered_lots]
-        _atomic_json(self.path, rows)
+        snapshot = {**self._cached, **self._results}
+        _atomic_json(self.path, [snapshot[key] for key in sorted(snapshot)])
         return rows
 
     def shutdown(self) -> None:

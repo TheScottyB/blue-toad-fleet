@@ -304,3 +304,25 @@ class TestReadingAGroundedResponse:
         from src.appraiser.pricing import parse_price_payload
         assert parse_price_payload({}, grounded_sources=[]) is None
         assert parse_price_payload({"low": 40}, grounded_sources=[]) is None
+
+
+def test_grounded_finish_preserves_rows_it_never_attempted(tmp_path):
+    """A cycle only re-judges the lots it submits; rows it never touched are
+    evidence, not leftovers. finish() used to trim the cache to the submitted
+    set — on 2026-08-29 that erased the operator's alpha-lot comps and dropped
+    his kept lots from the sheet downstream."""
+    import json
+    from src.appraiser.grounded_batch import GroundedPricingPipeline
+
+    cache = tmp_path / "grounded_prices.json"
+    historical = {"lot_id": "BT-001", "usable": True, "low": 450.0,
+                  "high": 1850.0, "sold_comp_count": 4}
+    cache.write_text(json.dumps([historical]))
+
+    pipe = GroundedPricingPipeline(cache, engine_factory=lambda: None)
+    rows = pipe.finish()
+
+    assert rows == [], "no lots were submitted this cycle"
+    on_disk = {r["lot_id"]: r for r in json.loads(cache.read_text())}
+    assert on_disk.get("BT-001") == historical, (
+        "finish() erased a cached row the cycle never attempted")
