@@ -153,7 +153,7 @@ class PipelineConfig:
     cycle_id: str
     listing_id: str
     data_dir: Path
-    output_dir: Path
+    output_dir: Path | None
     budget_cap: float
     auto_send_threshold: float
     auction_title: str
@@ -174,7 +174,8 @@ class PipelineConfig:
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "data_dir", Path(self.data_dir))
-        object.__setattr__(self, "output_dir", Path(self.output_dir))
+        if self.output_dir is not None:
+            object.__setattr__(self, "output_dir", Path(self.output_dir))
         if not all(str(value or "").strip() for value in (
             self.cycle_id, self.listing_id, self.auction_title, self.auction_date,
             self.auction_timezone, self.auction_deadline, self.venue, self.email_to,
@@ -206,7 +207,7 @@ def execute_pipeline(config: PipelineConfig) -> PipelineResult:
         cycle_id=config.cycle_id,
         listing_id=config.listing_id,
         data_dir=str(config.data_dir),
-        output_dir=str(config.output_dir),
+        output_dir=str(config.output_dir) if config.output_dir is not None else None,
         budget_cap=config.budget_cap,
         auto_send_threshold=config.auto_send_threshold,
         force_live_vertex=config.force_live_vertex,
@@ -742,6 +743,13 @@ def run_appraisal_stage(
                   else "LIVE Vertex AI spatial isolation")
         print(f"[*] Container Decomposition: {len(decomposition_candidates)} lots "
               f"from {source}...")
+    # RULING (pipeline lane, 2026-08-29, asked for by the seal-path brief):
+    # all-or-nothing stays. A sealed cycle must be one model vintage — letting
+    # cached Aug-20 rows sit beside live fill-ins is the "partial run wearing
+    # a cache" failure will_use_cache's own docstring names, and the seal's
+    # value is coherence, not spend. The sanctioned resumable layer is
+    # grounded pricing, whose per-lot fingerprint-gated cache makes a stopped
+    # pricing run cheap to resume without mixing appraisal vintages.
     from_cache = intake.engine.will_use_cache(
         appraisal_cache,
         force_live_vertex,
@@ -997,6 +1005,42 @@ def run_decision_stage(
     )
 
 
+def pipeline_cache_dir(data_path: Path, output_dir: Path | str | None) -> Path:
+    """Caches are cycle inputs living beside the manifest. Routing outputs
+    elsewhere must never move the cache lookup — coupling the two is what sent
+    the 2026-08-29 rerun to Vertex at full corpus price while every cache sat
+    unread in the data dir."""
+    return Path(data_path)
+
+
+def pipeline_state_path(
+    data_path: Path, output_path: Path, explicit_output: bool,
+) -> Path:
+    """Where the provenance-rich state seals. The canonical (no explicit
+    output) run must land it where media/video_manifest.json points — the
+    facts collector reads only there — while an explicit-output run (the
+    cloud worker) publishes it from its own output_dir."""
+    return (output_path if explicit_output else Path(data_path)) / "pipeline_state.json"
+
+
+def email_artifact_path(
+    data_path: Path, output_path: Path, explicit_output: bool,
+) -> Path:
+    return (
+        output_path / "absentee_bid_email.txt"
+        if explicit_output else data_path.parent / "aug22_absentee_bid_email.txt"
+    )
+
+
+def sheet_artifact_path(
+    data_path: Path, output_path: Path, explicit_output: bool,
+) -> Path:
+    return (
+        output_path / "bid_sheet.xlsx"
+        if explicit_output else data_path.parent / "BlueToad_2026-08-22_BidSheet.xlsx"
+    )
+
+
 def write_email_artifact(
     *,
     output_path: Path,
@@ -1010,10 +1054,7 @@ def write_email_artifact(
     decision_stage: DecisionStageResult,
 ) -> Path:
     """Write the clerk draft from the exact decision stage."""
-    path = (
-        output_path / "absentee_bid_email.txt"
-        if explicit_output else data_path.parent / "aug22_absentee_bid_email.txt"
-    )
+    path = email_artifact_path(data_path, output_path, explicit_output)
     path.write_text(compile_absentee_email(
         to=email_to,
         subject=(f"Absentee Bids - {auction_title} - {auction_date} "
@@ -1036,10 +1077,7 @@ def write_bid_sheet_artifact(
     decision_stage: DecisionStageResult,
 ) -> Path:
     """Write the workbook from the same lots, decisions, and evidence map."""
-    path = (
-        output_path / "bid_sheet.xlsx"
-        if explicit_output else data_path.parent / "BlueToad_2026-08-22_BidSheet.xlsx"
-    )
+    path = sheet_artifact_path(data_path, output_path, explicit_output)
     workbook = openpyxl.Workbook()
     sheet = workbook.active
     sheet.title = "Bid Sheet"
@@ -1181,7 +1219,7 @@ def write_pipeline_state_artifact(
     usage_file = output_path / "usage_telemetry.json"
     telemetry_payload = intake.telemetry.aggregate()
     photos = list(intake.photos)
-    state_path = output_path / "pipeline_state.json"
+    state_path = pipeline_state_path(data_path, output_path, explicit_output)
     state_path.write_text(json.dumps({
         "cycle_id": cycle_id,
         "listing_id": listing_id,
@@ -1337,7 +1375,7 @@ def run_pipeline(
     # 1. Intake & Spatial Grouping
     data_path = Path(data_dir)
     output_path = Path(output_dir) if output_dir else data_path.parent
-    cache_path = Path(output_dir) if output_dir else data_path
+    cache_path = pipeline_cache_dir(data_path, output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
     cache_path.mkdir(parents=True, exist_ok=True)
     refs = {} if reference_comps is None else reference_comps
@@ -1435,7 +1473,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--live", action="store_true", help="bypass model caches")
     parser.add_argument("--data-dir", type=Path,
                         default=Path("data/aug22_gallery_4160518"))
-    parser.add_argument("--output-dir", type=Path, default=Path("data"))
+    # No default output dir: the canonical invocation seals state beside the
+    # caches (where the facts collector reads) and keeps the money artifacts
+    # on their protected historical paths. Pass --output-dir only to stage a
+    # publishable copy elsewhere, as the cloud worker does.
+    parser.add_argument("--output-dir", type=Path, default=None)
     args = parser.parse_args(argv)
     try:
         execute_pipeline(PipelineConfig(
