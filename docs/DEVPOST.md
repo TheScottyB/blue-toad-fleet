@@ -14,6 +14,7 @@
   `Google Cloud Run`, `Vertex AI`, `Gemini 3.6 Flash`, `Gemini 3.5 Flash Lite`, `Gemini 2.5 Flash`, `Python`, `FastAPI`, `Docker`, `OpenPyXL`, `Pytest`, `Computer Vision`, `Multimodal AI`, `Auction Logistics`, `Retail Tech`
 * **"Try it out" links:**  
   * `https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app` (Live Cloud Run Gate Console)
+  * `https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/walk` (The Walk — all 462 photos in shot order, loop closure badged)
   * `https://github.com/TheScottyB/blue-toad-fleet` (Public GitHub Repository)
   * `https://github.com/TheScottyB/blue-toad-fleet/blob/master/media/blue_toad_fleet_demo.mp4` (4-beat narrated walkthrough, ~3:48)
 * **What date did you start this project?** `08-18-2026`
@@ -48,7 +49,7 @@ Capital was never the constraint — **time and visual throughput were**. The go
 ## What it does
 
 Blue Toad Fleet transforms an uncataloged gallery drop into a reviewable,
-budget-bounded absentee bid draft through six domain-specific mechanisms:
+budget-bounded absentee bid draft through seven domain-specific mechanisms:
 
 ### 1. Evidence-Gated Spatial Grouping
 Auctioneer captions and natural capture order provide a conservative grouping
@@ -58,6 +59,16 @@ exact manifest and embedding model. Without one, the Gate explicitly shows
 walk-order grouping and no room map. The checked-in August fixture has no
 spatial-observation sidecar, so this submission does not claim a reconstructed
 pole-barn topology for that run.
+
+What the evidence does support is on display live at `/walk`: every one of the
+462 photos rendered serpentine in exact shot order, lot runs marked, and the
+walk's one confirmed loop closure — the auctioneer returned to the costume
+jewelry trays 179 frames later — badged at both endpoints. That closure was
+found by `gemini-embedding-2`, where sequence proximity cannot find it by
+construction (recall@25 85.7% for embeddings vs 0.0% for sequence proximity on
+the reshoot corpus — `docs/CAPABILITY_PROBE.md`). The one photo the current
+grouping pass drops is rendered as a visibly ungrouped tile rather than
+hidden: the page shows the system's coverage honestly, gap included.
 
 ### 2. Container Lot Decomposition ("Mining for Gold")
 A bounded-container pass lists only visible contents. A possible alpha changes
@@ -85,6 +96,56 @@ not the previously drafted sports-card example.
 
 ### 6. Deterministic Greedy Budget Allocation
 Appraisals feed into pure, unit-tested bid math implementing the store's documented 35–40% buy-in band (applied at its 37.5% midpoint), condition discounts, standard $5.00 auction increments, and the mandatory 15% absentee fee. The final absentee email is compiled automatically for `info@bluetoadauctions.com`.
+
+### 7. Channel-Specific Velocity — eBay Absorption from the Operator's Own Seller Hub
+Price alone cannot tell a good buy from a shelf-sitter. The metric that can is
+**absorption**: units sold in the last 365 days divided by active listings now
+— how much of the standing supply clears in a year, on eBay specifically, read
+from the operator's own authenticated Seller Hub research account rather than
+scraped or guessed. The recorded proof of why it matters: a 1966 concert
+poster and a cast-iron pencil sharpener sell at nearly the same average price
+($22.12 vs $21.44), but the poster absorbs at 0.75 (16 months of supply)
+against the sharpener's 2.14 (5.6 months). Price cannot separate those two
+items; absorption does, and the per-lot comp reports in `data/comps/` carry
+the Seller Hub screenshots and page-printed date windows as evidence — pixels,
+because text is the medium models make things up in. Three silent-failure
+traps in the Seller Hub interface (a date control that labels without
+filtering, a row limit that renders zero instead of erroring, pagination with
+no end marker) are documented in `docs/PLAYBOOK-ebay-velocity.md`, each one a
+wrong number that looks like a right one. The same capability ships as an MCP
+connector (`scripts/comps_mcp_server.py`) exposing `ebay_absorption` and
+`ebay_comps` to the operator's desktop agent, with model-screened comparables
+— the question asked of each listing title is *"is this THAT item?"* — and a
+comp set that could not be screened is reported as UNFILTERED, never silently
+passed off as clean.
+
+---
+
+## The cycle that ran — sent, accepted, executed, answered
+
+This is not a demo pipeline pointed at sample data. The August 22 cycle
+completed the entire premise against a real auction, with every step verified
+in the mailbox:
+
+* The absentee sheet — nine lots, **$275.00 committed / $316.25 all-in**, every
+  cap under a $600 envelope — was generated, reviewed at the Gate, and sent to
+  Blue Toad on August 21.
+* The auction house accepted it ("Got it, thanks!"), executed it at the block
+  on August 22, and reported the outcome the same evening: *"sorry you did not
+  win."* Zero lots won. Zero dollars spent.
+* Losing every lot is the system working, not failing. The caps are defensive
+  by design: BT-041 (Edison cylinder lot) was capped at $25 against a $29–$43
+  sold-comp cluster on the deepest market comped that cycle — a ceiling the
+  room can beat only by paying at or above market. The recorded lesson for the
+  next cycle is to revisit the cap, not the comp.
+* The spend-to-return shape the sheet committed to, derived from the allocated
+  decisions' own comp provenance on the live API: **$713–$879 estimated resale
+  against $316.25 all-in — 2.25×–2.78×** if every cap had held.
+
+And the next cycle is already in flight: Blue Toad's September 5 auction was
+posted with 414 photos live as of August 29, on the same bi-weekly Saturday
+cadence the house has published through December. The system exists because
+this stream does not stop.
 
 ---
 
@@ -134,7 +195,7 @@ Appraisals feed into pure, unit-tested bid math implementing the store's documen
     publication.
 * **Release-gated Cloud proof:**
   * The public Cloud Run endpoint is listed above, but deployment revision
-    parity, measured latency, and final media are claims only after the release
+    parity, recorded latency, and final media are claims only after the release
     report records them.
 
 ---
@@ -143,6 +204,20 @@ Appraisals feed into pure, unit-tested bid math implementing the store's documen
 
 * **Evidence Matters More Than a Persuasive Map:** capture order is useful, but
   physical topology is shown only when cycle-bound observations support it.
+* **More Pixels Can Mean More Fabrication:** an upscaling arm was rejected
+  after it invented a lens serial number that the smaller original had read
+  correctly — and the appraisal tier transcribed the invention at unchanged
+  confidence. The probe record is `docs/CAPABILITY_PROBE.md`; the rule it
+  bought is zero tolerance for enhancement stages between the camera and the
+  appraiser.
+* **Fail-Closed Beats Fail-Quiet, Proven in Production:** when durable
+  Firestore memory was made fail-closed instead of silently downgrading to
+  container disk, the very next deploy crash-looped — and exposed that the
+  runtime service account had held zero project roles all along, meaning the
+  previously live revision had been answering "applied" for standing rules
+  that evaporated on every instance recycle. The fix (`infra/deploy.sh` grants
+  roles before first boot) turned silent data loss into a visible boot failure
+  and then into a true `memory_durable: true`.
 * **The Collaborative Partner Paradigm:** Full autonomy on real money is dangerous and unverified. Real commercial value is created when the machine provides visual distillation and the human provides physical intuition and final closure.
 * **Keyed Memory Beats Vector Drift:** Simple, deterministic `(kind, category)` rule keys learn permanent house conventions without prompt drift or embedding degradation.
 
@@ -150,6 +225,9 @@ Appraisals feed into pure, unit-tested bid math implementing the store's documen
 
 ## What's next for Blue Toad Fleet
 
+* **The September 5 cycle, live:** listing 4160519 is already posted with 414
+  photos; the intake, comp, and gate loop runs against it on the same
+  bi-weekly cadence this system was built for.
 * **Automated Eventarc Pipeline:** Wiring GCS bucket drops directly to Cloud Run workers via Pub/Sub topics and dead-letter queues.
 * **KMS-Signed Gmail OAuth Broker:** Direct automated transmission of approved absentee drafts via Google Secret Manager and KMS grants (as designed in `docs/BROKER.md`).
 * **Multi-House Spatial Expansion:** Collecting reviewed, manifest-bound spatial
