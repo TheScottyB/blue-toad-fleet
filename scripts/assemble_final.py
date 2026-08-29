@@ -37,7 +37,11 @@ DEFAULT_MANIFEST = "media/video_manifest.json"
 
 def _canonical_facts(manifest: dict, output: Path) -> tuple[str, dict] | None:
     configured = project_path(manifest["final_output"])
-    authoritative = project_path("media/" + "blue_to" + "ad_fleet_demo.mp4")
+    # The authoritative path must come from the repository manifest, not the
+    # caller's --manifest: reading it from `manifest` would make every build
+    # look canonical, and hardcoding it here would duplicate the declaration.
+    declared = load_json_object(project_path(DEFAULT_MANIFEST), "video manifest")
+    authoritative = project_path(declared["final_output"])
     if (
         configured.resolve() != authoritative.resolve()
         or output.resolve() != configured.resolve()

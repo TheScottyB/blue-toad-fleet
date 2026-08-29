@@ -31,13 +31,17 @@ def test_one_authoritative_final_video_owner():
     assert manifest["final_output"] == "media/blue_toad_fleet_demo.mp4"
     assert (SCRIPTS / "assemble_final.py").is_file()
     assert not (SCRIPTS / "build_video.py").exists()
+    declaration = ROOT / "src" / "cycles" / "ownership.py"
     owners = []
-    for path in SCRIPTS.glob("*"):
-        if path.suffix not in {".py", ".mjs"}:
-            continue
-        if "blue_toad_fleet_demo.mp4" in path.read_text():
-            owners.append(path.name)
-    assert owners == []  # The authoritative path lives only in the manifest.
+    for directory in ("src", "scripts", "demo", "infra"):
+        for path in (ROOT / directory).rglob("*"):
+            if path.suffix not in {".py", ".mjs"} or path == declaration:
+                continue
+            if "blue_toad_fleet_demo.mp4" in path.read_text():
+                owners.append(str(path.relative_to(ROOT)))
+    # The authoritative path lives only in the manifest and the ownership
+    # declaration; even the assembler reads it from the manifest.
+    assert owners == []
 
 
 def test_video_inputs_and_outputs_are_declared():

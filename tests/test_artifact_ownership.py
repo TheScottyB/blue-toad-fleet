@@ -31,13 +31,17 @@ def test_every_declared_owner_exists_and_is_unique():
 
 
 def test_no_non_owner_script_claims_protected_literal_paths():
+    declaration = ROOT / "src" / "cycles" / "ownership.py"
     for protected, owner in PROTECTED_ARTIFACT_OWNERS.items():
         if "{" in protected:
             continue
         claimers = []
-        for path in (ROOT / "scripts").glob("*"):
-            if path.suffix not in {".py", ".mjs"} or path.name == Path(owner).name:
-                continue
-            if protected in path.read_text():
-                claimers.append(path.name)
+        for directory in ("src", "scripts", "demo", "infra"):
+            for path in (ROOT / directory).rglob("*"):
+                if path.suffix not in {".py", ".mjs"}:
+                    continue
+                if path == ROOT / owner or path == declaration:
+                    continue
+                if protected in path.read_text():
+                    claimers.append(str(path.relative_to(ROOT)))
         assert claimers == [], f"{protected} also claimed by {claimers}"
