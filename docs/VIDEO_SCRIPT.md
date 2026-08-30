@@ -66,7 +66,7 @@
 * **Voiceover:**
   > *"Everything runs in production on Google Cloud Run and Vertex AI. The repository collects {{tests.collected}} tests; {{tests.passed}} pass locally and {{tests.skipped}} skip by policy.*
   >
-  > *The final sheet commits {{money.committed_max|usd}} across {{cycle.approved_bids}} approved bids—{{money.committed_all_in|usd}} all-in with the mandatory fifteen-percent absentee fee, strictly formatted to standard five-dollar auction increments.*
+  > *The final sheet commits {{money.committed_max|usd}} across {{cycle.approved_bids}} approved bids—{{money.committed_all_in|usd}} all-in with the mandatory fifteen-percent absentee fee.*
   >
   > *The system compiles an operator-reviewed email draft and publishes it only with the same sealed cycle manifest as the workbook and decision state. Sending remains a human action.*
   >
