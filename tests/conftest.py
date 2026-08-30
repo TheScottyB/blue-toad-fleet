@@ -15,3 +15,16 @@ def _isolated_voice_cache(tmp_path, monkeypatch):
     deliberately set BTF_VOICE_CACHE themselves, which overrides this.
     """
     monkeypatch.setenv("BTF_VOICE_CACHE", str(tmp_path / "btf_gemma_voice.json"))
+
+
+@pytest.fixture(autouse=True)
+def _no_live_api_cross_check(monkeypatch):
+    """read_api_total_sold is an I/O boundary (CDP fetch of the aggregates
+    API); stub it for every test so the unit suite never touches the
+    network — with the dedicated Chrome running, the unstubbed call made
+    the comp suite take 91s and depend on live eBay. Tests that exercise
+    the cross-check override this with their own monkeypatch."""
+    from src.comps import live as _live
+    monkeypatch.setattr(_live, "read_api_total_sold",
+                        lambda query, condition_id=None: None,
+                        raising=False)

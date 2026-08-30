@@ -36,6 +36,7 @@ keeping this layer unit-testable the way src/bidmath is.
 from __future__ import annotations
 
 import datetime as _dt
+import json as _json
 import re
 from dataclasses import dataclass, field
 
@@ -44,7 +45,7 @@ __all__ = [
     "ActiveRow", "ActivePage", "parse_sold_page", "parse_active_page",
     "parse_filters", "absorption", "months_of_supply", "window_days",
     "require_annual_window", "CONDITION_IDS", "UnknownConditionId",
-    "require_known_condition",
+    "require_known_condition", "api_total_sold", "sold_cross_check",
 ]
 
 
@@ -377,3 +378,74 @@ def require_known_condition(condition_id: int | None) -> str | None:
             "— the server silently ignores unknown ids and serves "
             "default-scope data (measured 2026-08-29), so it is refused")
     return label
+
+
+def api_total_sold(ndjson_text: str) -> int | None:
+    """'Total sold' from an api/search?modules=aggregates NDJSON body.
+
+    An independent source for the sold-unit total: the page walk and this
+    API figure agreed exactly on the measured corpus (291 = 291 unfiltered,
+    256 = 256 Used-scoped, 2026-08-29). The walk is generic over the
+    module's nesting so a container rename does not silently break it.
+    None when no aggregate module or Total sold item is readable —
+    absence, never a guessed zero."""
+    def walk(node):
+        if isinstance(node, dict):
+            yield node
+            for v in node.values():
+                yield from walk(v)
+        elif isinstance(node, list):
+            for v in node:
+                yield from walk(v)
+
+    for line in ndjson_text.split("\n"):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            module = _json.loads(line)
+        except ValueError:
+            continue
+        if not isinstance(module, dict) \
+                or module.get("_type") != "ResearchAggregateModule":
+            continue
+        for node in walk(module):
+            try:
+                label = node["header"]["textSpans"][0]["text"]
+            except (TypeError, LookupError):
+                continue
+            if label != "Total sold":
+                continue
+            try:
+                raw = node["value"]["textSpans"][0]["text"]
+                return int(raw.replace(",", ""))
+            except (TypeError, LookupError, ValueError):
+                return None
+    return None
+
+
+def sold_cross_check(page_units: int, truncated: bool,
+                     api_total: int | None) -> dict:
+    """The page walk's unit total against the aggregates API's Total sold.
+
+    Disagreement on an untruncated walk means one of the two is wrong — or
+    a sale landed in the seconds between the reads — and either way the
+    reader must see it rather than trust a silently drifted parse. A
+    truncated walk is a floor, so anything up to the API total is
+    consistent. An unreadable API leaves the page figure uncorroborated,
+    which is stated, never hidden."""
+    out = {"api_total_sold": api_total, "page_units": page_units}
+    if api_total is None:
+        out["verdict"] = ("UNAVAILABLE — aggregates API unreadable, page "
+                          "figure uncorroborated")
+    elif truncated:
+        out["verdict"] = ("consistent floor" if page_units <= api_total else
+                          f"MISMATCH — walked {page_units} units but the "
+                          f"API says the whole market is {api_total}")
+    elif page_units == api_total:
+        out["verdict"] = "match"
+    else:
+        out["verdict"] = (f"MISMATCH — page parse {page_units} vs API "
+                          f"{api_total}; one is wrong, or a sale landed "
+                          "between the two reads")
+    return out

@@ -377,3 +377,39 @@ class TestConditionScope:
         assert out["condition_scope"] == {"condition_id": 3000, "label": "Used"}
         with pytest.raises(UnknownConditionId):
             comps_mcp_server.ebay_absorption("q", condition_id=42)
+
+
+class TestSoldCrossCheckWiring:
+    """Both tools fetch the aggregates API as an independent check on the
+    page walk and surface the comparison; an unreadable API is stated."""
+
+    def test_ebay_absorption_carries_the_cross_check(
+            self, two_row_market, monkeypatch):
+        monkeypatch.setattr(live, "read_api_total_sold",
+                            lambda query, condition_id=None: 7)
+        from scripts import comps_mcp_server
+        out = comps_mcp_server.ebay_absorption("q")
+        assert out["sold_cross_check"] == {
+            "api_total_sold": 7, "page_units": 7, "verdict": "match"}
+
+    def test_comp_report_carries_the_cross_check(
+            self, two_row_market, monkeypatch):
+        monkeypatch.setattr(live, "select_comps", lambda ident, titles: None)
+        monkeypatch.setattr(live, "read_api_total_sold",
+                            lambda query, condition_id=None: 9)
+        out = live.comp_report("id", "q")
+        assert out["sold_cross_check"]["api_total_sold"] == 9
+        assert "MISMATCH" in out["sold_cross_check"]["verdict"]
+
+    def test_the_condition_scope_reaches_the_api_fetch(
+            self, two_row_market, monkeypatch):
+        seen = {}
+
+        def fake_api(query, condition_id=None):
+            seen["condition_id"] = condition_id
+            return 7
+
+        monkeypatch.setattr(live, "select_comps", lambda ident, titles: None)
+        monkeypatch.setattr(live, "read_api_total_sold", fake_api)
+        live.comp_report("id", "q", condition_id=3000)
+        assert seen["condition_id"] == 3000

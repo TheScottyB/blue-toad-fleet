@@ -45,7 +45,8 @@ if str(ROOT) not in sys.path:
 from mcp.server import MCPServer  # noqa: E402
 
 from src.comps import (absorption, months_of_supply,  # noqa: E402
-                       require_annual_window, require_known_condition)
+                       require_annual_window, require_known_condition,
+                       sold_cross_check)
 from src.comps import live  # noqa: E402
 
 server = MCPServer(
@@ -87,6 +88,7 @@ def ebay_absorption(query: str, condition_id: int | None = None) -> dict:
     sold = live.read_sold(query, condition_id=condition_id)
     require_annual_window(sold)
     active = live.read_active(query, condition_id=condition_id)
+    api_total = live.read_api_total_sold(query, condition_id=condition_id)
     rate = absorption(sold.sold_units, active.total_active or 0)
     return {
         "query": query,
@@ -100,6 +102,8 @@ def ebay_absorption(query: str, condition_id: int | None = None) -> dict:
         "sold_units_365d": sold.sold_units,
         "sold_listings_365d": len(sold.rows),
         "sold_results_truncated": sold.truncated,
+        "sold_cross_check": sold_cross_check(
+            sold.sold_units, sold.truncated, api_total),
         "active_now": active.total_active,
         "absorption": rate,
         "months_of_supply": months_of_supply(sold.sold_units,

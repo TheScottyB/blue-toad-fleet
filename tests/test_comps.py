@@ -24,7 +24,8 @@ from src.comps import (
     ChallengePage, NonAnnualWindow, SoldPage, SoldRow, SuspectEmpty,
     absorption, months_of_supply, parse_active_page, parse_filters,
     parse_sold_page, require_annual_window, window_days,
-    UnknownConditionId, require_known_condition,
+    UnknownConditionId, api_total_sold, require_known_condition,
+    sold_cross_check,
 )
 
 # --- fixtures shaped exactly like document.body.innerText -------------------
@@ -425,3 +426,57 @@ class TestConditionScope:
 
     def test_none_means_no_filter(self):
         assert require_known_condition(None) is None
+
+
+# One NDJSON line of a real api/search?modules=aggregates response
+# (sharpener query, captured live 2026-08-29), reduced to the section that
+# carries Total sold but keeping the exact real nesting.
+API_AGG_LINE = '{"_type": "ResearchAggregateModule", "sections": [{"dataItems": [{"header": {"_type": "TextualDisplay", "textSpans": [{"_type": "TextSpan", "text": "Total sold"}], "accessibilityText": "Total sold"}, "value": {"_type": "TextualDisplay", "textSpans": [{"_type": "TextSpan", "text": "291"}], "accessibilityText": "291"}, "tooltip": {"_type": "TextualDisplay", "textSpans": [{"_type": "TextSpan", "text": "The total number of items sold."}], "accessibilityText": "The total number of items sold."}}, {"header": {"_type": "TextualDisplay", "textSpans": [{"_type": "TextSpan", "text": "Sell-through"}], "accessibilityText": "Sell-through"}, "value": {"_type": "TextualDisplay", "textSpans": [{"_type": "TextSpan", "text": "-"}], "accessibilityText": "-"}, "tooltip": {"_type": "TextualDisplay", "textSpans": [{"_type": "TextSpan", "text": "The percentage of similar items that sold. Sell-through for a period greater than 90 days cannot be calculated. Reduce your date range to see the sell-through rate."}], "accessibilityText": "The percentage of similar items that sold. Sell-through for a period greater than 90 days cannot be calculated. Reduce your date range to see the sell-through rate."}}, {"header": {"_type": "TextualDisplay", "textSpans": [{"_type": "TextSpan", "text": "Total sellers"}], "accessibilityText": "Total sellers"}, "value": {"_type": "TextualDisplay", "textSpans": [{"_type": "TextSpan", "text": "275"}], "accessibilityText": "275"}, "tooltip": {"_type": "TextualDisplay", "textSpans": [{"_type": "TextSpan", "text": "The total number of sellers."}], "accessibilityText": "The total number of sellers."}}]}]}'
+
+API_AGG_BODY = (
+    '{"_type":"PageErrorModule","severity":"ERROR","meta":{"name":"pageError"},"debugUrl":""}\n'
+    "\n" + API_AGG_LINE + "\n")
+
+API_AGG_COMMA = '{"_type": "ResearchAggregateModule", "sections": [{"dataItems": [{"header": {"_type": "TextualDisplay", "textSpans": [{"_type": "TextSpan", "text": "Total sold"}], "accessibilityText": "Total sold"}, "value": {"_type": "TextualDisplay", "textSpans": [{"_type": "TextSpan", "text": "1,291"}], "accessibilityText": "1,291"}, "tooltip": {"_type": "TextualDisplay", "textSpans": [{"_type": "TextSpan", "text": "The total number of items sold."}], "accessibilityText": "The total number of items sold."}}, {"header": {"_type": "TextualDisplay", "textSpans": [{"_type": "TextSpan", "text": "Sell-through"}], "accessibilityText": "Sell-through"}, "value": {"_type": "TextualDisplay", "textSpans": [{"_type": "TextSpan", "text": "-"}], "accessibilityText": "-"}, "tooltip": {"_type": "TextualDisplay", "textSpans": [{"_type": "TextSpan", "text": "The percentage of similar items that sold. Sell-through for a period greater than 90 days cannot be calculated. Reduce your date range to see the sell-through rate."}], "accessibilityText": "The percentage of similar items that sold. Sell-through for a period greater than 90 days cannot be calculated. Reduce your date range to see the sell-through rate."}}, {"header": {"_type": "TextualDisplay", "textSpans": [{"_type": "TextSpan", "text": "Total sellers"}], "accessibilityText": "Total sellers"}, "value": {"_type": "TextualDisplay", "textSpans": [{"_type": "TextSpan", "text": "275"}], "accessibilityText": "275"}, "tooltip": {"_type": "TextualDisplay", "textSpans": [{"_type": "TextSpan", "text": "The total number of sellers."}], "accessibilityText": "The total number of sellers."}}]}]}'
+
+
+class TestApiTotalSold:
+    """The aggregates API is an independent source for the sold total —
+    page walk and API agreed exactly on the measured corpus (291 = 291
+    unfiltered, 256 = 256 Used-scoped, 2026-08-29). The parser must read
+    the real NDJSON shape and return absence, never a guessed zero."""
+
+    def test_reads_total_sold_from_a_real_response_body(self):
+        assert api_total_sold(API_AGG_BODY) == 291
+
+    def test_a_comma_grouped_total_parses(self):
+        assert api_total_sold(API_AGG_COMMA) == 1291
+
+    def test_no_aggregate_module_is_None_not_zero(self):
+        assert api_total_sold('{"_type":"PageErrorModule"}') is None
+        assert api_total_sold("Pardon Our Interruption...") is None
+        assert api_total_sold("") is None
+
+
+class TestSoldCrossCheck:
+    """One figure from the page walk, one from the API; disagreement means
+    one of them is wrong (or a sale landed between the reads — they are
+    seconds apart), and the reader must see it either way."""
+
+    def test_agreement_is_a_match(self):
+        assert sold_cross_check(291, False, 291)["verdict"] == "match"
+
+    def test_disagreement_is_a_named_mismatch(self):
+        v = sold_cross_check(290, False, 291)["verdict"]
+        assert "MISMATCH" in v and "290" in v and "291" in v
+
+    def test_a_truncated_walk_is_a_floor_not_a_mismatch(self):
+        assert sold_cross_check(600, True, 950)["verdict"] == "consistent floor"
+
+    def test_a_truncated_walk_above_the_api_total_is_still_wrong(self):
+        assert "MISMATCH" in sold_cross_check(600, True, 500)["verdict"]
+
+    def test_an_unreadable_api_is_stated_not_hidden(self):
+        v = sold_cross_check(291, False, None)
+        assert v["api_total_sold"] is None
+        assert "UNAVAILABLE" in v["verdict"]

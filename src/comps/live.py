@@ -39,8 +39,9 @@ import websockets
 
 from scripts.cdp_capture import capture, close_tab, open_tab
 from src.comps import (ActivePage, SoldPage, SuspectEmpty, absorption,
-                       months_of_supply, parse_active_page, parse_sold_page,
-                       require_annual_window, require_known_condition)
+                       api_total_sold, months_of_supply, parse_active_page,
+                       parse_sold_page, require_annual_window,
+                       require_known_condition, sold_cross_check)
 
 _BASE = ("https://www.ebay.com/sh/research?marketplace=EBAY-US"
          "&categoryId=0&offset={offset}&limit={limit}&tabName={tab}"
@@ -146,6 +147,33 @@ def read_active(query: str, condition_id: int | None = None) -> ActivePage:
     return asyncio.run(_read_active(query, condition_id))
 
 
+def _api_aggregates_url(q: str, condition_id: int | None = None) -> str:
+    s, e = _year_window_ms()
+    url = ("https://www.ebay.com/sh/research/api/search?marketplace=EBAY-US"
+           f"&keywords={q.replace(' ', '+')}&dayRange=365"
+           f"&startDate={s}&endDate={e}&categoryId=0&offset=0"
+           f"&limit={_SOLD_PAGE_LIMIT}&tabName=SOLD&modules=aggregates")
+    if condition_id is not None:
+        require_known_condition(condition_id)
+        url += f"&conditionId={condition_id}"
+    return url
+
+
+def read_api_total_sold(query: str,
+                        condition_id: int | None = None) -> int | None:
+    """'Total sold' from the aggregates API, or None.
+
+    Best-effort by design: this is the independent cross-check on the page
+    walk, so any failure here returns None and the caller reports the page
+    figure as uncorroborated rather than blocking the read."""
+    try:
+        text = asyncio.run(_read_text(
+            _api_aggregates_url(query, condition_id), wait=6.0))
+        return api_total_sold(text)
+    except Exception:
+        return None
+
+
 # ---------------------------------------------------------------------------
 # Intelligent comp selection
 # ---------------------------------------------------------------------------
@@ -236,6 +264,7 @@ def comp_report(identification: str, query: str,
     sold = read_sold(query, condition_id=condition_id)
     require_annual_window(sold)
     active = asyncio.run(_read_active(query, condition_id))
+    api_total = read_api_total_sold(query, condition_id=condition_id)
 
     out: dict = {
         "identification": identification,
@@ -260,6 +289,10 @@ def comp_report(identification: str, query: str,
         # True = the page cap stopped the walk with the last page still
         # full, so the sold figures (and absorption) are a FLOOR.
         "sold_results_truncated": sold.truncated,
+        # The page walk against the aggregates API - an independent source,
+        # so a silently drifted parse announces itself as a MISMATCH.
+        "sold_cross_check": sold_cross_check(
+            sold.sold_units, sold.truncated, api_total),
         "active_now": active.total_active,
         "absorption": absorption(sold.sold_units, active.total_active or 0),
         "months_of_supply": months_of_supply(
