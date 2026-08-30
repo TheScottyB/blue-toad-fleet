@@ -90,10 +90,24 @@ border:1px solid var(--line);background:var(--card2);color:var(--ink)}
 .cycle-result{min-height:20px;margin-top:9px;color:var(--ink2);font-size:12.5px}
 .desk-stage{margin:28px 0}
 .desk-stage .stage-kicker{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--cyan);margin:0 0 6px}
+.desk-stage h2{border-top:none;margin-top:0;padding-top:0}
+.desk-nav{position:sticky;top:0;z-index:8;display:flex;gap:12px;flex-wrap:wrap;
+align-items:center;background:rgba(15,17,21,.94);padding:10px 0 12px;margin:0 0 8px;
+border-bottom:1px solid var(--line)}
+.desk-nav a{color:var(--cyan);text-decoration:none;font-size:11.5px;font-weight:700;
+letter-spacing:.1em;text-transform:uppercase}
+.desk-nav a:hover{color:var(--ink)}
+.desk-fold{margin:12px 0;border:1px solid var(--line);border-radius:10px;
+padding:8px 14px;background:var(--card)}
+.desk-fold summary{cursor:pointer;color:var(--ink2);font-size:13px;font-weight:600}
 .clerk-draft{white-space:pre-wrap;background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:14px;font:12px/1.5 ui-monospace,Menlo,monospace;color:var(--ink2);max-height:28rem;overflow:auto}
 .desk-token{display:flex;gap:8px;align-items:center;margin-top:10px;font-size:12px;color:var(--ink3)}
 .desk-token input{padding:6px 8px;border-radius:7px;border:1px solid var(--line);background:var(--card2);color:var(--ink)}
-@media(max-width:700px){.cycle-control .fields{grid-template-columns:1fr}}
+@media(max-width:700px){
+.cycle-control .fields{grid-template-columns:1fr}
+.walk-pair{grid-template-columns:1fr}
+.walk-pair img{height:180px}
+}
 .tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
 padding:2px 7px;border-radius:5px;border:1px solid var(--line);color:var(--ink3);white-space:nowrap}
 .tag.shelf{border-color:var(--green);color:var(--green)}
@@ -144,13 +158,19 @@ padding:2px 6px;margin:2px 3px 0 0;border-radius:4px;background:rgba(56,189,248,
 .holding{margin-top:16px;padding-top:12px;border-top:1px dashed var(--line)}
 .holding .map-title{margin-bottom:10px}
 .walk-returns{margin:12px 0}
-.walk-return{display:flex;flex-wrap:wrap;align-items:center;gap:10px;
-background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:8px 0}
-.walk-return b{font:600 12px ui-monospace,Menlo,monospace;color:var(--cyan)}
-.walk-pair{display:flex;gap:6px}
-.walk-pair img{width:96px;height:66px;object-fit:cover;border-radius:4px;
+.walk-return{display:grid;gap:14px;background:var(--card);border:1px solid var(--line);
+border-radius:12px;padding:16px;margin:10px 0}
+.walk-return b{font:600 13px ui-monospace,Menlo,monospace;color:var(--cyan)}
+.walk-pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.walk-pair figure{margin:0}
+.walk-pair img{width:100%;height:220px;object-fit:cover;border-radius:8px;
+border:1px solid var(--line);background:var(--card2);display:block}
+.walk-pair figcaption{font:600 12px ui-monospace,Menlo,monospace;color:var(--ink3);margin-top:6px}
+.walk-meta{font-size:13px;color:var(--ink2)}
+.card-photos{display:flex;gap:8px;margin:8px 0 4px}
+.card-photos img{width:120px;height:82px;object-fit:cover;border-radius:6px;
 border:1px solid var(--line);background:var(--card2)}
-.walk-meta{font-size:12px;color:var(--ink3)}
+.card.compact{padding:10px 14px}
 
 /* Pitch Banner */
 .pitch-card{background:linear-gradient(135deg, rgba(167,139,250,0.08) 0%, rgba(56,189,248,0.08) 100%);
@@ -392,6 +412,17 @@ def _seq_chip(photo_id: str) -> str:
     )
 
 
+def _desk_nav() -> str:
+    return """
+<nav class="desk-nav" aria-label="Friday desk stages">
+  <a href="#stage-walk">1 Walk</a>
+  <a href="#stage-questions">2 Questions</a>
+  <a href="#stage-envelope">3 Envelope</a>
+  <a href="#stage-clerk">4 Clerk</a>
+</nav>
+"""
+
+
 def _cycle_control_block(enabled: bool) -> str:
     if not enabled:
         return ""
@@ -444,10 +475,14 @@ def _holding_strip(v: CycleView | None) -> str:
         return ""
     unplaced.sort(key=lambda s: s.walk_index)
     body = "".join(_seat_html(s) for s in unplaced)
-    return (
+    inner = (
         '<div class="holding" id="unplaced">'
         '<div class="map-title">Not yet placed</div>'
         f'<div class="seat-row">{body}</div></div>'
+    )
+    return (
+        f'<details class="desk-fold"><summary>{len(unplaced)} lot(s) not yet '
+        f"placed on the floor plan</summary>{inner}</details>"
     )
 
 
@@ -684,19 +719,23 @@ def _walk_returns_block(v: CycleView) -> str:
     for lot_id, anchor, returned in pairs:
         rows.append(
             f'<div class="walk-return" data-seq-a="{anchor}" data-seq-b="{returned}">'
-            f"<b>{escape(lot_id)}</b>"
-            f'<span class="walk-pair">'
+            f'<div class="walk-pair">'
+            f"<figure>"
             f'<img src="/walk/photo/{anchor}" alt="{anchor:03d}" loading="lazy">'
+            f"<figcaption>{anchor:03d} &middot; first shot</figcaption></figure>"
+            f"<figure>"
             f'<img src="/walk/photo/{returned}" alt="{returned:03d}" loading="lazy">'
-            f"</span>"
-            f'<span class="walk-meta">shot at {anchor:03d}, returned at '
-            f"{returned:03d} ({returned - anchor} frames later)</span>"
-            f'<span class="acts">'
+            f"<figcaption>{returned:03d} &middot; walk returned</figcaption></figure>"
+            f"</div>"
+            f"<div><b>{escape(lot_id)}</b>"
+            f'<div class="walk-meta">shot at {anchor:03d}, returned at '
+            f"{returned:03d} ({returned - anchor} frames later)</div>"
+            f'<div class="acts">'
             f'<button type="button" class="btn p" data-act="same" '
             f'data-seq-a="{anchor}" data-seq-b="{returned}">confirm</button>'
             f'<button type="button" class="btn" data-act="not-same" '
             f'data-seq-a="{anchor}" data-seq-b="{returned}">reject</button>'
-            f"</span></div>"
+            f"</div></div></div>"
         )
     return (
         '<div class="walk-returns">'
@@ -711,7 +750,7 @@ def _walk_stage(v: CycleView) -> str:
     seated = {pid for seat in v.seats for pid in seat.photo_ids}
     ungrouped = max(0, v.photos_ingested - len(seated))
     return f"""
-<section class="desk-stage" data-stage="walk">
+<section class="desk-stage" data-stage="walk" id="stage-walk">
   <p class="stage-kicker">Friday desk · 1 of 4</p>
   <h2>Walk membership</h2>
   <p style="color:var(--ink2)">Confirm same-lot and not-the-same on the walk.
@@ -728,7 +767,7 @@ def _walk_stage(v: CycleView) -> str:
 def _clerk_stage(v: CycleView) -> str:
     draft = escape(v.clerk_draft) if v.clerk_draft else "No clerk draft on this cycle."
     return f"""
-<section class="desk-stage" data-stage="clerk">
+<section class="desk-stage" data-stage="clerk" id="stage-clerk">
   <p class="stage-kicker">Friday desk · 4 of 4</p>
   <h2>Clerk draft</h2>
   <p style="color:var(--ink2)">Absentee email compiled from the envelope above.
@@ -738,76 +777,121 @@ def _clerk_stage(v: CycleView) -> str:
 """
 
 
-def _sheet_block(v: CycleView) -> str:
-    out = [f"<h2>The sheet &mdash; {v.summary.allocated} bid(s) allocated</h2>"]
-    order = {Priority.A: 0, Priority.B: 1, Priority.C: 2, Priority.SKIP: 3}
-    for d in sorted(v.decisions, key=lambda x: (order[x.priority],
-                                                -(x.committed_all_in or 0))):
-        if d.needs_deep_comps:
-            cls = "pending"
-        elif d.needs_human_pricing:
-            cls = "refused"
+def _photos_for_seat(seat: Seat | None) -> str:
+    if seat is None:
+        return ""
+    seqs = [
+        seq for pid in seat.photo_ids
+        if (seq := _bt_sequence(pid)) is not None
+    ]
+    if not seqs:
+        return ""
+    show = [seqs[0]] if len(seqs) == 1 else [seqs[0], seqs[-1]]
+    imgs = "".join(
+        f'<img src="/walk/photo/{seq}" alt="{seq:03d}" loading="lazy">'
+        for seq in show
+    )
+    return f'<div class="card-photos">{imgs}</div>'
+
+
+def _decision_card(d: Decision, v: CycleView, *, compact: bool,
+                   thumbs: str = "") -> str:
+    if d.needs_deep_comps:
+        cls = "pending"
+    elif d.needs_human_pricing:
+        cls = "refused"
+    else:
+        cls = _CLS[d.priority]
+    if compact:
+        cls = f"{cls} compact"
+    caption = v.captions.get(d.lot_id, "")
+    money, flag = "", ""
+    if d.max_bid is not None:
+        _units = units_committed(d.mechanic, d.unit_count, d.units_wanted)
+        if _units > 1:
+            money = (f'<span class="money">max ${d.max_bid:,.2f}/unit '
+                     f'&times;{_units} &middot; committed '
+                     f'${d.committed_max:,.2f} &middot; all-in '
+                     f'${d.committed_all_in:,.2f}</span>')
         else:
-            cls = _CLS[d.priority]
-        caption = v.captions.get(d.lot_id, "")
-        money, flag = "", ""
-        if d.max_bid is not None:
-            # A card reading "all-in $28.75" for an $86.25 commitment is what
-            # the operator approves against, on a page whose own header says
-            # $327.75. Show the commitment whenever it differs from one unit.
-            _units = units_committed(d.mechanic, d.unit_count, d.units_wanted)
-            if _units > 1:
-                money = (f'<span class="money">max ${d.max_bid:,.2f}/unit '
-                         f'&times;{_units} &middot; committed '
-                         f'${d.committed_max:,.2f} &middot; all-in '
-                         f'${d.committed_all_in:,.2f}</span>')
-            else:
-                money = (f'<span class="money">max ${d.max_bid:,.2f} '
-                         f'&middot; all-in ${d.all_in:,.2f}</span>')
-            if d.allocated and d.auto_send:
-                flag = _tag("auto-send", "mem")
-            elif d.allocated:
-                flag = _tag("needs approval")
-            elif d.priority is Priority.SKIP:
-                # allocate never spends SKIP leftover; that is a choice, not a cap miss.
-                flag = _tag("will not bid")
-            else:
-                flag = _tag("over budget")
-        if d.needs_deep_comps:
-            body = f'<div class="pending">{escape(d.reason)}</div>'
-        elif d.needs_human_pricing:
-            body = _refuse_div(d)
+            money = (f'<span class="money">max ${d.max_bid:,.2f} '
+                     f'&middot; all-in ${d.all_in:,.2f}</span>')
+        if d.allocated and d.auto_send:
+            flag = _tag("auto-send", "mem")
+        elif d.allocated:
+            flag = _tag("needs approval")
+        elif d.priority is Priority.SKIP:
+            flag = _tag("will not bid")
         else:
-            body = f'<div class="why">{escape(d.reason)}</div>'
-        # The one line that says what to DO with this lot. It lived in bidmath
-        # with no caller outside its own tests — built, tested, and wired to
-        # nothing — while the surface the operator actually reads showed a price
-        # and no instruction. Rendered as prose in its own class so the card's
-        # money figures remain the only summable ones on the page: the header
-        # and the cards have to keep reconciling. SKIP is already "do not bid";
-        # a CHOICE/TTM directive would tell the clerk the opposite.
+            flag = _tag("over budget")
+    if compact:
+        thumbs = ""
+    if d.needs_deep_comps:
+        body = f'<div class="pending">{escape(d.reason)}</div>'
+        directive = ""
+    elif d.needs_human_pricing:
+        body = _refuse_div(d)
+        directive = ""
+    elif compact:
+        body = ""
+        directive = ""
+    else:
+        body = f'<div class="why">{escape(d.reason)}</div>'
         directive = (f'<div class="directive">{escape(clerk_directive(d))}</div>'
                      if (d.priority is not Priority.SKIP
                          and (d.mechanic is not BidMechanic.STRAIGHT
                               or d.needs_mechanic_ruling)) else "")
-        want = 0 if d.allocated else 1
-        elect_label = "drop" if d.allocated else "add"
-        actions = [
-            f'<button class="btn" data-act="elect" data-want="{want}">'
-            f'{elect_label}</button>'
-        ]
-        if d.needs_deep_comps or d.needs_human_pricing:
-            actions.append(
-                '<input class="cap-input" type="number" min="5" step="5" placeholder="$ cap">'
-                '<button class="btn" data-act="price">price</button>'
-            )
-        desk = f'<div class="desk-actions">{"".join(actions)}</div>'
+    want = 0 if d.allocated else 1
+    elect_label = "drop" if d.allocated else "add"
+    actions = [
+        f'<button class="btn" data-act="elect" data-want="{want}">'
+        f'{elect_label}</button>'
+    ]
+    if d.needs_deep_comps or d.needs_human_pricing:
+        actions.append(
+            '<input class="cap-input" type="number" min="5" step="5" placeholder="$ cap">'
+            '<button class="btn" data-act="price">price</button>'
+        )
+    desk = f'<div class="desk-actions">{"".join(actions)}</div>'
+    return (
+        f'<div class="card {cls}" data-allocated="{int(d.allocated)}">'
+        f'<div class="hd" data-lot-id="{escape(d.lot_id)}">'
+        f'<span class="id">{escape(d.lot_id)}</span>'
+        f'<span class="idn">{escape(caption or d.category)}</span>'
+        f'{_tag(d.priority.value)}{_tag(d.labor.value, d.labor.value)}{flag}{money}'
+        f'</div>{thumbs}{body}{directive}{desk}</div>'
+    )
+
+
+def _sheet_block(v: CycleView) -> str:
+    seats = {s.lot_id: s for s in v.seats}
+    order = {Priority.A: 0, Priority.B: 1, Priority.C: 2, Priority.SKIP: 3}
+    ranked = sorted(v.decisions, key=lambda x: (order[x.priority],
+                                                -(x.committed_all_in or 0)))
+    seated, pending, rest = [], [], []
+    for d in ranked:
+        if d.allocated:
+            seated.append(d)
+        elif d.needs_deep_comps or d.needs_human_pricing:
+            pending.append(d)
+        else:
+            rest.append(d)
+    out = [f"<h2>The sheet &mdash; {v.summary.allocated} bid(s) allocated</h2>"]
+    for d in seated:
+        out.append(_decision_card(
+            d, v, compact=False, thumbs=_photos_for_seat(seats.get(d.lot_id)),
+        ))
+    if pending:
+        body = "\n".join(_decision_card(d, v, compact=True) for d in pending)
         out.append(
-            f'<div class="card {cls}" data-allocated="{int(d.allocated)}">'
-            f'<div class="hd" data-lot-id="{escape(d.lot_id)}">'
-            f'<span class="id">{escape(d.lot_id)}</span>'
-            f'<span class="idn">{escape(caption or d.category)}</span>'
-            f'{_tag(d.priority.value)}{_tag(d.labor.value, d.labor.value)}{flag}{money}</div>{body}{directive}{desk}</div>'
+            f'<details class="desk-fold"><summary>{len(pending)} lot(s) need a '
+            f"number before they can enter the envelope</summary>\n{body}</details>"
+        )
+    if rest:
+        body = "\n".join(_decision_card(d, v, compact=True) for d in rest)
+        out.append(
+            f'<details class="desk-fold"><summary>{len(rest)} lot(s) not on this '
+            f"envelope</summary>\n{body}</details>"
         )
     return "\n".join(out)
 
@@ -859,14 +943,15 @@ def render_console(v: CycleView, pitch_text: str = "") -> str:
            placeholder="Required in production">
   </label>
 </header>
+{_desk_nav()}
 {_cycle_control_block(v.cycle_controls)}
-{_walk_stage(v)}
 {_pitch_block(pitch_text, v.voice)}
-<section class="desk-stage" data-stage="questions">
+{_walk_stage(v)}
+<section class="desk-stage" data-stage="questions" id="stage-questions">
   <p class="stage-kicker">Friday desk · 2 of 4</p>
 {_question_block(v)}
 </section>
-<section class="desk-stage" data-stage="envelope">
+<section class="desk-stage" data-stage="envelope" id="stage-envelope">
   <p class="stage-kicker">Friday desk · 3 of 4</p>
 {_sheet_block(v)}
 </section>
