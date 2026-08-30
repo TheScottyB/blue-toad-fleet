@@ -110,3 +110,24 @@ def test_operator_rulings_derive_only_from_kinded_entries():
         (QuestionKind.SCOPE, ("BT-385",)),
     }
     assert all(r.answer for r in rulings)
+
+
+def test_operator_approved_has_no_duplicate_literal_keys():
+    """Duplicate keys in a dict literal shadow silently (last wins) — this
+    dropped two delegated rulings on 2026-08-29 when entries were added
+    without noticing originals further down."""
+    import ast
+    from pathlib import Path
+
+    source = Path(__file__).resolve().parents[1] / "scripts/run_vertex_pipeline.py"
+    tree = ast.parse(source.read_text())
+    for node in ast.walk(tree):
+        if (isinstance(node, ast.Assign)
+                and any(getattr(t, "id", None) == "OPERATOR_APPROVED"
+                        for t in node.targets)):
+            keys = [k.value for k in node.value.keys if isinstance(k, ast.Constant)]
+            assert len(keys) == len(set(keys)), (
+                sorted(k for k in keys if keys.count(k) > 1))
+            break
+    else:
+        raise AssertionError("OPERATOR_APPROVED literal not found")

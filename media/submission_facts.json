@@ -63,13 +63,10 @@
         "lot_ids": [
           "BT-004",
           "BT-016",
-          "BT-021",
           "BT-030",
-          "BT-041",
           "BT-042",
           "BT-047",
           "BT-068",
-          "BT-087",
           "BT-088",
           "BT-089",
           "BT-091",
@@ -78,6 +75,7 @@
           "BT-124",
           "BT-140",
           "BT-160",
+          "BT-163",
           "BT-195",
           "BT-211",
           "BT-225",
@@ -85,6 +83,7 @@
           "BT-241",
           "BT-260",
           "BT-261",
+          "BT-284",
           "BT-287",
           "BT-291",
           "BT-296",
@@ -92,6 +91,7 @@
           "BT-319",
           "BT-334",
           "BT-343",
+          "BT-347",
           "BT-351",
           "BT-413",
           "BT-416",
@@ -104,17 +104,20 @@
         ]
       },
       "auto_answered": {
-        "count": 6,
+        "count": 9,
         "lot_ids": [
           "BT-002",
           "BT-006",
           "BT-010",
+          "BT-021",
+          "BT-041",
           "BT-073",
           "BT-075",
           "BT-078",
           "BT-080",
           "BT-083",
           "BT-086",
+          "BT-087",
           "BT-165",
           "BT-385"
         ]
@@ -512,7 +515,7 @@
         ]
       },
       "dropped": {
-        "count": 235,
+        "count": 232,
         "lot_ids": [
           "BT-003",
           "BT-004",
@@ -587,7 +590,6 @@
           "BT-159",
           "BT-161",
           "BT-162",
-          "BT-163",
           "BT-167",
           "BT-168",
           "BT-169",
@@ -649,7 +651,6 @@
           "BT-281",
           "BT-282",
           "BT-283",
-          "BT-284",
           "BT-285",
           "BT-288",
           "BT-289",
@@ -684,7 +685,6 @@
           "BT-337",
           "BT-342",
           "BT-345",
-          "BT-347",
           "BT-348",
           "BT-349",
           "BT-350",
@@ -1218,9 +1218,9 @@
       "unknown_zone_default": "unknown"
     }
   },
-  "generated_at": "2026-08-30T00:26:32.298896+00:00",
+  "generated_at": "2026-08-30T00:31:07.398034+00:00",
   "git": {
-    "commit": "9eed8a3c570a8a7b60203bf377d9dc1e60519612",
+    "commit": "80eed4404abded2bb2209c52dd84379176d1d154",
     "dirty": true
   },
   "money": {
@@ -1242,7 +1242,7 @@
       "output_tokens": 0,
       "request_count": 0,
       "retry_request_count": 0,
-      "stage_duration_ms": 8.396
+      "stage_duration_ms": 8.385
     },
     "planning_estimate": {
       "cost_usd": {
@@ -1265,11 +1265,6 @@
     }
   },
   "publication": {
-    "blocking_lot_ids": [
-      "BT-021",
-      "BT-041",
-      "BT-087"
-    ],
     "flagged_deferred_lot_ids": [
       "BT-001",
       "BT-002",
@@ -1346,7 +1341,7 @@
       "BT-443",
       "BT-450"
     ],
-    "reason": "allocated lots have unresolved questions",
+    "reason": "no sealed artifact manifest is declared",
     "release_eligible": false,
     "status": "unpublished_local_snapshot"
   },
@@ -1360,13 +1355,13 @@
     "python": "3.14.4"
   },
   "schema_version": 2,
-  "snapshot_identity_sha256": "460e2d3fbaafc1796c2477650ae37e40810d7979c29f394e340a2886fdd17445",
+  "snapshot_identity_sha256": "65f3ff9fa040066a91c9243a1b44637394165c9a538c3279050edbbe4592cdfc",
   "source_sha256": {
     "absorption_evidence": "a6fcb32f93c3c2e1a38515fcd6746e06c9509fabd2d8c39c9bfa3e77e7fcb5e5",
     "appraisal_results": "fe12ee26559c41e82db48f6ad4f1c6d740b1847cdd8e00961c4863318f1db93c",
     "embedding_cache": "dce825d85046660583a8319f8f6a33a1ec0e8d115d47960e3d9e866071d6c700",
     "gallery_manifest": "f2d757927f526dcac225e177d5cbf1e8206168951264f94153a978bdcd86f21a",
-    "pipeline_state": "dcaf1e33498ee60349a9ddbbcd8578a01975dffde83a41ac78f31e14833f01b1",
+    "pipeline_state": "be1a444fb7de57fc251304498bbf5f5fd330372e9f6fd8c0e895b5ccf1c0ccbc",
     "reshoot_edges": "7ea297183484ff95ab8d56aa32ef2741a54c8c2d50ad1e4d7b8fa5e98c8025db",
     "triage_results": "c81d532216def8e234dec1ec6996c6bd37671cd5e1fb5b8f726b50e04f0c94b9",
     "video_script": "8ee5d0b9bd51df193b1f6ee5497fd97d83da1255766438b8229e6f70dd2b2e01"
@@ -1387,11 +1382,11 @@
     }
   },
   "tests": {
-    "collected": 976,
-    "command": "/Users/scottybe/workspace/blue-toad-fleet/.venv/bin/python -m pytest -q '--junitxml=<temporary>'",
+    "collected": 977,
+    "command": "pytest report: artifacts/release/pytest.xml",
     "errors": 0,
     "failed": 0,
-    "passed": 969,
+    "passed": 970,
     "skipped": 7
   }
 }

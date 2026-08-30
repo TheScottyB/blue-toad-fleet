@@ -1,15 +1,15 @@
 # Release evidence
 
 - **Status:** NOT READY
-- **Generated:** 2026-08-30T00:17:58.134645+00:00
-- **Commit:** `6df77d1fc4c53cc6351099d471bb176d5ea194cb`
+- **Generated:** 2026-08-30T00:31:06.940341+00:00
+- **Commit:** `80eed4404abded2bb2209c52dd84379176d1d154`
 - **Python:** `3.14.4`
 
 ## Test invocation
 
 - Command: `python -m pytest tests/ -q --junitxml=artifacts/release/pytest.xml`
-- Collected: 963
-- Passed: 956
+- Collected: 977
+- Passed: 970
 - Skipped: 7
 - Failed: 0
 - Errors: 0
@@ -21,22 +21,21 @@
 
 ## Canonical cycle facts
 
-- Snapshot identity: `83ed21cf418b2be9968d02194a49acfef3db5b24d9c916a76db81fdb3d145025`
+- Snapshot identity: `65f3ff9fa040066a91c9243a1b44637394165c9a538c3279050edbbe4592cdfc`
 - Artifact manifest: `unavailable`
 - Flagged non-blocking allocated lots: 45 deferred (desk-cannot-answer), 27 dropped (over queue cap) — these ship flagged low-confidence per the queue contract
 
 ## Deployed revision parity
 
 - Verdict: MISMATCH
-- Local commit: `6df77d1fc4c53cc6351099d471bb176d5ea194cb`
+- Local commit: `80eed4404abded2bb2209c52dd84379176d1d154`
 - Deployed commit: `a523a6e19ea50e4579771d237e80233e250112c4`
 - Health endpoint: `https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/health`
 
 ## Release blockers
 
 - the deployed revision does not match the audited commit
-- allocated lots have unresolved questions
-- unresolved allocated lots: BT-021, BT-041, BT-087
+- no sealed artifact manifest is declared
 - facts snapshot was generated from a dirty working tree
 
 ## Non-mutating checks

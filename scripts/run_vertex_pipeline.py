@@ -126,7 +126,16 @@ OPERATOR_APPROVED = {
     # $275.00 committed / $316.25 all-in.
     "BT-087": {"fit": 0.90, "cap": 15.00,
                "why": "collab: bulk estate costume jewelry; revised down to $15 "
-                      "on the sent 2026-08-21 sheet"},
+                      "on the sent 2026-08-21 sheet",
+               # Delegated scope review 2026-08-29 (photo-grounded): the clear
+               # tub with bagged and loose pieces; the sent line bid the tote.
+               # NOTE: this string happens to parse as STRAIGHT ('one bulk
+               # lot') — the scope kind keeps it out of the mechanics parser,
+               # and the latent parse matches the lot's actual mechanic anyway.
+               "ruling_kind": "scope",
+               "ruling": "Scope: the clear plastic tub and all bagged and "
+                         "loose jewelry contents inside — the tote and its "
+                         "contents sell as one bulk lot."},
 
     # Operator-delegated E1 review, relayed by the captain lane 2026-08-29 and
     # confirmed by the operator in-session; both verdicts photo-grounded
@@ -168,8 +177,24 @@ OPERATOR_APPROVED = {
                "why": "duplicate of BT-002 (close-up of trays 12/14) — "
                       "BT-002 takes all three at x3"},
 
-    "BT-021": {"fit": 0.90, "why": "collab: vintage telephones sell in store"},
-    "BT-041": {"fit": 0.90, "why": "collab: Edison cylinders are an alpha pick this cycle"},
+    # Delegated scope reviews 2026-08-29 (captain relay, photo-grounded,
+    # anchored in the sent sheet's own bid lines). Both confirm the existing
+    # straight scopes — no mechanic or money change; ruling_kind=scope keeps
+    # them out of the mechanics parser at every consumption site.
+    "BT-021": {"fit": 0.90,
+               "why": "collab: vintage telephones sell in store",
+               "ruling_kind": "scope",
+               "ruling": "Scope: the Princess phone and its original printed "
+                         "box only; the neighboring jersey and binder are "
+                         "separate lots, not included."},
+    "BT-041": {"fit": 0.90,
+               "why": "collab: Edison cylinders are an alpha pick this cycle",
+               "ruling_kind": "scope",
+               "ruling": "Scope: the Edison cylinder records and their "
+                         "cardboard containers on the tray only — "
+                         "approximately a dozen canisters plus the bare "
+                         "roll; the clock and bobbleheads behind are "
+                         "separate lots."},
     "BT-048": {"fit": 0.90, "why": "collab: licensed 80s character pieces move fast"},
     "BT-050": {"fit": 0.90, "why": "collab: Lionel set approved"},
     "BT-066": {"fit": 0.90, "why": "collab: handheld electronic games approved"},
