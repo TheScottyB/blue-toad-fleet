@@ -48,7 +48,9 @@ from src.appraiser.grounded_batch import (
     grounded_reference_comps, grounded_status_reason,
 )
 from src.appraiser.pricing import MAX_SPREAD_RATIO, MIN_SOLD_COMPS
-from src.appraiser.routing import GEMMA_MODEL
+from src.appraiser.routing import GEMMA_MODEL, rate_snapshot_usd_per_million
+from src.evidence.audit import AuditTrail
+from src.evidence.telemetry import UsageTelemetry
 from src.gate import CycleView, render_console
 from src.gate.walkstrip import render_walk_strip
 from src.gate.pitch import build_pitch
@@ -178,7 +180,72 @@ def reset_walk_edits() -> None:
     """Tests only. Clears operator walk same-lot / not-same rulings."""
     WALK_EDITS.reset()
 
-engine = AppraisalEngine()
+
+TELEMETRY = UsageTelemetry(
+    STATE["cycle_id"],
+    rates_usd_per_million=rate_snapshot_usd_per_million(),
+)
+AUDIT = AuditTrail(STATE["cycle_id"])
+engine = AppraisalEngine(telemetry=TELEMETRY)
+
+
+def reset_audit() -> None:
+    """Tests only. Clears in-process operator/agent events and Google calls."""
+    AUDIT.reset()
+    TELEMETRY.reset()
+
+
+def _normalize_usage_summary(summary: dict) -> dict:
+    out = dict(summary)
+    if int(out.get("request_count") or 0) == 0:
+        out["cost_status"] = "no_calls"
+        out["measured_cost_usd"] = None
+    return out
+
+
+def _cycle_usage_summary() -> dict:
+    path = Path("data/aug22_gallery_4160518/usage_telemetry.json")
+    if not path.exists():
+        path = Path("/app/data/aug22_gallery_4160518/usage_telemetry.json")
+    if not path.exists():
+        return {"cost_status": "no_calls", "request_count": 0, "measured_cost_usd": None}
+    try:
+        payload = json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError):
+        return {"cost_status": "unavailable", "request_count": None, "measured_cost_usd": None}
+    summary = payload.get("summary") if isinstance(payload, dict) else None
+    if not isinstance(summary, dict):
+        return {"cost_status": "unavailable", "request_count": None, "measured_cost_usd": None}
+    return _normalize_usage_summary(summary)
+
+
+def _audit_payload() -> dict:
+    usage = TELEMETRY.aggregate()
+    model_events = [
+        {
+            "schema_version": 1,
+            "at": row["finished_at"],
+            "cycle_id": row["cycle_id"],
+            "actor": "agent",
+            "kind": "model_call",
+            "detail": {
+                "stage": row["stage"],
+                "model": row["model"],
+                "status": row["status"],
+            },
+            "measured_cost_usd": row["measured_cost_usd"],
+        }
+        for row in usage["calls"]
+    ]
+    events = AUDIT.snapshot() + model_events
+    events.sort(key=lambda event: event.get("at") or "")
+    return {
+        "google": {
+            "process": usage["summary"],
+            "cycle_artifact": _cycle_usage_summary(),
+        },
+        "events": events,
+    }
 
 
 def photo_from_raw(raw_app: dict | None = None, **base) -> AppraisedPhoto:
@@ -584,6 +651,7 @@ def healthz():
         "python": sys.version.split()[0],
         "cycle_storage": CYCLES.backend_name if CYCLES else "disabled",
         "cycle_job_configured": bool(CYCLE_JOBS and CYCLE_JOBS.configured),
+        "google_cost_status": TELEMETRY.aggregate()["summary"]["cost_status"],
     }
 
 
@@ -601,6 +669,7 @@ def get_console():
     voice = write_pitch_voice(
         pitch, client=live_client, cache_path=cache, telemetry=engine.telemetry,
     )
+    audit = _audit_payload()
     clerk_draft = compile_absentee_email(
         to="info@bluetoadauctions.com",
         subject="Absentee Bids - August 22 Antique & Estate Auction (Bidder: Richmond General)",
@@ -629,8 +698,16 @@ def get_console():
             and (os.environ.get("OPERATOR_TOKEN") or not os.environ.get("K_SERVICE"))
         ),
         clerk_draft=clerk_draft,
+        google_cost_status=audit["google"]["process"]["cost_status"],
+        google_cost_usd=audit["google"]["process"]["measured_cost_usd"],
+        audit_events=audit["events"][-12:],
     )
     return render_console(view)
+
+
+@app.get("/api/audit")
+def get_audit():
+    return _audit_payload()
 
 
 def _manifest_by_sequence() -> dict[int, dict]:
@@ -1001,6 +1078,11 @@ def elect_sheet_lot(
             status_code=409,
             detail="allocate refused — over the $600 cap",
         )
+    AUDIT.record(
+        actor="operator",
+        kind="sheet_elect",
+        detail={"lot_id": lot_id, "want": want},
+    )
     return {
         "status": "applied",
         "lot_id": lot_id,
@@ -1035,6 +1117,11 @@ def price_sheet_lot(
     OPERATOR_SHEET.declined.discard(lot_id)
     _, _, _, after_decisions, after_summary, _, _ = get_aug22_state()
     after = _desk_snapshot(after_decisions, after_summary, [lot_id])
+    AUDIT.record(
+        actor="operator",
+        kind="sheet_price",
+        detail={"lot_id": lot_id, "max_bid": snapped},
+    )
     return {
         "status": "applied",
         "lot_id": lot_id,
@@ -1087,6 +1174,17 @@ def walk_edge(
         WALK_EDITS.rejected.add(pair)
     _, seats, *_ = get_aug22_state()
     after = {"same_lot": _same_lot(seats, a, b), "photo_a": a, "photo_b": b}
+    AUDIT.record(
+        actor="operator",
+        kind="walk_edge",
+        detail={
+            "seq_a": int(payload["seq_a"]),
+            "seq_b": int(payload["seq_b"]),
+            "status": status,
+            "before": before,
+            "after": after,
+        },
+    )
     return {
         "status": "applied",
         "seq_a": int(payload["seq_a"]),
@@ -1148,6 +1246,11 @@ def answer_question(
     stored = None
     authority_type = None
     if not promoted and not learned_rulings:
+        AUDIT.record(
+            actor="operator",
+            kind="answer",
+            detail={"question_id": qid, "status": "recorded", "promoted": False},
+        )
         return {
             "status": "recorded",
             "promoted": False,
@@ -1189,6 +1292,15 @@ def answer_question(
     except MemoryConflict as e:
         raise HTTPException(status_code=409, detail=str(e)) from e
 
+    AUDIT.record(
+        actor="operator",
+        kind="answer",
+        detail={
+            "question_id": qid,
+            "status": "applied",
+            "authority_type": authority_type,
+        },
+    )
     _, _, _, after_decisions, after_summary, after_queue, _ = get_aug22_state()
     after = {
         "asked": len(after_queue.asked),

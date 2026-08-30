@@ -38,6 +38,9 @@ class CycleView:
     seats: list[Seat] = field(default_factory=list)
     cycle_controls: bool = False
     clerk_draft: str = ""
+    google_cost_status: str = "no_calls"
+    google_cost_usd: float | None = None
+    audit_events: list = field(default_factory=list)
 
 
 _CSS = """
@@ -420,6 +423,31 @@ def _desk_nav() -> str:
   <a href="#stage-envelope">3 Envelope</a>
   <a href="#stage-clerk">4 Clerk</a>
 </nav>
+"""
+
+
+def _audit_block(v: CycleView) -> str:
+    status = escape(v.google_cost_status)
+    money = (
+        "unrecorded" if v.google_cost_usd is None
+        else f"${v.google_cost_usd:,.4f}"
+    )
+    rows = []
+    for event in v.audit_events:
+        if not isinstance(event, dict):
+            continue
+        kind = escape(str(event.get("kind") or ""))
+        actor = escape(str(event.get("actor") or ""))
+        rows.append(f'<div class="audit-row">{actor} · {kind}</div>')
+    body = (
+        "".join(rows)
+        or '<p style="color:var(--ink3);font-size:13px">No agent or operator events this process.</p>'
+    )
+    return f"""
+<details class="desk-fold" data-audit="google">
+  <summary>Google spend · {status} · {money} · {len(v.audit_events)} event(s)</summary>
+  {body}
+</details>
 """
 
 
@@ -952,6 +980,7 @@ def render_console(v: CycleView, pitch_text: str = "") -> str:
   </label>
 </header>
 {_desk_nav()}
+{_audit_block(v)}
 {_cycle_control_block(v.cycle_controls)}
 {_pitch_block(pitch_text, v.voice)}
 {_walk_stage(v)}

@@ -23,6 +23,8 @@ EST_OUTPUT_TOKENS_CONTAINER_ITEMIZATION = 600
 _PRICING = {  # USD per 1M tokens (input, output)
     TRIAGE_MODEL: (0.30, 2.50),
     APPRAISAL_MODEL: (1.50, 7.50),
+    # Vertex MaaS list snapshot 2026-08-18 for this exact model id.
+    CURATOR_MODEL: (0.07, 0.34),
 }
 
 
