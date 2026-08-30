@@ -77,9 +77,19 @@ not release evidence unless they are linked from `docs/SUBMISSION_CLAIMS.md`.
 
 ### July 11, 2026 historical material
 
-The former A/B comparison is quarantined. Its totals, identifiers, joins, and
-synthetic V2 path are not auditable enough for release evidence. The retained
-runner refuses to publish; rebuild only through remediation-plan Task 23.
+Frozen input lives at `data/july11_gallery_4136050/` (AuctionZip listing
+4136050, 452 photos / 324 captioned). The original desktop-apps workbook —
+`BlueToad_2026-07-11_BidSheet.xlsx`, 88 bid rows + a 452-row training tab — is
+Side A. Images are cached as appraisal-grade `_fl` files with hashes on the
+manifest (tracked — the listing HTML is already gone from AuctionZip).
+
+The comparison to run later is that BidSheet versus a **current-pipeline**
+workbook on the same cached photos, joined by photo sequence. That Side B
+workbook does not exist yet.
+
+`data/BlueToad_2026-07-11_Benchmark_Comparison.xlsx` stays quarantined: it is
+not Side A, not Side B, and not release evidence. `scripts/run_july11_benchmark.py`
+still refuses to publish.
 
 ### August 22, 2026 fixture
 * **Dataset:** 462 raw gallery photos (`data/aug22_gallery_4160518/manifest.json`).

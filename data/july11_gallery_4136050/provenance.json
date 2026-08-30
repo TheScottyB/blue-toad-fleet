@@ -1,0 +1,38 @@
+{
+  "listing_id": "4136050",
+  "auction_date": "2026-07-11",
+  "auctioneer": "Blue Toad Auctions",
+  "venue": "200 Elizabeth Lane, Genoa City, WI 53128",
+  "role": "ad_hoc_vs_current_pipeline_input",
+  "submission_evidence": false,
+  "photopanel_html": "unavailable — AuctionZip HTML 403 CloudFront at cache time; image CDN still served _fl",
+  "gallery_cache": {
+    "variant": "_fl",
+    "photos": 452,
+    "usable": 452,
+    "width": 560,
+    "height": 420,
+    "mime_type": "image/webp",
+    "cached_at": "2026-08-30"
+  },
+  "ad_hoc_bidsheet": {
+    "path": "BlueToad_2026-07-11_BidSheet.xlsx",
+    "sha256": "1aa1e4ca872b0aa1b05ad19c63e64299e65cfb7f52d61f5ff2fbfbef3bbdd716",
+    "byte_size": 71749,
+    "sheets": [
+      "Bid Sheet",
+      "Auction Info",
+      "All Lots (Training)",
+      "Listing Cross-Ref"
+    ],
+    "notes": "Cycle 1 artifact from the desktop SOP / openpyxl builders. 88-lot bid sheet, 452-row training tab. Not produced by src/ in this repo."
+  },
+  "quarantined_scorecard": {
+    "path": "data/BlueToad_2026-07-11_Benchmark_Comparison.xlsx",
+    "notes": "Synthetic V1-vs-V2 comparison. Not Side A, not Side B, not publishable."
+  },
+  "side_b": {
+    "status": "not_generated",
+    "notes": "Run the current pipeline on this drop. Write a new workbook. Do not use scripts/run_july11_benchmark.py."
+  }
+}
