@@ -15,6 +15,13 @@ def _response(input_tokens=100, output_tokens=25):
     ))
 
 
+def test_empty_cycle_is_no_calls_not_measured_zero():
+    summary = UsageTelemetry("cycle-1").aggregate()["summary"]
+    assert summary["request_count"] == 0
+    assert summary["cost_status"] == "no_calls"
+    assert summary["measured_cost_usd"] is None
+
+
 def test_records_measured_usage_latency_and_cost():
     telemetry = UsageTelemetry(
         "cycle-1", rates_usd_per_million={"model-a": (1.0, 2.0)},

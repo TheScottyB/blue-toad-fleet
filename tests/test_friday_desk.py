@@ -22,9 +22,11 @@ def client():
 def _clean_desk_loop():
     server_mod.reset_walk_edits()
     server_mod.reset_operator_sheet()
+    server_mod.reset_audit()
     yield
     server_mod.reset_walk_edits()
     server_mod.reset_operator_sheet()
+    server_mod.reset_audit()
 
 
 def _desk_view(seats=()):

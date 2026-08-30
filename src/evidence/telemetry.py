@@ -177,6 +177,15 @@ class UsageTelemetry:
         input_known = [row.input_tokens for row in calls if row.input_tokens is not None]
         output_known = [row.output_tokens for row in calls if row.output_tokens is not None]
         costs = [row.measured_cost_usd for row in calls if row.measured_cost_usd is not None]
+        if not calls:
+            measured_cost = None
+            cost_status = "no_calls"
+        elif len(costs) == len(calls):
+            measured_cost = round(sum(costs), 8)
+            cost_status = "measured"
+        else:
+            measured_cost = None
+            cost_status = "unavailable"
         return {
             "schema_version": 1,
             "cycle_id": self.cycle_id,
@@ -189,11 +198,17 @@ class UsageTelemetry:
                 "fallback_request_count": sum(row.fallback for row in calls),
                 "input_tokens": sum(input_known) if len(input_known) == len(calls) else None,
                 "output_tokens": sum(output_known) if len(output_known) == len(calls) else None,
-                "measured_cost_usd": round(sum(costs), 8) if len(costs) == len(calls) else None,
-                "cost_status": "measured" if len(costs) == len(calls) else "unavailable",
+                "measured_cost_usd": measured_cost,
+                "cost_status": cost_status,
                 "stage_duration_ms": round(sum(row.duration_ms for row in stages), 3),
             },
         }
+
+    def reset(self) -> None:
+        """Tests only. Clears in-process Google call records."""
+        with self._lock:
+            self.calls.clear()
+            self.stages.clear()
 
     def write(self, path: str | Path) -> Path:
         destination = Path(path)
