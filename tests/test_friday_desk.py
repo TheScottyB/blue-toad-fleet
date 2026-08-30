@@ -117,6 +117,14 @@ def test_one_operator_token_on_the_friday_desk(client):
     assert 'href="/walk"' in html
 
 
+def test_friday_desk_has_in_page_stage_nav(client):
+    html = client.get("/").text
+    for stage in ("walk", "questions", "envelope", "clerk"):
+        assert f'href="#stage-{stage}"' in html
+        assert f'id="stage-{stage}"' in html
+    assert not re.search(r'href="https?://', html)
+
+
 def test_friday_desk_lists_live_walk_returns_not_the_full_strip(client):
     html = client.get("/").text
     walk = _walk_stage(html)
@@ -128,9 +136,42 @@ def test_friday_desk_lists_live_walk_returns_not_the_full_strip(client):
     assert 'data-act="not-same"' in walk
     assert 'fetch("/api/walk/edge"' in html
     assert '<figure class="tile' not in html
-    assert html.count('src="/walk/photo/') <= 40
+    assert html.count('src="/walk/photo/') <= 120
     assert html.count('id="cycle-token"') == 1
     assert 'href="/walk"' in html
+
+
+def test_walk_returns_stay_open_and_the_holding_strip_is_folded(client):
+    walk = _walk_stage(client.get("/").text)
+    assert "spatial observations unavailable" in walk
+    assert 'id="unplaced"' in walk
+    open_walk = walk.split("<details", 1)[0]
+    assert 'class="walk-return"' in open_walk
+    assert 'id="unplaced"' not in open_walk
+    assert 'data-seq-a="2"' in open_walk
+
+
+def test_envelope_opens_seated_lots_and_collapses_the_rest(client):
+    html = client.get("/").text
+    start = html.find('data-stage="envelope"')
+    end = html.find('data-stage="clerk"')
+    env = html[start:end]
+    assert "<details" in env
+    open_env = env.split("<details", 1)[0]
+    assert 'data-allocated="1"' in open_env
+    assert 'data-allocated="0"' not in open_env
+
+
+def test_seated_envelope_card_shows_the_lot_photo():
+    html = render_console(_desk_view([
+        Seat(lot_id="BT-002", zone=Zone.UNKNOWN, walk_index=2,
+             photo_ids=("BT-002", "BT-003", "BT-181")),
+    ]))
+    env = html[html.find('data-stage="envelope"'):html.find('data-stage="clerk"')]
+    assert 'src="/walk/photo/2"' in env
+    assert 'src="/walk/photo/181"' in env
+    assert not re.search(r'src="https?://', env)
+    assert env.count('src="/walk/photo/') == 2
 
 
 def test_rejecting_a_desk_walk_return_drops_it_from_stage_one(client):
