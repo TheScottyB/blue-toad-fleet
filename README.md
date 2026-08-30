@@ -136,6 +136,31 @@ calculation (46 sold / 46 active = 1.0); it does not support a sports-card claim
 ### 6. Pure Deterministic BidMath Engine
 Appraisals feed into pure, unit-tested valuation logic implementing the store's documented **35–40% buy-in band** (applied at its 37.5% midpoint), condition discounts, standard **$5.00 bidding increments**, and the mandatory **15% absentee fee**.
 
+### 7. Live eBay Comp Connector (Seller Hub, the operator's own account)
+Grounded pricing needs sold evidence, and the most direct source is eBay Seller
+Hub product research on the operator's own seller account, read through a
+dedicated authenticated Chrome over CDP. [`src/comps/`](src/comps/__init__.py)
+is the pure layer — page-text parsing plus the operator's metric,
+`ebay_velocity = sold_units_last_365_days / active_listings_now` (an absorption
+rate; days-on-market is explicitly not computed) — and
+[`src/comps/live.py`](src/comps/live.py) drives the browser. Two front ends
+share it: an MCP stdio server
+([`scripts/comps_mcp_server.py`](scripts/comps_mcp_server.py)) exposing
+`ebay_absorption` and `ebay_comps` (model-screened "is this THAT item" verdicts
+per listing title and a comp-only price band), and a one-shot CLI
+([`scripts/comps_cli.py`](scripts/comps_cli.py)).
+
+Every guard is a measured Seller Hub failure turned into code
+([`docs/PLAYBOOK-ebay-velocity.md`](docs/PLAYBOOK-ebay-velocity.md)): reads
+**refuse rather than return a wrong number** — the bot wall, the silent-empty
+`limit>50` SOLD page, a printed window that is not annual, a `conditionId` the
+server would silently ignore, all raise instead of computing. The page-printed
+date line, not the request, is the authority on what was measured; sold totals
+are cross-checked against Seller Hub's own aggregates API (`sold_cross_check`);
+and the printed filter bar is surfaced as the page's *claim* about scope, after
+a live read proved a sticky filter chip can be a display ghost. A nonzero exit
+is a refused read, never "sold 0".
+
 ---
 
 ## Historical August fixture reconciliation
@@ -204,6 +229,7 @@ blue-toad-fleet/
 │   ├── architecture_diagram.png
 │   ├── app_icon.png
 │   ├── DEVPOST.md              # Complete Devpost submission story
+│   ├── PLAYBOOK-ebay-velocity.md  # Measured Seller Hub failures behind src/comps guards
 │   ├── VIDEO_SCRIPT.md         # 4-minute video walkthrough script
 │   ├── VIDEO_WORKFLOW.md       # Reproducible evidence-backed media workflow
 │   └── screenshots/            # High-resolution UI captures
@@ -211,6 +237,8 @@ blue-toad-fleet/
 │   ├── deploy.sh               # Deploy service plus cycle infrastructure
 │   └── provision_cycles.sh     # Bucket, processor job, IAM, Eventarc
 ├── scripts/                    # Live cycle runners & verification tools
+│   ├── comps_mcp_server.py     # eBay Seller Hub comp connector (MCP stdio server)
+│   ├── comps_cli.py            # The same connector as a one-shot CLI
 │   ├── run_aug22_cycle.py      # Retired legacy writer (refuses with guidance)
 │   ├── run_july11_benchmark.py # Quarantined historical entry point (refuses)
 │   └── capture_screenshots.mjs # Automated Playwright dark-mode screenshot capture
@@ -219,6 +247,7 @@ blue-toad-fleet/
 │   ├── appraiser/              # Vertex AI client, OpenAPI 3.0 schemas, prompts
 │   ├── assemble/               # Lot assembly & multi-angle merging
 │   ├── bidmath/                # Pure deterministic valuation & greedy allocator
+│   ├── comps/                  # eBay Seller Hub reads: absorption, comps, refusal guards
 │   ├── cycles/                 # Cloud Storage contract and Cloud Run Job worker
 │   ├── gate/                   # Gate Console UI renderer (pure HTML/CSS)
 │   ├── intake/                 # Manifest parsing, natural sort & spatial clustering
