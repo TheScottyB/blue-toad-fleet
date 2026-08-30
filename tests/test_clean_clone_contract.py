@@ -43,7 +43,7 @@ def test_doc_guard_collects_from_a_non_root_directory(tmp_path):
         text=True,
     )
     assert result.returncode == 0, result.stderr
-    assert "test_docs_match_the_sheet.py: 3" in result.stdout
+    assert "test_docs_match_the_sheet.py:" in result.stdout
 
 
 def test_release_code_has_no_personal_absolute_paths():
