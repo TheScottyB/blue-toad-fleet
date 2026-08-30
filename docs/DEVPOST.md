@@ -34,7 +34,7 @@
 Paste into
 `https://devpost.com/submit-to/30845-all-things-agentic-hackathon/manage/submissions/1144616-blue-toad-fleet/additional-info/edit`
 
-* **Startup Excellence:** do not check unless a corporate email is supplied. Organization name `Richmond General` is the shop, not an opt-in.
+* **Startup Excellence:** do not check unless BOTH an incorporated organization name AND a corporate email are supplied. Organization name `Richmond General` is the shop, not an opt-in.
 * **Submitter Type:** Individuals
 * **Submitter country of residence:** United States
 * **Which Category are you submitting to?** Collaborative Partner
