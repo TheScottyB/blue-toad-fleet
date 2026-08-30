@@ -32,7 +32,7 @@
   },
   "close": {
     "card": "media/cards/close.png",
-    "duration_seconds": 3.4
+    "duration_seconds": 2.8
   },
   "beats": [
     {

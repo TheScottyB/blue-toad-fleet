@@ -1218,10 +1218,10 @@
       "unknown_zone_default": "unknown"
     }
   },
-  "generated_at": "2026-08-30T00:31:07.398034+00:00",
+  "generated_at": "2026-08-30T00:32:20.723815+00:00",
   "git": {
-    "commit": "80eed4404abded2bb2209c52dd84379176d1d154",
-    "dirty": true
+    "commit": "57f26921b6d41961f8d7b6f3209f51ebd5f12db9",
+    "dirty": false
   },
   "money": {
     "budget_cap": 600.0,
@@ -1383,7 +1383,7 @@
   },
   "tests": {
     "collected": 977,
-    "command": "pytest report: artifacts/release/pytest.xml",
+    "command": "/Users/scottybe/workspace/blue-toad-fleet/.venv/bin/python -m pytest -q '--junitxml=<temporary>'",
     "errors": 0,
     "failed": 0,
     "passed": 970,
