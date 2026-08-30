@@ -30,7 +30,7 @@ from src.intake.puzzle import (
     GENERIC_CATEGORIES, Cluster, cannot_link, seed_clusters,
 )
 from src.intake.spatial import (
-    SANITY_FLOOR, AdjacencyClaim, PhotoObservation, Seat, SpatiallyTaggedPhoto,
+    SANITY_FLOOR, AdjacencyClaim, PhotoMember, PhotoObservation, Seat, SpatiallyTaggedPhoto,
     SurfaceSignature, Zone, adjacency_graph, apply_trajectory, cosine,
     merge_reshoots, nearest_neighbor, occupancy, observations_to_tagged,
     reshoot_edges, seats_from_groups, spatial_same_lot,
@@ -41,7 +41,7 @@ __all__ = ["GalleryDrop", "LotGroup", "PhotoRef", "TriagedPhoto", "WorkItem",
            "load_reshoot_edges",
            "Cluster", "seed_clusters", "cannot_link", "GENERIC_CATEGORIES",
            "SpatiallyTaggedPhoto", "SurfaceSignature", "Zone",
-           "AdjacencyClaim", "PhotoObservation", "Seat",
+           "AdjacencyClaim", "PhotoMember", "PhotoObservation", "Seat",
            "apply_trajectory", "occupancy", "spatial_same_lot",
            "adjacency_graph", "observations_to_tagged",
            "SANITY_FLOOR", "cosine", "merge_reshoots", "nearest_neighbor",

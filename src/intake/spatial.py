@@ -329,11 +329,19 @@ def merge_reshoots(
 
 
 @dataclass(frozen=True)
+class PhotoMember:
+    """One photo on a seat: identity plus walk sequence, not a parsed BT-id."""
+    photo_id: str
+    sequence: int
+
+
+@dataclass(frozen=True)
 class Seat:
     lot_id: str
     zone: Zone
     walk_index: int
     photo_ids: tuple[str, ...]
+    members: tuple[PhotoMember, ...] = ()
 
 
 def seats_from_groups(
@@ -346,9 +354,14 @@ def seats_from_groups(
     for g in groups:
         walk = min(sequences.get(pid, 10**9) for pid in g.photo_ids)
         zone = zones.get(g.lot_key, Zone.UNKNOWN)
+        members = tuple(
+            PhotoMember(pid, sequences[pid])
+            for pid in g.photo_ids
+            if pid in sequences
+        )
         seats.append(Seat(
             lot_id=g.lot_key, zone=zone, walk_index=walk,
-            photo_ids=g.photo_ids,
+            photo_ids=g.photo_ids, members=members,
         ))
     seats.sort(key=lambda s: s.walk_index)
     return seats

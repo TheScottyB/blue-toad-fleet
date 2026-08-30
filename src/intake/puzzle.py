@@ -28,7 +28,7 @@ def _to_piece(photo: TriagedPhoto) -> PhotoPiece:
     return PhotoPiece(
         photo_id=photo.photo_id,
         cycle_id="aug22",
-        sequence=0,
+        sequence=photo.sequence,
         caption=photo.caption,
         source_object=photo.photo_id,
         source_generation="0",

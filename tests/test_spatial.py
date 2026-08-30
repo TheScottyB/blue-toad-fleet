@@ -179,3 +179,19 @@ class TestListingGraph:
                 expected_photo_ids={"p1", "p2"},
                 expected_manifest_sha256=manifest_sha,
             )
+
+
+def test_seats_from_groups_record_walk_sequence_on_members():
+    from src.intake.manifest import LotGroup
+    from src.intake.spatial import PhotoMember, seats_from_groups
+
+    seats = seats_from_groups(
+        [LotGroup(lot_key="BT-002", photo_ids=("BT-002", "BT-181"))],
+        {"BT-002": 2, "BT-181": 181},
+    )
+    assert seats[0].lot_id == "BT-002"
+    assert seats[0].walk_index == 2
+    assert seats[0].members == (
+        PhotoMember("BT-002", 2),
+        PhotoMember("BT-181", 181),
+    )

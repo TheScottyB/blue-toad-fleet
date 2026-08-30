@@ -8,7 +8,7 @@ from starlette.testclient import TestClient
 from src.appraisal import build_queue
 from src.bidmath import CompEstimate, Confidence, Lot, allocate, price_lot, summarize
 from src.gate import CycleView, render_console
-from src.intake.spatial import Seat, Zone
+from src.intake.spatial import PhotoMember, Seat, Zone
 from src.server import app, get_aug22_state
 from src import server as server_mod
 
@@ -160,6 +160,22 @@ def test_envelope_opens_seated_lots_and_collapses_the_rest(client):
     open_env = env.split("<details", 1)[0]
     assert 'data-allocated="1"' in open_env
     assert 'data-allocated="0"' not in open_env
+
+
+def test_walk_return_uses_member_sequence_not_bt_id_parse():
+    """Gallery photo ids are not BT-00N. Sequence lives on the member."""
+    html = render_console(_desk_view([
+        Seat(
+            lot_id="lot-a", zone=Zone.UNKNOWN, walk_index=2,
+            photo_ids=("p2", "p181"),
+            members=(PhotoMember("p2", 2), PhotoMember("p181", 181)),
+        ),
+    ]))
+    walk = _walk_stage(html)
+    assert 'data-seq-a="2"' in walk
+    assert 'data-seq-b="181"' in walk
+    assert 'src="/walk/photo/2"' in walk
+    assert 'src="/walk/photo/181"' in walk
 
 
 def test_seated_envelope_card_shows_the_lot_photo():

@@ -412,6 +412,7 @@ def get_aug22_state(*, sheet: str = "full"):
             caption=p.caption,
             is_lot=p.is_lot,
             same_lot_as_previous=p.same_lot_as_previous,
+            sequence=sequences.get(p.photo_id, 0),
         )
         for p in appraised_photos
     ]
