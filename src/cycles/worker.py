@@ -134,6 +134,11 @@ def _require_publishable_output(input_dir: Path, output_dir: Path) -> None:
         raise RuntimeError("pipeline decision money does not reconcile to its summary")
     if committed_all_in > float(state.get("budget_cap") or 0):
         raise RuntimeError("pipeline decisions exceed the all-in budget cap")
+    # DELIBERATELY WIDE (operator ruling, 2026-08-29): the release gate blocks
+    # asked-only per the queue contract — an operator has reviewed that fixture
+    # and its deferred/dropped lots ship flagged. This publication gate guards
+    # UNREVIEWED fresh-cycle output, where nobody has seen the sheet at all,
+    # so the full asked+deferred+dropped union stays the fail-closed posture.
     unresolved = set((state.get("queue") or {}).get("unresolved_lot_ids") or [])
     affected = sorted(unresolved & {str(row["lot_id"]) for row in allocated})
     if affected:

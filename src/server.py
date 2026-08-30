@@ -55,7 +55,7 @@ from src.gate.pitch import build_pitch
 from src.gate.voice import write_pitch_voice
 from scripts.run_vertex_pipeline import (
     REFERENCE_COMPS, OPERATOR_APPROVED, apply_operator_cap, apply_operator_fit,
-    trusted_lot_flags,
+    operator_lot_rulings, trusted_lot_flags,
 )
 
 app = FastAPI(title="Blue Toad Fleet", version="2.0.0")
@@ -116,7 +116,14 @@ def apply_lot_rulings(lots, rulings=None, operator_approved=None):
         elif answers:
             answer = next(iter(answers))
         else:
-            answer = approvals.get(lot.lot_id, {}).get("ruling")
+            # Only a lot_grouping ruling (or a legacy kindless one, BT-002)
+            # carries bid mechanics; a scope answer records itself in the
+            # queue and must never be parsed into unit exposure.
+            entry = approvals.get(lot.lot_id, {})
+            answer = (
+                entry.get("ruling")
+                if entry.get("ruling_kind") in (None, "lot_grouping") else None
+            )
         if answer:
             mechanic, units, wanted = mechanic_from_ruling(answer)
             lot = replace(
@@ -558,7 +565,7 @@ def get_aug22_state(*, sheet: str = "full"):
         all_questions,
         current_rules(),
         cap=12,
-        lot_rulings=current_rulings(),
+        lot_rulings=(*operator_lot_rulings(OPERATOR_APPROVED), *current_rulings()),
         kept_lot_ids=frozenset(OPERATOR_APPROVED),
     )
 

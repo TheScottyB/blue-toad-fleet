@@ -3,6 +3,7 @@
     "allocated_lot_ids": [
       "BT-066",
       "BT-235",
+      "BT-385",
       "BT-021",
       "BT-048",
       "BT-050",
@@ -35,17 +36,16 @@
       "BT-450",
       "BT-457",
       "BT-113",
-      "BT-165",
       "BT-203",
       "BT-242",
       "BT-329",
       "BT-332",
       "BT-348",
       "BT-372",
-      "BT-385",
       "BT-432",
       "BT-434",
       "BT-436",
+      "BT-443",
       "BT-213"
     ],
     "appraised": 415,
@@ -55,16 +55,21 @@
     "duplicate_or_non_lot_photos": 47,
     "groups": 415,
     "listing_id": "4160518",
-    "needs_human_pricing": 322,
+    "needs_human_pricing": 323,
     "photos": 462,
     "queue": {
       "asked": {
         "count": 12,
         "lot_ids": [
           "BT-004",
+          "BT-016",
+          "BT-021",
+          "BT-030",
+          "BT-041",
           "BT-042",
           "BT-047",
           "BT-068",
+          "BT-087",
           "BT-088",
           "BT-089",
           "BT-091",
@@ -73,8 +78,6 @@
           "BT-124",
           "BT-140",
           "BT-160",
-          "BT-163",
-          "BT-165",
           "BT-195",
           "BT-211",
           "BT-225",
@@ -82,7 +85,6 @@
           "BT-241",
           "BT-260",
           "BT-261",
-          "BT-284",
           "BT-287",
           "BT-291",
           "BT-296",
@@ -90,9 +92,7 @@
           "BT-319",
           "BT-334",
           "BT-343",
-          "BT-347",
           "BT-351",
-          "BT-385",
           "BT-413",
           "BT-416",
           "BT-420",
@@ -104,8 +104,9 @@
         ]
       },
       "auto_answered": {
-        "count": 3,
+        "count": 6,
         "lot_ids": [
+          "BT-002",
           "BT-006",
           "BT-010",
           "BT-073",
@@ -113,7 +114,9 @@
           "BT-078",
           "BT-080",
           "BT-083",
-          "BT-086"
+          "BT-086",
+          "BT-165",
+          "BT-385"
         ]
       },
       "deferred": {
@@ -509,9 +512,8 @@
         ]
       },
       "dropped": {
-        "count": 238,
+        "count": 235,
         "lot_ids": [
-          "BT-002",
           "BT-003",
           "BT-004",
           "BT-005",
@@ -520,20 +522,16 @@
           "BT-012",
           "BT-013",
           "BT-015",
-          "BT-016",
           "BT-018",
           "BT-019",
-          "BT-021",
           "BT-022",
           "BT-023",
           "BT-024",
-          "BT-030",
           "BT-032",
           "BT-035",
           "BT-038",
           "BT-039",
           "BT-040",
-          "BT-041",
           "BT-045",
           "BT-046",
           "BT-051",
@@ -552,7 +550,6 @@
           "BT-080",
           "BT-081",
           "BT-082",
-          "BT-087",
           "BT-088",
           "BT-091",
           "BT-092",
@@ -590,6 +587,7 @@
           "BT-159",
           "BT-161",
           "BT-162",
+          "BT-163",
           "BT-167",
           "BT-168",
           "BT-169",
@@ -651,6 +649,7 @@
           "BT-281",
           "BT-282",
           "BT-283",
+          "BT-284",
           "BT-285",
           "BT-288",
           "BT-289",
@@ -685,6 +684,7 @@
           "BT-337",
           "BT-342",
           "BT-345",
+          "BT-347",
           "BT-348",
           "BT-349",
           "BT-350",
@@ -1218,19 +1218,19 @@
       "unknown_zone_default": "unknown"
     }
   },
-  "generated_at": "2026-08-29T23:47:20.605017+00:00",
+  "generated_at": "2026-08-30T00:17:58.606762+00:00",
   "git": {
-    "commit": "e30ebc6e0ccf72f3f100d0d3d43d67607b9502ca",
-    "dirty": false
+    "commit": "6df77d1fc4c53cc6351099d471bb176d5ea194cb",
+    "dirty": true
   },
   "money": {
     "budget_cap": 600.0,
     "committed_all_in": 598.0,
     "committed_max": 520.0,
-    "estimated_gross_resale_high": 3308.67,
-    "estimated_gross_resale_low": 1458.81,
-    "gross_resale_multiple_high": 5.53,
-    "gross_resale_multiple_low": 2.44
+    "estimated_gross_resale_high": 3293.67,
+    "estimated_gross_resale_low": 1473.81,
+    "gross_resale_multiple_high": 5.51,
+    "gross_resale_multiple_low": 2.46
   },
   "performance_and_cost": {
     "measured": {
@@ -1242,7 +1242,7 @@
       "output_tokens": 0,
       "request_count": 0,
       "retry_request_count": 0,
-      "stage_duration_ms": 8.986
+      "stage_duration_ms": 8.396
     },
     "planning_estimate": {
       "cost_usd": {
@@ -1266,6 +1266,11 @@
   },
   "publication": {
     "blocking_lot_ids": [
+      "BT-021",
+      "BT-041",
+      "BT-087"
+    ],
+    "flagged_deferred_lot_ids": [
       "BT-001",
       "BT-002",
       "BT-021",
@@ -1282,7 +1287,6 @@
       "BT-113",
       "BT-143",
       "BT-159",
-      "BT-165",
       "BT-179",
       "BT-187",
       "BT-203",
@@ -1299,7 +1303,6 @@
       "BT-362",
       "BT-372",
       "BT-373",
-      "BT-384",
       "BT-385",
       "BT-388",
       "BT-394",
@@ -1309,9 +1312,39 @@
       "BT-434",
       "BT-436",
       "BT-441",
+      "BT-443",
       "BT-447",
       "BT-450",
       "BT-457"
+    ],
+    "flagged_dropped_lot_ids": [
+      "BT-038",
+      "BT-039",
+      "BT-081",
+      "BT-082",
+      "BT-113",
+      "BT-143",
+      "BT-159",
+      "BT-179",
+      "BT-187",
+      "BT-213",
+      "BT-242",
+      "BT-247",
+      "BT-274",
+      "BT-329",
+      "BT-337",
+      "BT-348",
+      "BT-362",
+      "BT-372",
+      "BT-373",
+      "BT-384",
+      "BT-388",
+      "BT-398",
+      "BT-404",
+      "BT-434",
+      "BT-441",
+      "BT-443",
+      "BT-450"
     ],
     "reason": "allocated lots have unresolved questions",
     "release_eligible": false,
@@ -1327,13 +1360,13 @@
     "python": "3.14.4"
   },
   "schema_version": 2,
-  "snapshot_identity_sha256": "8680532cfd9fa2891f86b5ac63e34121ac6f10bc985411f5b1dc7d9b307a62ee",
+  "snapshot_identity_sha256": "83ed21cf418b2be9968d02194a49acfef3db5b24d9c916a76db81fdb3d145025",
   "source_sha256": {
     "absorption_evidence": "a6fcb32f93c3c2e1a38515fcd6746e06c9509fabd2d8c39c9bfa3e77e7fcb5e5",
     "appraisal_results": "fe12ee26559c41e82db48f6ad4f1c6d740b1847cdd8e00961c4863318f1db93c",
     "embedding_cache": "dce825d85046660583a8319f8f6a33a1ec0e8d115d47960e3d9e866071d6c700",
     "gallery_manifest": "f2d757927f526dcac225e177d5cbf1e8206168951264f94153a978bdcd86f21a",
-    "pipeline_state": "3d7f609d1e67fe53c7dca42269ce4f6b2092eb407124c6e25feaec0296c7a7f4",
+    "pipeline_state": "dcaf1e33498ee60349a9ddbbcd8578a01975dffde83a41ac78f31e14833f01b1",
     "reshoot_edges": "7ea297183484ff95ab8d56aa32ef2741a54c8c2d50ad1e4d7b8fa5e98c8025db",
     "triage_results": "c81d532216def8e234dec1ec6996c6bd37671cd5e1fb5b8f726b50e04f0c94b9",
     "video_script": "6d5d4e8c11aeb6869f4ce4002a203a44410965177286da2ee9b9e0ad44d4c952"
@@ -1354,11 +1387,11 @@
     }
   },
   "tests": {
-    "collected": 949,
-    "command": "/Users/scottybe/workspace/blue-toad-fleet/.venv/bin/python -m pytest -q '--junitxml=<temporary>'",
+    "collected": 963,
+    "command": "pytest report: artifacts/release/pytest.xml",
     "errors": 0,
     "failed": 0,
-    "passed": 942,
+    "passed": 956,
     "skipped": 7
   }
 }

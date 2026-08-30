@@ -62,6 +62,29 @@ def _revision_parity(
     return "MISMATCH", None
 
 
+def _facts_lines(facts: dict | None, facts_error: str | None) -> str:
+    """Operator-facing facts rows. Flagged deferred/dropped allocated lots are
+    rendered — non-blocking by the queue's contract, but never invisible: 148
+    triage questions were once dropped over cap with no review trail."""
+    if not facts:
+        return f"- Blocked: {facts_error or 'unknown facts error'}"
+    publication = facts.get("publication") or {}
+    lines = (
+        "- Snapshot identity: `" + str(facts.get("snapshot_identity_sha256")) + "`\n"
+        "- Artifact manifest: `" + str(
+            publication.get("artifact_manifest_sha256") or "unavailable") + "`"
+    )
+    deferred = publication.get("flagged_deferred_lot_ids") or []
+    dropped = publication.get("flagged_dropped_lot_ids") or []
+    if deferred or dropped:
+        lines += (
+            f"\n- Flagged non-blocking allocated lots: {len(deferred)} deferred "
+            f"(desk-cannot-answer), {len(dropped)} dropped (over queue cap) — "
+            "these ship flagged low-confidence per the queue contract"
+        )
+    return lines
+
+
 def _facts_blockers(snapshot: dict) -> list[str]:
     blockers: list[str] = []
     publication = snapshot.get("publication") or {}
@@ -128,12 +151,7 @@ def build_report(
     dependency_lines = "\n".join(
         f"- `{path.relative_to(root)}` — `{_sha(path)}`" for path in dependency_files
     ) or "- No dependency manifests found."
-    facts_lines = (
-        "- Snapshot identity: `" + str(facts.get("snapshot_identity_sha256")) + "`\n"
-        "- Artifact manifest: `" + str((facts.get("publication") or {}).get(
-            "artifact_manifest_sha256") or "unavailable") + "`"
-        if facts else f"- Blocked: {facts_error or 'unknown facts error'}"
-    )
+    facts_lines = _facts_lines(facts, facts_error)
     blocker_lines = "\n".join(f"- {item}" for item in blockers) or "- None."
     parity_lines = (
         f"- Verdict: {parity}\n"

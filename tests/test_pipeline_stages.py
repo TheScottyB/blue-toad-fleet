@@ -92,3 +92,21 @@ def test_batch_boundary_filters_superset_cache_and_rejects_missing_or_duplicate(
             [{"lot_id": "BT-001"}, {"lot_id": "BT-001"}],
             {"BT-001"}, label="test batch",
         )
+
+
+def test_operator_rulings_derive_only_from_kinded_entries():
+    from scripts.run_vertex_pipeline import operator_lot_rulings
+    from src.appraisal import QuestionKind
+
+    approvals = {
+        "BT-165": {"ruling_kind": "lot_grouping", "ruling": "sold by the piece"},
+        "BT-385": {"ruling_kind": "scope", "ruling": "value the case alone"},
+        "BT-002": {"ruling": "take all three trays at x3"},  # legacy: no kind
+        "BT-001": {"fit": 0.9, "cap": 100.0},
+    }
+    rulings = operator_lot_rulings(approvals)
+    assert {(r.kind, r.lot_ids) for r in rulings} == {
+        (QuestionKind.LOT_GROUPING, ("BT-165",)),
+        (QuestionKind.SCOPE, ("BT-385",)),
+    }
+    assert all(r.answer for r in rulings)

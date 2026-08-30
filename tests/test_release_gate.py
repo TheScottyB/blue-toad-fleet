@@ -273,3 +273,25 @@ def test_stamp_block_marks_untracked_only_dirt_despite_config_override(tmp_path)
     result = _run_stamp(repo)
     assert result.returncode == 0, result.stderr
     assert f"STAMP={sha}-dirty" in result.stdout
+
+
+def test_report_shows_flagged_lots_without_blocking_on_them():
+    """Flagged deferred/dropped allocated lots must be operator-visible in the
+    report — 148 triage questions once dropped over cap with no review trail —
+    but per the queue's contract they do not block release."""
+    from scripts.build_release_report import _facts_lines
+
+    facts = {
+        "snapshot_identity_sha256": "abc123",
+        "publication": {
+            "release_eligible": True,
+            "flagged_deferred_lot_ids": ["BT-001", "BT-165"],
+            "flagged_dropped_lot_ids": ["BT-002"],
+        },
+    }
+    text = _facts_lines(facts, None)
+    assert "2 deferred" in text
+    assert "1 dropped" in text
+    assert _facts_blockers({
+        "publication": facts["publication"], "git": {"dirty": False},
+    }) == []

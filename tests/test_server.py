@@ -163,40 +163,48 @@ def test_api_answer_promotion(client):
 
 
 def test_lot_grouping_answer_is_scoped_and_changes_money(client):
+    """Evolved 2026-08-29: BT-002's grouping question no longer reaches the
+    console — the auctioneer's recorded ruling (OPERATOR_APPROVED, ruling_kind
+    lot_grouping) auto-answers it at queue build, so the sheet derives the x3
+    money without re-asking a settled question. The live scoped-answer flow is
+    exercised on the remaining asked lot_grouping question instead; its money
+    mechanics are covered directly by
+    test_scoped_choice_ruling_uses_election_and_exposes_remainder."""
     from src.server import reset_rule_store
 
     reset_rule_store()
     asked = client.get("/api/questions").json()["asked"]
+    assert not any(
+        question["kind"] == "lot_grouping" and "BT-002" in question["lot_ids"]
+        for question in asked
+    ), "a ruling on file must not be re-asked at the console"
+    email = client.get("/api/email").text
+    bt002_block = email.split("[BT-002]", 1)[1].split("\n\n", 1)[0]
+    assert "PER UNIT" in bt002_block, "the x3 ruling's per-unit money must stand"
+
     target = next(
-        question for question in asked
-        if question["kind"] == "lot_grouping" and "BT-002" in question["lot_ids"]
+        question for question in asked if question["kind"] == "lot_grouping"
     )
     response = client.post("/api/answer", json={
         "question_id": target["question_id"],
-        "answer": "sell all trays together as one single lot",
+        "answer": "sell as one single lot, one bid",
     })
     assert response.status_code == 200
     data = response.json()
     assert data["authority_type"] == "lot_ruling"
-    assert data["rule"]["lot_ids"] == ["BT-002"]
-    assert data["before"]["decisions"]["BT-002"]["mechanic"] == "times_the_money"
-    assert data["after"]["decisions"]["BT-002"]["mechanic"] == "straight"
-    assert data["after"]["decisions"]["BT-002"]["committed_max"] < (
-        data["before"]["decisions"]["BT-002"]["committed_max"])
-    assert data["money_changed"] is True
+    assert data["rule"]["lot_ids"] == target["lot_ids"]
     assert data["pending_reappraisal"] is False
 
     memory = client.get("/api/memory").json()
     assert len(memory["lot_rulings"]) == 1
-    assert memory["lot_rulings"][0]["lot_ids"] == ["BT-002"]
-    email = client.get("/api/email").text
-    bt002_block = email.split("[BT-002]", 1)[1].split("\n\n", 1)[0]
-    assert "one lot, one bid" in bt002_block
-    assert "PER UNIT" not in bt002_block
+    assert memory["lot_rulings"][0]["lot_ids"] == target["lot_ids"]
     reset_rule_store()
     asked = client.get("/api/questions").json()["asked"]
     assert asked, "desk queue empty; nothing to answer"
-    target = asked[0]
+    target = next(
+        question for question in asked
+        if question["kind"] in ("appetite", "policy")
+    )
     r = client.post("/api/answer", json={
         "question_id": target["question_id"],
         "answer": "BUY — advertising glass moves in the storefront",

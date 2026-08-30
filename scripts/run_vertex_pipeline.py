@@ -33,7 +33,7 @@ from src.intake.spatial import (
 )
 from src.intake.puzzle import as_lot_groups, puzzle_loop, walk_proposal_edges
 from src.appraisal import (
-    Appraisal, Confidence as AppConfidence, Question, QuestionKind,
+    Appraisal, Confidence as AppConfidence, LotRuling, Question, QuestionKind,
     StandingRule, build_queue
 )
 from src.appraiser import AppraisalEngine
@@ -111,7 +111,12 @@ OPERATOR_APPROVED = {
                # email 2026-08-21: "Yes, that is a x3 bid." Recorded as words so
                # the sheet derives the money from the ruling rather than someone
                # retyping $75 into an email under the cutoff.
-               "ruling": "take all three trays at x3"},
+               # ruling_kind added 2026-08-29 so the queue auto-answers the
+               # re-surfaced grouping question with the auctioneer's own
+               # recorded ruling; the mechanic parse path is unchanged
+               # (kindless and lot_grouping consume identically).
+               "ruling": "take all three trays at x3",
+               "ruling_kind": "lot_grouping"},
     # REVISED DOWN 2026-08-21. The absentee sheet that actually went to Blue
     # Toad reads "START $5.00   MAX $15.00   (revised down from $25.00)". This
     # table still said $25.00, and apply_operator_cap sets max_bid to the cap
@@ -122,6 +127,30 @@ OPERATOR_APPROVED = {
     "BT-087": {"fit": 0.90, "cap": 15.00,
                "why": "collab: bulk estate costume jewelry; revised down to $15 "
                       "on the sent 2026-08-21 sheet"},
+
+    # Operator-delegated E1 review, relayed by the captain lane 2026-08-29 and
+    # confirmed by the operator in-session; both verdicts photo-grounded
+    # (images read directly). `ruling_kind` names the question kind the ruling
+    # answers, so the queue auto-answers it at reseal; only a lot_grouping
+    # ruling is parsed into bid mechanics — scope answers never touch money.
+    "BT-165": {"ruling_kind": "lot_grouping",
+               "ruling": "Buyer's choice shelf lot — sold by the piece; "
+                         "house default: take 1 unit max.",
+               "why": "delegated review: dense shelf of individual bobbleheads; "
+                      "the sent-email custom caps buyer's-choice shelf lots at "
+                      "1 unit. No counted units exist in any artifact, and "
+                      "per-unit over an unknown count is unpriceable by "
+                      "doctrine — the lot drops from the sheet rather than "
+                      "bid on an invented count (operator-accepted outcome)."},
+    "BT-385": {"ruling_kind": "scope",
+               "ruling": "Scope: the case as shown; contents unverified — "
+                         "value the case alone, any cars inside are unpriced "
+                         "upside.",
+               "why": "delegated review: the Gear Box case is closed and "
+                      "latched in the photo; container doctrine already prices "
+                      "the case alone (is_container, no confirmed contents). "
+                      "Money-neutral — records the answer so the question "
+                      "stops blocking."},
     # DUPLICATE of BT-002, confirmed three independent ways on 2026-08-21:
     #  - visual: seq 181 is a close-up of trays 12 and 14 from seq 2. The gold
     #    flat-link mesh necklace, the cream oval-bead strand, the coin-charm
@@ -322,6 +351,29 @@ def select_decomposition_candidates(
             candidate["container_type"] = p["container_type"]
         out.append(candidate)
     return out
+
+
+def operator_lot_rulings(
+    operator_approved: Mapping | None = None,
+) -> tuple[LotRuling, ...]:
+    """LotRulings derived from approvals entries that name their question kind.
+
+    An entry carrying `ruling` + `ruling_kind` is an operator answer to a
+    specific emitted question; the queue auto-answers the match at reseal so
+    an answered question never blocks release. Legacy entries with a bare
+    `ruling` (BT-002) are left alone — their consumption path predates the
+    kind field and changing it would re-litigate settled money."""
+    approvals = OPERATOR_APPROVED if operator_approved is None else operator_approved
+    return tuple(
+        LotRuling(
+            kind=QuestionKind(entry["ruling_kind"]),
+            answer=str(entry["ruling"]),
+            learned_cycle="operator-approved",
+            lot_ids=(lot_id,),
+        )
+        for lot_id, entry in (approvals or {}).items()
+        if entry.get("ruling") and entry.get("ruling_kind")
+    )
 
 
 def operator_lot_inputs(
@@ -889,6 +941,7 @@ def run_decision_stage(
         [*configured_questions, *appraisal.emitted_questions],
         standing_rules,
         cap=12,
+        lot_rulings=operator_lot_rulings(approvals),
         kept_lot_ids=frozenset(approvals or {}),
     )
     print(f"[+] Question Queue: {len(queue_result.asked)} asked, "
@@ -923,7 +976,15 @@ def run_decision_stage(
             refs[lot_id] = comp_info
             if upside_note:
                 identification = f"{identification}. {upside_note}"
-            ruling = (approvals.get(lot_id) or {}).get("ruling")
+            approved_entry = approvals.get(lot_id) or {}
+            # Only a lot_grouping ruling (or a legacy kindless one) carries
+            # bid mechanics — a scope ruling on a grounded-priced lot must
+            # not be parsed into unit exposure (BT-385 dropped this way).
+            ruling = (
+                approved_entry.get("ruling")
+                if approved_entry.get("ruling_kind") in (None, "lot_grouping")
+                else None
+            )
             if ruling:
                 mechanic, units, wanted = mechanic_from_ruling(ruling)
             elif per_unit:
@@ -957,10 +1018,18 @@ def run_decision_stage(
             )
             category = raw_app.get("category") or "general estate"
             per_unit = is_choice_lot(identification, caption)
-            mechanic, units, wanted = (
-                (BidMechanic.CHOICE, 1, 1)
-                if per_unit else (BidMechanic.STRAIGHT, 1, None)
-            )
+            entry = (approvals or {}).get(lot_id) or {}
+            if entry.get("ruling") and entry.get("ruling_kind") in (None, "lot_grouping"):
+                # Only a lot_grouping ruling carries bid mechanics; a scope
+                # answer records itself in the queue and never touches money.
+                # An unparseable ruling (e.g. per-unit with no counted units)
+                # comes back UNKNOWN and the lot honestly drops as unpriceable.
+                mechanic, units, wanted = mechanic_from_ruling(entry["ruling"])
+            else:
+                mechanic, units, wanted = (
+                    (BidMechanic.CHOICE, 1, 1)
+                    if per_unit else (BidMechanic.STRAIGHT, 1, None)
+                )
             lot = Lot(
                 lot_id=lot_id,
                 caption=identification,

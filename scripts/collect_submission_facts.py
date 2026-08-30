@@ -153,6 +153,33 @@ def _group_counts(
     return len(groups), len(photos) - len(groups), len(edges)
 
 
+def release_blocking_lots(
+    queue: dict, allocated_ids,
+) -> tuple[list[str], list[str], list[str]]:
+    """(blocking, flagged_deferred, flagged_dropped) over allocated lots.
+
+    RULING (operator, 2026-08-29): release eligibility blocks only on ASKED
+    questions — the ones an operator can actually answer at the console. The
+    queue's own contract (src/appraisal/__init__.py:214-216) says deferred
+    ("nobody at a desk could have answered it before the cutoff") and dropped
+    (over the queue cap) ship flagged low-confidence and "Neither blocks the
+    sheet". Blocking on the wide asked+deferred+dropped union left 44 of 46
+    allocated lots unreleasable by any operator action. The flagged lots stay
+    visible in the report, and the dropped-vs-deferred distinction survives —
+    dropped means the sheet never even heard the question.
+    """
+    allocated = set(allocated_ids)
+
+    def lots(section: str) -> set[str]:
+        return set((queue.get(section) or {}).get("lot_ids") or [])
+
+    return (
+        sorted(lots("asked") & allocated),
+        sorted(lots("deferred") & allocated),
+        sorted(lots("dropped") & allocated),
+    )
+
+
 def _decision_facts(pipeline_state: dict) -> tuple[dict, list[str]]:
     """Derive money/resale from the exact allocated decision records."""
     decisions = pipeline_state.get("decisions")
@@ -327,15 +354,21 @@ def collect(manifest_value: str, output_value: str | None, junit_value: str | No
     performance = pipeline_state.get("performance_and_cost") or {}
     spatial = pipeline_state.get("spatial") or {"mode": "walk-only"}
     queue = pipeline_state.get("queue") or {}
-    unresolved = set(queue.get("unresolved_lot_ids") or [])
-    release_blocking_lots = sorted(unresolved & set(allocated_ids))
+    blocking_lots, flagged_deferred, flagged_dropped = release_blocking_lots(
+        queue, allocated_ids,
+    )
     publication = _publication_facts(video_manifest, source_paths)
-    if release_blocking_lots:
+    publication = {
+        **publication,
+        "flagged_deferred_lot_ids": flagged_deferred,
+        "flagged_dropped_lot_ids": flagged_dropped,
+    }
+    if blocking_lots:
         publication = {
             **publication,
             "release_eligible": False,
             "reason": "allocated lots have unresolved questions",
-            "blocking_lot_ids": release_blocking_lots,
+            "blocking_lot_ids": blocking_lots,
         }
     snapshot = {
         "schema_version": 2,
