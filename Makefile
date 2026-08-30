@@ -39,7 +39,7 @@ start-cycle:      ## Upload SOURCE_DIR and write READY to start the Cloud Run Jo
 	$(PYTHON) -m scripts.stage_cycle --source-dir "$(SOURCE_DIR)" --cycle-id "$(CYCLE_ID)" --auction-title "$(AUCTION_TITLE)" --auction-date "$(AUCTION_DATE)" --timezone "$(TIMEZONE_NAME)" --venue "$(VENUE)" --deadline "$(DEADLINE)" --start
 
 video-prepare:    ## Verify facts and render declared video pages/cards (runs tests + gcloud proof)
-	$(PYTHON) -m scripts.build_media prepare
+	. ./infra/gcloud_ipv4.sh && $(PYTHON) -m scripts.build_media prepare
 
 video-record:     ## Record all four declared browser/terminal beats
 	$(PYTHON) -m scripts.build_media record
