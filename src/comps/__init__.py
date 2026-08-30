@@ -43,7 +43,8 @@ __all__ = [
     "ChallengePage", "SuspectEmpty", "NonAnnualWindow", "SoldRow", "SoldPage",
     "ActiveRow", "ActivePage", "parse_sold_page", "parse_active_page",
     "parse_filters", "absorption", "months_of_supply", "window_days",
-    "require_annual_window",
+    "require_annual_window", "CONDITION_IDS", "UnknownConditionId",
+    "require_known_condition",
 ]
 
 
@@ -58,6 +59,15 @@ class SuspectEmpty(RuntimeError):
     empty with no error and no message. Treating it as a real zero computes
     absorption 0 for a market that may be perfectly healthy.
     """
+
+
+class UnknownConditionId(ValueError):
+    """A conditionId the research URL would silently ignore.
+
+    Measured 2026-08-29: conditionId=0 and =999999 both fell back to the
+    page's default scope while looking obedient — default-scope data behind
+    a URL that appears to pin the condition, the one failure mode worse
+    than an error. Only ids in CONDITION_IDS are ever sent."""
 
 
 class NonAnnualWindow(RuntimeError):
@@ -336,3 +346,34 @@ def months_of_supply(sold_units: int, active_now: int) -> float | None:
     if sold_units <= 0 or active_now <= 0:
         return None
     return round(12.0 * active_now / sold_units, 1)
+
+CONDITION_IDS = {
+    1000: "New",
+    1500: "New other",
+    1750: "New with defects",
+    2000: "Certified refurbished",
+    2500: "Seller refurbished",
+    3000: "Used",
+    4000: "Very Good",
+    5000: "Good",
+    6000: "Acceptable",
+    7000: "For parts or not working",
+}
+
+
+def require_known_condition(condition_id: int | None) -> str | None:
+    """The label for a known conditionId; None (no filter) passes through.
+
+    An explicit conditionId in the research URL genuinely scopes the data
+    (measured 2026-08-29: 291 unfiltered / 256 Used / 28 New on the
+    sharpener query), but an unknown id is silently ignored server-side —
+    so it is refused here, before any I/O."""
+    if condition_id is None:
+        return None
+    label = CONDITION_IDS.get(condition_id)
+    if label is None:
+        raise UnknownConditionId(
+            f"conditionId {condition_id} is not a known eBay condition id "
+            "— the server silently ignores unknown ids and serves "
+            "default-scope data (measured 2026-08-29), so it is refused")
+    return label

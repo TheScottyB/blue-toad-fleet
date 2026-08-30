@@ -40,7 +40,7 @@ import websockets
 from scripts.cdp_capture import capture, close_tab, open_tab
 from src.comps import (ActivePage, SoldPage, SuspectEmpty, absorption,
                        months_of_supply, parse_active_page, parse_sold_page,
-                       require_annual_window)
+                       require_annual_window, require_known_condition)
 
 _BASE = ("https://www.ebay.com/sh/research?marketplace=EBAY-US"
          "&categoryId=0&offset={offset}&limit={limit}&tabName={tab}"
@@ -56,16 +56,24 @@ def _year_window_ms(now: _dt.datetime | None = None) -> tuple[int, int]:
     return int(start.timestamp() * 1000), int(now.timestamp() * 1000)
 
 
-def _sold_url(q: str, offset: int) -> str:
+def _sold_url(q: str, offset: int, condition_id: int | None = None) -> str:
     s, e = _year_window_ms()
-    return (_BASE.format(offset=offset, limit=_SOLD_PAGE_LIMIT, tab="SOLD",
-                         q=q.replace(" ", "+"))
-            + f"&dayRange=365&startDate={s}&endDate={e}")
-
-
-def _active_url(q: str) -> str:
-    return _BASE.format(offset=0, limit=_ACTIVE_LIMIT, tab="ACTIVE",
+    url = (_BASE.format(offset=offset, limit=_SOLD_PAGE_LIMIT, tab="SOLD",
                         q=q.replace(" ", "+"))
+           + f"&dayRange=365&startDate={s}&endDate={e}")
+    if condition_id is not None:
+        require_known_condition(condition_id)
+        url += f"&conditionId={condition_id}"
+    return url
+
+
+def _active_url(q: str, condition_id: int | None = None) -> str:
+    url = _BASE.format(offset=0, limit=_ACTIVE_LIMIT, tab="ACTIVE",
+                       q=q.replace(" ", "+"))
+    if condition_id is not None:
+        require_known_condition(condition_id)
+        url += f"&conditionId={condition_id}"
+    return url
 
 
 async def _read_text(url: str, wait: float = 8.0) -> str:
@@ -87,7 +95,7 @@ async def _read_text(url: str, wait: float = 8.0) -> str:
         close_tab(tab["id"])
 
 
-def read_sold(query: str) -> SoldPage:
+def read_sold(query: str, condition_id: int | None = None) -> SoldPage:
     """Walk every SOLD page for the 365-day window and merge the rows.
 
     Pages until a short page (the site has no next-marker and no row total),
@@ -104,7 +112,8 @@ def read_sold(query: str) -> SoldPage:
         caller must surface it, never pose the floor as the market.
     """
     async def walk() -> SoldPage:
-        first = parse_sold_page(await _read_text(_sold_url(query, 0)))
+        first = parse_sold_page(
+            await _read_text(_sold_url(query, 0, condition_id)))
         if first.genuine_zero:
             return first
         merged = first
@@ -115,7 +124,7 @@ def read_sold(query: str) -> SoldPage:
                 break
             try:
                 page = parse_sold_page(
-                    await _read_text(_sold_url(query, offset)))
+                    await _read_text(_sold_url(query, offset, condition_id)))
             except SuspectEmpty:
                 break
             merged.rows.extend(page.rows)
@@ -127,12 +136,14 @@ def read_sold(query: str) -> SoldPage:
     return asyncio.run(walk())
 
 
-async def _read_active(query: str) -> ActivePage:
-    return parse_active_page(await _read_text(_active_url(query)))
+async def _read_active(query: str,
+                       condition_id: int | None = None) -> ActivePage:
+    return parse_active_page(
+        await _read_text(_active_url(query, condition_id)))
 
 
-def read_active(query: str) -> ActivePage:
-    return asyncio.run(_read_active(query))
+def read_active(query: str, condition_id: int | None = None) -> ActivePage:
+    return asyncio.run(_read_active(query, condition_id))
 
 
 # ---------------------------------------------------------------------------
@@ -204,7 +215,8 @@ def select_comps(identification: str, titles: list[str]):
 
 
 def comp_report(identification: str, query: str,
-                evidence_dir: Path | None = None) -> dict:
+                evidence_dir: Path | None = None,
+                condition_id: int | None = None) -> dict:
     """The whole read for one lot: absorption, priced band, verdicts, proof.
 
     Absorption is computed RAW (units over the page's own active total) and,
@@ -220,9 +232,10 @@ def comp_report(identification: str, query: str,
     ``sold_units_365d`` understates absorption ~12x.
     """
     stamp = _dt.datetime.now().isoformat(timespec="seconds")
-    sold = read_sold(query)
+    condition_label = require_known_condition(condition_id)
+    sold = read_sold(query, condition_id=condition_id)
     require_annual_window(sold)
-    active = asyncio.run(_read_active(query))
+    active = asyncio.run(_read_active(query, condition_id))
 
     out: dict = {
         "identification": identification,
@@ -236,6 +249,12 @@ def comp_report(identification: str, query: str,
         # non-empty = the page CLAIMED scope — verify before trusting the
         # figures as scoped. None = no bar printed, [] = bar printed clean.
         "filters_as_printed": {"sold": sold.filters, "active": active.filters},
+        # The scope this read REQUESTED. An explicit conditionId genuinely
+        # scopes the data (measured 2026-08-29); none sent = unfiltered.
+        "condition_scope": {
+            "condition_id": condition_id,
+            "label": (condition_label if condition_id is not None
+                      else "no condition filter sent — unfiltered read")},
         "sold_units_365d": sold.sold_units,
         "sold_listings_365d": len(sold.rows),
         # True = the page cap stopped the walk with the last page still
@@ -290,8 +309,10 @@ def comp_report(identification: str, query: str,
             evidence_dir.mkdir(parents=True, exist_ok=True)
             sold_png = evidence_dir / "sold_365d.png"
             active_png = evidence_dir / "active.png"
-            asyncio.run(capture(_sold_url(query, 0), sold_png, False, 9.0))
-            asyncio.run(capture(_active_url(query), active_png, False, 9.0))
+            asyncio.run(capture(_sold_url(query, 0, condition_id),
+                                sold_png, False, 9.0))
+            asyncio.run(capture(_active_url(query, condition_id),
+                                active_png, False, 9.0))
             out["evidence"] = {"sold": str(sold_png), "active": str(active_png)}
         except Exception as e:
             out["evidence"] = f"CAPTURE FAILED: {e} — no screenshot proof exists"

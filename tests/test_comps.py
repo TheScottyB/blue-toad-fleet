@@ -24,6 +24,7 @@ from src.comps import (
     ChallengePage, NonAnnualWindow, SoldPage, SoldRow, SuspectEmpty,
     absorption, months_of_supply, parse_active_page, parse_filters,
     parse_sold_page, require_annual_window, window_days,
+    UnknownConditionId, require_known_condition,
 )
 
 # --- fixtures shaped exactly like document.body.innerText -------------------
@@ -402,3 +403,25 @@ class TestAbsorption:
 
     def test_zero_sold_zero_active_is_a_dead_market(self):
         assert absorption(0, 0) is None
+
+
+class TestConditionScope:
+    """Known conditionIds carry their labels; unknown ids are refused up
+    front, because the server silently ignores them and serves
+    default-scope data behind an obedient-looking URL (measured
+    2026-08-29: conditionId=0 and =999999 both fell back to the sticky
+    scope)."""
+
+    def test_known_ids_pass_and_carry_labels(self):
+        assert require_known_condition(3000) == "Used"
+        assert require_known_condition(1000) == "New"
+        assert require_known_condition(7000) == "For parts or not working"
+
+    def test_unknown_ids_are_refused_not_silently_ignored(self):
+        with pytest.raises(UnknownConditionId):
+            require_known_condition(999999)
+        with pytest.raises(UnknownConditionId):
+            require_known_condition(0)
+
+    def test_none_means_no_filter(self):
+        assert require_known_condition(None) is None

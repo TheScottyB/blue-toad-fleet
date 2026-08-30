@@ -27,7 +27,9 @@ import re
 import pytest
 
 from src.comps import (ActivePage, NonAnnualWindow, SoldPage, SoldRow,
-                       SuspectEmpty)
+                       SuspectEmpty,
+    UnknownConditionId,
+)
 from src.comps import live
 
 UNFILTERED = "UNAVAILABLE — figures above are UNFILTERED"
@@ -52,10 +54,12 @@ def two_row_market(monkeypatch):
         filters=SOLD_FILTERS,
     )
     active = ActivePage(total_active=46, filters=ACTIVE_FILTERS)
-    monkeypatch.setattr(live, "read_sold", lambda query: sold)
-    monkeypatch.setattr(live, "read_active", lambda query: active)
+    monkeypatch.setattr(live, "read_sold",
+                        lambda query, condition_id=None: sold)
+    monkeypatch.setattr(live, "read_active",
+                        lambda query, condition_id=None: active)
 
-    async def fake_active(query):
+    async def fake_active(query, condition_id=None):
         return active
 
     monkeypatch.setattr(live, "_read_active", fake_active)
@@ -147,10 +151,10 @@ ONE_ROW = [SoldRow(title="Synthetic sold listing title",
 
 def _stub_market(monkeypatch, sold: SoldPage) -> None:
     active = ActivePage(total_active=46, filters=[])
-    monkeypatch.setattr(live, "read_sold", lambda query: sold)
-    monkeypatch.setattr(live, "read_active", lambda query: active)
+    monkeypatch.setattr(live, "read_sold", lambda query, condition_id=None: sold)
+    monkeypatch.setattr(live, "read_active", lambda query, condition_id=None: active)
 
-    async def fake_active(query):
+    async def fake_active(query, condition_id=None):
         return active
 
     monkeypatch.setattr(live, "_read_active", fake_active)
@@ -314,3 +318,62 @@ class TestUnfilteredLabelling:
         assert out["landed_avg_unfiltered"] == pytest.approx(32.94)
         for bare in ("avg_sold_price", "avg_shipping", "landed_avg"):
             assert bare not in out
+
+
+class TestConditionScope:
+    """An explicit conditionId genuinely scopes the data (measured
+    2026-08-29: 291 unfiltered / 256 Used / 28 New on the sharpener), but an
+    unknown id is silently ignored server-side — default-scope data behind
+    an obedient-looking URL. So the tools send only known ids, thread them
+    into every URL, and state the requested scope in the response."""
+
+    def test_sold_url_carries_the_condition(self):
+        assert "conditionId=3000" in live._sold_url("x", 0, condition_id=3000)
+        assert "conditionId" not in live._sold_url("x", 0)
+
+    def test_active_url_carries_the_condition(self):
+        assert "conditionId=3000" in live._active_url("x", condition_id=3000)
+        assert "conditionId" not in live._active_url("x")
+
+    def test_comp_report_states_the_requested_scope(
+            self, two_row_market, monkeypatch):
+        monkeypatch.setattr(live, "select_comps", lambda ident, titles: None)
+        out = live.comp_report("id", "q", condition_id=3000)
+        assert out["condition_scope"] == {"condition_id": 3000, "label": "Used"}
+
+    def test_no_condition_is_stated_not_omitted(
+            self, two_row_market, monkeypatch):
+        monkeypatch.setattr(live, "select_comps", lambda ident, titles: None)
+        out = live.comp_report("id", "q")
+        assert out["condition_scope"] == {
+            "condition_id": None,
+            "label": "no condition filter sent — unfiltered read"}
+
+    def test_the_condition_reaches_both_data_reads(self, monkeypatch):
+        seen = {}
+        sold = SoldPage(
+            window="Aug 21, 2025 – Aug 21, 2026",
+            rows=[SoldRow(title="Vintage Boston Champion Pencil Sharpener",
+                          price=33.30, qty=6, date="Jul 15, 2026")])
+
+        def fake_sold(query, condition_id=None):
+            seen["sold"] = condition_id
+            return sold
+
+        async def fake_active(query, condition_id=None):
+            seen["active"] = condition_id
+            return ActivePage(total_active=46)
+
+        monkeypatch.setattr(live, "read_sold", fake_sold)
+        monkeypatch.setattr(live, "_read_active", fake_active)
+        monkeypatch.setattr(live, "select_comps", lambda ident, titles: None)
+        live.comp_report("id", "q", condition_id=1000)
+        assert seen == {"sold": 1000, "active": 1000}
+
+    def test_ebay_absorption_states_scope_and_refuses_unknown_ids(
+            self, two_row_market):
+        from scripts import comps_mcp_server
+        out = comps_mcp_server.ebay_absorption("q", condition_id=3000)
+        assert out["condition_scope"] == {"condition_id": 3000, "label": "Used"}
+        with pytest.raises(UnknownConditionId):
+            comps_mcp_server.ebay_absorption("q", condition_id=42)

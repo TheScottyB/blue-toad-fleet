@@ -45,7 +45,7 @@ if str(ROOT) not in sys.path:
 from mcp.server import MCPServer  # noqa: E402
 
 from src.comps import (absorption, months_of_supply,  # noqa: E402
-                       require_annual_window)
+                       require_annual_window, require_known_condition)
 from src.comps import live  # noqa: E402
 
 server = MCPServer(
@@ -79,15 +79,22 @@ server = MCPServer(
         "lists the filter markers the page showed. Measured 2026-08-29: a "
         "sticky chip can be display-only (data unfiltered), so non-empty = "
         "the page CLAIMED that scope; [] = clean bar; null = no bar printed "
-        "(unknown)."))
-def ebay_absorption(query: str) -> dict:
-    sold = live.read_sold(query)
+        "(unknown). Optional condition_id (known eBay ids only, e.g. 3000 "
+        "Used, 1000 New) genuinely scopes the read; unknown ids are refused "
+        "because the server silently ignores them."))
+def ebay_absorption(query: str, condition_id: int | None = None) -> dict:
+    label = require_known_condition(condition_id)
+    sold = live.read_sold(query, condition_id=condition_id)
     require_annual_window(sold)
-    active = live.read_active(query)
+    active = live.read_active(query, condition_id=condition_id)
     rate = absorption(sold.sold_units, active.total_active or 0)
     return {
         "query": query,
         "channel": "eBay only — not store or other channels",
+        "condition_scope": {
+            "condition_id": condition_id,
+            "label": (label if condition_id is not None
+                      else "no condition filter sent — unfiltered read")},
         "window_as_printed": sold.window,
         "filters_as_printed": {"sold": sold.filters, "active": active.filters},
         "sold_units_365d": sold.sold_units,
@@ -116,9 +123,12 @@ def ebay_absorption(query: str) -> dict:
         "selection is unavailable the result says UNFILTERED explicitly. "
         "`filters_as_printed` lists any filter markers the pages showed — "
         "non-empty means the pages CLAIMED that scope (a sticky chip can be "
-        "display-only; measured 2026-08-29), so verify before trusting."))
+        "display-only; measured 2026-08-29), so verify before trusting. "
+        "Optional condition_id (known eBay ids only) genuinely scopes the "
+        "read; unknown ids are refused, not silently ignored."))
 def ebay_comps(identification: str, query: str | None = None,
-               with_evidence: bool = False) -> dict:
+               with_evidence: bool = False,
+               condition_id: int | None = None) -> dict:
     q = query or identification
     evidence_dir = None
     if with_evidence:
@@ -126,7 +136,8 @@ def ebay_comps(identification: str, query: str | None = None,
         day = datetime.date.today().isoformat()
         safe = "".join(c if c.isalnum() else "-" for c in q)[:48]
         evidence_dir = ROOT / "data" / "comps" / day / safe
-    return live.comp_report(identification, q, evidence_dir)
+    return live.comp_report(identification, q, evidence_dir,
+                            condition_id=condition_id)
 
 
 if __name__ == "__main__":
