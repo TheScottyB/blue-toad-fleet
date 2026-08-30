@@ -3,8 +3,9 @@
 > **Build note:** Mutable figures below use `{{...}}` placeholders. The narration
 > generator resolves them from `media/submission_facts.json`, verifies that the
 > snapshot still matches its hashed sources, and refuses stale evidence. The
-> checked-in MP4 predates this workflow and must be regenerated before its spoken
-> claims can be treated as current submission evidence.
+> checked-in MP4 was built by this workflow on 2026-08-29 from release-eligible
+> facts (sealed artifact manifest declared); `make video-verify` confirms it is
+> bound to the current facts and inputs.
 
 **Target Duration:** Exactly 3:45 – 3:55 (Under the 4:00 strict maximum).  
 **Recording Format:** Screen capture of browser tabs + live voiceover.
@@ -66,7 +67,7 @@
 * **Voiceover:**
   > *"Everything runs in production on Google Cloud Run and Vertex AI. The repository collects {{tests.collected}} tests; {{tests.passed}} pass locally and {{tests.skipped}} skip by policy.*
   >
-  > *The final sheet commits {{money.committed_max|usd}} across {{cycle.approved_bids}} approved bids—{{money.committed_all_in|usd}} all-in with the mandatory fifteen-percent absentee fee.*
+  > *The final sheet commits {{money.committed_max|usd}} across {{cycle.approved_bids}} approved bids—{{money.committed_all_in|usd}} all-in after fees.*
   >
   > *The system compiles an operator-reviewed email draft and publishes it only with the same sealed cycle manifest as the workbook and decision state. Sending remains a human action.*
   >

@@ -61,6 +61,7 @@
     }
   ],
   "sources": {
+    "artifact_manifest": "data/aug22_gallery_4160518/artifact_manifest.json",
     "gallery_manifest": "data/aug22_gallery_4160518/manifest.json",
     "triage_results": "data/aug22_gallery_4160518/triage_results.json",
     "appraisal_results": "data/aug22_gallery_4160518/appraisal_results.json",

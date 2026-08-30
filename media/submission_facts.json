@@ -1218,10 +1218,10 @@
       "unknown_zone_default": "unknown"
     }
   },
-  "generated_at": "2026-08-30T00:32:20.723815+00:00",
+  "generated_at": "2026-08-30T01:24:01.009633+00:00",
   "git": {
-    "commit": "57f26921b6d41961f8d7b6f3209f51ebd5f12db9",
-    "dirty": false
+    "commit": "333ea63ccace2dd76fff559890897cb222c78ca3",
+    "dirty": true
   },
   "money": {
     "budget_cap": 600.0,
@@ -1265,6 +1265,8 @@
     }
   },
   "publication": {
+    "artifact_manifest_sha256": "32139b6e7acd5ecf9b5b31b80047b49d875102b3a4e80b75055b8296cc6be960",
+    "cycle_id": "2026-08-22",
     "flagged_deferred_lot_ids": [
       "BT-001",
       "BT-002",
@@ -1341,9 +1343,8 @@
       "BT-443",
       "BT-450"
     ],
-    "reason": "no sealed artifact manifest is declared",
-    "release_eligible": false,
-    "status": "unpublished_local_snapshot"
+    "release_eligible": true,
+    "status": "published"
   },
   "runtime": {
     "backend": "local-snapshot",
@@ -1355,16 +1356,17 @@
     "python": "3.14.4"
   },
   "schema_version": 2,
-  "snapshot_identity_sha256": "65f3ff9fa040066a91c9243a1b44637394165c9a538c3279050edbbe4592cdfc",
+  "snapshot_identity_sha256": "920d7eea8d8678f77efaa461a0e44df535bdca6db89a29a283f4fb60404351c1",
   "source_sha256": {
     "absorption_evidence": "a6fcb32f93c3c2e1a38515fcd6746e06c9509fabd2d8c39c9bfa3e77e7fcb5e5",
     "appraisal_results": "fe12ee26559c41e82db48f6ad4f1c6d740b1847cdd8e00961c4863318f1db93c",
+    "artifact_manifest": "32139b6e7acd5ecf9b5b31b80047b49d875102b3a4e80b75055b8296cc6be960",
     "embedding_cache": "dce825d85046660583a8319f8f6a33a1ec0e8d115d47960e3d9e866071d6c700",
     "gallery_manifest": "f2d757927f526dcac225e177d5cbf1e8206168951264f94153a978bdcd86f21a",
     "pipeline_state": "be1a444fb7de57fc251304498bbf5f5fd330372e9f6fd8c0e895b5ccf1c0ccbc",
     "reshoot_edges": "7ea297183484ff95ab8d56aa32ef2741a54c8c2d50ad1e4d7b8fa5e98c8025db",
     "triage_results": "c81d532216def8e234dec1ec6996c6bd37671cd5e1fb5b8f726b50e04f0c94b9",
-    "video_script": "8ee5d0b9bd51df193b1f6ee5497fd97d83da1255766438b8229e6f70dd2b2e01"
+    "video_script": "0a42da6e62503f1c17812c46d5e0a0887b7739a532084bb19fa1cc55d6ed3f87"
   },
   "stories": {
     "bt_002_answer_to_money": {
@@ -1382,11 +1384,11 @@
     }
   },
   "tests": {
-    "collected": 977,
+    "collected": 995,
     "command": "/Users/scottybe/workspace/blue-toad-fleet/.venv/bin/python -m pytest -q '--junitxml=<temporary>'",
     "errors": 0,
     "failed": 0,
-    "passed": 970,
+    "passed": 988,
     "skipped": 7
   }
 }
