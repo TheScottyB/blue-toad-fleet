@@ -23,7 +23,7 @@ https://thescottyb.github.io/blue-toad-fleet/blog/
 #AllThingsAgentic #AllThingsAgenticHackathon
 ```
 
-`<POST_URL>`: _fill after publish_
+Permalink: https://x.com/thescottybe/status/2093923673832894902 (posted 2026-08-30 from `@thescottybe`).
 
 ---
 

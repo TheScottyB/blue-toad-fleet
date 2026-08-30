@@ -66,7 +66,7 @@ GET / never Vertex-embeds or Google-Searches. Sending a bid is a human action.
 * **Startup Prize org / corporate email:** leave blank unless opting in.
 * **Which Google AI Models did you use?** `Gemini 3.6 Flash, Gemini 3.5 Flash Lite, Gemini 2.5 Flash (fallback), Gemma 4, Gemini Embedding 2`
 * **Bonus content URL:** `https://thescottyb.github.io/blue-toad-fleet/blog/` (public GitHub Pages; disclosure sentence is in the article).
-* **Bonus social post:** empty until a permalink with `#AllThingsAgentic` exists. Draft: `docs/blog/SOCIAL_POST.md`. Do not paste a page URL.
+* **Bonus social post:** `https://x.com/thescottybe/status/2093923673832894902` (public; `#AllThingsAgentic` and `#AllThingsAgenticHackathon` in the body). Draft: `docs/blog/SOCIAL_POST.md`.
 
 ---
 
