@@ -1218,9 +1218,9 @@
       "unknown_zone_default": "unknown"
     }
   },
-  "generated_at": "2026-08-30T01:24:01.009633+00:00",
+  "generated_at": "2026-08-30T01:27:55.671241+00:00",
   "git": {
-    "commit": "333ea63ccace2dd76fff559890897cb222c78ca3",
+    "commit": "c80e56ab2f1aae61754627ef65954136379655ce",
     "dirty": true
   },
   "money": {
@@ -1356,7 +1356,7 @@
     "python": "3.14.4"
   },
   "schema_version": 2,
-  "snapshot_identity_sha256": "920d7eea8d8678f77efaa461a0e44df535bdca6db89a29a283f4fb60404351c1",
+  "snapshot_identity_sha256": "1dfc4261ff3f8f562ff04be634062d76f5622ce79f70db499816b52c669a9890",
   "source_sha256": {
     "absorption_evidence": "a6fcb32f93c3c2e1a38515fcd6746e06c9509fabd2d8c39c9bfa3e77e7fcb5e5",
     "appraisal_results": "fe12ee26559c41e82db48f6ad4f1c6d740b1847cdd8e00961c4863318f1db93c",
@@ -1366,7 +1366,7 @@
     "pipeline_state": "be1a444fb7de57fc251304498bbf5f5fd330372e9f6fd8c0e895b5ccf1c0ccbc",
     "reshoot_edges": "7ea297183484ff95ab8d56aa32ef2741a54c8c2d50ad1e4d7b8fa5e98c8025db",
     "triage_results": "c81d532216def8e234dec1ec6996c6bd37671cd5e1fb5b8f726b50e04f0c94b9",
-    "video_script": "0a42da6e62503f1c17812c46d5e0a0887b7739a532084bb19fa1cc55d6ed3f87"
+    "video_script": "56655f030cb2311e11dc186c31f5525695108099c286483a57589f2212cc07c7"
   },
   "stories": {
     "bt_002_answer_to_money": {
@@ -1384,11 +1384,11 @@
     }
   },
   "tests": {
-    "collected": 995,
+    "collected": 1001,
     "command": "/Users/scottybe/workspace/blue-toad-fleet/.venv/bin/python -m pytest -q '--junitxml=<temporary>'",
     "errors": 0,
     "failed": 0,
-    "passed": 988,
+    "passed": 994,
     "skipped": 7
   }
 }
