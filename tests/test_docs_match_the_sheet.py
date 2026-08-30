@@ -113,6 +113,31 @@ def test_devpost_skill_gathers_media_and_fills_the_form():
     assert "login wall, stop" not in skill.lower()
 
 
+def test_blog_stays_inside_the_claim_boundary():
+    blog = (ROOT / "docs/blog/index.html").read_text()
+    social = (ROOT / "docs/blog/SOCIAL_POST.md").read_text()
+    current = sheet()
+    assert "All Things Agentic Hackathon" in blog
+    assert "I created this piece of content for the purposes of entering" in blog
+    assert "Gemma 4" in blog
+    assert "pending deep comps" in blog
+    assert "google-genai" in blog
+    assert "puzzle loop" in blog
+    assert "462 photos" in blog
+    assert f"{current.allocated} lots" in blog
+    assert "$275.00" in blog and "$316.25" in blog
+    assert "450 Photos" not in blog
+    assert "POLE BARN SHOWROOM TOPOLOGY" not in blog.upper()
+    assert "video predates" not in blog
+    assert "select_challenge" in blog and "not wired" in blog
+    assert "Sending a bid is a human action" in blog
+    assert "#AllThingsAgentic" in blog and "#AllThingsAgenticHackathon" in blog
+    assert "thescottyb.github.io/blue-toad-fleet/blog" in social
+    assert "pole barn" not in social.lower()
+    extra = (ROOT / "docs/DEVPOST.md").read_text().split("## Additional Info", 1)[-1]
+    assert "https://thescottyb.github.io/blue-toad-fleet/blog/" in extra
+
+
 def test_todo_names_the_devpost_deadline_as_7pm_cdt():
     """Devpost labels 5:00pm PDT; the operator-local page shows 7:00pm CDT."""
     todo = (ROOT / "docs/TODO.md").read_text()

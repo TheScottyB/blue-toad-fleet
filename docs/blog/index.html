@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>450 Photos, One Shopkeeper, and a Friday 8 PM Deadline — Blue Toad Fleet</title>
+<title>400+ Photos, One Shopkeeper, and a Friday 8 PM Deadline — Blue Toad Fleet</title>
 <meta name="description" content="How a one-person resale shop in Richmond, Illinois built an agent fleet on Google Cloud to prepare absentee bids for a rural estate auction 2.3 miles up the road.">
-<meta property="og:title" content="450 Photos, One Shopkeeper, and a Friday 8 PM Deadline">
-<meta property="og:description" content="Building Blue Toad Fleet — an agent fleet on Google Cloud for a rural estate auction that publishes 450 uncataloged photos every two weeks.">
+<meta property="og:title" content="400+ Photos, One Shopkeeper, and a Friday 8 PM Deadline">
+<meta property="og:description" content="Building Blue Toad Fleet — an agent fleet on Google Cloud for a rural estate auction that publishes 400+ uncataloged photos every two weeks.">
 <meta property="og:type" content="article">
 <style>
   :root{
@@ -98,7 +98,7 @@
 <div class="wrap">
 
   <p class="eyebrow">Richmond General · Field Notes</p>
-  <h1>450 Photos, One Shopkeeper, and a Friday 8&nbsp;PM Deadline</h1>
+  <h1>400+ Photos, One Shopkeeper, and a Friday 8&nbsp;PM Deadline</h1>
   <p class="standfirst">Building an agent fleet on Google Cloud for a rural estate auction 2.3 miles up the road — one that still publishes its catalog as a wall of unlabelled snapshots.</p>
 
   <p class="byline">By Scott Beilfuss · Richmond General, Richmond, Illinois</p>
@@ -111,9 +111,9 @@
 
   <p>I run Richmond General, a one-person heritage resale shop in Richmond, Illinois. Two and a third miles north, across the Wisconsin line in Genoa City, Blue Toad Auctions runs an estate sale roughly every two weeks. It is a five-minute drive. On a decent day it is a fifty-three minute walk.</p>
 
-  <p>Blue Toad is not a modern online auction. There is no bidding app, no lot-by-lot catalog, no filterable inventory. Every cycle, the sale is published as a single page of somewhere around 450 photographs of a pole barn full of estate goods — unlabelled, unnumbered, in whatever order the auctioneer walked the room — plus a list of SEO keywords. Absentee bids are real and welcome, by email, up to <strong>8:00 PM the Friday night before</strong>. After that the channel closes until the sale is over.</p>
+  <p>Blue Toad is not a modern online auction. There is no bidding app, no lot-by-lot catalog, no filterable inventory. Every cycle, the sale is published as a single page of 400+ photographs of estate goods — unlabelled, unnumbered, in whatever order the auctioneer walked the room — plus a list of SEO keywords. Absentee bids are real and welcome, by email, up to <strong>8:00 PM the Friday night before</strong>. After that the channel closes until the sale is over.</p>
 
-  <p>So the constraint is not access, and it never was capital. The sale is up the road and I go when I can. The constraint is what every cycle costs before a single bid exists: 450 photographs reviewed by hand, obscure makers identified, comps researched, margin math worked, and a priced sheet assembled — every two weeks, by one person who is also running the counter.</p>
+  <p>So the constraint is not access, and it never was capital. The sale is up the road and I go when I can. The constraint is what every cycle costs before a single bid exists: hundreds of photographs reviewed by hand, obscure makers identified, comps researched, margin math worked, and a priced sheet assembled — every two weeks, by one person who is also running the counter.</p>
 
   <p>That is the actual reason the published absentee channel has never once been used. Not distance. Preparing it by hand costs more than it returns.</p>
 
@@ -130,7 +130,9 @@
   evidence. The August 22 cycle now has a sealed artifact manifest for that
   sale's output. A later listing is a later cycle. The publisher still refuses
   to blur the sent sheet (nine lots, mailbox-backed) with the full-coverage
-  fixture (46 lots under the $600 cap).</p>
+  fixture (46 lots under the $600 cap). The August fixture groups all 462
+  photos into 415 clusters — a puzzle loop, not a funnel; unmatched photos
+  become singletons instead of silent drops.</p>
 
   <h2>What the fleet actually does</h2>
 
@@ -139,34 +141,36 @@
   <ul class="mechs">
     <li><b>Evidence-gated spatial grouping</b>Capture order and captions provide the conservative baseline; reviewed similarity edges can join repeat views. A physical map appears only when a manifest-bound spatial sidecar proves the zones. Without it, the Gate says walk-order grouping.</li>
     <li><b>Container Lot Decomposition</b>A bounded pass lists visible contents. An alpha affects price only when its mark is observed and no mark question remains open; otherwise the lot keeps its bulk floor.</li>
-    <li><b>The Honest Refusal Rule</b>On an unmarked piece of pottery with no verifiable comp, the fleet emits <code>NO EXTERNAL COMP — human pricing required</code> rather than inventing a number. Refusing to guess is the safety feature, not a gap.</li>
-    <li><b>The Choice-Lot Guard</b>Country auctioneers sell groups as “choice” or “times the money.” Unknown mechanics refuse; a written ruling sets the unit exposure; and one clerk directive carries the same amount through the sheet and email.</li>
-    <li><b>Bounded Curator Challenge</b>A challenge exists only when a typed standing rule conflicts with fresh, lot-matched evidence. The model may phrase the conflict, but it may not add market claims or tell the operator to buy.</li>
+    <li><b>The Honest Refusal Rule</b>On an unmarked piece of pottery with no verifiable sold comps, the fleet does not invent a number. <code>price_lot</code> returns <code>max_bid=None</code> with the reason <code>pending deep comps — verified sold-price evidence is still needed</code>, and the allocator cannot seat that lot. Refusing to guess is the safety feature, not a gap.</li>
+    <li><b>The Choice-Lot Guard</b>Country auctioneers sell groups as “choice” or “times the money.” Unknown mechanics refuse; a written ruling sets the unit exposure; and one clerk directive carries the same amount through the sheet and email. BT-002: a ×3 ruling turned a $25 per-unit ceiling into $75 committed / $86.25 all-in.</li>
+    <li><b>Bounded curator prose</b>A dollar figure the sheet did not compute is rejected and the deterministic template renders instead. The evidence-gated challenge seam (<code>select_challenge</code>) is implemented and tested as a contract; it is not wired into the live console.</li>
     <li><b>Deterministic Bid Math</b>Model output stops at identification and estimation. Turning an estimate into an authorized number is pure, unit-tested Python — margin target, condition discount, the house's $5 bid increment, the 15% fee. Auditable, and the same every run.</li>
   </ul>
 
   <h2>Built on Google Cloud</h2>
 
-  <p>Vision and reasoning run on Vertex AI — Gemini 3.6 Flash for the heavy multimodal passes, lighter models for triage, routed by how much a given photo is worth thinking about. The gate console and sourcing API run on Cloud Run. The pipeline now records per-call tokens, latency, retries, fallbacks, errors, rate snapshots, and measured cost; a fresh corpus run is required before publishing a full-cycle cost or speed.</p>
+  <p>Vision and reasoning run on Vertex AI through the Google GenAI SDK (<code>google-genai</code>) — Gemini 3.6 Flash for the heavy multimodal passes, Gemini 3.5 Flash Lite for triage, Gemini 2.5 Flash as fallback, Gemma 4 for the curator voice, and Gemini Embedding 2 on the reviewed reshoot-edge path. The gate console and cycle job run on Cloud Run. Memory is Firestore. Cycle kickoff uses Pub/Sub. The pipeline records per-call tokens, latency, retries, fallbacks, errors, rate snapshots, and measured cost; a cycle that never hit Vertex reports <code>no_calls</code>, not a measured $0 invoice.</p>
 
-  <p>The repository is public and MIT-licensed, with a four-command local demo that needs no Google Cloud account, no OAuth, and no keys. The release report records the current test counts instead of this article freezing a number that immediately goes stale.</p>
+  <p>The repository is public and MIT-licensed, with a four-command local demo that needs no Google Cloud account, no OAuth, and no keys: <code>make install</code>, <code>make demo</code>, <code>make cycles</code>, <code>make test</code>. The release report records the current test counts instead of this article freezing a number that immediately goes stale.</p>
 
   <h2>What it does not do</h2>
 
-  <p>Worth stating plainly, because a project that only lists its wins is not describing software. The fleet does not fetch the auction site — ingestion is a sanctioned gallery drop, not a scraper pointed at anyone. Comps are incomplete, so real lots still route to human pricing. The current August fixture is not release-eligible, the automated path does not transmit a bid, and the checked-in video predates the evidence-sealed media workflow.</p>
+  <p>Worth stating plainly, because a project that only lists its wins is not describing software. The fleet does not fetch the auction site — ingestion is a sanctioned gallery drop, not a scraper. Sending a bid is a human action. <code>GET /</code> on Cloud Run never Vertex-embeds or Google-Searches. The checked-in August fixture has no spatial-observation sidecar, so this write-up does not claim a reconstructed pole-barn map for that run — the live console shows walk-order grouping. July A/B output is quarantined and is not evidence.</p>
 
   <blockquote>Velocity to distill the information. Collaboration on the judgment.</blockquote>
 
-  <p>That is the whole thesis. The agent's job is to make 450 photographs comprehensible before Friday at 8. Deciding what is actually worth owning is still mine.</p>
+  <p>That is the whole thesis. The agent's job is to make hundreds of photographs comprehensible before Friday at 8. Deciding what is actually worth owning is still mine. The August 22 cycle that actually went to the clerk was nine lots, <strong>$275.00 committed / $316.25 all-in</strong>, under a $600 cap — mailbox-backed. The provenance-sealed local fixture, with every photo assigned, seats those nine first and fills the envelope to 46 lots — $520.00 / $598.00 all-in. Zero lots won. The caps are defensive by design.</p>
 
   <div class="links">
     <h2>Blue Toad Fleet</h2>
     <ul>
       <li><a href="https://github.com/TheScottyB/blue-toad-fleet">Source on GitHub</a> — public, MIT, release-gated evidence</li>
       <li><a href="https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app">Live gate console on Cloud Run</a></li>
+      <li><a href="https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/walk">The Walk</a> — 462 photos in shot order</li>
+      <li><a href="https://youtu.be/PaLRNZLHi0c">Demo video</a> — ~3:59, public on YouTube</li>
       <li><a href="https://richmondgeneral.github.io/items/">Richmond General catalog</a> — the shop this was built for</li>
     </ul>
-    <span class="tag">#AllThingsAgentic</span>
+    <span class="tag">#AllThingsAgentic #AllThingsAgenticHackathon</span>
   </div>
 
   <footer>
