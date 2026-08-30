@@ -3,9 +3,10 @@
 How to get a defensible velocity number for one identified lot, using the
 operator's own eBay seller account through the browser connection.
 
-Everything here was verified live on 2026-08-21/22 against
-`Boston Champion pencil sharpener`. Where a step exists only because something
-failed, the failure is written down next to it — those are the steps people skip.
+Everything here was verified live against `Boston Champion pencil sharpener` —
+the walk and metrics on 2026-08-21/22, condition filtering and the aggregates
+cross-check on 2026-08-29. Where a step exists only because something failed,
+the failure is written down next to it — those are the steps people skip.
 
 ---
 
@@ -23,7 +24,13 @@ it, or reintroduce it as a proxy.
 
 Reciprocal, if a months-of-supply framing reads better to a human:
 
-    months_of_supply = 12 / ebay_velocity
+    months_of_supply = 12 * active_listings_now / sold_units_last_365_days
+
+**Compute it from the raw counts, never from the rounded rate.** `12 / 0.03`
+prints 400 months where the raw counts (4 sold, 158 standing) give 474 — the
+2-dp rounding error explodes exactly in the slow markets where this number
+matters most (RG-0144 windsor read, 2026-08-29; `months_of_supply` in
+`src/comps/__init__.py` and its test in `tests/test_comps.py` pin this).
 
 ---
 
@@ -39,6 +46,7 @@ https://www.ebay.com/sh/research
   &tabName=SOLD              # or ACTIVE
   &startDate=<epoch ms>      # SOLD only
   &endDate=<epoch ms>        # SOLD only
+  &conditionId=3000          # optional — see GOTCHA 4 before using
 ```
 
 ### GOTCHA 1 — `dayRange` sets the dropdown label, not the data window
@@ -71,6 +79,54 @@ There is no total-row count and no next-page indicator. The last page is simply
 short: `offset=250` returned 35 rows for a 285-row result set. **Page until a
 page returns fewer than `limit`, then stop.** Do not trust `Total sellers` as a
 row count — it counts sellers, not listings, and is not the numerator.
+
+### GOTCHA 4 — `conditionId` fails silent in one direction and false-zero in the other
+
+All measured 2026-08-29 on the sharpener query.
+
+A **single valid id** in the URL genuinely scopes both tabs — `conditionId=3000`
+dropped sold units 291 → 256 and active 144 → 138, and the page grew a
+"Condition filter (1 Selected) / Used" chip. The valid ids
+(`CONDITION_IDS` in `src/comps/__init__.py`):
+
+| id | label | id | label |
+|---|---|---|---|
+| 1000 | New | 3000 | Used |
+| 1500 | New other | 4000 | Very Good |
+| 1750 | New with defects | 5000 | Good |
+| 2000 | Certified refurbished | 6000 | Acceptable |
+| 2500 | Seller refurbished | 7000 | For parts or not working |
+
+- **Unknown ids are silently ignored.** `conditionId=0` and `=999999` both
+  rendered the default scope with no warning — default data behind a URL that
+  looks pinned, which is worse than an error. The connector refuses ids
+  outside the table (`UnknownConditionId`) for exactly this reason.
+- **Joined multi-values are a FALSE ZERO.** `conditionId=1000|3000` and
+  `1000,3000` both printed "No sold results found" — the server treats the
+  unparseable value as unmatchable, not as "no filter". A pass that doesn't
+  know this records "sold 0" for a market that sells hundreds.
+- The multi-condition form that works is **repeated params**
+  (`&conditionId=1000&conditionId=3000`). The connector deliberately sends at
+  most one.
+
+### GOTCHA 5 — the sticky filter chip can be a display ghost
+
+Seller Hub persists filter-bar UI server-side from manual sessions: a leftover
+"Used" condition chip appeared on automated reads days later (first seen
+2026-08-24), and no reachable path clears it — the chip's ✕, an empty Apply,
+Reset, and deleting the session cookies were all dead ends.
+
+Measured 2026-08-29, **the chip described nothing**: with the chip rendered and
+no `conditionId` in the URL, the page's own data requests carried no condition
+param, and the page aggregates matched the *unfiltered* aggregates-API read
+(291 units), not the Used-scoped one (256). So:
+
+- **The printed filter bar is the page's CLAIM about scope, not the scope.**
+  Record it (the connector surfaces it as `filters_as_printed`), but never
+  "correct" a number because of it.
+- **Only an explicit URL param actually scopes the data.** Want unfiltered?
+  Send no `conditionId` — regardless of what the bar shows. Want scoped?
+  Send the id and expect the counts to move.
 
 ---
 
@@ -111,6 +167,28 @@ undercounted units by **3.5%** (285 rows vs 295 units), and the entire gap sits
 on page one — the only page carrying multi-quantity listings. A sampled or
 first-page-only pass loses all of it while looking representative. It would be
 far worse for an item where sellers hold stock.
+
+### Cross-check the walk against the aggregates API
+
+Seller Hub has its own summary endpoint — same params as the page, plus
+`&modules=aggregates`:
+
+```
+https://www.ebay.com/sh/research/api/search?...&modules=aggregates
+```
+
+The body is NDJSON; the `ResearchAggregateModule` line carries
+header/value pairs, and its **"Total sold"** is an independent statement of the
+numerator the page walk produced. On 2026-08-29 the six-page walk summed 291
+units and the API said 291 — that agreement is what turns "my parser worked"
+into a checked claim. Its per-condition buckets also reconcile: bucket
+`units × avg price` summed to the page's "Total item sales" to the cent.
+
+The connector runs this automatically (`sold_cross_check` in every read):
+`match` = corroborated · `MISMATCH` names both figures — one read is wrong, or
+a sale landed between them · `UNAVAILABLE` = uncorroborated, not wrong. A
+truncated walk (600-listing cap) checks as a **floor** against the API total
+instead of an equality.
 
 ---
 
@@ -183,7 +261,7 @@ non-comp active            15      (11%)
 ABSORPTION (units)        295 / 138 = 2.14   <- the metric
 absorption (comp-only)    264 / 123 = 2.15
 absorption (listings)     285 / 138 = 2.07   <- wrong basis, 3% low
-months of supply          12 / 2.14 = 5.6
+months of supply          12 x 138 / 295 = 5.6   <- raw counts, never 12/rounded-rate (§0)
 
 avg sold price          $21.44     range $1.25 - $80.00
 avg shipping            $10.44     landed ~$31.88
