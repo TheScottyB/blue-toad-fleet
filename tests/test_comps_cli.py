@@ -86,6 +86,40 @@ class TestCompsCommand:
         assert json.loads(capsys.readouterr().out)["query"] == "the item"
 
 
+class TestHelpIsOperatorDocumentation:
+    """--help is the operator's manual; it must state the contract.
+
+    The tool's central promise — nonzero exit = the read was REFUSED,
+    never "sold 0" — and its one prerequisite (the CDP Chrome on 9222)
+    have to be visible from the shell, not only in a docstring nobody
+    running the binary ever opens."""
+
+    def test_top_level_help_states_the_exit_contract(self, capsys):
+        with pytest.raises(SystemExit) as exc:
+            comps_cli.main(["--help"])
+        assert exc.value.code == 0
+        out = capsys.readouterr().out
+        assert "REFUSED" in out
+        assert 'never "sold 0"' in out
+        assert "9222" in out
+
+    def test_absorption_help_documents_the_arguments(self, capsys):
+        with pytest.raises(SystemExit):
+            comps_cli.main(["absorption", "--help"])
+        out = capsys.readouterr().out
+        assert "keywords" in out            # what `query` is
+        assert "3000" in out                # a condition-id example
+        assert "refused" in out             # unknown ids refuse, not ignore
+
+    def test_comps_help_documents_the_arguments(self, capsys):
+        with pytest.raises(SystemExit):
+            comps_cli.main(["comps", "--help"])
+        out = capsys.readouterr().out
+        assert "identification" in out
+        assert "screenshot" in out          # what --with-evidence saves
+        assert "default" in out             # --query falls back to the id
+
+
 class TestGuardsExitLoud:
     def test_a_live_guard_error_is_exit_nonzero_not_a_traceback(
             self, monkeypatch, capsys):

@@ -36,24 +36,55 @@ if str(ROOT) not in sys.path:
 from scripts import comps_mcp_server  # noqa: E402
 
 
+_CONDITION_HELP = (
+    "scope the read to one eBay condition id (e.g. 3000 Used, 1000 New, "
+    "7000 for-parts); unknown ids are refused, not silently ignored; "
+    "omitted = unfiltered read")
+
+_EPILOG = """\
+exit status:
+  0   the read completed; JSON on stdout
+  1   the read was REFUSED, reason on stderr — never "sold 0". Refusals:
+      bot wall, silent-empty page, non-annual printed window, unknown
+      condition id.
+
+prerequisite: the dedicated CDP Chrome on port 9222 (profile
+~/.btf-chrome-profile, signed in to Seller Hub). All figures are
+eBay-channel only. Gotchas: docs/PLAYBOOK-ebay-velocity.md."""
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="comps_cli",
         description="eBay Seller Hub comp reads (same output as the "
-                    "btf-comps MCP tools)")
+                    "btf-comps MCP tools)",
+        epilog=_EPILOG,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest="command", required=True)
 
     p_abs = sub.add_parser(
         "absorption", help="the cheap pass: channel-specific velocity")
-    p_abs.add_argument("query")
-    p_abs.add_argument("--condition-id", type=int, default=None)
+    p_abs.add_argument(
+        "query",
+        help="Seller Hub search keywords — what a buyer would type")
+    p_abs.add_argument("--condition-id", type=int, default=None,
+                       help=_CONDITION_HELP)
 
     p_comps = sub.add_parser(
         "comps", help="the full read: absorption + screened comparables")
-    p_comps.add_argument("identification")
-    p_comps.add_argument("--query", default=None)
-    p_comps.add_argument("--with-evidence", action="store_true")
-    p_comps.add_argument("--condition-id", type=int, default=None)
+    p_comps.add_argument(
+        "identification",
+        help="what the item IS — the full identification every candidate "
+             "listing title is screened against")
+    p_comps.add_argument(
+        "--query", default=None,
+        help="search keywords when they differ from the identification "
+             "(default: the identification itself)")
+    p_comps.add_argument(
+        "--with-evidence", action="store_true",
+        help="save Seller Hub screenshot evidence under data/comps/")
+    p_comps.add_argument("--condition-id", type=int, default=None,
+                         help=_CONDITION_HELP)
 
     args = parser.parse_args(argv)
     try:
