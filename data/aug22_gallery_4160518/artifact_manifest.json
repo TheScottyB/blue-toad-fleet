@@ -1,0 +1,34 @@
+{
+  "artifacts": {
+    "BlueToad_2026-08-22_BidSheet.xlsx": {
+      "bytes": 102453,
+      "content_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "object": "shops/richmond-general/cycles/2026-08-22/output/blobs/50c6d231c0b76234863fc4890d31b92e8cba09981cea66b98d77e1ffb335a112/BlueToad_2026-08-22_BidSheet.xlsx",
+      "sha256": "50c6d231c0b76234863fc4890d31b92e8cba09981cea66b98d77e1ffb335a112"
+    },
+    "aug22_absentee_bid_email.txt": {
+      "bytes": 19630,
+      "content_type": "text/plain",
+      "object": "shops/richmond-general/cycles/2026-08-22/output/blobs/da041f5a1e0303744c2ce86f9a328da9e903dec7d6551be79f9403604f665acd/aug22_absentee_bid_email.txt",
+      "sha256": "da041f5a1e0303744c2ce86f9a328da9e903dec7d6551be79f9403604f665acd"
+    },
+    "pipeline_state.json": {
+      "bytes": 723192,
+      "content_type": "application/json",
+      "object": "shops/richmond-general/cycles/2026-08-22/output/blobs/be1a444fb7de57fc251304498bbf5f5fd330372e9f6fd8c0e895b5ccf1c0ccbc/pipeline_state.json",
+      "sha256": "be1a444fb7de57fc251304498bbf5f5fd330372e9f6fd8c0e895b5ccf1c0ccbc"
+    }
+  },
+  "cycle_id": "2026-08-22",
+  "cycle_request_sha256": "e0889ad75d9676a661de1862aadb7672090eb9616279f21a01069fb7172d83d9",
+  "decision_identity_sha256": "8fba4142b05c0fed3f28251622bb00db88190dc539824c27886f4223a83b09a4",
+  "evidence_identity_sha256": "7040ff793b8234ca092ef3dd7ccc5d166035450afee082c09fb7fd89c8d8577f",
+  "listing_id": "4160518",
+  "model_identity_sha256": "e2d5d83e32769598283360c0c7e4fc63e6a636c1235dd5b8c4bb167b65e39d79",
+  "published_at": "2026-08-30T01:21:40.362243+00:00",
+  "queue_identity_sha256": "e9cb1cb904772f78823b21fb60b9e8bb53a61067e9c780435b3331ef58dc2920",
+  "rule_identity_sha256": "1836dd283294825201b301bfbe836cc67403d3cb6b55c377dcf1ecd113d5190a",
+  "schema_version": 2,
+  "shop_id": "richmond-general",
+  "source_manifest_sha256": "f2d757927f526dcac225e177d5cbf1e8206168951264f94153a978bdcd86f21a"
+}
