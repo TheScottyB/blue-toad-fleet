@@ -18,6 +18,7 @@
   * `https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/api/audit` (Google spend status + operator/agent trail)
   * `https://github.com/TheScottyB/blue-toad-fleet` (Public GitHub Repository)
   * `https://github.com/TheScottyB/blue-toad-fleet/blob/master/media/blue_toad_fleet_demo.mp4` (4-beat narrated walkthrough — live Cloud Console and terminal proof in beat 4, ~3:59)
+* **Video demo link (form field):** `https://youtu.be/PaLRNZLHi0c` — the same cut published public on the operator's channel (@threebatdrone) 2026-08-29; YouTube's badge reads 3:59.
 * **What date did you start this project?** `08-18-2026`
 * **Did you add Reproducible Testing instructions to your README?** `Yes` (`make install`, `make demo`, `make cycles`, `make test`)
 * **Hosted project URL:** `https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app`
