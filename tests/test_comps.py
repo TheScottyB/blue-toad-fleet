@@ -381,7 +381,18 @@ class TestAbsorption:
         assert absorption(295, 138) == pytest.approx(2.14, abs=0.01)
 
     def test_months_of_supply_is_the_reciprocal(self):
-        assert months_of_supply(absorption(295, 138)) == pytest.approx(5.6, abs=0.05)
+        assert months_of_supply(295, 138) == pytest.approx(5.6, abs=0.05)
+
+    def test_months_of_supply_computes_from_raw_counts_not_rounded_rate(self):
+        """4 sold over 158 standing: 12 * 158 / 4 = 474.0 months. Feeding
+        the 2-dp rounded absorption (0.03) into 12/rate printed 400 — 15%
+        off — on the live RG-0144 windsor read, 2026-08-29. A slow market
+        is exactly where the sheet reader needs the number to be right."""
+        assert months_of_supply(4, 158) == pytest.approx(474.0)
+
+    def test_months_of_supply_edges_are_None_not_numbers(self):
+        assert months_of_supply(0, 40) is None
+        assert months_of_supply(15, 0) is None
 
     def test_zero_active_is_not_a_division_crash(self):
         """Nothing standing: supply clears as fast as it appears. Report as
