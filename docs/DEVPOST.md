@@ -11,16 +11,17 @@
 ## Form Fields Quick Reference
 
 * **Built with (Tags):**  
-  `Google Cloud Run`, `Vertex AI`, `Gemini 3.6 Flash`, `Gemini 3.5 Flash Lite`, `Gemini 2.5 Flash`, `Python`, `FastAPI`, `Docker`, `OpenPyXL`, `Pytest`, `Computer Vision`, `Multimodal AI`, `Auction Logistics`, `Retail Tech`
+  `Google Cloud Run`, `Vertex AI`, `Gemini 3.6 Flash`, `Gemini 3.5 Flash Lite`, `Gemini 2.5 Flash`, `Gemma 4`, `Gemini Embedding 2`, `Python`, `FastAPI`, `Docker`, `OpenPyXL`, `Pytest`, `Computer Vision`, `Multimodal AI`, `Auction Logistics`, `Retail Tech`
 * **"Try it out" links:**  
   * `https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app` (Live Cloud Run Gate Console)
   * `https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/walk` (The Walk — all 462 photos in shot order, loop closure badged)
+  * `https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/api/audit` (Google spend status + operator/agent trail)
   * `https://github.com/TheScottyB/blue-toad-fleet` (Public GitHub Repository)
-  * `https://github.com/TheScottyB/blue-toad-fleet/blob/master/media/blue_toad_fleet_demo.mp4` (4-beat narrated walkthrough, ~3:48)
+  * `https://github.com/TheScottyB/blue-toad-fleet/blob/master/media/blue_toad_fleet_demo.mp4` (4-beat narrated walkthrough; checked-in cut is historical — see README)
 * **What date did you start this project?** `08-18-2026`
 * **Did you add Reproducible Testing instructions to your README?** `Yes` (`make install`, `make demo`, `make cycles`, `make test`)
 * **Hosted project URL:** `https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app`
-* **Which Google AI Models did you use?** `Gemini 3.6 Flash, Gemini 3.5 Flash Lite, Gemini 2.5 Flash`
+* **Which Google AI Models did you use?** `Gemini 3.6 Flash, Gemini 3.5 Flash Lite, Gemini 2.5 Flash (fallback), Gemma 4, Gemini Embedding 2`
 * **Submitter Type:** `Individual`
 * **Country of residence:** `United States`
 * **Which Category are you submitting to?** `The Collaborative Partner`
@@ -116,7 +117,7 @@ not the previously drafted sports-card example.
 ### 6. Deterministic Greedy Budget Allocation
 Appraisals feed into pure, unit-tested bid math implementing the store's documented 35–40% buy-in band (applied at its 37.5% midpoint), condition discounts, standard $5.00 auction increments, and the mandatory 15% absentee fee. The final absentee email is compiled automatically for `info@bluetoadauctions.com`.
 
-On the live console, that review now runs as a sequenced **Friday desk** — four stages in the order the owner actually works them on deadline day. Stage 1 is walk membership: same-lot / not-the-same rulings confirmed on two photo tiles at `/walk`, from which grouping rebuilds before anything downstream. Stage 2 is the question queue, sorted so lot-grouping and scope questions come before policy and appetite. Stage 3 is the envelope desk: drop or add lots and type a human cap, with freed budget staying freed. Stage 4 is the compiled clerk draft. Sending remains a human action.
+On the Gate console, that review runs as a sequenced **Friday desk** — four stages in the order the owner actually works them on deadline day. Stage 1 is walk membership: far-apart same-lot frames (the 2↔181 jewelry-tray return) confirm or reject on the desk; grouping rebuilds before anything downstream. Stage 2 is the question queue, sorted so lot-grouping and scope questions come before policy and appetite. Stage 3 is the envelope: seated lots stay open with their walk photos; unseated cards fold. Stage 4 is the compiled clerk draft. Sending remains a human action. Google spend for this process is a folded trail (`/api/audit`): zero Vertex calls report `no_calls`, not a measured $0 invoice. Re-check `/health` `git_commit` before attributing any of this to the hosted URL — deploy can lag the tree.
 
 ### 7. Channel-Specific Velocity — eBay Absorption from the Operator's Own Seller Hub
 Price alone cannot tell a good buy from a shelf-sitter. The metric that can is
@@ -184,7 +185,7 @@ this stream does not stop.
 
 * **Required Stack — what satisfies each requirement:**
   * **Gemini 3.5 or newer:** `gemini-3.6-flash` (multimodal appraisal) and `gemini-3.5-flash-lite` (triage fan-out), both on Vertex AI's `global` endpoint.
-  * **Agent framework — a purpose-built agent loop over the Google GenAI SDK.** The loop is the part that does the work, and it is ours: a triage fan-out narrows 462 photos to candidates ([`run_triage_batch`](../src/appraiser/engine.py)); survivors get a deep multimodal appraisal that is required to emit a *question* wherever a determining attribute is not visible, rather than a guess ([`run_appraisal_batch`](../src/appraiser/engine.py)); those questions are merged, ranked by how much of the sheet they repair, and capped ([`build_queue`](../src/appraisal/__init__.py)); answers the operator gives are remembered at the scope they deserve — policy and appetite answers become durable `StandingRule`s keyed `(QuestionKind, Category)` that survive into the next cycle, while grouping and scope answers are deliberately object-scoped rulings for their specific lots, because a ruling about one jewelry tray must never silently authorize a mechanic on next month's unrelated lot ([`learn`](../src/appraisal/__init__.py)); a question the desk cannot answer — a 2mm hallmark on a clasp — is *deferred* rather than asked ([`DESK_ANSWERABLE`](../src/appraisal/__init__.py)); grounded pricing preserves citations in one search-backed call and uses a second schema-only call instructed to extract the figures from that research note ([`price_lot_grounded`](../src/appraiser/engine.py)); and the result becomes a clerk-facing instruction a human at an auction block can act on ([`clerk_directive`](../src/bidmath/__init__.py)).
+  * **Agent framework — a purpose-built agent loop over the Google GenAI SDK.** The loop is the part that does the work, and it is ours. Every photo is a puzzle piece: caption lot numbers constrain, walk/reshoot edges propose, and the loop merges and splits until each photo is assigned exactly once — unmatched becomes a singleton, not a silent drop ([`puzzle_loop`](../src/intake/puzzle.py)). Model routing may spend a cheaper triage pass on a frame ([`run_triage_batch`](../src/appraiser/engine.py)); that is a cost choice, not a grouping gate. A deep multimodal appraisal is required to emit a *question* wherever a determining attribute is not visible, rather than a guess ([`run_appraisal_batch`](../src/appraiser/engine.py)); those questions are merged, ranked by how much of the sheet they repair, and capped ([`build_queue`](../src/appraisal/__init__.py)); answers the operator gives are remembered at the scope they deserve — policy and appetite answers become durable `StandingRule`s keyed `(QuestionKind, Category)` that survive into the next cycle, while grouping and scope answers are deliberately object-scoped rulings for their specific lots, because a ruling about one jewelry tray must never silently authorize a mechanic on next month's unrelated lot ([`learn`](../src/appraisal/__init__.py)); a question the desk cannot answer — a 2mm hallmark on a clasp — is *deferred* rather than asked ([`DESK_ANSWERABLE`](../src/appraisal/__init__.py)); grounded pricing preserves citations in one search-backed call and uses a second schema-only call instructed to extract the figures from that research note ([`price_lot_grounded`](../src/appraiser/engine.py)); and the result becomes a clerk-facing instruction a human at an auction block can act on ([`clerk_directive`](../src/bidmath/__init__.py)).
     That memory is load-bearing, not decorative: on a bulk costume-jewelry tray, appraising with the operator's standing rules versus without moves `fit_score` from 0.2 to 0.85 and flips the bid gate from SKIP to BID. Cross-cycle memory changes what gets bought.
   * **Google GenAI SDK (`google-genai`) — the model layer under that loop.** `genai.Client(vertexai=True, ...)` for application-default-credential auth that runs unchanged locally and inside Cloud Run, `types.Part.from_bytes` for multimodal request assembly, and `types.GenerateContentConfig(response_schema=...)` for constrained decoding — which is what makes a missing maker's mark come back as `null` plus a question instead of a confident invention. See [`src/appraiser/engine.py`](../src/appraiser/engine.py).
   * **Google Cloud infrastructure — Cloud Run:** single-container serverless hosting on project `threebatdrone-prod-420`.
@@ -192,7 +193,7 @@ this stream does not stop.
   * **Vertex AI:** Multi-tiered model routing utilizing `gemini-3.5-flash-lite` for high-speed, cost-effective triage ($0.30/1M tokens) and `gemini-3.6-flash` for deep multimodal appraisal with structured OpenAPI 3.0 schemas on the `global` endpoint.
   * **Google Cloud Run:** Single-container serverless hosting (`us-central1` on project `threebatdrone-prod-420`) serving the Gate Console UI, Sourcing API, and health endpoints.
 * **Core Software Architecture:**
-  * Pure, decoupled Python backend — no orchestration framework, no vector store, no agent runtime. The loop above is ~11,900 lines of typed Python under `src/` as of August 29, and the decision layer — photo grouping, the question queue, cross-cycle memory and the bid math — makes no model calls, so every number that reaches a bid sheet is reproducible and unit-tested.
+  * Pure, decoupled Python backend — no orchestration framework, no vector store, no agent runtime. The decision layer — photo grouping, the question queue, cross-cycle memory and the bid math — makes no model calls, so every number that reaches a bid sheet is reproducible and unit-tested.
   * Deterministic keyed memory `(QuestionKind, Category)` that generalises house conventions without vector drift.
   * Automated Excel bid sheet generator (`openpyxl`) and formatted absentee email draft generator.
   * A comprehensive local pytest suite; the release report records the exact
@@ -209,6 +210,7 @@ this stream does not stop.
    disagreement into invented market claims. Challenges are now typed,
    evidence-windowed, and rejected when the prose exceeds the supplied facts.
 5. **Cloud Run Edge Routing Nuances:** Google Front End (GFE) edge proxies intercepting specific root paths required precise endpoint mapping (`/health`) to ensure instant public HTTP 200 verification.
+6. **Zero calls is not a $0 invoice:** a cycle that never hit Vertex still wrote `cost_status: measured` / `$0`. Empty usage is now `no_calls`. List-rate tracking is not a Cloud Billing invoice.
 
 ---
 
@@ -225,6 +227,11 @@ this stream does not stop.
     provenance.
   * The owner's nine kept lots — the sheet that was actually sent — seat
     first by design; the machine fills the remaining envelope around them.
+* **Friday desk, not a dump:**
+  * Walk returns, questions, envelope, and clerk draft are one page. Unseated
+    lots fold. Operator walk/envelope/answer actions append to `/api/audit`.
+  * Re-probe `/health` `git_commit` before saying the hosted URL has this
+    revision; `docs/evidence/RELEASE.md` is the dated parity record.
 * **Release-gated Cloud proof:**
   * The public Cloud Run endpoint is listed above, but deployment revision
     parity, recorded latency, and final media are claims only after the release
@@ -259,9 +266,9 @@ this stream does not stop.
 
 ## What's next for Blue Toad Fleet
 
-* **The September 5 cycle, live:** listing 4160519 is already posted with 414
-  photos; the intake, comp, and gate loop runs against it on the same
-  bi-weekly cadence this system was built for.
+* **The September 5 cycle:** listing 4160519 is cached locally as 414 photos
+  (`data/sep5_gallery_4160519/manifest.json` `total_photos`); the same
+  bi-weekly Saturday cadence this system was built for.
 * **Automated Eventarc Pipeline:** Wiring GCS bucket drops directly to Cloud Run workers via Pub/Sub topics and dead-letter queues.
 * **KMS-Signed Gmail OAuth Broker:** Direct automated transmission of approved absentee drafts via Google Secret Manager and KMS grants (as designed in `docs/BROKER.md`).
 * **Multi-House Spatial Expansion:** Collecting reviewed, manifest-bound spatial

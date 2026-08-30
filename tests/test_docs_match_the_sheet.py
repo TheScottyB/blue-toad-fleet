@@ -59,3 +59,16 @@ def test_judged_copy_does_not_freeze_test_counts():
     assert "Unit%20Tests-release--gated" in combined
     for stale in ("298 passing", "565 passing", "730 unit tests", "737 collected"):
         assert stale not in combined.lower()
+
+
+def test_devpost_does_not_describe_grouping_as_a_funnel():
+    text = DEVPOST.read_text().lower()
+    assert "narrows 462" not in text
+    assert "11,900" not in text
+    assert "puzzle loop" in text
+
+
+def test_devpost_lists_gemma_among_google_models():
+    text = DEVPOST.read_text()
+    assert "Gemma 4" in text
+    assert "gemini-embedding-2" in text.lower() or "Gemini Embedding 2" in text
