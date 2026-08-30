@@ -35,7 +35,7 @@ deployment is UNVERIFIED, never a pass).
 
 ## Demo Video
 
-[`media/blue_toad_fleet_demo.mp4`](media/blue_toad_fleet_demo.mp4) — a narrated, four-beat walkthrough covering the commercial problem, evidence-backed photo grouping, the Gate Console, and Cloud Run/test-suite proof. The checked-in cut was assembled 2026-08-29 from sealed facts (artifact manifest `333ea63`); it is current submission evidence while `make video-verify` passes against it (~3:56, under the 4:00 cap). See [`docs/SUBMISSION_CLAIMS.md`](docs/SUBMISSION_CLAIMS.md).
+[`media/blue_toad_fleet_demo.mp4`](media/blue_toad_fleet_demo.mp4) — a narrated, four-beat walkthrough covering the commercial problem, evidence-backed photo grouping, the Gate Console, and Cloud Run/test-suite proof. The checked-in cut was assembled 2026-08-29 from sealed facts (artifact manifest `333ea63`); it is current submission evidence while `make video-verify` passes against it (~3:59, under the 4:00 cap). See [`docs/SUBMISSION_CLAIMS.md`](docs/SUBMISSION_CLAIMS.md).
 
 The rebuild workflow is declared in [`media/video_manifest.json`](media/video_manifest.json). See [`docs/VIDEO_WORKFLOW.md`](docs/VIDEO_WORKFLOW.md) before replacing the MP4. `make video-verify` checks dimensions, duration, size, and audio against the declared facts snapshot without changing the file (run `make video-prepare` first to produce that snapshot).
 
