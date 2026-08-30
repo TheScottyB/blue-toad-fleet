@@ -9,7 +9,7 @@ not release evidence unless they are linked from `docs/SUBMISSION_CLAIMS.md`.
 ## 1. Domain Discovery & The Operational Reality
 
 ### The Commercial Environment
-* **The Retail Operator:** Richmond General — a one-person heritage resale shop located at 10324 N Main St, Richmond, Illinois (McHenry County).
+* **The Retail Operator:** Richmond General — a one-person heritage resale shop located at 10325 N Main St, Richmond, Illinois (McHenry County).
 * **The Sourcing Target:** Blue Toad Auctions — located at 200 Elizabeth Lane, Genoa City, Wisconsin (Walworth County), **2.3 miles north via US-12** (5-minute drive / 53-minute walk across the state line).
 * **The Auction Format:** A traditional country estate auction held bi-weekly on Saturday mornings.
 * **The Sourcing Friction:** 
