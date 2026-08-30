@@ -13,3 +13,5 @@ Do not copy values here. Open the file.
 | Reshoot recall table | `docs/CAPABILITY_PROBE.md` |
 | Sep 5 listing photo count | `data/sep5_gallery_4160519/manifest.json` `total_photos` |
 | Google spend this process | `GET /api/audit` and `/health` `google_cost_status` |
+| Additional Info paste | `docs/DEVPOST.md` section **Additional Info** |
+| Additional Info checkbox rules | `.grok/skills/devpost-submission/references/additional-info.md` |

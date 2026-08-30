@@ -29,6 +29,46 @@
 
 ---
 
+## Additional Info (judges / organizers — not the public gallery)
+
+Paste into
+`https://devpost.com/submit-to/30845-all-things-agentic-hackathon/manage/submissions/1144616-blue-toad-fleet/additional-info/edit`
+
+* **Startup Excellence:** do not check unless a corporate email is supplied. Organization name `Richmond General` is the shop, not an opt-in.
+* **Submitter Type:** Individuals
+* **Submitter country of residence:** United States
+* **Which Category are you submitting to?** Collaborative Partner
+* **Organization name:** Richmond General
+* **What date did you start this project?** `08-18-2026`
+* **URL to public code repo:** `https://github.com/TheScottyB/blue-toad-fleet`
+* **Did you add Reproducible Testing instructions to your README?** Yes
+* **Hosted project URL:** `https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app`
+* **Testing instructions (judges only):**
+
+```
+No credentials for GET. Clone https://github.com/TheScottyB/blue-toad-fleet
+make install
+make test          # hermetic unit suite; count is the command output
+make demo          # seeded decision pipeline
+make cycles        # cross-cycle memory
+Live: https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app
+      https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/health  (git_commit, gemma_ok, google_cost_status)
+      https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/walk
+      https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/api/lots
+      https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/api/audit
+GET / never Vertex-embeds or Google-Searches. Sending a bid is a human action.
+```
+
+* **Which Google SDK did you use?** Google GenAI SDK (`google-genai`) — not ADK, not Antigravity, not Genkit.
+* **Which Google Cloud Service(s) did you use?** Cloud Run, Firestore, Pub/Sub. Not Cloud SQL. Not GKE.
+* **Architecture diagram:** `docs/architecture_diagram.png` (already on the form if present).
+* **Startup Prize org / corporate email:** leave blank unless opting in.
+* **Which Google AI Models did you use?** `Gemini 3.6 Flash, Gemini 3.5 Flash Lite, Gemini 2.5 Flash (fallback), Gemma 4, Gemini Embedding 2`
+* **Bonus content URL:** `https://github.com/TheScottyB/blue-toad-fleet/blob/master/docs/blog/index.html` (public; disclosure sentence is in the article).
+* **Bonus social post:** empty until a permalink with `#AllThingsAgentic` exists. Draft: `docs/blog/SOCIAL_POST.md`. Do not paste a page URL.
+
+---
+
 # Project Story (Copy & Paste Below into "About the project")
 
 ## Inspiration

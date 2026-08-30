@@ -1,6 +1,6 @@
 ---
 name: devpost-submission
-description: Use when drafting or updating Blue Toad Fleet Devpost copy, hackathon form fields, judged README/DEVPOST claims, submission 1144616, All Things Agentic, or when the user runs /devpost-submission.
+description: Use when drafting or updating Blue Toad Fleet Devpost copy, hackathon form fields, Additional Info, judged README/DEVPOST claims, submission 1144616, All Things Agentic, additional-info/edit, Google SDK/Cloud checkboxes, or when the user runs /devpost-submission.
 ---
 
 # Blue Toad Fleet Devpost submission
@@ -9,8 +9,9 @@ Paste surface for humans: `docs/DEVPOST.md`. Claim boundary: `docs/SUBMISSION_CL
 
 **REQUIRED SUB-SKILL:** Use `report-gate` before emitting any judged sentence a stranger could prove wrong.
 
-Devpost edit URL (login is the operator's):
-`https://devpost.com/submit-to/30845-all-things-agentic-hackathon/manage/submissions/1144616-blue-toad-fleet/project_details/edit`
+Devpost URLs (login is the operator's):
+- Project details: `https://devpost.com/submit-to/30845-all-things-agentic-hackathon/manage/submissions/1144616-blue-toad-fleet/project_details/edit`
+- Additional info: `https://devpost.com/submit-to/30845-all-things-agentic-hackathon/manage/submissions/1144616-blue-toad-fleet/additional-info/edit`
 
 ## Authority order
 
@@ -69,9 +70,15 @@ Full inventory: `docs/SUBMISSION_CLAIMS.md`.
 
 ## Form field homes
 
-All paste values live at the top of `docs/DEVPOST.md`. Track: **The Collaborative Partner**. Submitter: Individual, United States, Richmond General. Start date: `08-18-2026`. Hosted URL: `https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app`.
+Paste values live in `docs/DEVPOST.md`:
+- **Form Fields Quick Reference** — gallery-visible story fields.
+- **Additional Info** — the judges-only page (SDK, Cloud services, models, testing instructions, bonus links).
 
-Google models actually on the live path: `gemini-3.6-flash`, `gemini-3.5-flash-lite`, `gemini-2.5-flash` (fallback), `gemma-4-26b-a4b-it-maas`, `gemini-embedding-2` (reviewed reshoot edges). List what the code calls, not a marketing subset.
+Checkbox rules for that page: `references/additional-info.md`.
+
+Track: **Collaborative Partner** (form wording; gallery may show "The Collaborative Partner"). Submitter: Individuals, United States. Organization name: `Richmond General`. Start date: `08-18-2026`. Hosted URL: `https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app`.
+
+Google models the code calls: `gemini-3.6-flash`, `gemini-3.5-flash-lite`, `gemini-2.5-flash` (fallback), `gemma-4-26b-a4b-it-maas`, `gemini-embedding-2`. List those, not a marketing subset. SDK is **google-genai**, never ADK.
 
 ## Red flags
 
@@ -79,3 +86,7 @@ Google models actually on the live path: `gemini-3.6-flash`, `gemini-3.5-flash-l
 - "Live" attributed without a `/health` SHA.
 - Funnel language in the grouping paragraph.
 - A second copy of a figure that `media/submission_facts.json` already owns.
+- Checking ADK, Cloud SQL, or GKE.
+- Checking Startup Excellence without a corporate email.
+- Pasting a Facebook *page* URL as the social bonus (needs the post permalink).
+- Google models field listing only the three Flash names (omit Gemma 4 / Embedding 2).
