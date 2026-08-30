@@ -1,10 +1,18 @@
 from src.intake.manifest import TriagedPhoto
-from src.intake.puzzle import cannot_link, seed_clusters
+from src.intake.puzzle import _to_piece, cannot_link, seed_clusters
 
 
 def P(pid, caption="", same=False, is_lot=True):
     return TriagedPhoto(photo_id=pid, caption=caption,
                         is_lot=is_lot, same_lot_as_previous=same)
+
+
+def test_adapter_copies_walk_sequence_onto_the_photo_piece():
+    piece = _to_piece(TriagedPhoto(
+        photo_id="BT-181", caption="jewelry tray", sequence=181,
+    ))
+    assert piece.photo_id == "BT-181"
+    assert piece.sequence == 181
 
 
 class TestSeed:

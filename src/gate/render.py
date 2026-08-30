@@ -700,12 +700,17 @@ def _bt_sequence(photo_id: str) -> int | None:
 
 
 def _seat_sequences(seats: list[Seat]) -> dict[str, int]:
-    return {
-        pid: seq
-        for seat in seats
-        for pid in seat.photo_ids
-        if (seq := _bt_sequence(pid)) is not None
-    }
+    out: dict[str, int] = {}
+    for seat in seats:
+        if seat.members:
+            for member in seat.members:
+                out[member.photo_id] = member.sequence
+            continue
+        for pid in seat.photo_ids:
+            seq = _bt_sequence(pid)
+            if seq is not None:
+                out[pid] = seq
+    return out
 
 
 def _walk_returns_block(v: CycleView) -> str:
@@ -780,10 +785,13 @@ def _clerk_stage(v: CycleView) -> str:
 def _photos_for_seat(seat: Seat | None) -> str:
     if seat is None:
         return ""
-    seqs = [
-        seq for pid in seat.photo_ids
-        if (seq := _bt_sequence(pid)) is not None
-    ]
+    if seat.members:
+        seqs = [member.sequence for member in seat.members]
+    else:
+        seqs = [
+            seq for pid in seat.photo_ids
+            if (seq := _bt_sequence(pid)) is not None
+        ]
     if not seqs:
         return ""
     show = [seqs[0]] if len(seqs) == 1 else [seqs[0], seqs[-1]]

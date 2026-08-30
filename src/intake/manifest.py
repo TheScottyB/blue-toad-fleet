@@ -93,6 +93,7 @@ class TriagedPhoto:
     caption: str = ""
     is_lot: bool = True
     same_lot_as_previous: bool = False
+    sequence: int = 0
 
 
 @dataclass(frozen=True)
