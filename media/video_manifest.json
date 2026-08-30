@@ -32,7 +32,7 @@
   },
   "close": {
     "card": "media/cards/close.png",
-    "duration_seconds": 2.8
+    "duration_seconds": 2.2
   },
   "beats": [
     {
@@ -116,7 +116,12 @@
       "page": "media/raw/video_pages/terminal.html",
       "output": "media/raw/terminal.webm",
       "composited_output": "media/beat4_cloud_proof.mp4",
-      "hold_ms": 13000,
+      "hold_ms": 6500,
+      "shot_hold_ms": 8000,
+      "console_shots": [
+        "media/video_inputs/cloud_console/revisions.png",
+        "media/video_inputs/cloud_console/metrics.png"
+      ],
       "commands": [
         {
           "display": "gcloud run services describe blue-toad-fleet --region us-central1",

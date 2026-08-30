@@ -131,7 +131,14 @@ def test_narration_placeholders_keep_underscored_fact_names(monkeypatch):
             "money": {"committed_max": 275},
         },
     )
-    assert rendered == "109 and 275.00 dollars"
+    # Money is spoken in words: TTS read the digits "520" as "five twenty",
+    # which a listener hears as $5.20.
+    assert rendered == "109 and two hundred seventy-five dollars"
+    assert (
+        narration.render_facts("{{money.committed_all_in|usd}}",
+                               {"money": {"committed_all_in": 316.25}})
+        == "three hundred sixteen dollars and twenty-five cents"
+    )
 
 
 def test_gallery_renderer_escapes_third_party_caption(tmp_path):

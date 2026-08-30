@@ -33,6 +33,15 @@ def build(manifest_value: str, output_value: str | None) -> None:
     hold_ms = int(terminal.get("hold_ms", 2700))
     if hold_ms <= 0:
         raise VideoBuildError("terminal hold_ms must be positive")
+    shot_hold_ms = int(terminal.get("shot_hold_ms", 8000))
+    if shot_hold_ms <= 0:
+        raise VideoBuildError("terminal shot_hold_ms must be positive")
+    shot_blocks: list[str] = []
+    for index, shot_value in enumerate(terminal.get("console_shots") or []):
+        shot_path = require_file(shot_value, f"console shot {index + 1}")
+        shot_blocks.append(
+            f'<div class="shot"><img src="{shot_path.resolve().as_uri()}"></div>'
+        )
 
     blocks: list[str] = []
     for index, step in enumerate(steps):
@@ -54,9 +63,10 @@ def build(manifest_value: str, output_value: str | None) -> None:
     page = f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><title>proof</title><style>
 *{{box-sizing:border-box;margin:0}}body{{width:1600px;height:900px;background:#080b11;padding:52px 60px;font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:19px;line-height:1.65;color:#cbd5e1;overflow:hidden}}
 .step{{display:none;margin-bottom:20px}}.step.on{{display:block}}.p{{color:#34d399}}.c{{color:#64748b}}.t{{color:#f1f5f9}}.cmd{{white-space:pre-wrap}}.cur{{color:#22d3ee;animation:b 1s steps(2) infinite}}@keyframes b{{50%{{opacity:0}}}}.out{{color:#94a3b8;white-space:pre-wrap;margin-top:4px}}.out:empty{{display:none}}
-</style></head><body>{''.join(blocks)}<script>
+.shot{{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:#080b11;z-index:5}}.shot.on{{display:flex}}.shot img{{max-width:100%;max-height:100%}}
+</style></head><body>{''.join(shot_blocks)}{''.join(blocks)}<script>
 const steps=[...document.querySelectorAll('.step')];const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-(async()=>{{await sleep(900);for(const [index,step] of steps.entries()){{step.classList.add('on');const source=step.querySelector('.src').textContent;const typed=step.querySelector('.t');const output=step.querySelector('.out');const saved=output.textContent;output.textContent='';for(const character of source){{typed.textContent+=character;await sleep(26)}}await sleep(420);step.querySelector('.cur').style.display='none';output.textContent=saved;await sleep({hold_ms});if(document.body.scrollHeight>900)steps[index-2]?.classList.remove('on')}}document.title='done'}})();
+(async()=>{{await sleep(900);for(const shot of [...document.querySelectorAll('.shot')]){{shot.classList.add('on');await sleep({shot_hold_ms});shot.classList.remove('on')}}for(const [index,step] of steps.entries()){{step.classList.add('on');const source=step.querySelector('.src').textContent;const typed=step.querySelector('.t');const output=step.querySelector('.out');const saved=output.textContent;output.textContent='';for(const character of source){{typed.textContent+=character;await sleep(26)}}await sleep(420);step.querySelector('.cur').style.display='none';output.textContent=saved;await sleep({hold_ms});if(document.body.scrollHeight>900)steps[index-2]?.classList.remove('on')}}document.title='done'}})();
 </script></body></html>'''
     destination = atomic_write_text(output_value or terminal["page"], page)
     print(f"wrote {display_path(destination)} ({len(steps)} steps)")

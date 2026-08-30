@@ -30,7 +30,42 @@ DEFAULT_VOICE = "iP95p4xoKVk53GoZ742B"
 DEFAULT_MODEL = "eleven_multilingual_v2"
 BEAT_BREAK = '<break time="1.6s" />'
 PLACEHOLDER = re.compile(r"{{\s*([a-zA-Z0-9_.]+)(?:\|([a-z]+))?\s*}}")
-SPEECH_FIXES = [(r"\bcomps\b", "comparables"), (r"\bCOMP\b", "COMPARABLE")]
+SPEECH_FIXES = [
+    (r"\bcomps\b", "comparables"),
+    (r"\bCOMP\b", "COMPARABLE"),
+    # The TTS rushes the closing tagline into the previous sentence
+    # ("...human action blue-toad-fleet velocity..."). Explicit breaks give
+    # the product name room to land complete; the synthesis model honors
+    # <break/> tags (the full-track mode already relies on them).
+    (r"Blue Toad Fleet:",
+     '<break time="0.8s" /> Blue Toad Fleet. <break time="0.5s" />'),
+]
+
+
+_ONES = ["zero", "one", "two", "three", "four", "five", "six", "seven",
+         "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen",
+         "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"]
+_TENS = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy",
+         "eighty", "ninety"]
+
+
+def spell_int(number: int) -> str:
+    """Spell 0..9999 in words. Digits invite TTS ambiguity — '520' was
+    synthesized as 'five twenty', which a listener hears as $5.20."""
+    if not 0 <= number <= 9999:
+        raise VideoBuildError(f"cannot spell {number} for narration")
+    if number < 20:
+        return _ONES[number]
+    if number < 100:
+        tens, ones = divmod(number, 10)
+        return _TENS[tens] + (f"-{_ONES[ones]}" if ones else "")
+    if number < 1000:
+        hundreds, rest = divmod(number, 100)
+        out = f"{_ONES[hundreds]} hundred"
+        return out + (f" {spell_int(rest)}" if rest else "")
+    thousands, rest = divmod(number, 1000)
+    out = f"{_ONES[thousands]} thousand"
+    return out + (f" {spell_int(rest)}" if rest else "")
 
 
 def api_key() -> str:
@@ -64,9 +99,18 @@ def render_facts(text: str, facts: dict) -> str:
             return str(value)
         if formatter == "usd":
             try:
-                return f"{float(value):,.2f} dollars"
+                amount = float(value)
             except (TypeError, ValueError) as exc:
                 raise VideoBuildError(f"fact {key} cannot be formatted as USD") from exc
+            # TTS garbles money digits: "520.00 dollars" synthesized as
+            # "five-twenty DOSOR dollars", and bare "520" as "five twenty"
+            # (heard as $5.20). Words remove the ambiguity entirely.
+            whole = int(amount)
+            cents = round((amount - whole) * 100)
+            spoken = f"{spell_int(whole)} dollars"
+            if cents:
+                return f"{spoken} and {spell_int(cents)} cents"
+            return spoken
         raise VideoBuildError(f"unsupported narration fact formatter: {formatter}")
 
     rendered = PLACEHOLDER.sub(replace, text)

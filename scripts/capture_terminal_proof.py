@@ -40,7 +40,7 @@ def capture(manifest_value: str, output_value: str | None) -> None:
                 check=False,
                 capture_output=True,
                 text=True,
-                timeout=300,
+                timeout=900,
             )
         except FileNotFoundError as exc:
             raise VideoBuildError(f"terminal proof program is missing: {argv[0]}") from exc
