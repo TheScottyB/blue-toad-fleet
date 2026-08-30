@@ -244,7 +244,7 @@ def comp_report(identification: str, query: str,
         "active_now": active.total_active,
         "absorption": absorption(sold.sold_units, active.total_active or 0),
         "months_of_supply": months_of_supply(
-            absorption(sold.sold_units, active.total_active or 0)),
+            sold.sold_units, active.total_active or 0),
         # Page aggregates over the WHOLE result set, before comp screening —
         # same _unfiltered convention as the MCP server's landed figure.
         "avg_sold_price_unfiltered": sold.avg_price,

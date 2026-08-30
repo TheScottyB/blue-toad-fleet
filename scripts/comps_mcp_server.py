@@ -95,7 +95,8 @@ def ebay_absorption(query: str) -> dict:
         "sold_results_truncated": sold.truncated,
         "active_now": active.total_active,
         "absorption": rate,
-        "months_of_supply": months_of_supply(rate),
+        "months_of_supply": months_of_supply(sold.sold_units,
+                                             active.total_active or 0),
         "genuine_zero": sold.genuine_zero,
         "landed_avg_unfiltered": sold.landed_avg,
     }

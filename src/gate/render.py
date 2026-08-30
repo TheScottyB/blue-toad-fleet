@@ -15,6 +15,7 @@ from src.appraisal import QueueResult
 from src.bidmath import (units_committed, clerk_directive, BidMechanic,
                          CoverageGap, Decision, Priority, SheetSummary)
 from src.gate.voice import PitchVoice
+from src.gate.walkstrip import closure_pairs
 from src.intake.spatial import Seat, Zone
 from src.memory.ids import make_question_id
 
@@ -142,6 +143,14 @@ footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);color:v
 padding:2px 6px;margin:2px 3px 0 0;border-radius:4px;background:rgba(56,189,248,.15);color:var(--cyan)}
 .holding{margin-top:16px;padding-top:12px;border-top:1px dashed var(--line)}
 .holding .map-title{margin-bottom:10px}
+.walk-returns{margin:12px 0}
+.walk-return{display:flex;flex-wrap:wrap;align-items:center;gap:10px;
+background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:8px 0}
+.walk-return b{font:600 12px ui-monospace,Menlo,monospace;color:var(--cyan)}
+.walk-pair{display:flex;gap:6px}
+.walk-pair img{width:96px;height:66px;object-fit:cover;border-radius:4px;
+border:1px solid var(--line);background:var(--card2)}
+.walk-meta{font-size:12px;color:var(--ink3)}
 
 /* Pitch Banner */
 .pitch-card{background:linear-gradient(135deg, rgba(167,139,250,0.08) 0%, rgba(56,189,248,0.08) 100%);
@@ -255,6 +264,53 @@ _SHEET_JS = """
     }).catch(function(){
       btn.disabled = false;
       report(false, {detail: "network error"});
+    });
+  });
+})();
+</script>
+"""
+
+
+_WALK_JS = """
+<script>
+(function(){
+  var box = document.getElementById("answer-result");
+  function tokenHeaders() {
+    var headers = {"Content-Type": "application/json"};
+    var token = document.getElementById("cycle-token");
+    if (token && token.value.trim()) headers["X-Operator-Token"] = token.value.trim();
+    return headers;
+  }
+  document.addEventListener("click", function(ev){
+    var btn = ev.target.closest("[data-act=same], [data-act=not-same]");
+    if (!btn) return;
+    ev.preventDefault();
+    var a = btn.getAttribute("data-seq-a");
+    var b = btn.getAttribute("data-seq-b");
+    if (!a || !b) return;
+    btn.disabled = true;
+    fetch("/api/walk/edge", {
+      method: "POST",
+      headers: tokenHeaders(),
+      body: JSON.stringify({
+        seq_a: Number(a),
+        seq_b: Number(b),
+        status: btn.getAttribute("data-act") === "same" ? "approved" : "rejected"
+      })
+    }).then(function(r){
+      return r.json().then(function(j){ return {ok: r.ok, j: j}; });
+    }).then(function(x){
+      if (box) {
+        box.hidden = false;
+        box.textContent = x.ok
+          ? (x.j.status + " · " + x.j.edge_status + " · same_lot " + x.j.after.same_lot)
+          : (x.j.detail || "failed");
+      }
+      if (x.ok) setTimeout(function(){ location.reload(); }, 700);
+      else btn.disabled = false;
+    }).catch(function(){
+      btn.disabled = false;
+      if (box) { box.hidden = false; box.textContent = "network error"; }
     });
   });
 })();
@@ -602,6 +658,55 @@ def _refuse_div(d: Decision) -> str:
     return f'<div class="refuse">{text}</div>'
 
 
+def _bt_sequence(photo_id: str) -> int | None:
+    if photo_id.startswith("BT-") and photo_id[3:].isdigit():
+        return int(photo_id[3:])
+    return None
+
+
+def _seat_sequences(seats: list[Seat]) -> dict[str, int]:
+    return {
+        pid: seq
+        for seat in seats
+        for pid in seat.photo_ids
+        if (seq := _bt_sequence(pid)) is not None
+    }
+
+
+def _walk_returns_block(v: CycleView) -> str:
+    pairs = closure_pairs(v.seats, sequences=_seat_sequences(v.seats))
+    if not pairs:
+        return (
+            '<p style="color:var(--ink3);font-size:13px">'
+            "No walk returns in this grouping.</p>"
+        )
+    rows = []
+    for lot_id, anchor, returned in pairs:
+        rows.append(
+            f'<div class="walk-return" data-seq-a="{anchor}" data-seq-b="{returned}">'
+            f"<b>{escape(lot_id)}</b>"
+            f'<span class="walk-pair">'
+            f'<img src="/walk/photo/{anchor}" alt="{anchor:03d}" loading="lazy">'
+            f'<img src="/walk/photo/{returned}" alt="{returned:03d}" loading="lazy">'
+            f"</span>"
+            f'<span class="walk-meta">shot at {anchor:03d}, returned at '
+            f"{returned:03d} ({returned - anchor} frames later)</span>"
+            f'<span class="acts">'
+            f'<button type="button" class="btn p" data-act="same" '
+            f'data-seq-a="{anchor}" data-seq-b="{returned}">confirm</button>'
+            f'<button type="button" class="btn" data-act="not-same" '
+            f'data-seq-a="{anchor}" data-seq-b="{returned}">reject</button>'
+            f"</span></div>"
+        )
+    return (
+        '<div class="walk-returns">'
+        '<p style="color:var(--ink2);font-size:13px">Walk returns &mdash; far-apart '
+        "frames currently grouped as one lot.</p>"
+        + "".join(rows)
+        + "</div>"
+    )
+
+
 def _walk_stage(v: CycleView) -> str:
     seated = {pid for seat in v.seats for pid in seat.photo_ids}
     ungrouped = max(0, v.photos_ingested - len(seated))
@@ -613,6 +718,7 @@ def _walk_stage(v: CycleView) -> str:
   Grouping rebuilds from those rulings before questions and the envelope.</p>
   <p style="color:var(--ink3);font-size:13px">{v.photos_ingested} photos ·
   {len(v.seats)} lots · {ungrouped} not grouped</p>
+  {_walk_returns_block(v)}
   <p><a href="/walk">Open the walk</a></p>
   {_map_block(v)}
 </section>
@@ -774,5 +880,6 @@ def render_console(v: CycleView, pitch_text: str = "") -> str:
 </div>
 {_ANSWER_JS}
 {_SHEET_JS}
+{_WALK_JS}
 {_CYCLE_JS if v.cycle_controls else ""}
 </body></html>"""

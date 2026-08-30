@@ -324,7 +324,15 @@ def absorption(sold_units: int, active_now: int) -> float | None:
     return round(sold_units / active_now, 2)
 
 
-def months_of_supply(absorption_rate: float | None) -> float | None:
-    if not absorption_rate:
+def months_of_supply(sold_units: int, active_now: int) -> float | None:
+    """12 * active / sold — months the standing supply would take to clear.
+
+    Computed from the raw counts, never from the rounded absorption rate:
+    12 / round(rate, 2) printed 400 months where the true figure was 474
+    (RG-0144 windsor read, 2026-08-29) — the slow markets where this number
+    matters most are exactly where the 2-dp rounding error explodes. None
+    when either side is zero: no sales is not "infinite months" on a sheet,
+    and no standing supply is not "0 months"."""
+    if sold_units <= 0 or active_now <= 0:
         return None
-    return round(12.0 / absorption_rate, 1)
+    return round(12.0 * active_now / sold_units, 1)
