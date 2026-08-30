@@ -270,6 +270,12 @@ def comp_report(identification: str, query: str,
         prices = sorted(r.price for r in comp_rows if r.price is not None)
         out["comp_selection"] = {
             "comp_units": sum(r.qty for r in comp_rows),
+            # The accepted rows, so a band that moves between runs names the
+            # listing that entered or left it (a borderline row flipped
+            # unsure -> comp between the 2026-08-24/29 RG-0144 runs and only
+            # the band betrayed it).
+            "comps": [{"title": r.title[:80], "price": r.price, "qty": r.qty,
+                       "date": r.date} for r in comp_rows[:20]],
             "excluded_count": len(excluded),
             "excluded": excluded[:20],
             "comp_price_band": ([prices[0], prices[-1]] if prices else None),

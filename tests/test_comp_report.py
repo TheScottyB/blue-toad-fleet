@@ -100,6 +100,21 @@ class TestPartialSelection:
         assert sel["excluded_count"] == 1
         assert sel["comp_price_band"] == [33.30, 33.30]
 
+    def test_the_judged_comps_are_listed_not_just_the_excluded(
+            self, two_row_market, monkeypatch):
+        """When the band moves between runs, the row that entered it must be
+        visible. A borderline listing flipped unsure -> comp between the
+        2026-08-24 and 2026-08-29 RG-0144 runs and only the band betrayed
+        it — the accepted rows were nowhere in the output to diff."""
+        monkeypatch.setattr(live, "select_comps", lambda ident, titles: [
+            {"index": 0, "verdict": "comp", "reason": "same item"},
+            {"index": 1, "verdict": "not_comp", "reason": "parts lot"},
+        ])
+        out = live.comp_report("Boston Champion sharpener", "boston champion")
+        assert out["comp_selection"]["comps"] == [
+            {"title": "Vintage Boston Champion Pencil Sharpener NOS",
+             "price": 33.30, "qty": 6, "date": "Jul 15, 2026"}]
+
 
 class TestFilterSurfacing:
     """Both tools surface the page-printed filter markers — the page's own
