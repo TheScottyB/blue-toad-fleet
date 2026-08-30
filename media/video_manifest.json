@@ -77,7 +77,7 @@
       "composited_output": "media/raw/beat1_video.mp4",
       "title_card": "media/cards/open.png",
       "title_duration_seconds": 4.4,
-      "duration_seconds": 55,
+      "duration_seconds": 60,
       "top_hold_seconds": 3,
       "bottom_hold_seconds": 4
     },
@@ -107,7 +107,7 @@
         {"label": "memory", "anchor": "ANSWERED FROM MEMORY", "glide_ms": 1700, "hold_ms": 6800},
         {"label": "sheet", "anchor": "BT-001", "glide_ms": 2100, "hold_ms": 7900, "offset": 150},
         {"label": "bids", "anchor": "BT-021", "glide_ms": 3900, "hold_ms": 4600},
-        {"label": "skips", "anchor": "BT-003", "glide_ms": 2400, "hold_ms": 5500}
+        {"label": "skips", "anchor": "BT-003", "glide_ms": 2400, "hold_ms": 8500}
       ]
     },
     "terminal": {
@@ -115,6 +115,7 @@
       "page": "media/raw/video_pages/terminal.html",
       "output": "media/raw/terminal.webm",
       "composited_output": "media/beat4_cloud_proof.mp4",
+      "hold_ms": 13000,
       "commands": [
         {
           "display": "gcloud run services describe blue-toad-fleet --region us-central1",
@@ -127,6 +128,14 @@
             "--region",
             "us-central1",
             "--format=value(status.latestReadyRevisionName,status.url)"
+          ]
+        },
+        {
+          "display": "curl -s https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/health",
+          "argv": [
+            "curl",
+            "-s",
+            "https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/health"
           ]
         },
         {

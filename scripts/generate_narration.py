@@ -147,11 +147,18 @@ def generate(
     full: bool,
     voice: str,
     model: str,
+    only_beat: int | None = None,
 ) -> None:
     manifest = load_json_object(manifest_value, "video manifest")
     facts = load_verified_facts(manifest)
     script = require_file(manifest["sources"]["video_script"], "video script")
     beats = parse_beats(script, facts)
+    if only_beat is not None:
+        if full:
+            raise VideoBuildError("--only-beat cannot be combined with --full")
+        beats = [beat for beat in beats if beat["beat"] == only_beat]
+        if not beats:
+            raise VideoBuildError(f"video script has no voiced beat {only_beat}")
     output_directory = project_path(output_directory_value)
     output_directory.mkdir(parents=True, exist_ok=True)
     key = api_key()
@@ -172,11 +179,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--manifest", default="media/video_manifest.json")
     parser.add_argument("--output-dir", default="media/vo")
     parser.add_argument("--full", action="store_true")
+    parser.add_argument("--only-beat", type=int, choices=[1, 2, 3, 4],
+                        help="Synthesize a single beat, e.g. after a quota-failed run")
     parser.add_argument("--voice", default=os.environ.get("BTF_VOICE", DEFAULT_VOICE))
     parser.add_argument("--model", default=os.environ.get("BTF_TTS_MODEL", DEFAULT_MODEL))
     args = parser.parse_args(argv)
     try:
-        generate(args.manifest, args.output_dir, args.full, args.voice, args.model)
+        generate(args.manifest, args.output_dir, args.full, args.voice, args.model,
+                 args.only_beat)
     except (OSError, ValueError, VideoBuildError) as exc:
         print(f"narration generation failed: {exc}", file=sys.stderr)
         return 1

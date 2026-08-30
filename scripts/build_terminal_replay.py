@@ -30,6 +30,9 @@ def build(manifest_value: str, output_value: str | None) -> None:
         raise VideoBuildError(f"invalid captured terminal steps: {exc}") from exc
     if not isinstance(steps, list) or not steps:
         raise VideoBuildError("captured terminal steps must be a non-empty list")
+    hold_ms = int(terminal.get("hold_ms", 2700))
+    if hold_ms <= 0:
+        raise VideoBuildError("terminal hold_ms must be positive")
 
     blocks: list[str] = []
     for index, step in enumerate(steps):
@@ -53,7 +56,7 @@ def build(manifest_value: str, output_value: str | None) -> None:
 .step{{display:none;margin-bottom:20px}}.step.on{{display:block}}.p{{color:#34d399}}.c{{color:#64748b}}.t{{color:#f1f5f9}}.cmd{{white-space:pre-wrap}}.cur{{color:#22d3ee;animation:b 1s steps(2) infinite}}@keyframes b{{50%{{opacity:0}}}}.out{{color:#94a3b8;white-space:pre-wrap;margin-top:4px}}.out:empty{{display:none}}
 </style></head><body>{''.join(blocks)}<script>
 const steps=[...document.querySelectorAll('.step')];const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-(async()=>{{await sleep(900);for(const [index,step] of steps.entries()){{step.classList.add('on');const source=step.querySelector('.src').textContent;const typed=step.querySelector('.t');const output=step.querySelector('.out');const saved=output.textContent;output.textContent='';for(const character of source){{typed.textContent+=character;await sleep(26)}}await sleep(420);step.querySelector('.cur').style.display='none';output.textContent=saved;await sleep(2700);if(document.body.scrollHeight>900)steps[index-2]?.classList.remove('on')}}document.title='done'}})();
+(async()=>{{await sleep(900);for(const [index,step] of steps.entries()){{step.classList.add('on');const source=step.querySelector('.src').textContent;const typed=step.querySelector('.t');const output=step.querySelector('.out');const saved=output.textContent;output.textContent='';for(const character of source){{typed.textContent+=character;await sleep(26)}}await sleep(420);step.querySelector('.cur').style.display='none';output.textContent=saved;await sleep({hold_ms});if(document.body.scrollHeight>900)steps[index-2]?.classList.remove('on')}}document.title='done'}})();
 </script></body></html>'''
     destination = atomic_write_text(output_value or terminal["page"], page)
     print(f"wrote {display_path(destination)} ({len(steps)} steps)")
