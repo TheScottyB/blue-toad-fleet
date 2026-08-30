@@ -7,11 +7,11 @@ import { checkedGoto, projectPath } from './video_recording.mjs';
 const url = process.env.BTF_URL || 'https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app';
 const shots = [
   ['01-gate-console', null, 24],
-  ['02-showroom-topology', 'POLE BARN SHOWROOM TOPOLOGY', 24],
-  ['03-curator-challenge', "Curator's Negotiation", 24],
-  ['04-memory-and-questions', 'ANSWERED FROM MEMORY', 24],
-  ['05-the-sheet', 'BT-001', 150],
-  ['06-skip-reasoning', 'BT-003', 80],
+  ['02-walk-membership', 'Walk membership', 48],
+  ['03-curator-challenge', "Curator's read", 48],
+  ['04-memory-and-questions', 'Answered from memory', 48],
+  ['05-the-sheet', 'The sheet', 48],
+  ['06-skip-reasoning', 'not on this envelope', 48],
 ];
 const browser = await chromium.launch({ channel: 'chrome' });
 const runDirectory = mkdtempSync(join(tmpdir(), 'blue-toad-shots-'));
@@ -28,10 +28,16 @@ try {
   for (const [name, anchor, offset] of shots) {
     if (anchor) {
       const y = await page.evaluate(([text, adjustment]) => {
-        const hits = [...document.querySelectorAll('body *')]
-          .filter(element => element.textContent?.toLowerCase().includes(text.toLowerCase()));
-        if (!hits.length) return null;
-        let node = hits[hits.length - 1];
+        const fold = value => value.toLowerCase().replace(/[\u2018\u2019\u201A\u201B]/g, "'");
+        const needle = fold(text);
+        const heading = [...document.querySelectorAll('h1,h2,h3,h4,.pitch-hd,.stage-kicker')]
+          .find(element => fold(element.textContent || '').includes(needle));
+        let node = heading || [...document.querySelectorAll('body *')].find(element => {
+          const own = fold(element.textContent || '');
+          if (!own.includes(needle)) return false;
+          return ![...element.children].some(child => fold(child.textContent || '').includes(needle));
+        });
+        if (!node) return null;
         while (node && node.getBoundingClientRect().width < 400) node = node.parentElement;
         return Math.max(0, node.getBoundingClientRect().top + window.scrollY - adjustment);
       }, [anchor, offset]);

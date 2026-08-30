@@ -37,3 +37,15 @@ def test_screenshot_set_is_staged_before_any_publication():
     publish = source.index("for (const [partial, destination] of completed)")
     assert capture < publish
     assert "mkdtempSync" in source
+
+
+def test_screenshot_anchors_match_the_friday_desk_not_a_pole_barn():
+    source = (ROOT / "scripts/capture_screenshots.mjs").read_text()
+    assert "POLE BARN SHOWROOM TOPOLOGY" not in source
+    assert "02-walk-membership" in source
+    assert "Walk membership" in source
+    assert "Curator's read" in source
+    assert "The sheet" in source
+    assert "not on this envelope" in source
+    assert "'BT-001'" not in source
+    assert "'BT-003'" not in source

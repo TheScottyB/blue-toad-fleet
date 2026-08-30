@@ -192,7 +192,7 @@ not used as submission evidence or as an input to the current pipeline.
 ### The Output: Live Gate Console UI (Google Cloud Run)
 <div align="center">
   <img src="docs/screenshots/01-gate-console.png" width="48%" alt="Gate Console Header" style="border-radius: 8px;" />
-  <img src="docs/screenshots/02-showroom-topology.png" width="48%" alt="Historical Gate capture; replace after the release gate passes" style="border-radius: 8px;" />
+  <img src="docs/screenshots/02-walk-membership.png" width="48%" alt="Walk membership on the Friday desk" style="border-radius: 8px;" />
 </div>
 
 ### Cloud-backed cycle kickoff

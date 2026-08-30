@@ -12,11 +12,12 @@ Drive a **signed-in** Chrome. `open_page` / anonymous fetch hits the login wall 
   against `docs/SUBMISSION_CLAIMS.md` before assuming only additions are
   needed.
 - **Vet gallery images by their PIXELS, not their filenames.**
-  `docs/screenshots/01-gate-console.png` and `05-the-sheet.png` render the
-  old console: "POLE BARN SHOWROOM TOPOLOGY", "12 BID(S)", AUTO-SEND badges,
-  BT-181 allocated. No caption cures banned pixels. Use `00-raw-auction-gallery.png`,
-  fresh `cdp_capture.py` shots of the live console `/` and `/walk`, and the
-  Cloud-Run revisions capture instead.
+  Recaptured 2026-08-29 from the live Gate: `01-gate-console.png` is the
+  Friday desk (462 photos, 46 bids, $598 of $600), `05-the-sheet.png` is
+  "THE SHEET — 46 BID(S) ALLOCATED" with BT-001/BT-002. `02-showroom-topology.png`
+  is gone from the tree; `02-walk-membership.png` is walk membership, not a
+  room map — do not upload it as topology. No caption cures banned pixels.
+  Still open each PNG before attaching.
 - **Image captions cap at 140 characters** — the form flags overage with a
   red negative counter and refuses that caption on save.
 - **Additional Info arrived pre-filled WRONG:** SDK was set to
@@ -59,8 +60,8 @@ Fill from `docs/DEVPOST.md` **Form Fields Quick Reference** and **Project Story*
 | Built with | Form Fields **Built with (Tags)** |
 | Try it out | Form Fields **Try it out** links |
 | Inspiration / What it does / How we built it / Challenges / Accomplishments / What we learned / What's next | matching DEVPOST headings |
-| Demo video | `media/blue_toad_fleet_demo.mp4` |
-| Gallery images | `docs/screenshots/00-raw-auction-gallery.png`, `01-gate-console.png`, `05-the-sheet.png`. Add `media/video_inputs/cloud_console/revisions.png` for Cloud Run proof. Skip `02-showroom-topology.png` (historical; do not present as a pole-barn map). |
+| Demo video | Live widget is a YouTube/Vimeo/Facebook/Youku URL, not an MP4 upload. Current form value `https://youtu.be/PaLRNZLHi0c` (oembed title: Blue Toad Fleet — Demo). Also keep the GitHub MP4 as a Try-it-out link. |
+| Gallery images | `docs/screenshots/00-raw-auction-gallery.png`, `01-gate-console.png`, `05-the-sheet.png`. Add `media/video_inputs/cloud_console/revisions.png` for Cloud Run proof. Skip `02-showroom-topology.png` if still on disk (historical; do not present as a pole-barn map). Do not upload `02-walk-membership.png` as a reconstructed room map — it is Friday-desk walk membership. |
 
 **Save** (Update project). Do **not** click the hackathon **Submit** control unless the operator said to submit.
 
@@ -70,7 +71,7 @@ Read the saved page back against DEVPOST.md. Mismatched money or models → fix 
 
 URL: `.../additional-info/edit`
 
-Paste from DEVPOST.md **Additional Info**. Checkbox rules: `additional-info.md`. Upload `docs/architecture_diagram.png` into the architecture-diagram control.
+Paste from DEVPOST.md **Additional Info**. Checkbox rules: `additional-info.md`. Upload `docs/architecture_diagram.png` into the architecture-diagram control. Testing instructions is a single-line `string` input, not a textarea — collapse the DEVPOST block to fit (the live widget drops a ~627-character paste).
 
 Save. Do not Submit unless asked.
 
