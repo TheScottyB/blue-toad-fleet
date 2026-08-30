@@ -9,7 +9,8 @@ Ranked by consequence. Every item names a file:line and what goes wrong if it
 stays. Items marked **[lane: X]** belong to another session — do not take them
 without saying so, and see `docs/lane-briefs/` for the boundary.
 
-Submission deadline **Aug 31 2026 5:00pm PDT**. Deploy drop-dead **Aug 27**.
+Submission deadline **Monday Aug 31, 2026, 7:00pm CDT** (Devpost labels this
+5:00pm PDT; same instant, 8:00pm EDT). Deploy drop-dead **Aug 27**.
 
 Master remediation documents:
 

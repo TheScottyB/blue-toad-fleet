@@ -1,17 +1,19 @@
 ---
 name: devpost-submission
-description: Use when drafting or updating Blue Toad Fleet Devpost copy, hackathon form fields, Additional Info, judged README/DEVPOST claims, submission 1144616, All Things Agentic, additional-info/edit, Google SDK/Cloud checkboxes, or when the user runs /devpost-submission.
+description: Use when drafting or updating Blue Toad Fleet Devpost copy, hackathon form fields, Additional Info, judged README/DEVPOST claims, submission 1144616, All Things Agentic, additional-info/edit, project_details/edit, Google SDK/Cloud checkboxes, capturing submission screenshots, generating the architecture diagram, filling the live Devpost form, or when the user runs /devpost-submission.
 ---
 
 # Blue Toad Fleet Devpost submission
 
-Paste surface for humans: `docs/DEVPOST.md`. Claim boundary: `docs/SUBMISSION_CLAIMS.md`. Mutable figures: `media/submission_facts.json` only after a sealed, release-eligible snapshot.
+Paste surface: `docs/DEVPOST.md`. Claim boundary: `docs/SUBMISSION_CLAIMS.md`. Mutable figures: `media/submission_facts.json` only after a sealed, release-eligible snapshot.
 
 **REQUIRED SUB-SKILL:** Use `report-gate` before emitting any judged sentence a stranger could prove wrong.
 
-Devpost URLs (login is the operator's):
+Devpost (operator login in `$HOME/.btf-chrome-profile`):
 - Project details: `https://devpost.com/submit-to/30845-all-things-agentic-hackathon/manage/submissions/1144616-blue-toad-fleet/project_details/edit`
 - Additional info: `https://devpost.com/submit-to/30845-all-things-agentic-hackathon/manage/submissions/1144616-blue-toad-fleet/additional-info/edit`
+
+Deadline: `docs/TODO.md` (Monday Aug 31, 2026, 7:00pm CDT / Devpost 5:00pm PDT).
 
 ## Authority order
 
@@ -65,8 +67,17 @@ Full inventory: `docs/SUBMISSION_CLAIMS.md`.
 3. Update `docs/DEVPOST.md` form-field block and story sections so they match 1–2. Keep the strings `tests/test_docs_match_the_sheet.py` asserts.
 4. Run report-gate on the edited copy. Refuted numbers are replaced, not deleted quietly.
 5. Run `.venv/bin/python -m pytest tests/test_docs_match_the_sheet.py tests/test_sheet_matches_what_was_sent.py tests/test_submission_facts.py`.
-6. If the Devpost page is a login wall, stop and give the operator the paste from `docs/DEVPOST.md`. Do not guess form widgets.
-7. Do not deploy, force-push, or send mail from this skill.
+6. Gather shots (label them as the **deployed** console if `git_commit` ≠ `HEAD`):
+   ```bash
+   node scripts/capture_raw_gallery.mjs
+   node scripts/capture_screenshots.mjs
+   ```
+7. Generate the architecture diagram from sealed facts:
+   ```bash
+   .venv/bin/python scripts/generate_architecture_diagram.py --manifest media/video_manifest.json --output docs/architecture_diagram.png
+   ```
+8. Open the live form in the capture Chrome and **load** DEVPOST.md onto it. Field map, uploads, Save-vs-Submit: `references/fill-form.md`. A login page is not the end of the recipe — wait for the operator to sign in, then fill. Do not guess missing widgets. Do not click **Submit** unless the operator asked to submit.
+9. Do not deploy, force-push, or send mail from this skill.
 
 ## Form field homes
 
@@ -74,7 +85,7 @@ Paste values live in `docs/DEVPOST.md`:
 - **Form Fields Quick Reference** — gallery-visible story fields.
 - **Additional Info** — the judges-only page (SDK, Cloud services, models, testing instructions, bonus links).
 
-Checkbox rules for that page: `references/additional-info.md`.
+Checkbox rules: `references/additional-info.md`. Live fill: `references/fill-form.md`.
 
 Track: **Collaborative Partner** (form wording; gallery may show "The Collaborative Partner"). Submitter: Individuals, United States. Organization name: `Richmond General`. Start date: `08-18-2026`. Hosted URL: `https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app`.
 
@@ -90,3 +101,6 @@ Google models the code calls: `gemini-3.6-flash`, `gemini-3.5-flash-lite`, `gemi
 - Checking Startup Excellence without a corporate email.
 - Pasting a Facebook *page* URL as the social bonus (needs the post permalink).
 - Google models field listing only the three Flash names (omit Gemma 4 / Embedding 2).
+- Stopping at the login wall instead of waiting for sign-in and filling.
+- Clicking Devpost **Submit** when the operator asked only to load/save.
+- Uploading `02-showroom-topology.png` as a reconstructed pole barn.

@@ -71,12 +71,35 @@ def _input_identity(manifest: dict, facts_sha256: str) -> str:
     ).encode()).hexdigest()
 
 
-def _require_embedded_identity(payload: dict, facts_sha256: str, inputs_sha256: str) -> None:
+def _embedded_comment(payload: dict) -> str:
     tags = (payload.get("format") or {}).get("tags") or {}
-    comment = str(tags.get("comment") or tags.get("COMMENT") or "")
+    return str(tags.get("comment") or tags.get("COMMENT") or "")
+
+
+def _require_embedded_facts(payload: dict, facts_sha256: str) -> None:
+    comment = _embedded_comment(payload)
+    if f"blue-toad-facts-sha256={facts_sha256}" not in comment:
+        raise VideoBuildError("final video is not bound to the current facts")
+
+
+def _require_embedded_identity(payload: dict, facts_sha256: str, inputs_sha256: str) -> None:
     expected = f"blue-toad-facts-sha256={facts_sha256};inputs-sha256={inputs_sha256}"
-    if comment != expected:
+    if _embedded_comment(payload) != expected:
         raise VideoBuildError("final video is not bound to the current facts and inputs")
+
+
+def _source_paths(manifest: dict) -> list[str]:
+    paths = [manifest["close"]["card"]]
+    for beat in manifest["beats"]:
+        paths.extend((beat["video"], beat["audio"]))
+    return paths
+
+
+def _sources_present(manifest: dict) -> bool:
+    return all(
+        (path := project_path(value)).is_file() and path.stat().st_size > 0
+        for value in _source_paths(manifest)
+    )
 
 
 def _positive_number(value, label: str) -> float:
@@ -122,9 +145,14 @@ def verify(manifest_path: str, output_override: str | None = None) -> None:
     )
     if canonical:
         facts_sha256, _facts = canonical
-        _require_embedded_identity(
-            payload, facts_sha256, _input_identity(manifest, facts_sha256),
-        )
+        if _sources_present(manifest):
+            _require_embedded_identity(
+                payload, facts_sha256, _input_identity(manifest, facts_sha256),
+            )
+        else:
+            # Clone verify: gitignored raw beat videos are not on disk.
+            # Still require the published file to carry the current facts hash.
+            _require_embedded_facts(payload, facts_sha256)
     print(
         f"verified {display_path(output)}: {expected_duration:.3f}s expected, "
         f"{output.stat().st_size:,} bytes, video+audio present"

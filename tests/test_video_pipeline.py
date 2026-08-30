@@ -77,6 +77,24 @@ def test_recorders_do_not_scan_a_shared_directory_or_use_global_tmp_pages():
     assert "mkdtempSync" in helper
 
 
+def test_verify_only_accepts_the_published_mp4_without_raw_beat_videos():
+    """media/raw/ is gitignored; clone verify must not demand those files."""
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPTS / "assemble_final.py"),
+            "--manifest",
+            "media/video_manifest.json",
+            "--verify-only",
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "verified media/blue_toad_fleet_demo.mp4" in result.stdout
+
+
 def test_assembler_probes_durations_and_publishes_atomically():
     source = (SCRIPTS / "assemble_final.py").read_text()
     assert "media_duration(" in source

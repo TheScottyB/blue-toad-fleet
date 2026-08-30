@@ -92,3 +92,30 @@ def test_readme_does_not_label_the_checked_in_video_stale():
     text = README.read_text()
     assert "it is not current submission evidence" not in text
     assert "2026-08-20" not in text.split("Demo Video", 1)[-1].split("## Try it", 1)[0]
+
+
+def test_devpost_skill_gathers_media_and_fills_the_form():
+    """The skill must capture shots, render the diagram, and load DEVPOST.md onto the live form."""
+    skill = (ROOT / ".grok/skills/devpost-submission/SKILL.md").read_text()
+    fill = (ROOT / ".grok/skills/devpost-submission/references/fill-form.md").read_text()
+    combined = skill + "\n" + fill
+    assert "capture_screenshots.mjs" in combined
+    assert "capture_raw_gallery.mjs" in combined
+    assert "generate_architecture_diagram.py" in combined
+    assert "docs/architecture_diagram.png" in combined
+    assert "project_details/edit" in combined
+    assert "additional-info/edit" in combined
+    assert "9222" in combined
+    assert "Save" in fill
+    assert "Submit" in fill
+    recipe = skill.lower()
+    assert "fill" in recipe or "load" in recipe
+    assert "login wall, stop" not in skill.lower()
+
+
+def test_todo_names_the_devpost_deadline_as_7pm_cdt():
+    """Devpost labels 5:00pm PDT; the operator-local page shows 7:00pm CDT."""
+    todo = (ROOT / "docs/TODO.md").read_text()
+    assert "7:00pm CDT" in todo
+    assert "Monday Aug 31, 2026" in todo
+    assert "Sunday" not in todo.split("Submission deadline", 1)[-1].split("\n", 2)[0]
