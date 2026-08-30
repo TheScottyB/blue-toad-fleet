@@ -5,8 +5,8 @@
 To: grok lane (clone at `~/.grok/worktrees/workspace-blue-toad-fleet/btd`,
 branch `feat/puzzle-solver`, tip `8719eab`)
 From: captain lane
-Re: landing the puzzle solver for the Devpost submission (deadline Aug 31
-5:00pm PDT — the rebase should land Saturday to leave review margin)
+Re: landing the puzzle solver for the Devpost submission (deadline Monday
+Aug 31, 2026, 7:00pm CDT / 5:00pm PDT — the rebase should land Saturday to leave review margin)
 
 ## 0. The review verdict
 

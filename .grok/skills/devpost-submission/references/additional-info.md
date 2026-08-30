@@ -30,6 +30,6 @@ The form currently showing only the three Gemini Flash names is incomplete — G
 - Social post must include `#AllThingsAgentic`. `docs/blog/SOCIAL_POST.md` is draft copy. Do not paste a page URL; paste the post permalink after Scott publishes. Empty is honest if unpublished.
 - Architecture diagram file: `docs/architecture_diagram.png` (already uploaded on the form if present).
 
-## Login wall
+## Login
 
-If the page redirects to `secure.devpost.com/users/login`, stop and give the operator the Additional Info block from `docs/DEVPOST.md`. Do not guess remaining widgets.
+Use the capture Chrome in `references/fill-form.md`. If the tab is `secure.devpost.com/users/login`, wait for the operator to sign in there, then fill. Do not guess remaining widgets. Do not treat the login wall as the end of the recipe.

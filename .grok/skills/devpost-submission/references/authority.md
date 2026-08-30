@@ -15,3 +15,6 @@ Do not copy values here. Open the file.
 | Google spend this process | `GET /api/audit` and `/health` `google_cost_status` |
 | Additional Info paste | `docs/DEVPOST.md` section **Additional Info** |
 | Additional Info checkbox rules | `.grok/skills/devpost-submission/references/additional-info.md` |
+| Live form fill (Save, not Submit) | `.grok/skills/devpost-submission/references/fill-form.md` |
+| Architecture diagram | `docs/architecture_diagram.png` from `scripts/generate_architecture_diagram.py` |
+| Gallery stills | `docs/screenshots/` from `scripts/capture_screenshots.mjs` / `capture_raw_gallery.mjs` |

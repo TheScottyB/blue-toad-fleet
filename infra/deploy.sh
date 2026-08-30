@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Deploy the Blue Toad Fleet to Google Cloud Run. Idempotent; safe to re-run.
 set -euo pipefail
+# shellcheck disable=SC1091
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/gcloud_ipv4.sh"
 
 GOOGLE_CLOUD_PROJECT="${GOOGLE_CLOUD_PROJECT:-threebatdrone-prod-420}"
 REGION="${CLOUD_RUN_REGION:-us-central1}"
