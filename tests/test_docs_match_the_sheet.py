@@ -74,6 +74,20 @@ def test_devpost_lists_gemma_among_google_models():
     assert "gemini-embedding-2" in text.lower() or "Gemini Embedding 2" in text
 
 
+def test_devpost_additional_info_names_the_sdk_and_cloud_services():
+    text = DEVPOST.read_text()
+    extra = text.split("## Additional Info", 1)[-1]
+    assert "google-genai" in extra
+    assert "not ADK" in extra
+    assert "Cloud Run" in extra
+    assert "Firestore" in extra
+    assert "Pub/Sub" in extra
+    assert "Not Cloud SQL" in extra
+    assert "Not GKE" in extra
+    assert "Gemma 4" in extra
+    assert "make test" in extra
+
+
 def test_readme_does_not_label_the_checked_in_video_stale():
     text = README.read_text()
     assert "it is not current submission evidence" not in text
