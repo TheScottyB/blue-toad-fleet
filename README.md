@@ -25,17 +25,19 @@ deployment is UNVERIFIED, never a pass).
 
 * **Live Gate Console & UI:** [https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app)
 * **Live Health Endpoint:** [https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/health](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/health)
+* **The Walk:** [https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/walk](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/walk)
 * **Live Sourcing API:** [https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/api/lots](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/api/lots)
 * **Live Question Queue:** [https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/api/questions](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/api/questions)
 * **Live Absentee Email Generator:** [https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/api/email](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/api/email)
+* **Google spend / audit trail:** [https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/api/audit](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/api/audit)
 
 ---
 
 ## Demo Video
 
-[`media/blue_toad_fleet_demo.mp4`](media/blue_toad_fleet_demo.mp4) — a narrated, four-beat walkthrough covering the commercial problem, evidence-backed photo grouping, the live Gate Console, and Cloud Run/test-suite proof. The checked-in cut was recorded on 2026-08-20 and contains that run's historical figures; it is not current submission evidence.
+[`media/blue_toad_fleet_demo.mp4`](media/blue_toad_fleet_demo.mp4) — a narrated, four-beat walkthrough covering the commercial problem, evidence-backed photo grouping, the Gate Console, and Cloud Run/test-suite proof. The checked-in cut was assembled 2026-08-29 from sealed facts (artifact manifest `333ea63`); it is current submission evidence while `make video-verify` passes against it (~3:56, under the 4:00 cap). See [`docs/SUBMISSION_CLAIMS.md`](docs/SUBMISSION_CLAIMS.md).
 
-The replacement workflow is declared in [`media/video_manifest.json`](media/video_manifest.json), derives mutable copy from a verified evidence snapshot, isolates every browser recording, and has one authoritative final assembler. See [`docs/VIDEO_WORKFLOW.md`](docs/VIDEO_WORKFLOW.md) before rebuilding. `make video-verify` checks dimensions, duration, size, and audio against the declared facts snapshot without changing the MP4 (run `make video-prepare` first to produce that snapshot).
+The rebuild workflow is declared in [`media/video_manifest.json`](media/video_manifest.json). See [`docs/VIDEO_WORKFLOW.md`](docs/VIDEO_WORKFLOW.md) before replacing the MP4. `make video-verify` checks dimensions, duration, size, and audio against the declared facts snapshot without changing the file (run `make video-prepare` first to produce that snapshot).
 
 ---
 
@@ -95,8 +97,8 @@ for application-default-credential auth that runs unchanged on a laptop and insi
 Cloud Run, `types.Part.from_bytes` to assemble the photo alongside the prompt, and
 `types.GenerateContentConfig(response_schema=...)` for constrained decoding.
 
-* **Triage Fan-out (`gemini-3.5-flash-lite`):** Filters low-margin clutter and background filler. Per-call tokens, latency, retries, fallback use, errors, rate snapshots, and measured cost are now recorded; no speed or full-cycle cost is claimed until a fresh corpus run produces that telemetry.
-* **Deep Multimodal Appraisal (`gemini-3.6-flash`):** Evaluates high-conviction survivors using structured OpenAPI 3.0 schemas on the `global` Vertex endpoint.
+* **Triage Fan-out (`gemini-3.5-flash-lite`):** Scores every photo. That score is a routing/cost choice; it does not drop a photo from grouping. Per-call tokens, latency, retries, fallback use, errors, rate snapshots, and measured cost are recorded; no speed or full-cycle cost is claimed until a fresh corpus run produces that telemetry.
+* **Deep Multimodal Appraisal (`gemini-3.6-flash`):** Structured OpenAPI 3.0 schemas on the `global` Vertex endpoint. Grouping is a puzzle loop: every photo is assigned exactly once (unmatched → singleton).
 * **Per-lot stage handoff:** Ordinary lots enter appraisal immediately; container lots enter as soon as their own spatial decomposition finishes. Each completed appraisal can start grounded comp research while other lots are still being appraised.
 * **Honest Refusal Rule:** The appraisal model is forbidden from naming any price at all (`APPRAISAL_SYSTEM`: *"NEVER state or imply a price, estimate or value range"*). The refusal is decided downstream and is deterministic, not model-dependent — `price_lot` ([`src/bidmath/__init__.py`](src/bidmath/__init__.py)) returns a lot whose `CompEstimate` has no sources with `max_bid=None` and the workflow state `pending deep comps`, and `allocate` can never allocate it before verified sold-price evidence arrives. The resealed August fixture (2026-08-29, full appraisal coverage) allocates 46 lots, prices 38 more that the $600 cap crowds out, skips 9, and still routes **322 of 415** grouped lots to human pricing; the fixture remains release-ineligible until the operator's question queue clears.
 
