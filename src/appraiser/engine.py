@@ -2,7 +2,7 @@
 src/appraiser/engine.py — Live Vertex AI Triage and Appraisal Engine.
 
 Executes real structured model inference via google-genai on Vertex AI:
-- Stage 1: Triage using gemini-3.5-flash-lite / gemini-2.5-flash
+- Stage 1: Triage using gemini-3.5-flash-lite / gemini-2.5-flash (routing, not a drop gate)
 - Stage 2: Structured Appraisal using gemini-3.6-flash / gemini-2.5-flash
 
 Includes persistent caching to JSON for reproducibility, cost control,

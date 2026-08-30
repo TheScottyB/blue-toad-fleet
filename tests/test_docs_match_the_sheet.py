@@ -72,3 +72,9 @@ def test_devpost_lists_gemma_among_google_models():
     text = DEVPOST.read_text()
     assert "Gemma 4" in text
     assert "gemini-embedding-2" in text.lower() or "Gemini Embedding 2" in text
+
+
+def test_readme_does_not_label_the_checked_in_video_stale():
+    text = README.read_text()
+    assert "it is not current submission evidence" not in text
+    assert "2026-08-20" not in text.split("Demo Video", 1)[-1].split("## Try it", 1)[0]

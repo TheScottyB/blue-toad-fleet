@@ -1,18 +1,17 @@
 """
-Two-stage appraisal: cheap triage over everything, careful appraisal over survivors.
+Two-stage model routing: cheap triage over every photo, then structured appraisal.
 
-Stage 1 — TRIAGE, Gemini 3.5 Flash Lite, ~428 photos.
-    Is this a lot or a duplicate angle? Roughly what is it? Worth a closer look?
-    Cheap and fast. Cuts the gallery to candidates.
+Stage 1 — TRIAGE, Gemini 3.5 Flash Lite.
+    Is this a lot or a duplicate angle? Roughly what is it? A routing/cost score.
+    Does not drop a photo from grouping.
 
-Stage 2 — APPRAISAL, Gemini 3.6 Flash, ~60 candidates.
+Stage 2 — APPRAISAL, Gemini 3.6 Flash.
     Identification and attribution: maker, period, form, marks, condition.
     Emits clarifying questions wherever a determining attribute isn't visible.
 
-The split is deliberate and worth defending: a wide fan-out over hundreds of
-images is a throughput problem, and judgment on the survivors is a reasoning
-problem. Using one model for both wastes money on the first or accuracy on the
-second.
+Grouping is a puzzle loop: every photo is assigned once. The split is a
+throughput choice, not a coverage gate. Using one model for both wastes money
+on the first pass or accuracy on the second.
 
 The prompts forbid inventing a price. An appraiser states what a thing *is*;
 what it's worth is a separate, weaker claim made downstream with comps and a

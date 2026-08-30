@@ -81,15 +81,16 @@ The former A/B comparison is quarantined. Its totals, identifiers, joins, and
 synthetic V2 path are not auditable enough for release evidence. The retained
 runner refuses to publish; rebuild only through remediation-plan Task 23.
 
-### August 22, 2026 historical local fixture
+### August 22, 2026 fixture
 * **Dataset:** 462 raw gallery photos (`data/aug22_gallery_4160518/manifest.json`).
-* **Current canonical grouping:** 414 groups, including reviewed non-adjacent
-  reshoot edges.
-* **Computed allocation:** 9 lots; $275.00 committed max and $316.25 all-in.
-* **Release status:** **not publishable**. The legacy state has no sealed artifact
-  manifest and has unresolved questions on allocated lots. The checked-in email,
-  workbook, screenshots, and video are historical outputs, not current release
-  evidence.
+* **Canonical grouping:** 415 groups, including reviewed non-adjacent reshoot
+  edges. Puzzle loop: every photo assigned; unmatched is a singleton.
+* **Sent sheet (mailbox):** 9 lots; $275.00 committed max and $316.25 all-in.
+  The only artifact ever sent.
+* **Full-coverage allocation:** 46 lots; $520.00 max / $598.00 all-in under $600.
+  Sealed output: `data/aug22_gallery_4160518/artifact_manifest.json`.
+* **Video:** `media/blue_toad_fleet_demo.mp4` is current submission evidence while
+  `make video-verify` passes. Stills in `docs/screenshots/` remain historical.
 
 ---
 
