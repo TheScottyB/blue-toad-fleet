@@ -52,7 +52,7 @@ _BOOT_URL = _ORIGIN + "/sh/research?marketplace=EBAY-US"
 _SOLD_PAGE_LIMIT = 50   # >50 silently renders zero rows on SOLD (playbook G2)
 _ACTIVE_LIMIT = 200     # works on ACTIVE, returns the whole set in one read
 _MAX_SOLD_PAGES = 12    # 600 listings; past that the query is too broad to comp
-_READY_TIMEOUT = 30.0   # seconds for the boot tab to reach a same-origin page
+_READY_TIMEOUT = 60.0   # a cold first launch took ~30 s once (2026-09-25); usually ~2 s
 _FETCH_TIMEOUT = 30.0
 
 SCOPE_NOTE = ("API request parameters only — Seller Hub UI filter chips do "
