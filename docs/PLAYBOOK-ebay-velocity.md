@@ -8,6 +8,25 @@ the walk and metrics on 2026-08-21/22, condition filtering and the aggregates
 cross-check on 2026-08-29. Where a step exists only because something failed,
 the failure is written down next to it — those are the steps people skip.
 
+> **2026-09-25 — the connector reads the research JSON API, not the page.**
+> `src/comps` now fetches `/sh/research/api/search?…&modules=aggregates&modules=searchResults`
+> (the exact request eBay's own page makes) from inside one signed-in Seller
+> Hub tab. Why: the page scrape in §2 drifted silently — rows started printing
+> `$ 45.00` (space), so every comp price parsed as None; the sold range moved
+> to an en dash; `eBay shipping` rows skipped the quantity anchor. The API
+> carries the same figures as named fields, answers in under a second (a read
+> went from ~22 s to ~3 s), and ignores sticky UI filter chips (sharpener,
+> measured: 305 unfiltered / 274 `conditionId=3000` / 24 `conditionId=1000`
+> while the page showed a Used chip — GOTCHA 5 no longer applies to the
+> connector). Still true and still enforced: GOTCHA 1 (pin
+> `startDate`/`endDate`; without them the Heineken mirror query returned 2 rows
+> instead of 5 — and since the API echoes no window, every sale date is checked
+> inside the requested one), GOTCHA 2 (limit 50 on SOLD), GOTCHA 4. Every SOLD
+> response carries a `PageErrorModule` with severity ERROR — eBay's own page gets
+> it too; it is noise unless it carries a "No … results found" message, which
+> is the genuine-zero / past-the-end signal. §2 below documents the page for
+> manual reads.
+
 ---
 
 ## 0. The metric

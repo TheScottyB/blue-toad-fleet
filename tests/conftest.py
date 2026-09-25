@@ -18,13 +18,21 @@ def _isolated_voice_cache(tmp_path, monkeypatch):
 
 
 @pytest.fixture(autouse=True)
-def _no_live_api_cross_check(monkeypatch):
-    """read_api_total_sold is an I/O boundary (CDP fetch of the aggregates
-    API); stub it for every test so the unit suite never touches the
-    network — with the dedicated Chrome running, the unstubbed call made
-    the comp suite take 91s and depend on live eBay. Tests that exercise
-    the cross-check override this with their own monkeypatch."""
+def _no_live_research_session(monkeypatch):
+    """ResearchSession is the comps layer's only I/O boundary (a CDP tab on
+    Seller Hub). Replace it for every test with one that refuses, so the
+    unit suite can never touch live eBay — with the dedicated Chrome
+    running, an unstubbed read made the comp suite slow and dependent on
+    the live market (observed 2026-08-29). Tests that exercise the walk
+    install their own fake."""
     from src.comps import live as _live
-    monkeypatch.setattr(_live, "read_api_total_sold",
-                        lambda query, condition_id=None: None,
-                        raising=False)
+
+    class _NoNetwork:
+        async def __aenter__(self):
+            raise RuntimeError("unit tests must not open a live Seller Hub "
+                               "session — stub ResearchSession or read_market")
+
+        async def __aexit__(self, *exc):
+            return None
+
+    monkeypatch.setattr(_live, "ResearchSession", _NoNetwork)

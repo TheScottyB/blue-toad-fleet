@@ -1,415 +1,257 @@
 """
-comp_report's selection accounting and the live layer's own guards, with the
-network stubbed out.
+The live layer with I/O replaced at the ResearchSession boundary.
 
-Guards under test:
-
-  - a PARTIAL verdict list — the model judged some rows and not others — must
-    never present itself as a fully screened set. Measured 2026-08-24: two
-    sold rows plus a one-verdict model response yielded comp_units=1,
-    excluded_count=0, excluded=[] — the unjudged row silently left both the
-    price band and the exclusion accounting.
-  - the printed date window is the only authority (playbook G1) on the LIVE
-    path too, not just the capture-import path: probed 2026-08-29, a 30-day
-    printed window flowed through comp_report and returned absorption
-    normally — a ~12x understatement labelled `sold_units_365d`.
-  - read_sold's pagination: an exact-multiple-of-50 market has no short last
-    page, so the phantom next page (zero rows, no message) is termination,
-    not SuspectEmpty; and the _MAX_SOLD_PAGES cap must mark the read
-    truncated, never pose as the whole market.
-
-read_sold / _read_text / _read_active / select_comps are stubbed because they
-are the I/O boundary (CDP Chrome and Vertex); everything else runs unmodified.
+  - _read_market's pagination against canned API bodies keyed by request:
+    a short page ends the walk, an exact multiple of 50 ends on the page
+    past the end (zero rows WITH eBay's message), the cap marks a floor.
+  - comp_report's selection accounting, price stats, links, rows and
+    evidence, with the model call stubbed.
+  - the window guard refusing through both tools.
 """
 
-import re
+import json
+import urllib.parse
+from pathlib import Path
 
 import pytest
 
-from src.comps import (ActivePage, NonAnnualWindow, SoldPage, SoldRow,
-                       SuspectEmpty,
-    UnknownConditionId,
-)
+from src.comps import NonAnnualWindow, SuspectEmpty, split_modules
 from src.comps import live
 
-UNFILTERED = "UNAVAILABLE — figures above are UNFILTERED"
+FIX = Path(__file__).parent / "fixtures" / "comps"
+SOLD = (FIX / "sold_heineken_2026-09-25.ndjson").read_text()
+ACTIVE = (FIX / "active_heineken_2026-09-25.ndjson").read_text()
+SOLD_ZERO = (FIX / "sold_zero_2026-09-25.ndjson").read_text()
+PAST_END = (FIX / "sold_past_end_2026-09-25.ndjson").read_text()
+
+HEINEKEN_IDS = ["116782969297", "158271810080", "267646832976",
+                "358331808639", "406697668711"]
 
 
-SOLD_FILTERS = ["Filter Applied", "Condition filter (1 Selected)", "Used"]
-ACTIVE_FILTERS = ["Filter Applied"]
+def synthetic_sold(n_rows: int, start_id: int = 1, total_sold: int = 999,
+                   date: str = "Sep 1, 2026") -> str:
+    """A sold API body in the real nesting (row shape from the fixture)."""
+    mods = split_modules(SOLD)
+    results = next(m for m in mods if m["_type"] == "SearchResultsModule")
+    template = results["results"][1]
+    rows = []
+    for i in range(n_rows):
+        r = json.loads(json.dumps(template))
+        r["listing"]["itemId"]["value"] = str(start_id + i)
+        r["listing"]["title"]["textSpans"][0]["text"] = f"Synthetic sold listing {start_id + i}"
+        r["datelastsold"]["textSpans"][0]["text"] = date
+        rows.append(r)
+    results["results"] = rows
+    body = "\n".join(json.dumps(m) for m in mods)
+    return body.replace('"text": "5"', f'"text": "{total_sold}"', 1)
 
 
-@pytest.fixture
-def two_row_market(monkeypatch):
-    sold = SoldPage(
-        window="Aug 21, 2025 – Aug 21, 2026",
-        rows=[
-            SoldRow(title="Vintage Boston Champion Pencil Sharpener NOS",
-                    price=33.30, qty=6, date="Jul 15, 2026"),
-            SoldRow(title="Boston Champion Pencil Sharpener",
-                    price=12.50, qty=1, date="Aug 12, 2026"),
-        ],
-        avg_price=24.11,
-        avg_shipping=8.83,
-        filters=SOLD_FILTERS,
-    )
-    active = ActivePage(total_active=46, filters=ACTIVE_FILTERS)
-    monkeypatch.setattr(live, "read_sold",
-                        lambda query, condition_id=None: sold)
-    monkeypatch.setattr(live, "read_active",
-                        lambda query, condition_id=None: active)
+class FakeSession:
+    """Stands in for ResearchSession; answers by (tab, offset)."""
+    pages: dict = {}
+    requests: list = []
 
-    async def fake_active(query, condition_id=None):
-        return active
+    async def __aenter__(self):
+        return self
 
-    monkeypatch.setattr(live, "_read_active", fake_active)
-    return sold
+    async def __aexit__(self, *exc):
+        return None
 
-
-class TestPartialSelection:
-    def test_a_verdict_hole_is_a_failure_not_a_screened_set(
-            self, two_row_market, monkeypatch):
-        """One judged row, one hole. The response must say UNFILTERED, not
-        pose as a screened set that quietly dropped a row from the band and
-        the exclusion accounting."""
-        monkeypatch.setattr(live, "select_comps", lambda ident, titles: [
-            {"index": 0, "verdict": "comp", "reason": "same item"},
-            None,
-        ])
-        out = live.comp_report("Boston Champion sharpener", "boston champion")
-        assert out["comp_selection"] == UNFILTERED
-
-    def test_raw_figures_survive_a_failed_selection(
-            self, two_row_market, monkeypatch):
-        """Absorption is raw by design — it must still be reported when the
-        screen fails, labelled as unfiltered by the branch above."""
-        monkeypatch.setattr(live, "select_comps",
-                            lambda ident, titles: [None, None])
-        out = live.comp_report("Boston Champion sharpener", "boston champion")
-        assert out["comp_selection"] == UNFILTERED
-        assert out["sold_units_365d"] == 7
-        assert out["absorption"] == pytest.approx(7 / 46, abs=0.01)
-
-    def test_a_complete_screen_still_reports_as_screened(
-            self, two_row_market, monkeypatch):
-        """The guard must not over-fire: every row judged means the screened
-        dict, with every non-comp row in the exclusion accounting."""
-        monkeypatch.setattr(live, "select_comps", lambda ident, titles: [
-            {"index": 0, "verdict": "comp", "reason": "same item"},
-            {"index": 1, "verdict": "not_comp", "reason": "parts lot"},
-        ])
-        out = live.comp_report("Boston Champion sharpener", "boston champion")
-        sel = out["comp_selection"]
-        assert sel["comp_units"] == 6
-        assert sel["excluded_count"] == 1
-        assert sel["comp_price_band"] == [33.30, 33.30]
-
-    def test_the_judged_comps_are_listed_not_just_the_excluded(
-            self, two_row_market, monkeypatch):
-        """When the band moves between runs, the row that entered it must be
-        visible. A borderline listing flipped unsure -> comp between the
-        2026-08-24 and 2026-08-29 RG-0144 runs and only the band betrayed
-        it — the accepted rows were nowhere in the output to diff."""
-        monkeypatch.setattr(live, "select_comps", lambda ident, titles: [
-            {"index": 0, "verdict": "comp", "reason": "same item"},
-            {"index": 1, "verdict": "not_comp", "reason": "parts lot"},
-        ])
-        out = live.comp_report("Boston Champion sharpener", "boston champion")
-        assert out["comp_selection"]["comps"] == [
-            {"title": "Vintage Boston Champion Pencil Sharpener NOS",
-             "price": 33.30, "qty": 6, "date": "Jul 15, 2026"}]
-
-
-class TestFilterSurfacing:
-    """Both tools surface the page-printed filter markers — the page's own
-    claim about its scope, which can be a display-only ghost (measured
-    2026-08-29). A claimed scope must reach the caller as printed."""
-
-    def test_comp_report_carries_the_printed_filters(
-            self, two_row_market, monkeypatch):
-        monkeypatch.setattr(live, "select_comps", lambda ident, titles: None)
-        out = live.comp_report("Boston Champion sharpener", "boston champion")
-        assert out["filters_as_printed"] == {
-            "sold": SOLD_FILTERS, "active": ACTIVE_FILTERS}
-
-    def test_ebay_absorption_carries_the_printed_filters(
-            self, two_row_market):
-        from scripts import comps_mcp_server
-        out = comps_mcp_server.ebay_absorption("boston champion")
-        assert out["filters_as_printed"] == {
-            "sold": SOLD_FILTERS, "active": ACTIVE_FILTERS}
-
-
-# --- the live path must enforce the printed window, like the import path ----
-
-ANNUAL_WINDOW = "Aug 21, 2025 – Aug 21, 2026"
-THIRTY_DAY_WINDOW = "Jul 23, 2026 – Aug 21, 2026"
-
-ONE_ROW = [SoldRow(title="Synthetic sold listing title",
-                   price=10.00, qty=1, date="Jul 15, 2026")]
-
-
-def _stub_market(monkeypatch, sold: SoldPage) -> None:
-    active = ActivePage(total_active=46, filters=[])
-    monkeypatch.setattr(live, "read_sold", lambda query, condition_id=None: sold)
-    monkeypatch.setattr(live, "read_active", lambda query, condition_id=None: active)
-
-    async def fake_active(query, condition_id=None):
-        return active
-
-    monkeypatch.setattr(live, "_read_active", fake_active)
-    monkeypatch.setattr(live, "select_comps", lambda ident, titles: None)
-
-
-class TestWindowAuthority:
-    """GOTCHA 1 on the live path: the printed date line is the only authority
-    on the window. evidence/model.py already refuses a non-annual window on
-    the capture-import path; comp_report and ebay_absorption must refuse the
-    same fact, not compute `sold_units_365d` off a 30-day page."""
-
-    def test_a_non_annual_printed_window_is_refused(self, monkeypatch):
-        _stub_market(monkeypatch, SoldPage(window=THIRTY_DAY_WINDOW,
-                                           rows=list(ONE_ROW)))
-        with pytest.raises(NonAnnualWindow):
-            live.comp_report("synthetic item", "synthetic query")
-
-    def test_an_absent_window_with_rows_is_refused(self, monkeypatch):
-        """Rows without a date line is an unloaded or mutant page — fail
-        closed, never label the count 365d on faith."""
-        _stub_market(monkeypatch, SoldPage(window=None, rows=list(ONE_ROW)))
-        with pytest.raises(NonAnnualWindow):
-            live.comp_report("synthetic item", "synthetic query")
-
-    def test_a_genuine_zero_prints_no_window_and_still_reports(
-            self, monkeypatch):
-        """The zero-results page prints no date line at all; refusing it
-        would make every dead market unreadable. Its report already states
-        the absence: window_as_printed None, genuine_zero True."""
-        _stub_market(monkeypatch, SoldPage(window=None, genuine_zero=True))
-        out = live.comp_report("synthetic item", "synthetic query")
-        assert out["genuine_zero"] is True
-        assert out["window_as_printed"] is None
-
-    def test_ebay_absorption_refuses_a_non_annual_window(self, monkeypatch):
-        from scripts import comps_mcp_server
-        _stub_market(monkeypatch, SoldPage(window=THIRTY_DAY_WINDOW,
-                                           rows=list(ONE_ROW)))
-        with pytest.raises(NonAnnualWindow):
-            comps_mcp_server.ebay_absorption("synthetic query")
-
-
-# --- read_sold pagination, against the real parser -------------------------
-
-def _sold_page_text(n_rows: int, first: int = 0) -> str:
-    """innerText-shaped SOLD page with `n_rows` rows, for the real parser."""
-    head = (
-        "Seller Hub\nrichmondgeneral\nResearch products\nSold​Active\n"
-        f"{ANNUAL_WINDOW}\nShow sales trends\n"
-        "$24.11\nAvg sold price\n$4.99 - $105.00\nSold price range\n"
-        "$8.83\nAvg shipping\n7%\nFree shipping\n-\nSell-through\n"
-        "43\nTotal sellers\nListing\n\nActions\n\nAvg sold price\n"
-    )
-    rows = "".join(
-        "\n, preview full size image\n"
-        f"Synthetic sold listing number {first + i:04d} title\n\nEdit\n\n"
-        "$10.00\nFixed price\n\n$5.00\n0% Free shipping\n\n1\n\n$10.00\n\n"
-        "-\n\nJul 15, 2026\n"
-        for i in range(n_rows)
-    )
-    return head + rows + "Page 1\n"
-
-
-# Zero rows, no zero-results message — the shape of both the limit>50 silent
-# render AND the page one past an exact-multiple-of-50 result set.
-PHANTOM_EMPTY = (
-    "Seller Hub\nrichmondgeneral\nResearch products\nSold​Active\n"
-    "Category selected:\nAll Categories\nAbout eBay\n"
-)
+    async def get(self, path):
+        q = urllib.parse.parse_qs(urllib.parse.urlsplit(path).query)
+        FakeSession.requests.append(q)
+        key = (q["tabName"][0], int(q["offset"][0]))
+        if key not in FakeSession.pages:
+            raise AssertionError(f"unexpected request {key}")
+        return FakeSession.pages[key]
 
 
 @pytest.fixture
-def paged_market(monkeypatch):
-    """read_sold against canned page texts keyed by offset, real parser."""
-    pages: dict[int, str] = {}
-    calls: list[int] = []
-
-    async def fake_read_text(url, wait=8.0):
-        offset = int(re.search(r"offset=(\d+)", url).group(1))
-        calls.append(offset)
-        return pages[offset]
-
-    monkeypatch.setattr(live, "_read_text", fake_read_text)
-    return pages, calls
+def fake_session(monkeypatch):
+    FakeSession.pages = {("ACTIVE", 0): ACTIVE}
+    FakeSession.requests = []
+    monkeypatch.setattr(live, "ResearchSession", FakeSession)
+    return FakeSession
 
 
-class TestSoldPagination:
-    def test_a_market_of_exactly_50_rows_ends_at_the_phantom_page(
-            self, paged_market):
-        """An exact multiple of 50 has no short last page — the next page
-        renders zero rows with no message. After >=1 full page that is
-        termination, not the silent-empty failure."""
-        pages, _ = paged_market
-        pages[0] = _sold_page_text(50)
-        pages[50] = PHANTOM_EMPTY
-        sold = live.read_sold("synthetic query")
-        assert len(sold.rows) == 50
-        assert sold.truncated is False
-
-    def test_a_short_last_page_is_a_complete_read(self, paged_market):
-        pages, _ = paged_market
-        pages[0] = _sold_page_text(50)
-        pages[50] = _sold_page_text(3, first=50)
-        sold = live.read_sold("synthetic query")
-        assert len(sold.rows) == 53
-        assert sold.truncated is False
-
-    def test_the_page_cap_is_an_explicit_truncation_marker(self, paged_market):
-        """12 full pages hit _MAX_SOLD_PAGES with the last page still full:
-        more rows exist that were never read. The page cap was previously
-        silent — 600 rows posed as the whole market."""
-        pages, calls = paged_market
-        for off in range(0, 600, 50):
-            pages[off] = _sold_page_text(50, first=off)
-        sold = live.read_sold("synthetic query")
-        assert len(sold.rows) == 600
-        assert sold.truncated is True
-        assert 600 not in calls
-
-    def test_a_silent_empty_FIRST_page_still_raises(self, paged_market):
-        """The phantom-page allowance must not weaken GOTCHA 2: zero rows
-        with no message on page one is still suspect, never 'sold 0'."""
-        pages, _ = paged_market
-        pages[0] = PHANTOM_EMPTY
-        with pytest.raises(SuspectEmpty):
-            live.read_sold("synthetic query")
+def fixed_window(monkeypatch):
+    monkeypatch.setattr(live, "year_window", lambda now=None: (
+        1758800000000, 1790336000000, "Sep 25, 2025 – Sep 25, 2026"))
 
 
-class TestTruncationMarker:
-    def test_comp_report_carries_the_truncation_marker(self, monkeypatch):
-        _stub_market(monkeypatch, SoldPage(window=ANNUAL_WINDOW,
-                                           rows=list(ONE_ROW), truncated=True))
-        out = live.comp_report("synthetic item", "synthetic query")
-        assert out["sold_results_truncated"] is True
-
-    def test_ebay_absorption_carries_the_truncation_marker(self, monkeypatch):
-        from scripts import comps_mcp_server
-        _stub_market(monkeypatch, SoldPage(window=ANNUAL_WINDOW,
-                                           rows=list(ONE_ROW), truncated=True))
-        out = comps_mcp_server.ebay_absorption("synthetic query")
-        assert out["sold_results_truncated"] is True
-
-    def test_an_untruncated_read_says_so(self, two_row_market, monkeypatch):
-        monkeypatch.setattr(live, "select_comps", lambda ident, titles: None)
-        out = live.comp_report("Boston Champion sharpener", "boston champion")
-        assert out["sold_results_truncated"] is False
+@pytest.fixture(autouse=True)
+def _pinned_window(monkeypatch):
+    fixed_window(monkeypatch)
 
 
-class TestUnfilteredLabelling:
-    """comps_mcp_server labels its page aggregate landed_avg_unfiltered;
-    comp_report emitted the same unscreened aggregates with bare names. One
-    convention: page aggregates carry the _unfiltered suffix everywhere."""
+# --- requests ------------------------------------------------------------------
 
-    def test_page_aggregates_are_labelled_unfiltered(
-            self, two_row_market, monkeypatch):
-        monkeypatch.setattr(live, "select_comps", lambda ident, titles: None)
-        out = live.comp_report("Boston Champion sharpener", "boston champion")
-        assert out["avg_sold_price_unfiltered"] == 24.11
-        assert out["avg_shipping_unfiltered"] == 8.83
-        assert out["landed_avg_unfiltered"] == pytest.approx(32.94)
-        for bare in ("avg_sold_price", "avg_shipping", "landed_avg"):
-            assert bare not in out
+class TestRequests:
+    def test_sold_request_pins_dates_and_both_modules(self):
+        path = live.search_path("heineken special dark mirror", "SOLD", 0, 50,
+                                None, (1, 2))
+        q = urllib.parse.parse_qs(urllib.parse.urlsplit(path).query)
+        assert q["startDate"] == ["1"] and q["endDate"] == ["2"]
+        assert q["modules"] == ["aggregates", "searchResults"]
+        assert q["keywords"] == ["heineken special dark mirror"]
 
+    def test_keywords_are_encoded_not_just_space_swapped(self):
+        path = live.search_path('a&b #1 "x"', "SOLD")
+        q = urllib.parse.parse_qs(urllib.parse.urlsplit(path).query)
+        assert q["keywords"] == ['a&b #1 "x"']
 
-class TestConditionScope:
-    """An explicit conditionId genuinely scopes the data (measured
-    2026-08-29: 291 unfiltered / 256 Used / 28 New on the sharpener), but an
-    unknown id is silently ignored server-side — default-scope data behind
-    an obedient-looking URL. So the tools send only known ids, thread them
-    into every URL, and state the requested scope in the response."""
-
-    def test_sold_url_carries_the_condition(self):
-        assert "conditionId=3000" in live._sold_url("x", 0, condition_id=3000)
-        assert "conditionId" not in live._sold_url("x", 0)
-
-    def test_active_url_carries_the_condition(self):
-        assert "conditionId=3000" in live._active_url("x", condition_id=3000)
-        assert "conditionId" not in live._active_url("x")
-
-    def test_comp_report_states_the_requested_scope(
-            self, two_row_market, monkeypatch):
-        monkeypatch.setattr(live, "select_comps", lambda ident, titles: None)
-        out = live.comp_report("id", "q", condition_id=3000)
-        assert out["condition_scope"] == {"condition_id": 3000, "label": "Used"}
-
-    def test_no_condition_is_stated_not_omitted(
-            self, two_row_market, monkeypatch):
-        monkeypatch.setattr(live, "select_comps", lambda ident, titles: None)
-        out = live.comp_report("id", "q")
-        assert out["condition_scope"] == {
-            "condition_id": None,
-            "label": "no condition filter sent — unfiltered read"}
-
-    def test_the_condition_reaches_both_data_reads(self, monkeypatch):
-        seen = {}
-        sold = SoldPage(
-            window="Aug 21, 2025 – Aug 21, 2026",
-            rows=[SoldRow(title="Vintage Boston Champion Pencil Sharpener",
-                          price=33.30, qty=6, date="Jul 15, 2026")])
-
-        def fake_sold(query, condition_id=None):
-            seen["sold"] = condition_id
-            return sold
-
-        async def fake_active(query, condition_id=None):
-            seen["active"] = condition_id
-            return ActivePage(total_active=46)
-
-        monkeypatch.setattr(live, "read_sold", fake_sold)
-        monkeypatch.setattr(live, "_read_active", fake_active)
-        monkeypatch.setattr(live, "select_comps", lambda ident, titles: None)
-        live.comp_report("id", "q", condition_id=1000)
-        assert seen == {"sold": 1000, "active": 1000}
-
-    def test_ebay_absorption_states_scope_and_refuses_unknown_ids(
-            self, two_row_market):
-        from scripts import comps_mcp_server
-        out = comps_mcp_server.ebay_absorption("q", condition_id=3000)
-        assert out["condition_scope"] == {"condition_id": 3000, "label": "Used"}
+    def test_unknown_condition_is_refused_before_io(self):
+        from src.comps import UnknownConditionId
         with pytest.raises(UnknownConditionId):
-            comps_mcp_server.ebay_absorption("q", condition_id=42)
+            live.search_path("q", "SOLD", condition_id=42)
 
 
-class TestSoldCrossCheckWiring:
-    """Both tools fetch the aggregates API as an independent check on the
-    page walk and surface the comparison; an unreadable API is stated."""
+# --- pagination ----------------------------------------------------------------
 
-    def test_ebay_absorption_carries_the_cross_check(
-            self, two_row_market, monkeypatch):
-        monkeypatch.setattr(live, "read_api_total_sold",
-                            lambda query, condition_id=None: 7)
-        from scripts import comps_mcp_server
-        out = comps_mcp_server.ebay_absorption("q")
-        assert out["sold_cross_check"] == {
-            "api_total_sold": 7, "page_units": 7, "verdict": "match"}
+class TestMarketWalk:
+    def test_one_short_page(self, fake_session):
+        fake_session.pages[("SOLD", 0)] = SOLD
+        m = live.read_market("heineken special dark mirror")
+        assert len(m.sold.rows) == 5 and not m.sold.truncated
+        assert m.active.total_active == 19
+        assert set(m.raw) == {"sold_p0.ndjson", "active.ndjson"}
+        assert [r["tabName"][0] for r in fake_session.requests] == [
+            "SOLD", "ACTIVE"]
 
-    def test_comp_report_carries_the_cross_check(
-            self, two_row_market, monkeypatch):
-        monkeypatch.setattr(live, "select_comps", lambda ident, titles: None)
-        monkeypatch.setattr(live, "read_api_total_sold",
-                            lambda query, condition_id=None: 9)
+    def test_short_last_page_ends_the_walk(self, fake_session):
+        fake_session.pages[("SOLD", 0)] = synthetic_sold(50, 1, 57)
+        fake_session.pages[("SOLD", 50)] = synthetic_sold(7, 51, 57)
+        m = live.read_market("q")
+        assert m.sold.sold_units == 57 and not m.sold.truncated
+
+    def test_exact_multiple_of_50_ends_on_the_page_past_the_end(
+            self, fake_session):
+        fake_session.pages[("SOLD", 0)] = synthetic_sold(50, 1, 50)
+        fake_session.pages[("SOLD", 50)] = PAST_END
+        m = live.read_market("q")
+        assert m.sold.sold_units == 50 and not m.sold.truncated
+        assert not m.sold.genuine_zero
+
+    def test_the_cap_marks_a_floor(self, fake_session):
+        for p in range(12):
+            fake_session.pages[("SOLD", p * 50)] = synthetic_sold(50, p * 50 + 1)
+        m = live.read_market("q")
+        assert m.sold.sold_units == 600 and m.sold.truncated
+
+    def test_a_genuine_zero_market_does_not_page(self, fake_session):
+        fake_session.pages[("SOLD", 0)] = SOLD_ZERO
+        m = live.read_market("q")
+        assert m.sold.genuine_zero and m.sold.sold_units == 0
+
+    def test_a_silent_empty_first_page_refuses(self, fake_session):
+        body = "\n".join(json.dumps(x) for x in split_modules(SOLD_ZERO)
+                         if x["_type"] != "PageErrorModule")
+        fake_session.pages[("SOLD", 0)] = body
+        with pytest.raises(SuspectEmpty):
+            live.read_market("q")
+
+
+# --- comp_report -----------------------------------------------------------------
+
+def verdicts_all_but_round(ident, titles):
+    return [{"index": i,
+             "verdict": "not_comp" if "Round" in t else "comp",
+             "reason": "round, not rectangular" if "Round" in t else "same mirror"}
+            for i, t in enumerate(titles)]
+
+
+@pytest.fixture
+def heineken(fake_session, monkeypatch):
+    fake_session.pages[("SOLD", 0)] = SOLD
+    monkeypatch.setattr(live, "select_comps", verdicts_all_but_round)
+    return fake_session
+
+
+class TestCompReport:
+    def test_screened_comps_carry_prices_and_links(self, heineken):
+        out = live.comp_report("Heineken Special Dark mirror 17x14",
+                               "heineken special dark mirror")
+        sel = out["comp_selection"]
+        assert sel["comp_units"] == 4 and sel["excluded_count"] == 1
+        assert sel["comp_price_band"] == [15.0, 28.34]
+        assert sel["comp_price_stats"]["median"] == pytest.approx(24.98, abs=0.01)
+        assert sel["comp_landed_stats"]["n"] == 4
+        assert all(c["price"] is not None and c["url"].startswith(
+            "https://www.ebay.com/itm/") for c in sel["comps"])
+        assert sel["excluded"][0]["reason"] == "round, not rectangular"
+
+    def test_market_figures(self, heineken):
         out = live.comp_report("id", "q")
-        assert out["sold_cross_check"]["api_total_sold"] == 9
-        assert "MISMATCH" in out["sold_cross_check"]["verdict"]
+        assert out["sold_units_365d"] == 5 and out["active_now"] == 19
+        assert out["absorption"] == 0.26
+        assert out["months_of_supply"] == 45.6
+        assert out["sold_cross_check"]["verdict"] == "match"
+        assert out["sold_price_range_unfiltered"] == [15.0, 45.0]
+        assert out["active_avg_price"] == 45.38
+        assert out["window"] == "Sep 25, 2025 – Sep 25, 2026"
+        assert "filter chips do not" in out["scope_note"]
 
-    def test_the_condition_scope_reaches_the_api_fetch(
-            self, two_row_market, monkeypatch):
-        seen = {}
+    def test_lowest_active_asks_are_sorted_with_links(self, heineken):
+        asks = live.comp_report("id", "q")["active_lowest_asks"]
+        prices = [a["price"] for a in asks]
+        assert prices == sorted(prices) and all(a["url"] for a in asks)
 
-        def fake_api(query, condition_id=None):
-            seen["condition_id"] = condition_id
-            return 7
+    def test_rows_only_on_request(self, heineken):
+        assert "sold_rows" not in live.comp_report("id", "q")
+        rows = live.comp_report("id", "q", include_rows=True)["sold_rows"]
+        assert [r["item_id"] for r in rows] == HEINEKEN_IDS
+        assert {r["verdict"] for r in rows} == {"comp", "not_comp"}
 
-        monkeypatch.setattr(live, "select_comps", lambda ident, titles: None)
-        monkeypatch.setattr(live, "read_api_total_sold", fake_api)
-        live.comp_report("id", "q", condition_id=3000)
-        assert seen["condition_id"] == 3000
+    def test_selection_failure_is_stated_unfiltered(self, heineken,
+                                                    monkeypatch):
+        monkeypatch.setattr(live, "select_comps", lambda i, t: None)
+        out = live.comp_report("id", "q", include_rows=True)
+        assert out["comp_selection"].startswith("UNAVAILABLE")
+        assert "verdict" not in out["sold_rows"][0]
+
+    def test_a_hole_in_the_verdicts_is_a_whole_set_failure(self, heineken,
+                                                          monkeypatch):
+        def holey(ident, titles):
+            v = verdicts_all_but_round(ident, titles)
+            v[2] = None
+            return v
+        monkeypatch.setattr(live, "select_comps", holey)
+        assert live.comp_report("id", "q")["comp_selection"].startswith(
+            "UNAVAILABLE")
+
+    def test_evidence_is_the_raw_api_bodies(self, heineken, tmp_path):
+        out = live.comp_report("id", "q", evidence_dir=tmp_path)
+        files = out["evidence"]["api_responses"]
+        assert Path(files["sold_p0"]).read_text() == SOLD
+        assert Path(files["active"]).read_text() == ACTIVE
+        assert "screenshots" not in out["evidence"]
+
+    def test_condition_scope_is_stated(self, heineken):
+        out = live.comp_report("id", "q", condition_id=3000)
+        assert out["condition_scope"] == {"condition_id": 3000,
+                                          "label": "Used"}
+        assert heineken.requests[0]["conditionId"] == ["3000"]
+
+
+class TestWindowRefusal:
+    def test_a_sale_outside_the_window_refuses_both_tools(self, fake_session):
+        fake_session.pages[("SOLD", 0)] = synthetic_sold(3, date="Jan 2, 2024")
+        with pytest.raises(NonAnnualWindow):
+            live.comp_report("id", "q")
+        from scripts import comps_mcp_server
+        with pytest.raises(NonAnnualWindow):
+            comps_mcp_server.ebay_absorption("q")
+
+
+class TestAbsorptionTool:
+    def test_the_cheap_pass_makes_no_model_call(self, fake_session,
+                                                monkeypatch):
+        fake_session.pages[("SOLD", 0)] = SOLD
+
+        def boom(*a):
+            raise AssertionError("absorption must not call the model")
+        monkeypatch.setattr(live, "select_comps", boom)
+        from scripts import comps_mcp_server
+        out = comps_mcp_server.ebay_absorption("heineken special dark mirror")
+        assert out["sold_units_365d"] == 5 and out["active_now"] == 19
+        assert out["channel"] == "eBay only — not store or other channels"

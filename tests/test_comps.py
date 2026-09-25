@@ -1,379 +1,225 @@
 """
-The comp connector's pure layer, tested against real page shapes.
+The pure comps layer against real Seller Hub research-API responses.
 
-Every fixture below is built from text the Seller Hub research page actually
-rendered during the 2026-08-21/22 sessions (Boston Champion / Century of
-Progress / Pink Floyd), and every guard exists because the playbook recorded a
-failure that produced a WRONG NUMBER rather than an error:
-
-  - `limit` above 50 renders zero rows on SOLD with no message, so an empty
-    parse must be treated as SUSPECT, never as "sold 0" (absorption computes as
-    0 from a page that looks fine).
-  - a genuine empty market prints "No sold results found for <query>" — that,
-    and only that, is a real zero.
-  - `Total sold` is UNITS, not lot size: avg_sold_price x total_sold =
-    item_sales reconciles on every multi-quantity row, so the numerator sums
-    the column; counting rows undercounted by 3.5% on the sharpener corpus.
-  - the date window the PAGE prints is the only authority; the request's
-    dayRange is a dropdown label.
+Fixtures under tests/fixtures/comps/ are live responses captured 2026-09-25
+(Heineken Special Dark mirror query + a nonsense query), trimmed of tracking
+and tooltip nodes but keeping eBay's exact nesting and text — including the
+`$ 45.00` money format and the always-present PageErrorModule that broke the
+old innerText scraper silently.
 """
+
+import datetime as dt
+import json
+from pathlib import Path
 
 import pytest
 
 from src.comps import (
     ChallengePage, NonAnnualWindow, SoldPage, SoldRow, SuspectEmpty,
-    absorption, months_of_supply, parse_active_page, parse_filters,
-    parse_sold_page, require_annual_window, window_days,
-    UnknownConditionId, api_total_sold, require_known_condition,
-    sold_cross_check,
+    UnknownConditionId, absorption, aggregates, api_total_sold, money,
+    money_range, months_of_supply, parse_active_response,
+    parse_sold_response, price_stats, require_annual_window,
+    require_known_condition, sold_cross_check, split_modules, window_days,
+    window_label,
 )
 
-# --- fixtures shaped exactly like document.body.innerText -------------------
-
-SOLD_PAGE = """Seller Hub
-richmondgeneral
-Research products
-Sold​Active
-Aug 21, 2025 – Aug 21, 2026
-Show sales trends
-$24.11
-Avg sold price
-$4.99 - $105.00
-Sold price range
-$8.83
-Avg shipping
-7%
-Free shipping
--
-Sell-through
-43
-Total sellers
-Listing
-
-Actions
-
-Avg sold price
-
-, preview full size image
-Vintage Boston Champion Pencil Sharpener Hand Crank Pinch Feed NEW NOS
-
-Edit
-
-$33.30
-Fixed price
-
-$8.95
-0% Free shipping
-
-6
-
-$199.80
-
--
-
-Jul 15, 2026
-
-, preview full size image
-1933 Chicago World's Fair Glass Bottle - A Century of Progress 1833-1933 -No Cap
-
-Edit
-
-$20.00
-Fixed price
-
-$6.68
-0% Free shipping
-
-1
-
-$20.00
-
--
-
-Jul 26, 2026
-
-, preview full size image
-Boston Champion Pencil Sharpener
-
-Edit
-
-$12.50
-Auction
-
-$6.80
-0% Free shipping
-
-1
-
-$12.50
-
-3
-
-Aug 12, 2026
-Page 1
-"""
-
-ACTIVE_PAGE = """Seller Hub
-richmondgeneral
-Sold​Active
-Currently live today
-Show current trends
-$30.45
-Avg listing price
-$9.00 - $89.99
-Listing price range
-$10.02
-Avg shipping
-15%
-Free shipping
-46
-Total active listings
-22%
-Promoted listings
-Listing
-
-, preview full size image
-Vintage Old Bottle Chicago Fair "A Century Of Progress 1833-1933" Well Preserved
-
-Edit
-
-$19.98
-Free shipping
-
--
-
-0
-
--
-
-Aug 19, 2026
-
-, preview full size image
-1933 Chicago Century of Progress Metal Key Fob Bottle Opener
-
-Edit
-
-$21.99
-+$9.99 shipping
-
--
-
-4
-
--
-
-Jul 23, 2026
-"""
-
-GENUINE_ZERO = """Category selected:
-All Categories
-Sold​Active
-No sold results found for "Pink Floyd Palace Theatre Manchester poster"
-About eBay
-"""
-
-SILENT_EMPTY = """Seller Hub
-richmondgeneral
-Research products
-Sold​Active
-Category selected:
-All Categories
-About eBay
-"""
-
-CHALLENGE = """Pardon Our Interruption...
-As you were browsing something about your browser made us think you were a bot.
-"""
-
-# The filter bar as document.body.innerText actually renders it, captured live
-# 2026-08-24 with a sticky "Used" condition filter left over from a manual
-# Seller Hub session. The SOLD tab printed all three markers; a fresh ACTIVE
-# render printed only the page-level badge with a plain button label.
-
-FILTERED_BAR = """Category selected:
-All Categories
-Filter Applied
-Select a different category
-Lock selected filters
-Condition filter (1 Selected)
-Filter Applied
-Format filter
-Price filter
-Top rated
-More filters
-Used
-Sold​Active
-"""
-
-BADGE_ONLY_BAR = """Category selected:
-All Categories
-Filter Applied
-Select a different category
-Lock selected filters
-Condition filter
-Format filter
-Price filter
-Top rated
-More filters
-Sold​Active
-"""
-
-CLEAN_BAR = """Category selected:
-All Categories
-Select a different category
-Lock selected filters
-Condition filter
-Format filter
-Price filter
-Top rated
-More filters
-Sold​Active
-"""
+FIX = Path(__file__).parent / "fixtures" / "comps"
+WINDOW = "Sep 25, 2025 – Sep 25, 2026"
 
 
-class TestSoldParsing:
-    def test_reads_the_window_the_page_printed(self):
-        page = parse_sold_page(SOLD_PAGE)
-        assert page.window == "Aug 21, 2025 – Aug 21, 2026"
+def fixture(name: str) -> str:
+    return (FIX / name).read_text()
 
-    def test_sums_units_not_rows(self):
-        """The x6 NOS listing is six sales. 3 rows, 8 units."""
-        page = parse_sold_page(SOLD_PAGE)
-        assert len(page.rows) == 3
-        assert page.sold_units == 8
 
-    def test_row_fields(self):
-        r = parse_sold_page(SOLD_PAGE).rows[0]
-        assert r.title.startswith("Vintage Boston Champion")
-        assert r.price == 33.30
-        assert r.qty == 6
+SOLD = fixture("sold_heineken_2026-09-25.ndjson")
+ACTIVE = fixture("active_heineken_2026-09-25.ndjson")
+SOLD_ZERO = fixture("sold_zero_2026-09-25.ndjson")
+ACTIVE_ZERO = fixture("active_zero_2026-09-25.ndjson")
+SOLD_PAST_END = fixture("sold_past_end_2026-09-25.ndjson")
 
-    def test_aggregate_block(self):
-        page = parse_sold_page(SOLD_PAGE)
-        assert page.avg_price == 24.11
-        assert page.avg_shipping == 8.83
-        assert (page.price_low, page.price_high) == (4.99, 105.00)
 
-    def test_landed_average_includes_shipping(self):
-        page = parse_sold_page(SOLD_PAGE)
-        assert page.landed_avg == pytest.approx(24.11 + 8.83)
+class TestMoney:
+    """The format drift that emptied every price band: eBay renders
+    `$ 45.00` (space) in rows and API values. One tolerant parser."""
 
-    def test_a_genuine_zero_is_zero(self):
-        page = parse_sold_page(GENUINE_ZERO)
-        assert page.rows == [] and page.sold_units == 0
-        assert page.genuine_zero is True
+    @pytest.mark.parametrize("text,value", [
+        ("$ 45.00", 45.0), ("$45.00", 45.0), ("+$ 12.80 shipping", 12.8),
+        ("$ 6,508.70", 6508.70), ("$ 5", 5.0),
+    ])
+    def test_amounts(self, text, value):
+        assert money(text) == value
 
-    def test_an_empty_page_without_the_zero_message_is_SUSPECT_not_zero(self):
-        """GOTCHA 2 as code. limit>50 renders nothing, silently; treating that
-        as 'sold 0' computes absorption 0 from a page that looks fine."""
+    @pytest.mark.parametrize("text", [None, "", "-", "- - -", "Free shipping"])
+    def test_absence_is_none_never_zero(self, text):
+        assert money(text) is None
+
+    @pytest.mark.parametrize("text", [
+        "$ 15.00 - $ 45.00", "$15.00 – $45.00", "$ 15.00 — $ 45.00"])
+    def test_ranges_with_any_dash(self, text):
+        assert money_range(text) == (15.0, 45.0)
+
+    def test_no_range_is_a_pair_of_none(self):
+        assert money_range("- - -") == (None, None)
+
+
+class TestSoldResponse:
+    def test_rows_carry_named_fields(self):
+        page = parse_sold_response(SOLD, window=WINDOW)
+        assert len(page.rows) == 5
+        r = next(r for r in page.rows if r.item_id == "158271810080")
+        assert r.title.startswith("Heineken Imported Special Dark Beer")
+        assert r.price == 23.0
+        assert r.shipping == 8.07
+        assert r.landed == 31.07
+        assert r.qty == 1
+        assert r.date == "Sep 13, 2026"
+        assert r.url == "https://www.ebay.com/itm/158271810080"
+        assert r.image.startswith("https://i.ebayimg.com/")
+
+    def test_every_row_has_a_price(self):
+        """The old scraper returned price=None for all five of these."""
+        page = parse_sold_response(SOLD, window=WINDOW)
+        assert sorted(r.price for r in page.rows) == [
+            15.0, 23.0, 26.95, 28.34, 45.0]
+
+    def test_free_shipping_row_is_zero_not_unknown(self):
+        page = parse_sold_response(SOLD, window=WINDOW)
+        r = next(r for r in page.rows if r.item_id == "267646832976")
+        assert r.shipping == 0.0
+        assert r.landed == 26.95
+
+    def test_aggregates_including_the_range_and_total(self):
+        page = parse_sold_response(SOLD, window=WINDOW)
+        assert page.avg_price == 27.66
+        assert (page.price_low, page.price_high) == (15.0, 45.0)
+        assert page.avg_shipping == 11.06
+        assert page.total_sold == 5
+        assert page.total_sellers == 5
+        assert page.landed_avg == 38.72
+        assert page.window == WINDOW
+
+    def test_the_page_error_module_is_noise_when_data_is_present(self):
+        mods = split_modules(SOLD)
+        assert mods[0]["_type"] == "PageErrorModule"
+        assert mods[0]["severity"] == "ERROR"
+        assert parse_sold_response(SOLD).rows  # parsed anyway
+
+    def test_units_not_rows(self):
+        mods = split_modules(SOLD)
+        results = next(m for m in mods
+                       if m["_type"] == "SearchResultsModule")["results"]
+        results[0]["itemssold"]["textSpans"][0]["text"] = "3"
+        body = "\n".join(json.dumps(m) for m in mods)
+        page = parse_sold_response(body, window=WINDOW)
+        assert len(page.rows) == 5
+        assert page.sold_units == 7  # one row now sold 3
+
+    def test_a_genuine_zero_needs_ebays_own_message(self):
+        page = parse_sold_response(SOLD_ZERO, window=WINDOW)
+        assert page.genuine_zero and page.rows == []
+        assert page.sold_units == 0
+
+    def test_the_page_past_the_end_reads_as_zero(self):
+        """offset past the last row: zero rows WITH the message — the walk
+        treats it as termination, never as a dead market."""
+        assert parse_sold_response(SOLD_PAST_END).genuine_zero
+
+    def test_zero_rows_without_the_message_is_suspect(self):
+        mods = [m for m in split_modules(SOLD_ZERO)
+                if m["_type"] != "PageErrorModule"]
+        body = "\n".join(json.dumps(m) for m in mods)
         with pytest.raises(SuspectEmpty):
-            parse_sold_page(SILENT_EMPTY)
+            parse_sold_response(body)
 
-    def test_a_challenge_page_raises_not_parses(self):
+    def test_no_results_module_is_suspect(self):
+        body = "\n".join(json.dumps(m) for m in split_modules(SOLD)
+                         if m["_type"] != "SearchResultsModule")
+        with pytest.raises(SuspectEmpty):
+            parse_sold_response(body)
+
+    @pytest.mark.parametrize("body", [
+        "<!DOCTYPE html><html><title>Sign in or Register</title>",
+        "Pardon Our Interruption...",
+        "not json at all",
+    ])
+    def test_non_json_is_a_challenge(self, body):
         with pytest.raises(ChallengePage):
-            parse_sold_page(CHALLENGE)
+            parse_sold_response(body)
+
+    def test_empty_body_is_suspect(self):
+        with pytest.raises(SuspectEmpty):
+            parse_sold_response("")
 
 
-class TestActiveParsing:
-    def test_denominator_comes_from_the_aggregate_not_row_count(self):
-        """The page says 46 active; only 2 rows are rendered in the fixture.
-        Counting rows here would understate the denominator 23x."""
-        page = parse_active_page(ACTIVE_PAGE)
-        assert page.total_active == 46
-        assert len(page.rows) == 2
+class TestActiveResponse:
+    def test_total_comes_from_the_aggregate_not_the_rows(self):
+        page = parse_active_response(ACTIVE)
+        assert page.total_active == 19
+        assert len(page.rows) == 3  # fixture trimmed to 3 rows
 
-    def test_titles(self):
-        page = parse_active_page(ACTIVE_PAGE)
-        assert "Key Fob Bottle Opener" in page.rows[1].title
+    def test_rows_and_price_strip(self):
+        page = parse_active_response(ACTIVE)
+        assert page.avg_price == 45.38
+        assert (page.price_low, page.price_high) == (17.99, 79.99)
+        r = page.rows[0]
+        assert r.price is not None and r.item_id and r.url
+        assert r.start_date
 
-    def test_challenge_raises(self):
-        with pytest.raises(ChallengePage):
-            parse_active_page(CHALLENGE)
+    def test_a_genuine_zero(self):
+        page = parse_active_response(ACTIVE_ZERO)
+        assert page.total_active == 0 and page.rows == []
 
-
-class TestFilterScope:
-    """The page's printed filter markers are surfaced as printed — they are
-    the page's CLAIM about its own scope (a sticky chip can even be a
-    display-only ghost, measured 2026-08-29). An absent bar is UNKNOWN,
-    never 'clean'."""
-
-    def test_reports_every_marker_the_sold_page_printed(self):
-        page = parse_sold_page(FILTERED_BAR + SOLD_PAGE)
-        assert page.filters == [
-            "Filter Applied", "Condition filter (1 Selected)", "Used"]
-
-    def test_badge_alone_is_still_a_scoped_read(self):
-        page = parse_active_page(BADGE_ONLY_BAR + ACTIVE_PAGE)
-        assert page.filters == ["Filter Applied"]
-
-    def test_a_clean_bar_is_an_empty_list(self):
-        page = parse_sold_page(CLEAN_BAR + SOLD_PAGE)
-        assert page.filters == []
-
-    def test_no_bar_printed_is_unknown_not_clean(self):
-        """SOLD_PAGE has no filter bar at all. That is 'the page did not
-        print its filter state', which must never read as 'unfiltered'."""
-        page = parse_sold_page(SOLD_PAGE)
-        assert page.filters is None
-
-    def test_a_genuine_zero_still_carries_the_scope(self):
-        """A scoped zero is not the same fact as an unscoped zero."""
-        page = parse_sold_page(FILTERED_BAR + GENUINE_ZERO)
-        assert page.genuine_zero is True
-        assert page.filters == [
-            "Filter Applied", "Condition filter (1 Selected)", "Used"]
-
-    def test_parse_filters_directly(self):
-        assert parse_filters(FILTERED_BAR) == [
-            "Filter Applied", "Condition filter (1 Selected)", "Used"]
-        assert parse_filters(CLEAN_BAR) == []
-        assert parse_filters("no bar here at all") is None
+    def test_aggregates_read_as_labelled(self):
+        agg = aggregates(split_modules(ACTIVE))
+        assert agg["Total active listings"] == "19"
 
 
 class TestWindowAuthority:
-    """GOTCHA 1 as pure code: the date line the page prints is the only
-    authority on the window, and the metric is DEFINED per 365 days. A
-    non-annual print must refuse, mirroring evidence/model.py's exactly-365
-    check on the capture-import path (±1 day here for leap-year spans)."""
+    """The API prints no window, so the guard is two-part: the requested
+    window spans a year, and every sale date falls inside it."""
 
-    def test_the_annual_print_spans_365_days(self):
-        assert window_days("Aug 21, 2025 – Aug 21, 2026") == 365
+    def row(self, date):
+        return SoldRow(title="Synthetic sold listing", price=10.0, qty=1,
+                       date=date, item_id="1")
 
-    def test_a_30_day_print_is_not_annual(self):
-        """The window the verifier probe fed comp_report on 2026-08-29."""
-        assert window_days("Jul 23, 2026 – Aug 21, 2026") == 29
+    def test_label_and_span(self):
+        label = window_label(dt.date(2025, 9, 25), dt.date(2026, 9, 25))
+        assert label == WINDOW
+        assert window_days(label) == 365
 
-    def test_an_absent_or_garbled_window_is_none(self):
-        assert window_days(None) is None
-        assert window_days("Show sales trends") is None
+    def test_the_real_rows_sit_inside_the_window(self):
+        require_annual_window(parse_sold_response(SOLD, window=WINDOW))
 
     def test_refuses_a_short_window(self):
-        page = SoldPage(window="Jul 23, 2026 – Aug 21, 2026", rows=[
-            SoldRow(title="Synthetic sold listing", price=10.0, qty=1,
-                    date="Aug 12, 2026")])
         with pytest.raises(NonAnnualWindow):
-            require_annual_window(page)
+            require_annual_window(SoldPage(
+                window="Aug 26, 2026 – Sep 25, 2026",
+                rows=[self.row("Sep 13, 2026")]))
+
+    def test_refuses_a_sale_outside_the_window(self):
+        """The data did not honour the pinned dates (what a dropped
+        startDate/endDate does: measured 2 rows vs 5)."""
+        with pytest.raises(NonAnnualWindow):
+            require_annual_window(SoldPage(
+                window=WINDOW, rows=[self.row("Jun 2, 2025")]))
+
+    def test_one_day_of_timezone_slack(self):
+        require_annual_window(SoldPage(
+            window=WINDOW, rows=[self.row("Sep 24, 2025"),
+                                 self.row("Sep 26, 2026")]))
 
     def test_refuses_rows_without_any_window(self):
-        page = SoldPage(window=None, rows=[
-            SoldRow(title="Synthetic sold listing", price=10.0, qty=1,
-                    date="Aug 12, 2026")])
         with pytest.raises(NonAnnualWindow):
-            require_annual_window(page)
+            require_annual_window(SoldPage(window=None,
+                                           rows=[self.row("Sep 13, 2026")]))
 
     def test_accepts_a_leap_year_span(self):
-        """Feb 29, 2028 sits inside this year: 366 printed days is still a
-        year, not a scope error."""
-        assert window_days("Jul 1, 2027 – Jul 1, 2028") == 366
-        require_annual_window(SoldPage(window="Jul 1, 2027 – Jul 1, 2028",
-                                       rows=[SoldRow(title="Synthetic listing",
-                                                     price=1.0, qty=1,
-                                                     date=None)]))
+        require_annual_window(SoldPage(
+            window="Jul 1, 2027 – Jul 1, 2028",
+            rows=[self.row("Feb 29, 2028")]))
 
-    def test_a_genuine_zero_prints_no_window_and_is_exempt(self):
-        """The zero-results page prints no date line at all (see
-        GENUINE_ZERO above); its report states the absence explicitly
-        instead of refusing every dead market."""
+    def test_a_genuine_zero_passes(self):
+        require_annual_window(SoldPage(window=WINDOW, genuine_zero=True))
         require_annual_window(SoldPage(window=None, genuine_zero=True))
 
 
@@ -386,33 +232,34 @@ class TestAbsorption:
         assert months_of_supply(295, 138) == pytest.approx(5.6, abs=0.05)
 
     def test_months_of_supply_computes_from_raw_counts_not_rounded_rate(self):
-        """4 sold over 158 standing: 12 * 158 / 4 = 474.0 months. Feeding
-        the 2-dp rounded absorption (0.03) into 12/rate printed 400 — 15%
-        off — on the live RG-0144 windsor read, 2026-08-29. A slow market
-        is exactly where the sheet reader needs the number to be right."""
+        """12 * 158 / 4 = 474.0; 12/round(rate) printed 400 on the RG-0144
+        windsor read, 2026-08-29."""
         assert months_of_supply(4, 158) == pytest.approx(474.0)
 
-    def test_months_of_supply_edges_are_None_not_numbers(self):
+    def test_edges_are_none_not_numbers(self):
         assert months_of_supply(0, 40) is None
         assert months_of_supply(15, 0) is None
-
-    def test_zero_active_is_not_a_division_crash(self):
-        """Nothing standing: supply clears as fast as it appears. Report as
-        None rather than a fake number — the caller must say 'no standing
-        supply', not print inf on a sheet."""
         assert absorption(15, 0) is None
-
-    def test_zero_sold_zero_active_is_a_dead_market(self):
         assert absorption(0, 0) is None
 
 
-class TestConditionScope:
-    """Known conditionIds carry their labels; unknown ids are refused up
-    front, because the server silently ignores them and serves
-    default-scope data behind an obedient-looking URL (measured
-    2026-08-29: conditionId=0 and =999999 both fell back to the sticky
-    scope)."""
+class TestPriceStats:
+    def test_quartiles_over_the_real_heineken_comps(self):
+        s = price_stats([23.0, 26.95, 15.0, 28.34])
+        assert s["n"] == 4 and s["min"] == 15.0 and s["max"] == 28.34
+        assert s["median"] == pytest.approx(24.98, abs=0.01)
+        assert s["p25"] <= s["median"] <= s["p75"]
 
+    def test_one_value(self):
+        assert price_stats([20.0]) == {"n": 1, "min": 20.0, "p25": 20.0,
+                                       "median": 20.0, "p75": 20.0,
+                                       "max": 20.0}
+
+    def test_nothing_is_none(self):
+        assert price_stats([]) is None
+
+
+class TestConditionScope:
     def test_known_ids_pass_and_carry_labels(self):
         assert require_known_condition(3000) == "Used"
         assert require_known_condition(1000) == "New"
@@ -428,41 +275,24 @@ class TestConditionScope:
         assert require_known_condition(None) is None
 
 
-# One NDJSON line of a real api/search?modules=aggregates response
-# (sharpener query, captured live 2026-08-29), reduced to the section that
-# carries Total sold but keeping the exact real nesting.
-API_AGG_LINE = '{"_type": "ResearchAggregateModule", "sections": [{"dataItems": [{"header": {"_type": "TextualDisplay", "textSpans": [{"_type": "TextSpan", "text": "Total sold"}], "accessibilityText": "Total sold"}, "value": {"_type": "TextualDisplay", "textSpans": [{"_type": "TextSpan", "text": "291"}], "accessibilityText": "291"}, "tooltip": {"_type": "TextualDisplay", "textSpans": [{"_type": "TextSpan", "text": "The total number of items sold."}], "accessibilityText": "The total number of items sold."}}, {"header": {"_type": "TextualDisplay", "textSpans": [{"_type": "TextSpan", "text": "Sell-through"}], "accessibilityText": "Sell-through"}, "value": {"_type": "TextualDisplay", "textSpans": [{"_type": "TextSpan", "text": "-"}], "accessibilityText": "-"}, "tooltip": {"_type": "TextualDisplay", "textSpans": [{"_type": "TextSpan", "text": "The percentage of similar items that sold. Sell-through for a period greater than 90 days cannot be calculated. Reduce your date range to see the sell-through rate."}], "accessibilityText": "The percentage of similar items that sold. Sell-through for a period greater than 90 days cannot be calculated. Reduce your date range to see the sell-through rate."}}, {"header": {"_type": "TextualDisplay", "textSpans": [{"_type": "TextSpan", "text": "Total sellers"}], "accessibilityText": "Total sellers"}, "value": {"_type": "TextualDisplay", "textSpans": [{"_type": "TextSpan", "text": "275"}], "accessibilityText": "275"}, "tooltip": {"_type": "TextualDisplay", "textSpans": [{"_type": "TextSpan", "text": "The total number of sellers."}], "accessibilityText": "The total number of sellers."}}]}]}'
-
-API_AGG_BODY = (
-    '{"_type":"PageErrorModule","severity":"ERROR","meta":{"name":"pageError"},"debugUrl":""}\n'
-    "\n" + API_AGG_LINE + "\n")
-
-API_AGG_COMMA = '{"_type": "ResearchAggregateModule", "sections": [{"dataItems": [{"header": {"_type": "TextualDisplay", "textSpans": [{"_type": "TextSpan", "text": "Total sold"}], "accessibilityText": "Total sold"}, "value": {"_type": "TextualDisplay", "textSpans": [{"_type": "TextSpan", "text": "1,291"}], "accessibilityText": "1,291"}, "tooltip": {"_type": "TextualDisplay", "textSpans": [{"_type": "TextSpan", "text": "The total number of items sold."}], "accessibilityText": "The total number of items sold."}}, {"header": {"_type": "TextualDisplay", "textSpans": [{"_type": "TextSpan", "text": "Sell-through"}], "accessibilityText": "Sell-through"}, "value": {"_type": "TextualDisplay", "textSpans": [{"_type": "TextSpan", "text": "-"}], "accessibilityText": "-"}, "tooltip": {"_type": "TextualDisplay", "textSpans": [{"_type": "TextSpan", "text": "The percentage of similar items that sold. Sell-through for a period greater than 90 days cannot be calculated. Reduce your date range to see the sell-through rate."}], "accessibilityText": "The percentage of similar items that sold. Sell-through for a period greater than 90 days cannot be calculated. Reduce your date range to see the sell-through rate."}}, {"header": {"_type": "TextualDisplay", "textSpans": [{"_type": "TextSpan", "text": "Total sellers"}], "accessibilityText": "Total sellers"}, "value": {"_type": "TextualDisplay", "textSpans": [{"_type": "TextSpan", "text": "275"}], "accessibilityText": "275"}, "tooltip": {"_type": "TextualDisplay", "textSpans": [{"_type": "TextSpan", "text": "The total number of sellers."}], "accessibilityText": "The total number of sellers."}}]}]}'
-
-
 class TestApiTotalSold:
-    """The aggregates API is an independent source for the sold total —
-    page walk and API agreed exactly on the measured corpus (291 = 291
-    unfiltered, 256 = 256 Used-scoped, 2026-08-29). The parser must read
-    the real NDJSON shape and return absence, never a guessed zero."""
-
     def test_reads_total_sold_from_a_real_response_body(self):
-        assert api_total_sold(API_AGG_BODY) == 291
+        assert api_total_sold(SOLD) == 5
 
     def test_a_comma_grouped_total_parses(self):
-        assert api_total_sold(API_AGG_COMMA) == 1291
+        assert api_total_sold(SOLD.replace(
+            '"text":"Total sold"}]},"value":{"_type":"TextualDisplay",'
+            '"textSpans":[{"_type":"TextSpan","text":"5"',
+            '"text":"Total sold"}]},"value":{"_type":"TextualDisplay",'
+            '"textSpans":[{"_type":"TextSpan","text":"1,291"')) == 1291
 
-    def test_no_aggregate_module_is_None_not_zero(self):
+    def test_no_aggregate_module_is_none_not_zero(self):
         assert api_total_sold('{"_type":"PageErrorModule"}') is None
         assert api_total_sold("Pardon Our Interruption...") is None
         assert api_total_sold("") is None
 
 
 class TestSoldCrossCheck:
-    """One figure from the page walk, one from the API; disagreement means
-    one of them is wrong (or a sale landed between the reads — they are
-    seconds apart), and the reader must see it either way."""
-
     def test_agreement_is_a_match(self):
         assert sold_cross_check(291, False, 291)["verdict"] == "match"
 
@@ -473,10 +303,10 @@ class TestSoldCrossCheck:
     def test_a_truncated_walk_is_a_floor_not_a_mismatch(self):
         assert sold_cross_check(600, True, 950)["verdict"] == "consistent floor"
 
-    def test_a_truncated_walk_above_the_api_total_is_still_wrong(self):
+    def test_a_truncated_walk_above_the_total_is_still_wrong(self):
         assert "MISMATCH" in sold_cross_check(600, True, 500)["verdict"]
 
-    def test_an_unreadable_api_is_stated_not_hidden(self):
+    def test_an_unreadable_total_is_stated_not_hidden(self):
         v = sold_cross_check(291, False, None)
         assert v["api_total_sold"] is None
         assert "UNAVAILABLE" in v["verdict"]
