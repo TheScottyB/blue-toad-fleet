@@ -36,3 +36,7 @@ def _no_live_research_session(monkeypatch):
             return None
 
     monkeypatch.setattr(_live, "ResearchSession", _NoNetwork)
+    # Suspect-empty pages are normally re-asked after a pause; unit tests ask
+    # once so they stay fast and their request counts stay exact. The retry
+    # tests set their own (zero-second) pauses.
+    monkeypatch.setattr(_live, "_EMPTY_RETRY_PAUSES", ())

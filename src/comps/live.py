@@ -7,9 +7,11 @@ Seller Hub once by the operator) and Vertex for intelligent comp selection.
 Parsing and arithmetic live in src/comps/__init__.py and are what the unit
 tests cover.
 
-Data path (rewritten 2026-09-25): ONE tab on the Seller Hub research page per
-read, then same-origin ``fetch()`` calls to the research JSON API from inside
-it — the exact requests eBay's own page makes. The old path opened a fresh tab
+Data path (rewritten 2026-09-25): ONE tab on the Seller Hub research page,
+then same-origin ``fetch()`` calls to the research JSON API from inside it —
+the exact requests eBay's own page makes. Since 2026-11-11 that tab is shared:
+a read reuses the research tab that is already open and leaves it open, so
+there is no window opening and closing per query. The old path opened a fresh tab
 per page and slept a fixed 8 s before scraping ``innerText`` (a run took ~22 s
 and the scrape silently lost every row price when eBay changed its money
 formatting); an API page answers in under a second and carries named fields.
@@ -30,6 +32,8 @@ from __future__ import annotations
 import asyncio
 import datetime as _dt
 import json
+import os
+import sys
 import time
 import urllib.error
 import urllib.parse
@@ -39,8 +43,8 @@ from pathlib import Path
 
 import websockets
 
-from src.comps import (ActivePage, ChallengePage, SoldPage, absorption,
-                       merge_sold_pages, months_of_supply,
+from src.comps import (ActivePage, ChallengePage, SoldPage, SuspectEmpty,
+                       absorption, merge_sold_pages, months_of_supply,
                        parse_active_response, parse_sold_response,
                        price_stats, require_annual_window,
                        require_known_condition, sold_cross_check,
@@ -54,6 +58,19 @@ _ACTIVE_LIMIT = 200     # works on ACTIVE, returns the whole set in one read
 _MAX_SOLD_PAGES = 12    # 600 listings; past that the query is too broad to comp
 _READY_TIMEOUT = 60.0   # a cold first launch took ~30 s once (2026-09-25); usually ~2 s
 _FETCH_TIMEOUT = 30.0
+_RESEARCH_PREFIX = _ORIGIN + "/sh/research"
+_REUSE_READY_TIMEOUT = 8.0  # an open research tab answers at once; else open a fresh one
+# The research tab is left open and reused by the next read. Opening and
+# closing one per read made a window pop up and vanish for every query
+# (measured 2026-11-11: the dedicated Chrome had no window, so each read's tab
+# WAS a window). BTF_COMPS_KEEP_TAB=0 restores close-on-exit.
+_KEEP_TAB = os.environ.get("BTF_COMPS_KEEP_TAB", "1") != "0"
+# Seconds to wait before re-asking a page that came back suspiciously empty.
+# eBay's research API intermittently answers a healthy query with zero rows
+# and no zero-results message (2026-11-11: the same query read 50 rows before
+# and after). Re-asking inside the open tab costs a second; refusing made the
+# caller rerun the whole read. Still empty after the last pause = refused.
+_EMPTY_RETRY_PAUSES: tuple[float, ...] = (1.5, 3.0)
 
 SCOPE_NOTE = ("API request parameters only — Seller Hub UI filter chips do "
               "not scope these reads (measured 2026-09-25)")
@@ -78,40 +95,98 @@ def _cdp_json(path: str, method: str = "GET", timeout: float = 10) -> dict | lis
             "--user-data-dir=$HOME/.btf-chrome-profile") from None
 
 
+def pick_research_tab(targets: object) -> dict | None:
+    """The already-open Seller Hub research tab to reuse, or None.
+
+    Only a page sitting on the research URL qualifies: a tab that eBay sent
+    to signin or a challenge has a different URL and is never picked, so a
+    fresh tab (and its ChallengePage refusal) handles that case."""
+    for t in targets if isinstance(targets, list) else []:
+        if (isinstance(t, dict) and t.get("type") == "page" and t.get("id")
+                and str(t.get("url", "")).startswith(_RESEARCH_PREFIX)):
+            return t
+    return None
+
+
+def _ws_url(tab: dict) -> str:
+    # /json omits webSocketDebuggerUrl for a target another client holds.
+    return tab.get("webSocketDebuggerUrl") or (
+        CDP.replace("http://", "ws://") + "/devtools/page/" + tab["id"])
+
+
 class ResearchSession:
     """One Seller Hub tab; research API reads are fetch() calls inside it.
 
     Same-origin fetch carries the signed-in cookies and hits the endpoint the
     page itself uses, so there is no per-read tab, no fixed sleep, and no
     rendered text to scrape. Readiness is polled (document complete on
-    www.ebay.com) rather than assumed after a sleep."""
+    www.ebay.com) rather than assumed after a sleep.
+
+    The tab is shared: a read attaches to the research tab that is already
+    open, opens one only when there is none, and leaves it open for the next
+    read (see _KEEP_TAB). ``reused`` says which happened."""
 
     def __init__(self) -> None:
         self._tab: dict | None = None
         self._ws = None
         self._n = 0
+        self.reused = False
+
+    async def _attach(self, tab: dict, ready_timeout: float) -> None:
+        self._tab = tab
+        self._ws = await websockets.connect(
+            _ws_url(tab), max_size=64 * 1024 * 1024)
+        await self._wait_ready(ready_timeout)
+
+    async def _detach(self) -> None:
+        ws, self._ws, self._tab = self._ws, None, None
+        if ws is not None:
+            try:
+                await ws.close()
+            except Exception:  # best-effort; a dead socket is already closed
+                pass
 
     async def __aenter__(self) -> "ResearchSession":
-        self._tab = _cdp_json(
-            "/json/new?" + urllib.parse.quote(_BOOT_URL, safe=""), method="PUT")
-        self._ws = await websockets.connect(
-            self._tab["webSocketDebuggerUrl"], max_size=64 * 1024 * 1024)
-        await self._wait_ready()
+        tab = pick_research_tab(_cdp_json("/json"))
+        if tab is not None:
+            try:
+                await self._attach(tab, _REUSE_READY_TIMEOUT)
+                self.reused = True
+                return self
+            except ChallengePage:
+                await self._detach()
+                raise
+            except Exception:
+                # A stuck or half-closed tab is not worth a refusal: fall
+                # back to a fresh one, exactly as before tabs were shared.
+                await self._detach()
+        self._n = 0
+        try:
+            await self._attach(_cdp_json(
+                "/json/new?" + urllib.parse.quote(_BOOT_URL, safe=""),
+                method="PUT"), _READY_TIMEOUT)
+        except BaseException:
+            await self._close_tab()
+            raise
         return self
 
+    async def _close_tab(self) -> None:
+        tab = self._tab
+        await self._detach()
+        if tab is not None:
+            # /json/close answers plain text ("Target is closing"), not
+            # JSON; closing is best-effort cleanup and never fails a read.
+            try:
+                urllib.request.urlopen(
+                    f"{CDP}/json/close/{tab['id']}", timeout=5).read()
+            except (urllib.error.URLError, OSError):
+                pass
+
     async def __aexit__(self, *exc) -> None:
-        try:
-            if self._ws is not None:
-                await self._ws.close()
-        finally:
-            if self._tab is not None:
-                # /json/close answers plain text ("Target is closing"), not
-                # JSON; closing is best-effort cleanup and never fails a read.
-                try:
-                    urllib.request.urlopen(
-                        f"{CDP}/json/close/{self._tab['id']}", timeout=5).read()
-                except (urllib.error.URLError, OSError):
-                    pass
+        if _KEEP_TAB:
+            await self._detach()
+        else:
+            await self._close_tab()
 
     async def _eval(self, expression: str, timeout: float) -> object:
         self._n += 1
@@ -135,8 +210,8 @@ class ResearchSession:
                     + json.dumps(result["exceptionDetails"])[:300])
             return (result.get("result") or {}).get("value")
 
-    async def _wait_ready(self) -> None:
-        deadline = time.monotonic() + _READY_TIMEOUT
+    async def _wait_ready(self, timeout: float = _READY_TIMEOUT) -> None:
+        deadline = time.monotonic() + timeout
         last = None
         while time.monotonic() < deadline:
             try:
@@ -159,7 +234,7 @@ class ResearchSession:
                     "challenge, not research")
             await asyncio.sleep(0.25)
         raise TimeoutError(
-            f"Seller Hub tab not ready after {_READY_TIMEOUT:.0f}s (last "
+            f"Seller Hub tab not ready after {timeout:.0f}s (last "
             f"state {last!r})")
 
     async def get(self, path: str) -> str:
@@ -234,14 +309,38 @@ class Market:
     raw: dict[str, str] = field(default_factory=dict)
 
 
+async def _get_parsed(sess, path: str, parse, what: str):
+    """One research read → (body, parsed), re-asked when suspiciously empty.
+
+    A SuspectEmpty answer is asked again inside the same tab after each pause
+    in _EMPTY_RETRY_PAUSES. The guard is unchanged: an answer that is still
+    empty after the last pause is refused, never reported as a zero."""
+    pauses = list(_EMPTY_RETRY_PAUSES)
+    while True:
+        body = await sess.get(path)
+        try:
+            return body, parse(body)
+        except SuspectEmpty as e:
+            if not pauses:
+                raise
+            wait = pauses.pop(0)
+            print(f"comps: {what} came back empty ({e}); asking again in "
+                  f"{wait:g}s", file=sys.stderr)
+            await asyncio.sleep(wait)
+
+
 async def _read_market(query: str, condition_id: int | None) -> Market:
     s, e, label = year_window()
     raw: dict[str, str] = {}
+
+    def sold(body: str) -> SoldPage:
+        return parse_sold_response(body, window=label)
+
     async with ResearchSession() as sess:
-        body = await sess.get(search_path(query, "SOLD", 0, _SOLD_PAGE_LIMIT,
-                                          condition_id, (s, e)))
+        body, first = await _get_parsed(
+            sess, search_path(query, "SOLD", 0, _SOLD_PAGE_LIMIT,
+                              condition_id, (s, e)), sold, "SOLD page 1")
         raw["sold_p0.ndjson"] = body
-        first = parse_sold_response(body, window=label)
         later: list[SoldPage] = []
         if not first.genuine_zero:
             got = len(first.rows)
@@ -250,11 +349,12 @@ async def _read_market(query: str, condition_id: int | None) -> Market:
                 if offset >= _MAX_SOLD_PAGES * _SOLD_PAGE_LIMIT:
                     first.truncated = True
                     break
-                body = await sess.get(search_path(
-                    query, "SOLD", offset, _SOLD_PAGE_LIMIT, condition_id,
-                    (s, e)))
-                raw[f"sold_p{offset // _SOLD_PAGE_LIMIT}.ndjson"] = body
-                page = parse_sold_response(body, window=label)
+                n = offset // _SOLD_PAGE_LIMIT
+                body, page = await _get_parsed(
+                    sess, search_path(query, "SOLD", offset, _SOLD_PAGE_LIMIT,
+                                      condition_id, (s, e)),
+                    sold, f"SOLD page {n + 1}")
+                raw[f"sold_p{n}.ndjson"] = body
                 if page.genuine_zero:
                     # An exact multiple of 50: the page past the end carries
                     # the zero message — termination, not a dead market.
@@ -262,10 +362,10 @@ async def _read_market(query: str, condition_id: int | None) -> Market:
                 later.append(page)
                 got = len(page.rows)
                 offset += _SOLD_PAGE_LIMIT
-        body = await sess.get(search_path(query, "ACTIVE", 0, _ACTIVE_LIMIT,
-                                          condition_id))
+        body, active = await _get_parsed(
+            sess, search_path(query, "ACTIVE", 0, _ACTIVE_LIMIT, condition_id),
+            parse_active_response, "ACTIVE")
         raw["active.ndjson"] = body
-        active = parse_active_response(body)
     return Market(sold=merge_sold_pages(first, later), active=active,
                   window_ms=(s, e), raw=raw)
 

@@ -17,6 +17,19 @@ Richmond General wrapper ops/scripts/ebay-comps starts it for you):
     .venv/bin/python scripts/comps_cli.py comps "Boston Champion hand-crank sharpener, complete" \
         --query "boston champion pencil sharpener" --with-evidence --rows-out rows.json
 
+Several searches in ONE call (a batch) — price an item with one run instead of
+one run per query:
+
+    .venv/bin/python scripts/comps_cli.py absorption "sega nomad" "sega nomad console" "nomad handheld"
+    .venv/bin/python scripts/comps_cli.py comps "Sega Nomad handheld, working" \
+        --query "sega nomad" --query "sega nomad console" --rows-out rows.json
+
+One query prints the same dict as always. A batch prints
+{"batch": true, "count", "refused", "results": [...]}: each result is that
+same dict, or {"query", "refused": "<Reason>: ..."} for a query that was
+refused. A batch exits 1 if ANY query was refused (the others still print),
+so a refusal can never be mistaken for a zero.
+
 Guards exit nonzero with the reason on stderr — a wrong number never
 leaves as exit 0: NonAnnualWindow (window not a year, or a sale dated
 outside it), SuspectEmpty (empty without eBay's zero message),
@@ -30,6 +43,7 @@ import argparse
 import json
 import signal
 import sys
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -44,6 +58,11 @@ _CONDITION_HELP = (
     "7000 for-parts); unknown ids are refused, not silently ignored; "
     "omitted = unfiltered read")
 
+# Seconds between the queries of a batch — eBay's research API answers the
+# occasional rapid read with an empty page (2026-11-11), so a batch does not
+# hammer it.
+_BATCH_PAUSE = 1.0
+
 _EPILOG = """\
 exit status:
   0   the read completed; JSON on stdout
@@ -51,6 +70,11 @@ exit status:
       signed out / bot wall, empty response without eBay's zero message,
       window not a year or a sale dated outside it, unknown condition id,
       Chrome not answering, --timeout exceeded.
+      In a batch (several queries): 1 if ANY query was refused; the JSON
+      still prints, with that query's entry carrying "refused".
+
+batch: give `absorption` several queries, or `comps` several --query flags.
+--timeout then applies to each query, not to the whole batch.
 
 prerequisite: the dedicated CDP Chrome on port 9222 (profile
 ~/.btf-chrome-profile, signed in to Seller Hub). All figures are
@@ -83,8 +107,9 @@ def main(argv: list[str] | None = None) -> int:
     p_abs = sub.add_parser(
         "absorption", help="the cheap pass: channel-specific velocity")
     p_abs.add_argument(
-        "query",
-        help="Seller Hub search keywords — what a buyer would type")
+        "query", nargs="+",
+        help="Seller Hub search keywords — what a buyer would type; "
+             "several = one batch call")
     p_abs.add_argument("--condition-id", type=int, default=None,
                        help=_CONDITION_HELP)
 
@@ -95,9 +120,10 @@ def main(argv: list[str] | None = None) -> int:
         help="what the item IS — the full identification every candidate "
              "listing title is screened against")
     p_comps.add_argument(
-        "--query", default=None,
+        "--query", action="append", default=None,
         help="search keywords when they differ from the identification "
-             "(default: the identification itself)")
+             "(default: the identification itself); repeat the flag to "
+             "run several searches in one batch call")
     p_comps.add_argument(
         "--with-evidence", action="store_true",
         help="save the raw research API responses under data/comps/")
@@ -114,32 +140,26 @@ def main(argv: list[str] | None = None) -> int:
     for p in (p_abs, p_comps):
         p.add_argument("--timeout", type=int, default=180,
                        help="hard wall-clock limit in seconds (default 180; "
-                            "0 = none)")
+                            "0 = none); per query in a batch")
 
     args = parser.parse_args(argv)
+    queries = (args.query if args.command == "absorption"
+               else (args.query or [None]))
+    if len(queries) > 1:
+        return _batch(args, queries)
+
     _deadline(args.timeout)
     try:
-        if args.command == "absorption":
-            out = comps_mcp_server.ebay_absorption(
-                args.query, condition_id=args.condition_id)
-        else:
-            out = comps_mcp_server.ebay_comps(
-                args.identification, query=args.query,
-                with_evidence=args.with_evidence,
-                condition_id=args.condition_id,
-                screenshots=args.screenshots,
-                include_rows=args.rows_out is not None)
-            if args.rows_out is not None:
-                rows = out.pop("sold_rows", [])
-                args.rows_out.parent.mkdir(parents=True, exist_ok=True)
-                args.rows_out.write_text(json.dumps({
-                    "identification": out["identification"],
-                    "query": out["query"],
-                    "captured_at": out["captured_at"],
-                    "window": out["window"],
-                    "condition_scope": out["condition_scope"],
-                    "rows": rows}, indent=1, ensure_ascii=False))
-                out["rows_out"] = str(args.rows_out)
+        out, rows = _read_one(args, queries[0])
+        if rows is not None:
+            _write_rows(args.rows_out, {
+                "identification": out["identification"],
+                "query": out["query"],
+                "captured_at": out["captured_at"],
+                "window": out["window"],
+                "condition_scope": out["condition_scope"],
+                "rows": rows})
+            out["rows_out"] = str(args.rows_out)
     except Exception as e:
         print(f"{type(e).__name__}: {e} — read refused", file=sys.stderr)
         return 1
@@ -148,6 +168,67 @@ def main(argv: list[str] | None = None) -> int:
             signal.alarm(0)
     print(json.dumps(out, indent=2, ensure_ascii=False))
     return 0
+
+
+def _read_one(args, query: str | None) -> tuple[dict, list | None]:
+    """One read through the exact tool function → (tool dict, sold rows or
+    None). Rows are split off only when --rows-out asked for them."""
+    if args.command == "absorption":
+        return comps_mcp_server.ebay_absorption(
+            query, condition_id=args.condition_id), None
+    out = comps_mcp_server.ebay_comps(
+        args.identification, query=query,
+        with_evidence=args.with_evidence,
+        condition_id=args.condition_id,
+        screenshots=args.screenshots,
+        include_rows=args.rows_out is not None)
+    rows = out.pop("sold_rows", []) if args.rows_out is not None else None
+    return out, rows
+
+
+def _write_rows(path: Path, payload: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=1, ensure_ascii=False))
+
+
+def _batch(args, queries: list[str]) -> int:
+    """Several queries in one call. Each gets its own --timeout; a refused
+    query is recorded and the rest still run. Exit 1 if any was refused."""
+    results: list[dict] = []
+    row_sets: list[dict] = []
+    refused = 0
+    for i, query in enumerate(queries):
+        if i:
+            time.sleep(_BATCH_PAUSE)
+        _deadline(args.timeout)
+        try:
+            out, rows = _read_one(args, query)
+        except Exception as e:
+            refused += 1
+            reason = f"{type(e).__name__}: {e}"
+            print(f"{reason} — read refused (query {query!r})",
+                  file=sys.stderr)
+            results.append({"query": query, "refused": reason})
+            continue
+        finally:
+            if args.timeout > 0:
+                signal.alarm(0)
+        if rows is not None:
+            row_sets.append({
+                "query": out["query"],
+                "captured_at": out["captured_at"],
+                "window": out["window"],
+                "condition_scope": out["condition_scope"],
+                "rows": rows})
+            out["rows_out"] = str(args.rows_out)
+        results.append(out)
+    if args.command == "comps" and args.rows_out is not None:
+        _write_rows(args.rows_out, {
+            "identification": args.identification, "queries": row_sets})
+    print(json.dumps({"batch": True, "count": len(queries),
+                      "refused": refused, "results": results},
+                     indent=2, ensure_ascii=False))
+    return 1 if refused else 0
 
 
 if __name__ == "__main__":

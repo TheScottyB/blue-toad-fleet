@@ -114,3 +114,61 @@ class TestHelp:
             comps_cli.main(["--help"])
         text = capsys.readouterr().out
         assert "never \"sold 0\"" in text and "--timeout" in text
+
+
+class TestBatch:
+    """Several queries in one call: one run per item, not one per query."""
+
+    @pytest.fixture(autouse=True)
+    def _no_pause(self, monkeypatch):
+        monkeypatch.setattr(comps_cli, "_BATCH_PAUSE", 0)
+
+    def test_absorption_takes_several_queries(self, market, capsys):
+        assert comps_cli.main(["absorption", "q one", "q two", "q three"]) == 0
+        out = json.loads(capsys.readouterr().out)
+        assert out["batch"] is True and out["count"] == 3 and out["refused"] == 0
+        assert [r["query"] for r in out["results"]] == ["q one", "q two", "q three"]
+        assert all(r["sold_units_365d"] == 5 for r in out["results"])
+
+    def test_one_query_still_prints_the_plain_tool_dict(self, market, capsys):
+        assert comps_cli.main(["absorption", "only one"]) == 0
+        out = json.loads(capsys.readouterr().out)
+        assert "batch" not in out and out["sold_units_365d"] == 5
+
+    def test_a_refused_query_is_recorded_and_the_rest_still_run(
+            self, market, monkeypatch, capsys):
+        from src.comps import SuspectEmpty
+        good = live.read_market
+
+        def read(query, condition_id=None):
+            if query == "bad":
+                raise SuspectEmpty("zero sold rows and no message")
+            return good(query, condition_id)
+        monkeypatch.setattr(live, "read_market", read)
+
+        assert comps_cli.main(["absorption", "ok", "bad", "also ok"]) == 1
+        cap = capsys.readouterr()
+        out = json.loads(cap.out)
+        assert out["refused"] == 1 and out["count"] == 3
+        assert out["results"][1] == {
+            "query": "bad",
+            "refused": "SuspectEmpty: zero sold rows and no message"}
+        assert out["results"][0]["sold_units_365d"] == 5
+        assert out["results"][2]["sold_units_365d"] == 5
+        assert "read refused (query 'bad')" in cap.err
+
+    def test_comps_repeats_query_and_writes_one_rows_file(
+            self, market, tmp_path, capsys):
+        rows = tmp_path / "rows.json"
+        assert comps_cli.main(["comps", "the item", "--query", "heineken",
+                               "--query", "heineken mirror",
+                               "--rows-out", str(rows)]) == 0
+        out = json.loads(capsys.readouterr().out)
+        assert out["batch"] is True and out["count"] == 2
+        assert [r["query"] for r in out["results"]] == ["heineken", "heineken mirror"]
+        assert all("sold_rows" not in r and r["rows_out"] == str(rows)
+                   for r in out["results"])
+        saved = json.loads(rows.read_text())
+        assert saved["identification"] == "the item"
+        assert [q["query"] for q in saved["queries"]] == ["heineken", "heineken mirror"]
+        assert all(len(q["rows"]) == 5 for q in saved["queries"])
