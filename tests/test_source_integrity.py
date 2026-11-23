@@ -107,6 +107,7 @@ def test_caption_entities_are_decoded_once_at_ingestion():
 def test_production_downloaders_do_not_disable_tls_verification():
     root = Path(__file__).resolve().parents[1]
     for relative in (
+        "scripts/cache_estatesales.py",
         "scripts/cache_gallery.py",
         "scripts/recache_full_size.py",
         "scripts/dry_run_single_photo.py",

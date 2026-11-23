@@ -108,6 +108,7 @@ def download_image(
     dest_path: Path,
     max_retries: int = 3,
     *,
+    referer: str = "https://www.auctionzip.com/",
     opener=urllib.request.urlopen,
 ) -> DownloadResult:
     if dest_path.exists() and dest_path.stat().st_size > 0:
@@ -122,7 +123,7 @@ def download_image(
         url,
         headers={
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko)",
-            "Referer": "https://www.auctionzip.com/",
+            "Referer": referer,
         },
     )
     for attempt in range(max_retries):
