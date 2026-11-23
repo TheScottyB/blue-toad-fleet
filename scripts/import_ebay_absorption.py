@@ -15,7 +15,9 @@ from src.evidence import AbsorptionEvidence
 
 
 _WINDOW = re.compile(r"([A-Z][a-z]{2}) (\d{1,2}), (\d{4})\s*[–-]\s*([A-Z][a-z]{2}) (\d{1,2}), (\d{4})")
-_ACTIVE = re.compile(r"(?:^|\|)\s*(\d+)\s*\|\s*Total active listings", re.I)
+_ACTIVE = re.compile(r"(?:^|\|)\s*(\d[\d,]*)\s*\|\s*Total active listings", re.I)
+_COMPLETE_RE = re.compile(r"(?<!in)\bcomplete\b|\bshort page\b", re.I)
+_NEGATED_COMPLETE_RE = re.compile(r"\b(?:incomplete|not\s+complete)\b", re.I)
 
 
 def _sha256(path: Path) -> str:
@@ -40,19 +42,25 @@ def import_capture(capture_path: Path, *, reviewer: str) -> AbsorptionEvidence:
     if not active_match:
         raise ValueError("capture has no Total active listings denominator")
     pages = str(sold.get("pages_walked") or "")
-    complete = "complete" in pages.casefold() or "short page" in pages.casefold()
+    complete = bool(_COMPLETE_RE.search(pages)) and not bool(_NEGATED_COMPLETE_RE.search(pages))
 
+    base_dir = capture_path.parent.resolve()
     source_paths = {"capture": capture_path}
     for label, value in (capture.get("screenshots") or {}).items():
         if label not in {"sold", "active"}:
             continue
-        source_paths[f"screenshot_{label}"] = capture_path.parent / str(value)
+        candidate = (capture_path.parent / str(value)).resolve()
+        if not candidate.is_relative_to(base_dir):
+            raise ValueError(f"unsafe screenshot path outside capture directory: {value!r}")
+        source_paths[f"screenshot_{label}"] = candidate
     sold_tsv = capture_path.parent / "sold_365d.tsv"
     if sold_tsv.is_file():
         source_paths["sold_rows"] = sold_tsv
     missing = [str(path) for path in source_paths.values() if not path.is_file()]
     if missing:
         raise FileNotFoundError("capture evidence is missing: " + ", ".join(missing))
+    if sold.get("units") is None or sold.get("rows") is None:
+        raise ValueError("capture sold units and rows are required")
 
     evidence = AbsorptionEvidence(
         schema_version=1,
@@ -62,9 +70,9 @@ def import_capture(capture_path: Path, *, reviewer: str) -> AbsorptionEvidence:
         window_start=window_start,
         window_end=window_end,
         displayed_window=str(sold["window_as_printed_by_page"]),
-        sold_units_last_365_days=int(sold.get("units") or 0),
-        sold_rows=int(sold.get("rows") or 0),
-        active_listings_now=int(active_match.group(1)),
+        sold_units_last_365_days=int(sold["units"]),
+        sold_rows=int(sold["rows"]),
+        active_listings_now=int(active_match.group(1).replace(",", "")),
         sold_pages_complete=complete,
         sold_page_count=max(1, pages.casefold().count("offset")),
         captured_at=str((capture.get("screenshots") or {}).get("captured_at")

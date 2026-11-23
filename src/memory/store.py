@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import json
+import math
 import os
-from dataclasses import asdict, dataclass
+import tempfile
+import threading
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Protocol
@@ -150,6 +153,80 @@ class RuleStore(Protocol):
         self, ruling: LotRulingRecord, expected_revision: int | None = None,
     ) -> LotRulingRecord: ...
     def ruling_history(self, shop_id: str, ruling_id: str) -> list[dict]: ...
+    def desk_state(self, shop_id: str, cycle_id: str) -> "DeskStateRecord": ...
+    def put_desk_state(
+        self, state: "DeskStateRecord", expected_revision: int | None = None,
+    ) -> "DeskStateRecord": ...
+
+
+@dataclass
+class DeskStateRecord:
+    """Durable operator envelope & walk-grouping edits for one shop/cycle."""
+
+    shop_id: str
+    cycle_id: str
+    declined: frozenset[str] = frozenset()
+    human_caps: dict[str, float] = field(default_factory=dict)
+    walk_approved: frozenset[frozenset[str]] = frozenset()
+    walk_rejected: frozenset[frozenset[str]] = frozenset()
+    revision: int = 0
+    actor: str = "operator"
+
+    def __post_init__(self) -> None:
+        self.declined = frozenset(str(x) for x in (self.declined or ()) if x)
+        clean_caps: dict[str, float] = {}
+        for k, v in (self.human_caps or {}).items():
+            if isinstance(v, bool):
+                raise ValueError("human_caps values must be finite numbers")
+            fv = float(v)
+            if not math.isfinite(fv) or fv <= 0:
+                raise ValueError("human_caps values must be positive finite numbers")
+            clean_caps[str(k)] = fv
+        self.human_caps = clean_caps
+        self.walk_approved = frozenset(
+            frozenset(str(x) for x in pair if x)
+            for pair in (self.walk_approved or ())
+            if len(pair) == 2
+        )
+        self.walk_rejected = frozenset(
+            frozenset(str(x) for x in pair if x)
+            for pair in (self.walk_rejected or ())
+            if len(pair) == 2
+        )
+
+    def as_dict(self) -> dict:
+        return {
+            "shop_id": self.shop_id,
+            "cycle_id": self.cycle_id,
+            "declined": sorted(self.declined),
+            "human_caps": dict(sorted(self.human_caps.items())),
+            "walk_approved": sorted(sorted(pair) for pair in self.walk_approved),
+            "walk_rejected": sorted(sorted(pair) for pair in self.walk_rejected),
+            "revision": self.revision,
+            "actor": self.actor,
+        }
+
+    @classmethod
+    def from_dict(cls, raw: dict) -> "DeskStateRecord":
+        return cls(
+            shop_id=str(raw["shop_id"]),
+            cycle_id=str(raw["cycle_id"]),
+            declined=frozenset(raw.get("declined") or ()),
+            human_caps={
+                str(k): float(v)
+                for k, v in (raw.get("human_caps") or {}).items()
+            },
+            walk_approved=frozenset(
+                frozenset(pair) for pair in (raw.get("walk_approved") or ())
+                if isinstance(pair, (list, tuple, set, frozenset)) and len(pair) == 2
+            ),
+            walk_rejected=frozenset(
+                frozenset(pair) for pair in (raw.get("walk_rejected") or ())
+                if isinstance(pair, (list, tuple, set, frozenset)) and len(pair) == 2
+            ),
+            revision=int(raw.get("revision") or 0),
+            actor=str(raw.get("actor") or "operator"),
+        )
 
 
 def _now() -> str:
@@ -182,100 +259,140 @@ class InMemoryRuleStore:
         seed: list[StandingRule] | None = None,
         shop_id: str = "richmond-general",
     ):
+        self._lock = threading.RLock()
         self._rules: dict[str, StandingRuleRecord] = _seed_records(seed, shop_id)
         self._events: list[dict] = []
         self._rulings: dict[str, LotRulingRecord] = {}
         self._ruling_events: list[dict] = []
+        self._desks: dict[tuple[str, str], DeskStateRecord] = {}
 
     def active_rules(self, shop_id: str) -> list[StandingRule]:
-        return [
-            r.to_standing_rule()
-            for r in self._rules.values()
-            if r.shop_id == shop_id and r.active
-        ]
+        with self._lock:
+            return [
+                r.to_standing_rule()
+                for r in self._rules.values()
+                if r.shop_id == shop_id and r.active
+            ]
 
     def put(
         self, rule: StandingRuleRecord, expected_revision: int | None = None,
     ) -> StandingRuleRecord:
-        existing = self._rules.get(rule.rule_id)
-        current_rev = existing.revision if existing else 0
-        if expected_revision is not None and expected_revision != current_rev:
-            raise MemoryConflict(
-                f"rule {rule.rule_id[:8]} at revision {current_rev}, "
-                f"expected {expected_revision}"
+        with self._lock:
+            existing = self._rules.get(rule.rule_id)
+            current_rev = existing.revision if existing else 0
+            if expected_revision is not None and expected_revision != current_rev:
+                raise MemoryConflict(
+                    f"rule {rule.rule_id[:8]} at revision {current_rev}, "
+                    f"expected {expected_revision}"
+                )
+            stored = StandingRuleRecord(
+                shop_id=rule.shop_id,
+                kind=rule.kind,
+                category=rule.category,
+                answer=rule.answer,
+                learned_cycle=rule.learned_cycle,
+                source_question_id=rule.source_question_id,
+                active=rule.active,
+                revision=current_rev + 1,
+                review_after=rule.review_after,
+                actor=rule.actor,
             )
-        stored = StandingRuleRecord(
-            shop_id=rule.shop_id,
-            kind=rule.kind,
-            category=rule.category,
-            answer=rule.answer,
-            learned_cycle=rule.learned_cycle,
-            source_question_id=rule.source_question_id,
-            active=rule.active,
-            revision=current_rev + 1,
-            review_after=rule.review_after,
-            actor=rule.actor,
-        )
-        self._rules[stored.rule_id] = stored
-        self._events.append({
-            "rule_id": stored.rule_id,
-            "shop_id": stored.shop_id,
-            "kind": stored.kind.value,
-            "category": stored.category,
-            "answer": stored.answer,
-            "revision": stored.revision,
-            "source_question_id": stored.source_question_id,
-            "actor": stored.actor,
-            "at": _now(),
-        })
-        return stored
+            self._rules[stored.rule_id] = stored
+            self._events.append({
+                "rule_id": stored.rule_id,
+                "shop_id": stored.shop_id,
+                "kind": stored.kind.value,
+                "category": stored.category,
+                "answer": stored.answer,
+                "revision": stored.revision,
+                "source_question_id": stored.source_question_id,
+                "actor": stored.actor,
+                "at": _now(),
+            })
+            return stored
 
     def history(self, shop_id: str, rule_key: str) -> list[dict]:
-        return [e for e in self._events
-                if e["shop_id"] == shop_id and e["rule_id"] == rule_key]
+        with self._lock:
+            return [e for e in self._events
+                    if e["shop_id"] == shop_id and e["rule_id"] == rule_key]
 
     def active_rulings(self, shop_id: str, cycle_id: str) -> list[LotRuling]:
-        return [
-            record.to_lot_ruling()
-            for record in self._rulings.values()
-            if (record.shop_id == shop_id and record.cycle_id == cycle_id
-                and record.active)
-        ]
+        with self._lock:
+            return [
+                record.to_lot_ruling()
+                for record in self._rulings.values()
+                if (record.shop_id == shop_id and record.cycle_id == cycle_id
+                    and record.active)
+            ]
 
     def put_ruling(
         self, ruling: LotRulingRecord, expected_revision: int | None = None,
     ) -> LotRulingRecord:
-        existing = self._rulings.get(ruling.ruling_id)
-        current_rev = existing.revision if existing else 0
-        if expected_revision is not None and expected_revision != current_rev:
-            raise MemoryConflict(
-                f"ruling {ruling.ruling_id[:8]} at revision {current_rev}, "
-                f"expected {expected_revision}"
+        with self._lock:
+            existing = self._rulings.get(ruling.ruling_id)
+            current_rev = existing.revision if existing else 0
+            if expected_revision is not None and expected_revision != current_rev:
+                raise MemoryConflict(
+                    f"ruling {ruling.ruling_id[:8]} at revision {current_rev}, "
+                    f"expected {expected_revision}"
+                )
+            stored = LotRulingRecord(
+                shop_id=ruling.shop_id,
+                cycle_id=ruling.cycle_id,
+                kind=ruling.kind,
+                lot_ids=ruling.lot_ids,
+                answer=ruling.answer,
+                source_question_id=ruling.source_question_id,
+                cluster_id=ruling.cluster_id,
+                active=ruling.active,
+                revision=current_rev + 1,
+                actor=ruling.actor,
             )
-        stored = LotRulingRecord(
-            shop_id=ruling.shop_id,
-            cycle_id=ruling.cycle_id,
-            kind=ruling.kind,
-            lot_ids=ruling.lot_ids,
-            answer=ruling.answer,
-            source_question_id=ruling.source_question_id,
-            cluster_id=ruling.cluster_id,
-            active=ruling.active,
-            revision=current_rev + 1,
-            actor=ruling.actor,
-        )
-        self._rulings[stored.ruling_id] = stored
-        self._ruling_events.append({
-            **stored.as_dict(),
-            "at": _now(),
-        })
-        return stored
+            self._rulings[stored.ruling_id] = stored
+            self._ruling_events.append({
+                **stored.as_dict(),
+                "at": _now(),
+            })
+            return stored
 
     def ruling_history(self, shop_id: str, ruling_id: str) -> list[dict]:
-        return [
-            event for event in self._ruling_events
-            if event["shop_id"] == shop_id and event["ruling_id"] == ruling_id
-        ]
+        with self._lock:
+            return [
+                event for event in self._ruling_events
+                if event["shop_id"] == shop_id and event["ruling_id"] == ruling_id
+            ]
+
+    def desk_state(self, shop_id: str, cycle_id: str) -> DeskStateRecord:
+        with self._lock:
+            existing = self._desks.get((shop_id, cycle_id))
+            if existing is None:
+                return DeskStateRecord(shop_id=shop_id, cycle_id=cycle_id)
+            return DeskStateRecord.from_dict(existing.as_dict())
+
+    def put_desk_state(
+        self, state: DeskStateRecord, expected_revision: int | None = None,
+    ) -> DeskStateRecord:
+        with self._lock:
+            key = (state.shop_id, state.cycle_id)
+            existing = self._desks.get(key)
+            current_rev = existing.revision if existing else 0
+            if expected_revision is not None and expected_revision != current_rev:
+                raise MemoryConflict(
+                    f"desk {state.cycle_id} at revision {current_rev}, "
+                    f"expected {expected_revision}"
+                )
+            stored = DeskStateRecord(
+                shop_id=state.shop_id,
+                cycle_id=state.cycle_id,
+                declined=state.declined,
+                human_caps=state.human_caps,
+                walk_approved=state.walk_approved,
+                walk_rejected=state.walk_rejected,
+                revision=current_rev + 1,
+                actor=state.actor,
+            )
+            self._desks[key] = stored
+            return stored
 
 
 class FileRuleStore:
@@ -289,6 +406,7 @@ class FileRuleStore:
         seed: list[StandingRule] | None = None,
         shop_id: str = "richmond-general",
     ):
+        self._lock = threading.RLock()
         self.path = Path(path)
         self._shop_id = shop_id
         # Writable local disk is durable. Cloud Run's container FS is not.
@@ -305,11 +423,19 @@ class FileRuleStore:
                 for key, value in (raw.get("rulings") or {}).items()
             }
             self._ruling_events = list(raw.get("ruling_events") or [])
+            self._desks = {
+                (rec.shop_id, rec.cycle_id): rec
+                for rec in (
+                    DeskStateRecord.from_dict(value)
+                    for value in (raw.get("desks") or {}).values()
+                )
+            }
         else:
             self._rules = _seed_records(seed, shop_id)
             self._events = []
             self._rulings = {}
             self._ruling_events = []
+            self._desks = {}
             if self._rules:
                 self._flush()
 
@@ -320,99 +446,149 @@ class FileRuleStore:
             "events": self._events,
             "rulings": {k: v.as_dict() for k, v in self._rulings.items()},
             "ruling_events": self._ruling_events,
+            "desks": {
+                f"{shop}:{cycle}": rec.as_dict()
+                for (shop, cycle), rec in self._desks.items()
+            },
         }
-        tmp = self.path.with_suffix(self.path.suffix + ".tmp")
-        tmp.write_text(json.dumps(payload, indent=2) + "\n")
-        tmp.replace(self.path)
+        fd, tmp_name = tempfile.mkstemp(
+            prefix=self.path.name + ".", suffix=".tmp", dir=str(self.path.parent),
+        )
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as handle:
+                handle.write(json.dumps(payload, indent=2) + "\n")
+            os.replace(tmp_name, self.path)
+        except BaseException:
+            Path(tmp_name).unlink(missing_ok=True)
+            raise
 
     def active_rules(self, shop_id: str) -> list[StandingRule]:
-        return [
-            r.to_standing_rule()
-            for r in self._rules.values()
-            if r.shop_id == shop_id and r.active
-        ]
+        with self._lock:
+            return [
+                r.to_standing_rule()
+                for r in self._rules.values()
+                if r.shop_id == shop_id and r.active
+            ]
 
     def put(
         self, rule: StandingRuleRecord, expected_revision: int | None = None,
     ) -> StandingRuleRecord:
-        existing = self._rules.get(rule.rule_id)
-        current_rev = existing.revision if existing else 0
-        if expected_revision is not None and expected_revision != current_rev:
-            raise MemoryConflict(
-                f"rule {rule.rule_id[:8]} at revision {current_rev}, "
-                f"expected {expected_revision}"
+        with self._lock:
+            existing = self._rules.get(rule.rule_id)
+            current_rev = existing.revision if existing else 0
+            if expected_revision is not None and expected_revision != current_rev:
+                raise MemoryConflict(
+                    f"rule {rule.rule_id[:8]} at revision {current_rev}, "
+                    f"expected {expected_revision}"
+                )
+            stored = StandingRuleRecord(
+                shop_id=rule.shop_id,
+                kind=rule.kind,
+                category=rule.category,
+                answer=rule.answer,
+                learned_cycle=rule.learned_cycle,
+                source_question_id=rule.source_question_id,
+                active=rule.active,
+                revision=current_rev + 1,
+                review_after=rule.review_after,
+                actor=rule.actor,
             )
-        stored = StandingRuleRecord(
-            shop_id=rule.shop_id,
-            kind=rule.kind,
-            category=rule.category,
-            answer=rule.answer,
-            learned_cycle=rule.learned_cycle,
-            source_question_id=rule.source_question_id,
-            active=rule.active,
-            revision=current_rev + 1,
-            review_after=rule.review_after,
-            actor=rule.actor,
-        )
-        self._rules[stored.rule_id] = stored
-        self._events.append({
-            "rule_id": stored.rule_id,
-            "shop_id": stored.shop_id,
-            "kind": stored.kind.value,
-            "category": stored.category,
-            "answer": stored.answer,
-            "revision": stored.revision,
-            "source_question_id": stored.source_question_id,
-            "actor": stored.actor,
-            "at": _now(),
-        })
-        self._flush()
-        return stored
+            self._rules[stored.rule_id] = stored
+            self._events.append({
+                "rule_id": stored.rule_id,
+                "shop_id": stored.shop_id,
+                "kind": stored.kind.value,
+                "category": stored.category,
+                "answer": stored.answer,
+                "revision": stored.revision,
+                "source_question_id": stored.source_question_id,
+                "actor": stored.actor,
+                "at": _now(),
+            })
+            self._flush()
+            return stored
 
     def history(self, shop_id: str, rule_key: str) -> list[dict]:
-        return [e for e in self._events
-                if e["shop_id"] == shop_id and e["rule_id"] == rule_key]
+        with self._lock:
+            return [e for e in self._events
+                    if e["shop_id"] == shop_id and e["rule_id"] == rule_key]
 
     def active_rulings(self, shop_id: str, cycle_id: str) -> list[LotRuling]:
-        return [
-            record.to_lot_ruling()
-            for record in self._rulings.values()
-            if (record.shop_id == shop_id and record.cycle_id == cycle_id
-                and record.active)
-        ]
+        with self._lock:
+            return [
+                record.to_lot_ruling()
+                for record in self._rulings.values()
+                if (record.shop_id == shop_id and record.cycle_id == cycle_id
+                    and record.active)
+            ]
 
     def put_ruling(
         self, ruling: LotRulingRecord, expected_revision: int | None = None,
     ) -> LotRulingRecord:
-        existing = self._rulings.get(ruling.ruling_id)
-        current_rev = existing.revision if existing else 0
-        if expected_revision is not None and expected_revision != current_rev:
-            raise MemoryConflict(
-                f"ruling {ruling.ruling_id[:8]} at revision {current_rev}, "
-                f"expected {expected_revision}"
+        with self._lock:
+            existing = self._rulings.get(ruling.ruling_id)
+            current_rev = existing.revision if existing else 0
+            if expected_revision is not None and expected_revision != current_rev:
+                raise MemoryConflict(
+                    f"ruling {ruling.ruling_id[:8]} at revision {current_rev}, "
+                    f"expected {expected_revision}"
+                )
+            stored = LotRulingRecord(
+                shop_id=ruling.shop_id,
+                cycle_id=ruling.cycle_id,
+                kind=ruling.kind,
+                lot_ids=ruling.lot_ids,
+                answer=ruling.answer,
+                source_question_id=ruling.source_question_id,
+                cluster_id=ruling.cluster_id,
+                active=ruling.active,
+                revision=current_rev + 1,
+                actor=ruling.actor,
             )
-        stored = LotRulingRecord(
-            shop_id=ruling.shop_id,
-            cycle_id=ruling.cycle_id,
-            kind=ruling.kind,
-            lot_ids=ruling.lot_ids,
-            answer=ruling.answer,
-            source_question_id=ruling.source_question_id,
-            cluster_id=ruling.cluster_id,
-            active=ruling.active,
-            revision=current_rev + 1,
-            actor=ruling.actor,
-        )
-        self._rulings[stored.ruling_id] = stored
-        self._ruling_events.append({**stored.as_dict(), "at": _now()})
-        self._flush()
-        return stored
+            self._rulings[stored.ruling_id] = stored
+            self._ruling_events.append({**stored.as_dict(), "at": _now()})
+            self._flush()
+            return stored
 
     def ruling_history(self, shop_id: str, ruling_id: str) -> list[dict]:
-        return [
-            event for event in self._ruling_events
-            if event["shop_id"] == shop_id and event["ruling_id"] == ruling_id
-        ]
+        with self._lock:
+            return [
+                event for event in self._ruling_events
+                if event["shop_id"] == shop_id and event["ruling_id"] == ruling_id
+            ]
+
+    def desk_state(self, shop_id: str, cycle_id: str) -> DeskStateRecord:
+        with self._lock:
+            existing = self._desks.get((shop_id, cycle_id))
+            if existing is None:
+                return DeskStateRecord(shop_id=shop_id, cycle_id=cycle_id)
+            return DeskStateRecord.from_dict(existing.as_dict())
+
+    def put_desk_state(
+        self, state: DeskStateRecord, expected_revision: int | None = None,
+    ) -> DeskStateRecord:
+        with self._lock:
+            key = (state.shop_id, state.cycle_id)
+            existing = self._desks.get(key)
+            current_rev = existing.revision if existing else 0
+            if expected_revision is not None and expected_revision != current_rev:
+                raise MemoryConflict(
+                    f"desk {state.cycle_id} at revision {current_rev}, "
+                    f"expected {expected_revision}"
+                )
+            stored = DeskStateRecord(
+                shop_id=state.shop_id,
+                cycle_id=state.cycle_id,
+                declined=state.declined,
+                human_caps=state.human_caps,
+                walk_approved=state.walk_approved,
+                walk_rejected=state.walk_rejected,
+                revision=current_rev + 1,
+                actor=state.actor,
+            )
+            self._desks[key] = stored
+            self._flush()
+            return stored
 
 
 def seed_rules() -> list[StandingRule]:

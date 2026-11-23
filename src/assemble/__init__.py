@@ -148,9 +148,9 @@ def assemble_lots(
             fit_score=best.fit_score,
             condition_penalty=penalty,
             comp=comps.get(group.lot_key, NO_COMP),
-            mechanic=BidMechanic.CHOICE if per_unit else BidMechanic.STRAIGHT,
+            mechanic=BidMechanic.UNKNOWN if per_unit else BidMechanic.STRAIGHT,
             unit_count=1,
-            units_wanted=1 if per_unit else None,
+            units_wanted=None,
             labor=labor_aspect(
                 best.category,
                 is_container=any(m.is_container for m in members),

@@ -30,16 +30,23 @@ eBay, not in the store or any other channel. Present it as such, always.
 from __future__ import annotations
 
 import asyncio
+from contextlib import contextmanager
 import datetime as _dt
 import json
 import os
 import sys
+import threading
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass, field
 from pathlib import Path
+
+try:
+    import fcntl as _fcntl
+except ImportError:  # pragma: no cover - non-POSIX
+    _fcntl = None
 
 import websockets
 
@@ -71,6 +78,31 @@ _KEEP_TAB = os.environ.get("BTF_COMPS_KEEP_TAB", "1") != "0"
 # and after). Re-asking inside the open tab costs a second; refusing made the
 # caller rerun the whole read. Still empty after the last pause = refused.
 _EMPTY_RETRY_PAUSES: tuple[float, ...] = (1.5, 3.0)
+_MARKET_LOCK = threading.Lock()
+_CHALLENGE_PATH_MARKERS = ("/signin", "/login", "/splashui", "/challenge", "captcha")
+
+
+@contextmanager
+def _serialized_cdp_access():
+    with _MARKET_LOCK:
+        profile_dir = Path.home() / ".btf-chrome-profile"
+        if _fcntl is not None and profile_dir.is_dir():
+            lock_path = profile_dir / ".btf-comps.lock"
+            try:
+                handle = lock_path.open("a+")
+            except OSError:
+                yield
+                return
+            try:
+                _fcntl.flock(handle.fileno(), _fcntl.LOCK_EX)
+                yield
+            finally:
+                try:
+                    _fcntl.flock(handle.fileno(), _fcntl.LOCK_UN)
+                finally:
+                    handle.close()
+        else:
+            yield
 
 SCOPE_NOTE = ("API request parameters only — Seller Hub UI filter chips do "
               "not scope these reads (measured 2026-09-25)")
@@ -130,6 +162,7 @@ class ResearchSession:
         self._tab: dict | None = None
         self._ws = None
         self._n = 0
+        self._poisoned = False
         self.reused = False
 
     async def _attach(self, tab: dict, ready_timeout: float) -> None:
@@ -154,12 +187,12 @@ class ResearchSession:
                 self.reused = True
                 return self
             except ChallengePage:
-                await self._detach()
+                await self._close_tab()
                 raise
             except Exception:
-                # A stuck or half-closed tab is not worth a refusal: fall
-                # back to a fresh one, exactly as before tabs were shared.
-                await self._detach()
+                # A stuck or half-closed tab is closed rather than leaked so it
+                # cannot stall every future pick_research_tab() call.
+                await self._close_tab()
         self._n = 0
         try:
             await self._attach(_cdp_json(
@@ -183,7 +216,7 @@ class ResearchSession:
                 pass
 
     async def __aexit__(self, *exc) -> None:
-        if _KEEP_TAB:
+        if _KEEP_TAB and not self._poisoned:
             await self._detach()
         else:
             await self._close_tab()
@@ -221,14 +254,18 @@ class ResearchSession:
             except (RuntimeError, TimeoutError):
                 last = None
             if isinstance(last, dict) and last.get("host") == "www.ebay.com":
-                if "signin" in (last.get("path") or "").lower():
+                path_lower = (last.get("path") or "").lower()
+                if any(marker in path_lower for marker in _CHALLENGE_PATH_MARKERS):
                     raise ChallengePage(
-                        "Seller Hub redirected to signin — sign the dedicated "
-                        "Chrome in to eBay (profile ~/.btf-chrome-profile)")
-                if last.get("state") in ("interactive", "complete"):
+                        "Seller Hub redirected to signin or challenge — sign the "
+                        "dedicated Chrome in to eBay (profile ~/.btf-chrome-profile)")
+                if (
+                    last.get("state") in ("interactive", "complete")
+                    and path_lower.startswith("/sh/research")
+                ):
                     return
             elif isinstance(last, dict) and last.get("host") \
-                    and "ebay" not in last["host"]:
+                    and last.get("host") != "www.ebay.com":
                 raise ChallengePage(
                     f"Seller Hub landed on {last['host']} — signin or "
                     "challenge, not research")
@@ -240,19 +277,26 @@ class ResearchSession:
     async def get(self, path: str) -> str:
         """GET a same-origin path; the body on 200, else a refusal."""
         expr = ("(async () => { const r = await fetch(%s, {credentials: "
-                "'include', headers: {accept: 'application/json'}}); return "
-                "{status: r.status, type: r.headers.get('content-type') || '', "
+                "'include', redirect: 'manual', headers: {accept: "
+                "'application/json'}}); return {status: r.status, "
+                "rtype: r.type || '', type: r.headers.get('content-type') || '', "
                 "body: await r.text()}; })()" % json.dumps(path))
         res = await self._eval(expr, timeout=_FETCH_TIMEOUT)
         if not isinstance(res, dict):
             raise RuntimeError(f"fetch returned {res!r}")
-        if res.get("status") in (401, 403) or "html" in res.get("type", ""):
+        status = res.get("status")
+        if (
+            res.get("rtype") == "opaqueredirect"
+            or status in (0, 301, 302, 303, 307, 308, 401, 403)
+            or "html" in res.get("type", "").lower()
+        ):
+            self._poisoned = True
             raise ChallengePage(
-                f"research API answered {res.get('status')} "
-                f"{res.get('type')} — signed out or challenged")
-        if res.get("status") != 200:
+                f"research API answered {status} ({res.get('rtype') or res.get('type')}) "
+                "— signed out or challenged")
+        if status != 200:
             raise RuntimeError(
-                f"research API answered HTTP {res.get('status')}")
+                f"research API answered HTTP {status}")
         return res.get("body") or ""
 
 
@@ -373,7 +417,8 @@ async def _read_market(query: str, condition_id: int | None) -> Market:
 def read_market(query: str, condition_id: int | None = None) -> Market:
     """SOLD (every page, 365-day window pinned) + ACTIVE in one session."""
     require_known_condition(condition_id)
-    return asyncio.run(_read_market(query, condition_id))
+    with _serialized_cdp_access():
+        return asyncio.run(_read_market(query, condition_id))
 
 
 # ---------------------------------------------------------------------------
@@ -520,7 +565,7 @@ def write_evidence(m: Market, evidence_dir: Path, query: str,
                                 active_png, False, 9.0))
             out["screenshots"] = {"sold": str(sold_png), "active": str(active_png)}
         except BaseException as e:  # capture's open_tab raises SystemExit
-            if isinstance(e, KeyboardInterrupt):
+            if isinstance(e, (KeyboardInterrupt, TimeoutError, asyncio.CancelledError)):
                 raise
             out["screenshots"] = f"CAPTURE FAILED: {e} — no screenshot exists"
     return out

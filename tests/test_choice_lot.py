@@ -61,7 +61,7 @@ class TestStandingDefaultElectsOne:
 
 
 class TestAssemblePropagatesChoice:
-    def test_assemble_marks_choice_from_identification(self):
+    def test_assemble_marks_unruled_choice_as_unknown_until_ruled(self):
         lots = assemble_lots([
             AppraisedPhoto(
                 photo_id="p1", caption="Lot 12 lanterns",
@@ -69,8 +69,10 @@ class TestAssemblePropagatesChoice:
                 category="railroad", fit_score=0.9, confidence=Confidence.HIGH,
             ),
         ], comps={"12": comp()})
-        assert lots[0].mechanic is BidMechanic.CHOICE
-        assert lots[0].units_wanted == 1
+        assert lots[0].mechanic is BidMechanic.UNKNOWN
+        assert lots[0].units_wanted is None
+        assert price_lot(lots[0]).max_bid is None
+        assert price_lot(lots[0]).needs_mechanic_ruling is True
 
     def test_assemble_leaves_ordinary_lots_straight(self):
         lots = assemble_lots([

@@ -41,6 +41,7 @@ def test_readme_labels_local_money_as_sealed_and_distinct_from_sent():
     assert "Historical August fixture reconciliation" in text
     assert f"**{current.allocated} allocated bids (${current.committed_max:,.2f} max)**" in text
     assert f"**${current.committed_all_in:,.2f}** all-in" in text
+    assert f"**{current.needs_human_pricing} of {current.total_lots}**" in text
     assert "provenance-sealed" in text
     assert "only artifact ever sent" in " ".join(text.split())
 

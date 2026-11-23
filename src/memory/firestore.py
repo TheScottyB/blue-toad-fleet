@@ -6,7 +6,7 @@ import os
 
 from src.appraisal import LotRuling, StandingRule
 from src.memory.store import (
-    LotRulingRecord, MemoryConflict, StandingRuleRecord, _seed_records,
+    DeskStateRecord, LotRulingRecord, MemoryConflict, StandingRuleRecord, _seed_records,
 )
 
 
@@ -29,9 +29,18 @@ class FirestoreRuleStore:
         self._ruling_events = (
             self._db.collection("shops").document(shop_id).collection("ruling_events")
         )
+        self._desks = (
+            self._db.collection("shops").document(shop_id).collection("desk_state")
+        )
+        self._desk_events = (
+            self._db.collection("shops").document(shop_id).collection("desk_events")
+        )
         if seed and not list(self._rules.limit(1).stream()):
             for rec in _seed_records(seed, shop_id).values():
-                self.put(rec)
+                try:
+                    self.put(rec, expected_revision=0)
+                except MemoryConflict:
+                    pass
 
     def active_rules(self, shop_id: str) -> list[StandingRule]:
         if shop_id != self._shop_id:
@@ -154,3 +163,45 @@ class FirestoreRuleStore:
             rows.append(data)
         rows.sort(key=lambda event: event.get("revision", 0))
         return rows
+
+    def desk_state(self, shop_id: str, cycle_id: str) -> DeskStateRecord:
+        if shop_id != self._shop_id:
+            return DeskStateRecord(shop_id=shop_id, cycle_id=cycle_id)
+        snap = self._desks.document(cycle_id).get()
+        if not snap.exists:
+            return DeskStateRecord(shop_id=shop_id, cycle_id=cycle_id)
+        return DeskStateRecord.from_dict(snap.to_dict())
+
+    def put_desk_state(
+        self, state: DeskStateRecord, expected_revision: int | None = None,
+    ) -> DeskStateRecord:
+        from google.cloud import firestore as fs
+
+        ref = self._desks.document(state.cycle_id)
+        txn = self._db.transaction()
+
+        @fs.transactional
+        def _write(transaction):
+            snap = ref.get(transaction=transaction)
+            current_rev = int(snap.to_dict().get("revision") or 0) if snap.exists else 0
+            if expected_revision is not None and expected_revision != current_rev:
+                raise MemoryConflict(
+                    f"desk {state.cycle_id} at revision {current_rev}, "
+                    f"expected {expected_revision}"
+                )
+            stored = DeskStateRecord(
+                shop_id=state.shop_id,
+                cycle_id=state.cycle_id,
+                declined=state.declined,
+                human_caps=state.human_caps,
+                walk_approved=state.walk_approved,
+                walk_rejected=state.walk_rejected,
+                revision=current_rev + 1,
+                actor=state.actor,
+            )
+            transaction.set(ref, stored.as_dict())
+            event_ref = self._desk_events.document()
+            transaction.set(event_ref, {**stored.as_dict(), "at": fs.SERVER_TIMESTAMP})
+            return stored
+
+        return _write(txn)

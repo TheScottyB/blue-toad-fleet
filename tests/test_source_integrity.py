@@ -108,8 +108,10 @@ def test_production_downloaders_do_not_disable_tls_verification():
     root = Path(__file__).resolve().parents[1]
     for relative in (
         "scripts/cache_gallery.py",
+        "scripts/cache_estatesales.py",
         "scripts/recache_full_size.py",
         "scripts/dry_run_single_photo.py",
+        "src/intake/estatesales.py",
     ):
         source = (root / relative).read_text()
         assert "CERT_NONE" not in source

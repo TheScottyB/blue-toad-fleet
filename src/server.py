@@ -6,12 +6,15 @@ Serves the interactive Gate Console UI, real-time collaboration endpoints,
 automated absentee email generator, and live Vertex AI appraisal execution on Google Cloud.
 """
 
+import hmac
 import json
+import math
 import os
 import sys
+import threading
 from pathlib import Path
 from statistics import median
-from typing import Optional
+from typing import Any, Optional
 from fastapi import FastAPI, HTTPException, Body, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import (HTMLResponse, PlainTextResponse, JSONResponse,
@@ -34,8 +37,8 @@ from src.appraisal import (
     Appraisal, Confidence as AppConfidence
 )
 from src.memory import (
-    LotRulingRecord, MemoryConflict, StandingRuleRecord, make_question_id, open_rule_store,
-    seed_rules,
+    DeskStateRecord, LotRulingRecord, MemoryConflict, StandingRuleRecord,
+    make_question_id, open_rule_store, seed_rules,
 )
 from src.memory.store import InMemoryRuleStore
 from src.cycles import (
@@ -148,16 +151,63 @@ def reset_rule_store(seed=None):
     )
 
 
-class OperatorSheet:
-    """Cycle-scoped envelope edits. Never applied to sheet='sent'."""
+_SERVER_LOCK = threading.RLock()
+_FALLBACK_DESKS: dict[tuple[str, str], DeskStateRecord] = {}
 
-    def __init__(self):
-        self.declined: set[str] = set()
-        self.human_caps: dict[str, float] = {}
+
+def _read_desk() -> DeskStateRecord:
+    cycle_id = STATE["cycle_id"]
+    with _SERVER_LOCK:
+        if hasattr(RULES, "desk_state"):
+            return RULES.desk_state(SHOP_ID, cycle_id)
+        return _FALLBACK_DESKS.get(
+            (SHOP_ID, cycle_id),
+            DeskStateRecord(shop_id=SHOP_ID, cycle_id=cycle_id),
+        )
+
+
+def _write_desk(
+    *,
+    declined: set[str] | frozenset[str] | None = None,
+    human_caps: dict[str, float] | None = None,
+    walk_approved: set[frozenset[str]] | frozenset[frozenset[str]] | None = None,
+    walk_rejected: set[frozenset[str]] | frozenset[frozenset[str]] | None = None,
+) -> DeskStateRecord:
+    cycle_id = STATE["cycle_id"]
+    with _SERVER_LOCK:
+        current = _read_desk()
+        updated = DeskStateRecord(
+            shop_id=SHOP_ID,
+            cycle_id=cycle_id,
+            declined=current.declined if declined is None else frozenset(declined),
+            human_caps=current.human_caps if human_caps is None else dict(human_caps),
+            walk_approved=(
+                current.walk_approved if walk_approved is None else frozenset(walk_approved)
+            ),
+            walk_rejected=(
+                current.walk_rejected if walk_rejected is None else frozenset(walk_rejected)
+            ),
+            actor=_operator_actor(),
+        )
+        if hasattr(RULES, "put_desk_state"):
+            return RULES.put_desk_state(updated)
+        _FALLBACK_DESKS[(SHOP_ID, cycle_id)] = updated
+        return updated
+
+
+class OperatorSheet:
+    """Cycle-scoped envelope edits backed by RULES. Never applied to sheet='sent'."""
+
+    @property
+    def declined(self) -> set[str]:
+        return set(_read_desk().declined)
+
+    @property
+    def human_caps(self) -> dict[str, float]:
+        return dict(_read_desk().human_caps)
 
     def reset(self) -> None:
-        self.declined.clear()
-        self.human_caps.clear()
+        _write_desk(declined=frozenset(), human_caps={})
 
 
 OPERATOR_SHEET = OperatorSheet()
@@ -169,15 +219,18 @@ def reset_operator_sheet() -> None:
 
 
 class WalkEdits:
-    """Cycle-scoped membership rulings. Never applied to sheet='sent'."""
+    """Cycle-scoped membership rulings backed by RULES. Never applied to sheet='sent'."""
 
-    def __init__(self):
-        self.approved: set[frozenset[str]] = set()
-        self.rejected: set[frozenset[str]] = set()
+    @property
+    def approved(self) -> set[frozenset[str]]:
+        return set(_read_desk().walk_approved)
+
+    @property
+    def rejected(self) -> set[frozenset[str]]:
+        return set(_read_desk().walk_rejected)
 
     def reset(self) -> None:
-        self.approved.clear()
-        self.rejected.clear()
+        _write_desk(walk_approved=frozenset(), walk_rejected=frozenset())
 
 
 WALK_EDITS = WalkEdits()
@@ -477,8 +530,11 @@ def get_aug22_state(*, sheet: str = "full"):
     except Exception as e:
         print(f"[!] Warning: Could not parse embedding cache: {e}")
         edges = set()
+    desk = _read_desk() if sheet != "sent" else DeskStateRecord(
+        shop_id=SHOP_ID, cycle_id=STATE["cycle_id"],
+    )
     if sheet != "sent":
-        edges = (set(edges) | WALK_EDITS.approved) - WALK_EDITS.rejected
+        edges = (set(edges) | desk.walk_approved) - desk.walk_rejected
 
     triaged_photos = [
         TriagedPhoto(
@@ -504,7 +560,7 @@ def get_aug22_state(*, sheet: str = "full"):
 
     walk_edges = walk_proposal_edges(triaged_photos)
     if sheet != "sent":
-        walk_edges -= WALK_EDITS.rejected
+        walk_edges -= desk.walk_rejected
     proposal = walk_edges | {
         frozenset(e) if not isinstance(e, frozenset) else e for e in edges
     }
@@ -550,13 +606,12 @@ def get_aug22_state(*, sheet: str = "full"):
         decisions.append(stamp_coverage_gap(decision, grounded_by_lot))
     pristine = list(decisions)
     if sheet != "sent":
-        decisions = [_apply_human_cap(d) for d in decisions]
+        decisions = [_apply_human_cap(d, desk.human_caps) for d in decisions]
         decisions = [
-            replace(d, priority=Priority.SKIP) if d.lot_id in OPERATOR_SHEET.declined else d
+            replace(d, priority=Priority.SKIP) if d.lot_id in desk.declined else d
             for d in decisions
         ]
-    desk_edits = sheet != "sent" and (
-        OPERATOR_SHEET.declined or OPERATOR_SHEET.human_caps)
+    desk_edits = sheet != "sent" and (desk.declined or desk.human_caps)
     if desk_edits:
         # Envelope edits, not re-optimization: budget the operator frees by
         # declining a lot is NOT auto-respent on the machine's next-cheapest
@@ -570,7 +625,7 @@ def get_aug22_state(*, sheet: str = "full"):
             auto_send_threshold=STATE["auto_send_threshold"],
         )
         pool = ({d.lot_id for d in baseline if d.allocated}
-                - OPERATOR_SHEET.declined) | set(OPERATOR_SHEET.human_caps)
+                - desk.declined) | set(desk.human_caps)
         seated = {d.lot_id: d for d in allocate(
             [d for d in decisions if d.lot_id in pool],
             budget_cap=STATE["budget_cap"],
@@ -654,7 +709,11 @@ def healthz():
         "gemma_ok": bool(engine.client) and "gemma" in GEMMA_MODEL.lower(),
         "memory_backend": getattr(RULES, "backend_name", "unknown"),
         "memory_durable": bool(getattr(RULES, "durable", False)),
-        "answer_auth": "required" if os.environ.get("OPERATOR_TOKEN") else "disabled",
+        "answer_auth": (
+            "required"
+            if (os.environ.get("OPERATOR_TOKEN") or "").strip()
+            else "disabled"
+        ),
         "python": sys.version.split()[0],
         "cycle_storage": CYCLES.backend_name if CYCLES else "disabled",
         "cycle_job_configured": bool(CYCLE_JOBS and CYCLE_JOBS.configured),
@@ -879,11 +938,19 @@ def list_questions():
     }
 
 
-def _apply_human_cap(decision: Decision) -> Decision:
-    cap = OPERATOR_SHEET.human_caps.get(decision.lot_id)
+def _apply_human_cap(
+    decision: Decision, human_caps: dict[str, float] | None = None,
+) -> Decision:
+    caps = _read_desk().human_caps if human_caps is None else human_caps
+    cap = caps.get(decision.lot_id)
     if cap is None:
         return decision
-    snapped = snap_to_increment(cap)
+    if decision.needs_mechanic_ruling or decision.mechanic is BidMechanic.UNKNOWN:
+        return decision
+    try:
+        snapped = snap_to_increment(cap)
+    except ValueError:
+        return decision
     if snapped < BID_INCREMENT:
         return decision
     priority = decision.priority
@@ -916,8 +983,72 @@ def _desk_snapshot(decisions, summary, lot_ids=None) -> dict:
     }
 
 
+def _require_dict_payload(payload: Any) -> dict:
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=400, detail="request body must be a JSON object")
+    return payload
+
+
+def _req_str(payload: dict, key: str, *, max_len: int = 256, detail: str | None = None) -> str:
+    raw = payload.get(key)
+    if not isinstance(raw, str):
+        raise HTTPException(status_code=400, detail=detail or f"{key} must be a string")
+    value = raw.strip()
+    if not value:
+        raise HTTPException(status_code=400, detail=detail or f"Missing {key}")
+    if len(value) > max_len or "\x00" in value:
+        raise HTTPException(status_code=400, detail=f"{key} exceeds maximum length or is invalid")
+    return value
+
+
+def _opt_str(
+    payload: dict, key: str, *, default: str | None = "", max_len: int = 2000,
+) -> str | None:
+    raw = payload.get(key)
+    if raw is None:
+        return default
+    if not isinstance(raw, str):
+        raise HTTPException(status_code=400, detail=f"{key} must be a string")
+    if len(raw) > max_len or "\x00" in raw:
+        raise HTTPException(status_code=400, detail=f"{key} exceeds maximum length or is invalid")
+    return raw
+
+
+def _req_bool(payload: dict, key: str, *, detail: str | None = None) -> bool:
+    if key not in payload:
+        raise HTTPException(status_code=400, detail=detail or f"Missing {key}")
+    raw = payload[key]
+    if not isinstance(raw, bool):
+        raise HTTPException(status_code=400, detail=f"{key} must be a boolean")
+    return raw
+
+
+def _req_finite_float(payload: dict, key: str, *, max_val: float = 1_000_000.0) -> float:
+    raw = payload.get(key)
+    if isinstance(raw, bool):
+        raise HTTPException(status_code=400, detail=f"{key} must be a finite number")
+    try:
+        val = float(raw)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail=f"{key} must be a number")
+    if not math.isfinite(val) or val > max_val:
+        raise HTTPException(status_code=400, detail=f"{key} must be a finite number")
+    return val
+
+
+def _opt_revision(payload: dict) -> int | None:
+    if "expected_revision" not in payload or payload["expected_revision"] is None:
+        return None
+    raw = payload["expected_revision"]
+    if isinstance(raw, bool) or not isinstance(raw, int) or raw < 0:
+        raise HTTPException(
+            status_code=400, detail="expected_revision must be a non-negative integer",
+        )
+    return raw
+
+
 def _require_operator(x_operator_token: str | None) -> None:
-    expected = os.environ.get("OPERATOR_TOKEN")
+    expected = (os.environ.get("OPERATOR_TOKEN") or "").strip()
     if os.environ.get("K_SERVICE") and not expected:
         raise HTTPException(
             status_code=503,
@@ -925,8 +1056,52 @@ def _require_operator(x_operator_token: str | None) -> None:
         )
     if not expected:
         return
-    if (x_operator_token or "") != expected:
+    provided = (x_operator_token or "").strip()
+    if not hmac.compare_digest(provided.encode("utf-8"), expected.encode("utf-8")):
         raise HTTPException(status_code=401, detail="operator token required")
+
+
+def _verify_oidc_token(token: str, audience: str | None) -> dict:
+    from google.auth.transport import requests as google_requests
+    from google.oauth2 import id_token
+
+    return id_token.verify_oauth2_token(token, google_requests.Request(), audience=audience)
+
+
+def _require_eventarc_auth(authorization: str | None) -> None:
+    explicit_invoker = (os.environ.get("BTF_EVENTARC_INVOKER_EMAIL") or "").strip()
+    in_cloud = bool(os.environ.get("K_SERVICE"))
+    if not in_cloud and not explicit_invoker:
+        return
+    expected_email = explicit_invoker
+    if not expected_email:
+        project = (os.environ.get("GOOGLE_CLOUD_PROJECT") or "").strip()
+        sa_name = (
+            os.environ.get("BTF_RUNTIME_ACCOUNT_NAME") or "blue-toad-fleet-runtime"
+        ).strip()
+        if project:
+            expected_email = f"{sa_name}@{project}.iam.gserviceaccount.com"
+    if not expected_email:
+        raise HTTPException(
+            status_code=503,
+            detail="Eventarc invoker identity is not configured",
+        )
+    header = (authorization or "").strip()
+    if not header.lower().startswith("bearer "):
+        raise HTTPException(status_code=401, detail="Eventarc bearer token required")
+    token = header[7:].strip()
+    if not token:
+        raise HTTPException(status_code=401, detail="Eventarc bearer token required")
+    audience = (os.environ.get("BTF_EVENTARC_AUDIENCE") or "").strip() or None
+    try:
+        claims = _verify_oidc_token(token, audience)
+    except Exception as exc:
+        raise HTTPException(status_code=401, detail="invalid Eventarc OIDC token") from exc
+    claim_email = str((claims or {}).get("email") or "").strip()
+    if not (claims or {}).get("email_verified") or not hmac.compare_digest(
+        claim_email.encode("utf-8"), expected_email.encode("utf-8"),
+    ):
+        raise HTTPException(status_code=403, detail="unauthorized Eventarc invoker")
 
 
 def _operator_actor() -> str:
@@ -963,19 +1138,28 @@ def _launch_staged_cycle(request) -> dict:
         return {"launched": False, "deduplicated": True, "status": status.as_dict()}
     try:
         operation = CYCLE_JOBS.launch(request)
-        status = CycleStatus.make(
-            request, "running", "Cloud Run Job accepted the staged cycle",
-            operation_name=operation,
-        )
-        repo.write_status(status)
-        return {"launched": True, "deduplicated": False,
-                "operation_name": operation, "status": status.as_dict()}
     except Exception as exc:
         # Eventarc retries are useful only if a transient launch failure can
         # release the idempotency claim.
         repo.release_launch(request)
-        repo.write_status(CycleStatus.make(request, "failed", str(exc)[:1000]))
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
+        try:
+            repo.write_status(CycleStatus.make(request, "failed", str(exc)[:1000]))
+        except CycleConflict:
+            pass
+        print(f"[!] Cycle job launch failed for {request.cycle_id}: {exc}", file=sys.stderr)
+        raise HTTPException(
+            status_code=502, detail="failed to launch Cloud Run cycle processor",
+        ) from exc
+    status = CycleStatus.make(
+        request, "running", "Cloud Run Job accepted the staged cycle",
+        operation_name=operation,
+    )
+    try:
+        repo.write_status(status)
+    except CycleConflict:
+        status = repo.read_status(request)
+    return {"launched": True, "deduplicated": False,
+            "operation_name": operation, "status": status.as_dict()}
 
 
 @app.post("/api/cycles/start", status_code=202)
@@ -985,10 +1169,10 @@ def start_cycle(
 ):
     """Explicitly start a fully staged cycle; never accepts local file paths."""
     _require_cycle_operator(x_operator_token)
-    cycle_id = (payload.get("cycle_id") or "").strip()
-    shop_id = (payload.get("shop_id") or SHOP_ID).strip()
-    if not cycle_id:
-        raise HTTPException(status_code=400, detail="cycle_id is required")
+    body = _require_dict_payload(payload)
+    cycle_id = _req_str(body, "cycle_id", max_len=64, detail="cycle_id is required")
+    shop_raw = _opt_str(body, "shop_id", default=SHOP_ID, max_len=64)
+    shop_id = (shop_raw or SHOP_ID).strip() or SHOP_ID
     repo = _configured_cycles()
     try:
         request = repo.read_request(shop_id, cycle_id)
@@ -1001,15 +1185,28 @@ def start_cycle(
             # A simultaneous console click or Eventarc delivery won the race.
             if not repo.is_ready(request):
                 raise
+        except CycleNotFound as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
     return _launch_staged_cycle(request)
 
 
 @app.post("/api/events/storage", status_code=202)
-def storage_event(payload: dict = Body(...)):
+def storage_event(
+    payload: dict = Body(...),
+    authorization: str | None = Header(default=None),
+):
     """Eventarc receiver. Only a durable READY marker can launch work."""
-    data = payload.get("data") if isinstance(payload.get("data"), dict) else payload
-    bucket = str(data.get("bucket") or "").removeprefix("gs://").rstrip("/")
-    name = str(data.get("name") or "")
+    _require_eventarc_auth(authorization)
+    body = _require_dict_payload(payload)
+    data = body.get("data") if isinstance(body.get("data"), dict) else body
+    raw_bucket = data.get("bucket")
+    raw_name = data.get("name")
+    if raw_bucket is not None and not isinstance(raw_bucket, str):
+        raise HTTPException(status_code=400, detail="bucket must be a string")
+    if raw_name is not None and not isinstance(raw_name, str):
+        raise HTTPException(status_code=400, detail="name must be a string")
+    bucket = (raw_bucket or "").removeprefix("gs://").rstrip("/")
+    name = raw_name or ""
     expected_bucket = os.environ.get("BTF_CYCLE_BUCKET", "").removeprefix("gs://").rstrip("/")
     if not expected_bucket or bucket != expected_bucket:
         return {"ignored": True, "reason": "unexpected bucket"}
@@ -1056,35 +1253,46 @@ def elect_sheet_lot(
     x_operator_token: str | None = Header(default=None),
 ):
     _require_operator(x_operator_token)
-    lot_id = (payload.get("lot_id") or "").strip()
-    if not lot_id or "want" not in payload:
+    body = _require_dict_payload(payload)
+    if "lot_id" not in body or "want" not in body:
         raise HTTPException(status_code=400, detail="Missing lot_id or want")
-    want = bool(payload.get("want"))
-    _, _, _, decisions, summary, _, _ = get_aug22_state()
-    by_id = {d.lot_id: d for d in decisions}
-    if lot_id not in by_id:
-        raise HTTPException(status_code=404, detail="lot is not on the current sheet")
-    before = _desk_snapshot(decisions, summary, [lot_id])
-    decision = by_id[lot_id]
-    was_declined = lot_id in OPERATOR_SHEET.declined
-    if want:
-        if decision.max_bid is None and lot_id not in OPERATOR_SHEET.human_caps:
+    lot_id = _req_str(body, "lot_id", max_len=64, detail="Missing lot_id or want")
+    want = _req_bool(body, "want", detail="Missing lot_id or want")
+    with _SERVER_LOCK:
+        _, _, _, decisions, summary, _, _ = get_aug22_state()
+        by_id = {d.lot_id: d for d in decisions}
+        if lot_id not in by_id:
+            raise HTTPException(status_code=404, detail="lot is not on the current sheet")
+        before = _desk_snapshot(decisions, summary, [lot_id])
+        decision = by_id[lot_id]
+        desk = _read_desk()
+        declined = set(desk.declined)
+        was_declined = lot_id in declined
+        if want:
+            if decision.needs_mechanic_ruling or decision.mechanic is BidMechanic.UNKNOWN:
+                raise HTTPException(
+                    status_code=409,
+                    detail="lot needs a grouping ruling before it can enter the envelope",
+                )
+            if decision.max_bid is None and lot_id not in desk.human_caps:
+                raise HTTPException(
+                    status_code=409,
+                    detail="lot needs a number before it can enter the envelope",
+                )
+            declined.discard(lot_id)
+        else:
+            declined.add(lot_id)
+        _write_desk(declined=declined)
+        _, _, _, after_decisions, after_summary, _, _ = get_aug22_state()
+        after = _desk_snapshot(after_decisions, after_summary, [lot_id])
+        if want and not after["decisions"][lot_id]["allocated"]:
+            if was_declined:
+                declined.add(lot_id)
+                _write_desk(declined=declined)
             raise HTTPException(
                 status_code=409,
-                detail="lot needs a number before it can enter the envelope",
+                detail="allocate refused — over the $600 cap",
             )
-        OPERATOR_SHEET.declined.discard(lot_id)
-    else:
-        OPERATOR_SHEET.declined.add(lot_id)
-    _, _, _, after_decisions, after_summary, _, _ = get_aug22_state()
-    after = _desk_snapshot(after_decisions, after_summary, [lot_id])
-    if want and not after["decisions"][lot_id]["allocated"]:
-        if was_declined:
-            OPERATOR_SHEET.declined.add(lot_id)
-        raise HTTPException(
-            status_code=409,
-            detail="allocate refused — over the $600 cap",
-        )
     AUDIT.record(
         actor="operator",
         kind="sheet_elect",
@@ -1106,24 +1314,38 @@ def price_sheet_lot(
     x_operator_token: str | None = Header(default=None),
 ):
     _require_operator(x_operator_token)
-    lot_id = (payload.get("lot_id") or "").strip()
-    try:
-        cap = float(payload.get("max_bid"))
-    except (TypeError, ValueError):
-        raise HTTPException(status_code=400, detail="max_bid must be a number")
-    if not lot_id:
-        raise HTTPException(status_code=400, detail="Missing lot_id")
+    body = _require_dict_payload(payload)
+    cap = _req_finite_float(body, "max_bid")
+    lot_id = _req_str(body, "lot_id", max_len=64, detail="Missing lot_id")
     snapped = snap_to_increment(cap)
     if snapped < BID_INCREMENT:
         raise HTTPException(status_code=400, detail="max_bid must be at least $5")
-    _, _, _, decisions, summary, _, _ = get_aug22_state()
-    if lot_id not in {d.lot_id for d in decisions}:
-        raise HTTPException(status_code=404, detail="lot is not on the current sheet")
-    before = _desk_snapshot(decisions, summary, [lot_id])
-    OPERATOR_SHEET.human_caps[lot_id] = snapped
-    OPERATOR_SHEET.declined.discard(lot_id)
-    _, _, _, after_decisions, after_summary, _, _ = get_aug22_state()
-    after = _desk_snapshot(after_decisions, after_summary, [lot_id])
+    with _SERVER_LOCK:
+        _, _, _, decisions, summary, _, _ = get_aug22_state()
+        by_id = {d.lot_id: d for d in decisions}
+        if lot_id not in by_id:
+            raise HTTPException(status_code=404, detail="lot is not on the current sheet")
+        target = by_id[lot_id]
+        if target.needs_mechanic_ruling or target.mechanic is BidMechanic.UNKNOWN:
+            raise HTTPException(
+                status_code=409,
+                detail="lot needs a grouping ruling before pricing",
+            )
+        before = _desk_snapshot(decisions, summary, [lot_id])
+        prev_desk = _read_desk()
+        new_caps = dict(prev_desk.human_caps)
+        new_caps[lot_id] = snapped
+        new_declined = set(prev_desk.declined)
+        new_declined.discard(lot_id)
+        _write_desk(declined=new_declined, human_caps=new_caps)
+        _, _, _, after_decisions, after_summary, _, _ = get_aug22_state()
+        after = _desk_snapshot(after_decisions, after_summary, [lot_id])
+        if not after["decisions"][lot_id]["allocated"]:
+            _write_desk(declined=prev_desk.declined, human_caps=prev_desk.human_caps)
+            raise HTTPException(
+                status_code=409,
+                detail="allocate refused — over the $600 cap",
+            )
     AUDIT.record(
         actor="operator",
         kind="sheet_price",
@@ -1143,6 +1365,8 @@ def price_sheet_lot(
 
 
 def _bt_id_for_seq(seq) -> str:
+    if isinstance(seq, bool):
+        raise HTTPException(status_code=400, detail="seq_a and seq_b must be integers")
     try:
         n = int(seq)
     except (TypeError, ValueError):
@@ -1163,30 +1387,38 @@ def walk_edge(
     x_operator_token: str | None = Header(default=None),
 ):
     _require_operator(x_operator_token)
-    status = (payload.get("status") or "").strip()
+    body = _require_dict_payload(payload)
+    status = _req_str(
+        body, "status", max_len=32, detail="status must be approved or rejected",
+    )
     if status not in {"approved", "rejected"}:
         raise HTTPException(status_code=400, detail="status must be approved or rejected")
-    a = _bt_id_for_seq(payload.get("seq_a"))
-    b = _bt_id_for_seq(payload.get("seq_b"))
+    a = _bt_id_for_seq(body.get("seq_a"))
+    b = _bt_id_for_seq(body.get("seq_b"))
     if a == b:
         raise HTTPException(status_code=400, detail="need two distinct photos")
     pair = frozenset({a, b})
-    _, seats, *_ = get_aug22_state()
-    before = {"same_lot": _same_lot(seats, a, b), "photo_a": a, "photo_b": b}
-    if status == "approved":
-        WALK_EDITS.rejected.discard(pair)
-        WALK_EDITS.approved.add(pair)
-    else:
-        WALK_EDITS.approved.discard(pair)
-        WALK_EDITS.rejected.add(pair)
-    _, seats, *_ = get_aug22_state()
-    after = {"same_lot": _same_lot(seats, a, b), "photo_a": a, "photo_b": b}
+    with _SERVER_LOCK:
+        _, seats, *_ = get_aug22_state()
+        before = {"same_lot": _same_lot(seats, a, b), "photo_a": a, "photo_b": b}
+        desk = _read_desk()
+        approved = set(desk.walk_approved)
+        rejected = set(desk.walk_rejected)
+        if status == "approved":
+            rejected.discard(pair)
+            approved.add(pair)
+        else:
+            approved.discard(pair)
+            rejected.add(pair)
+        _write_desk(walk_approved=approved, walk_rejected=rejected)
+        _, seats, *_ = get_aug22_state()
+        after = {"same_lot": _same_lot(seats, a, b), "photo_a": a, "photo_b": b}
     AUDIT.record(
         actor="operator",
         kind="walk_edge",
         detail={
-            "seq_a": int(payload["seq_a"]),
-            "seq_b": int(payload["seq_b"]),
+            "seq_a": int(body["seq_a"]),
+            "seq_b": int(body["seq_b"]),
             "status": status,
             "before": before,
             "after": after,
@@ -1194,8 +1426,8 @@ def walk_edge(
     )
     return {
         "status": "applied",
-        "seq_a": int(payload["seq_a"]),
-        "seq_b": int(payload["seq_b"]),
+        "seq_a": int(body["seq_a"]),
+        "seq_b": int(body["seq_b"]),
         "edge_status": status,
         "before": before,
         "after": after,
@@ -1208,18 +1440,16 @@ def answer_question(
     x_operator_token: str | None = Header(default=None),
 ):
     _require_operator(x_operator_token)
-    qid = payload.get("question_id")
-    ans = (payload.get("answer") or "").strip()
-    if not qid or not ans:
-        raise HTTPException(
-            status_code=400, detail="Missing question_id or answer",
-        )
+    body = _require_dict_payload(payload)
+    qid = _req_str(body, "question_id", max_len=128, detail="Missing question_id or answer")
+    ans = _req_str(body, "answer", max_len=4000, detail="Missing question_id or answer")
+    expected_rev = _opt_revision(body)
 
     photos, seats, lots, decisions, summary, queue_res, captions = get_aug22_state()
     by_id = {make_question_id(STATE["cycle_id"], q): q for q in queue_res.asked}
     question = by_id.get(qid)
     if question is None:
-        if payload.get("expected_revision") is not None:
+        if expected_rev is not None:
             raise HTTPException(
                 status_code=409,
                 detail="question or authority revision is stale; reload the queue",
@@ -1282,7 +1512,7 @@ def answer_question(
                 answer=ruling.answer,
                 source_question_id=qid,
                 actor=_operator_actor(),
-            ), expected_revision=payload.get("expected_revision"))
+            ), expected_revision=expected_rev)
             authority_type = "lot_ruling"
         else:
             new_rule = promoted[0]
@@ -1294,7 +1524,7 @@ def answer_question(
                 learned_cycle=new_rule.learned_cycle,
                 source_question_id=qid,
                 actor=_operator_actor(),
-            ), expected_revision=payload.get("expected_revision"))
+            ), expected_revision=expected_rev)
             authority_type = "standing_policy"
     except MemoryConflict as e:
         raise HTTPException(status_code=409, detail=str(e)) from e
@@ -1397,14 +1627,16 @@ def list_memory():
 
 
 @app.post("/api/appraise")
-def appraise_live(payload: dict = Body(...)):
+def appraise_live(
+    payload: dict = Body(...),
+    x_operator_token: str | None = Header(default=None),
+):
     """Run an on-demand live Vertex AI appraisal on a lot."""
-    lot_id = payload.get("lot_id")
-    caption = payload.get("caption", "")
-    category_hint = payload.get("category_hint")
-
-    if not lot_id:
-        raise HTTPException(status_code=400, detail="Missing lot_id")
+    _require_operator(x_operator_token)
+    body = _require_dict_payload(payload)
+    lot_id = _req_str(body, "lot_id", max_len=64, detail="Missing lot_id")
+    caption = _opt_str(body, "caption", default="", max_len=2000) or ""
+    category_hint = _opt_str(body, "category_hint", default=None, max_len=200)
 
     photo_bytes = cached_photo_bytes(lot_id)
     if photo_bytes is None:
@@ -1443,15 +1675,25 @@ def appraise_live(payload: dict = Body(...)):
             ],
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Vertex AI appraisal failed: {e}")
+        print(f"[!] Vertex AI appraisal failed for {lot_id}: {e}", file=sys.stderr)
+        raise HTTPException(status_code=500, detail="Vertex AI appraisal failed")
 
 
 @app.post("/api/decompose")
-def decompose_live(payload: dict = Body(...)):
+def decompose_live(
+    payload: dict = Body(...),
+    x_operator_token: str | None = Header(default=None),
+):
     """Spatially isolate and itemize one cached gallery photo."""
-    lot_id = payload.get("lot_id")
-    if not lot_id:
-        raise HTTPException(status_code=400, detail="Missing lot_id")
+    _require_operator(x_operator_token)
+    body = _require_dict_payload(payload)
+    lot_id = _req_str(body, "lot_id", max_len=64, detail="Missing lot_id")
+    caption = _opt_str(body, "caption", default="", max_len=2000) or ""
+    spatial_context = _opt_str(body, "spatial_context", default=None, max_len=2000)
+    container_type = _opt_str(body, "container_type", default=None, max_len=64)
+    spatial_boundary = body.get("spatial_boundary")
+    if spatial_boundary is not None and not isinstance(spatial_boundary, dict):
+        raise HTTPException(status_code=400, detail="spatial_boundary must be an object")
     photo_bytes = cached_photo_bytes(lot_id)
     if photo_bytes is None:
         raise HTTPException(
@@ -1461,17 +1703,18 @@ def decompose_live(payload: dict = Body(...)):
     try:
         result = engine.decompose_container(
             lot_id=lot_id,
-            caption=payload.get("caption", ""),
+            caption=caption,
             image_bytes=photo_bytes,
-            spatial_boundary=payload.get("spatial_boundary"),
-            spatial_context=payload.get("spatial_context"),
-            container_type=payload.get("container_type"),
+            spatial_boundary=spatial_boundary,
+            spatial_context=spatial_context,
+            container_type=container_type,
         )
         return {"status": "success", "decomposition": result}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Vertex AI decomposition failed: {e}")
+        print(f"[!] Vertex AI decomposition failed for {lot_id}: {e}", file=sys.stderr)
+        raise HTTPException(status_code=500, detail="Vertex AI decomposition failed")
 
 
 @app.get("/api/email", response_class=PlainTextResponse)

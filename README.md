@@ -100,15 +100,15 @@ Cloud Run, `types.Part.from_bytes` to assemble the photo alongside the prompt, a
 * **Triage Fan-out (`gemini-3.5-flash-lite`):** Scores every photo. That score is a routing/cost choice; it does not drop a photo from grouping. Per-call tokens, latency, retries, fallback use, errors, rate snapshots, and measured cost are recorded; no speed or full-cycle cost is claimed until a fresh corpus run produces that telemetry.
 * **Deep Multimodal Appraisal (`gemini-3.6-flash`):** Structured OpenAPI 3.0 schemas on the `global` Vertex endpoint. Grouping is a puzzle loop: every photo is assigned exactly once (unmatched → singleton).
 * **Per-lot stage handoff:** Ordinary lots enter appraisal immediately; container lots enter as soon as their own spatial decomposition finishes. Each completed appraisal can start grounded comp research while other lots are still being appraised.
-* **Honest Refusal Rule:** The appraisal model is forbidden from naming any price at all (`APPRAISAL_SYSTEM`: *"NEVER state or imply a price, estimate or value range"*). The refusal is decided downstream and is deterministic, not model-dependent — `price_lot` ([`src/bidmath/__init__.py`](src/bidmath/__init__.py)) returns a lot whose `CompEstimate` has no sources with `max_bid=None` and the workflow state `pending deep comps`, and `allocate` can never allocate it before verified sold-price evidence arrives. The resealed August fixture (2026-08-29, full appraisal coverage) allocates 46 lots, prices 38 more that the $600 cap crowds out, skips 9, and still routes **322 of 415** grouped lots to human pricing; the fixture remains release-ineligible until the operator's question queue clears.
+* **Honest Refusal Rule:** The appraisal model is forbidden from naming any price at all (`APPRAISAL_SYSTEM`: *"NEVER state or imply a price, estimate or value range"*). The refusal is decided downstream and is deterministic, not model-dependent — `price_lot` ([`src/bidmath/__init__.py`](src/bidmath/__init__.py)) returns a lot whose `CompEstimate` has no sources with `max_bid=None` and the workflow state `pending deep comps`, and `allocate` can never allocate it before verified sold-price evidence arrives. The resealed August fixture (2026-08-29, full appraisal coverage) allocates 46 lots, prices 37 more that the $600 cap crowds out, skips 9, and still routes **323 of 415** grouped lots to human pricing; any fresh cycle remains release-ineligible until askable questions on allocated lots clear.
 
 ### 3a. Grounded Pricing Without Losing the Evidence
 Live Vertex validation exposed a failure at the boundary between Google Search grounding and structured output: adding `response_schema` preserved the search queries but stripped the `grounding_chunks` citations, while the same call without the schema returned them (a live-session observation; the raw responses were not archived in this repository). Blue Toad therefore separates the work. The first call performs grounded research in free text and preserves Google-supplied citations; a second call, with no tools or search, is instructed to extract only the figures in that research note into the pricing schema. Three independent grounded samples are then medianed ([`grounded_batch.py`](src/appraiser/grounded_batch.py)), and the lot is refused if the calls disagree too widely, contain fewer than two sold comps, or provide no usable citation. See [`price_lot_grounded`](src/appraiser/engine.py) and [`price_is_usable`](src/appraiser/pricing.py).
 
 ### 3b. The Curator's Read (Gemma 4 on Vertex AI)
 The Gate console's pitch banner is written by **Gemma 4** (`gemma-4-26b-a4b-it-maas`),
-and it is the only call in the system with no response schema — because it is the
-only one whose output is not a decision. `build_pitch` in
+constrained by `VOICE_SCHEMA` to four prose fields whose output is never a bid
+decision. `build_pitch` in
 [`src/gate/pitch.py`](src/gate/pitch.py) selects the tiers deterministically from
 the allocated sheet; Gemma is handed lot ids, captions and the bids the math
 already set, and asked to phrase them. It never sees a comparable sale.
@@ -140,10 +140,12 @@ Appraisals feed into pure, unit-tested valuation logic implementing the store's 
 Grounded pricing needs sold evidence, and the most direct source is eBay Seller
 Hub product research on the operator's own seller account, read through a
 dedicated authenticated Chrome over CDP. [`src/comps/`](src/comps/__init__.py)
-is the pure layer — page-text parsing plus the operator's metric,
+is the pure layer — parsing Seller Hub's research JSON API (`/sh/research/api/search`
+NDJSON modules) plus the operator's metric,
 `ebay_velocity = sold_units_last_365_days / active_listings_now` (an absorption
 rate; days-on-market is explicitly not computed) — and
-[`src/comps/live.py`](src/comps/live.py) drives the browser. Two front ends
+[`src/comps/live.py`](src/comps/live.py) drives a shared research tab with same-origin
+`fetch()` reads and empty-page retry. Two front ends
 share it: an MCP stdio server
 ([`scripts/comps_mcp_server.py`](scripts/comps_mcp_server.py)) exposing
 `ebay_absorption` and `ebay_comps` (model-screened "is this THAT item" verdicts
@@ -152,13 +154,12 @@ per listing title and a comp-only price band), and a one-shot CLI
 
 Every guard is a measured Seller Hub failure turned into code
 ([`docs/PLAYBOOK-ebay-velocity.md`](docs/PLAYBOOK-ebay-velocity.md)): reads
-**refuse rather than return a wrong number** — the bot wall, the silent-empty
-`limit>50` SOLD page, a printed window that is not annual, a `conditionId` the
-server would silently ignore, all raise instead of computing. The page-printed
-date line, not the request, is the authority on what was measured; sold totals
-are cross-checked against Seller Hub's own aggregates API (`sold_cross_check`);
-and the printed filter bar is surfaced as the page's *claim* about scope, after
-a live read proved a sticky filter chip can be a display ghost. A nonzero exit
+**refuse rather than return a wrong number** — the bot/signin wall, the silent-empty
+`limit>50` SOLD page, a non-annual window or out-of-window sale date, or a `conditionId` the
+server would silently ignore, all raise instead of computing. Explicit `startDate`/`endDate`
+parameters are verified against returned row sale dates; sold totals
+are cross-checked against Seller Hub's own aggregates module (`sold_cross_check`);
+and only explicit URL parameters scope API reads (Seller Hub UI filter chips do not). A nonzero exit
 is a refused read, never "sold 0".
 
 ---
@@ -171,8 +172,8 @@ provenance-sealed pipeline state (415 decision rows, resealed 2026-08-29 with
 full appraisal coverage). The owner's nine kept lots — the sheet that actually
 went to Blue Toad, $275.00/$316.25, archived with its mailbox receipt in
 `docs/evidence/` — seat first by design; the allocator fills 37 more lots
-around them. The 46 carry **$1,458.81–$3,308.67 estimated gross resale**
-(**2.44–5.53x** all-in cost before selling expenses), derived from the sealed
+around them. The 46 carry **$1,473.81–$3,293.67 estimated gross resale**
+(**2.46–5.51x** all-in cost before selling expenses), derived from the sealed
 decisions' own comp provenance. The sent sheet remains the only artifact ever
 sent; the full-coverage figures roll whenever the evidence caches change, and
 the allocation invariant (never exceed the operator's cap) is tested directly.
@@ -264,7 +265,7 @@ blue-toad-fleet/
 
 ## Disclosure & Solo Eligibility
 
-All code in this repository was written between August 18 and August 31, 2026.
+All hackathon submission code (through commit `0a6e85a`) was written between August 18 and August 31, 2026; subsequent commits on `master` refine the eBay Seller Hub JSON API comp connector and post-audit hardening.
 
 * **Eligibility:** Built solo, in 13 days, by one person.
 * **Pre-existing Context:** The bid math and workflow implement the documented sourcing rules of Richmond General (Richmond, IL). Historical data references real sales receipts and auction manifests from Blue Toad Auctions (Genoa City, WI).

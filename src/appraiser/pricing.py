@@ -23,6 +23,7 @@ A refused price is not a failure. It is the lot going to the operator unpriced,
 which is the same thing the system has always done when it could not know.
 """
 
+import math
 from dataclasses import dataclass, field
 from statistics import median
 from urllib.parse import urlparse
@@ -100,13 +101,25 @@ def price_is_usable(results) -> bool:
     rows = [r for r in results if r is not None]
     if len(rows) < MIN_CALLS:
         return False
-    if any(r.low <= 0 or r.high <= 0 or r.low > r.high for r in rows):
+    if any(
+        isinstance(r.low, bool)
+        or isinstance(r.high, bool)
+        or not math.isfinite(r.low)
+        or not math.isfinite(r.high)
+        or r.low <= 0
+        or r.high <= 0
+        or r.low > r.high
+        for r in rows
+    ):
         return False
     if median([r.sold_comp_count for r in rows]) < MIN_SOLD_COMPS:
         return False
-    if not any(usable_sources(r.sources) for r in rows):
+    if not all(usable_sources(r.sources) for r in rows):
         return False
 
+    lows = [r.low for r in rows]
+    if min(lows) <= 0 or max(lows) / min(lows) > MAX_SPREAD_RATIO:
+        return False
     highs = [r.high for r in rows]
     if min(highs) <= 0 or max(highs) / min(highs) > MAX_SPREAD_RATIO:
         return False
@@ -117,26 +130,31 @@ PRICE_SCHEMA = {
     "type": "object",
     "properties": {
         "low": {"type": "number",
-                "description": "Lowest realised SOLD price found. Not an asking price."},
+                "description": "Lowest realised SOLD price in USD found. Not an asking price."},
         "high": {"type": "number",
-                 "description": "Highest realised SOLD price found. Not an asking price."},
+                 "description": "Highest realised SOLD price in USD found. Not an asking price."},
         "sold_comp_count": {"type": "integer",
-                            "description": "How many completed sales this range is drawn from."},
+                            "description": "How many completed USD sales this range is drawn from."},
         "asking_prices_only": {
             "type": "boolean",
             "description": "True if only active listings were found, no completed sales."},
+        "currency": {
+            "type": "string",
+            "description": "ISO 4217 currency code of the completed sales (must be USD)."},
     },
     "required": ["low", "high", "sold_comp_count", "asking_prices_only"],
 }
 
 PRICING_SYSTEM = """You are pricing one lot for a resale buyer's absentee bid.
 
-Search for COMPLETED SALES of comparable items — realised hammer prices, eBay \
-sold listings, auction results. An active listing is what somebody hopes to get, \
-not what the thing is worth, and bidding against hope loses money.
+Search for COMPLETED SALES in US Dollars (USD) of comparable items — realised \
+hammer prices, eBay US sold listings, US auction results. Ignore non-USD \
+listings (JPY, GBP, EUR, CAD, AUD) unless explicitly reported in USD. An active \
+listing is what somebody hopes to get, not what the thing is worth, and bidding \
+against hope loses money.
 
-Report the low and high of what actually sold, and how many completed sales you \
-based that on. If you can only find active listings, say so with \
+Report the USD low and high of what actually sold, and how many completed USD \
+sales you based that on. If you can only find active listings, say so with \
 asking_prices_only and report what you found anyway — the caller will discard it.
 
 Do not guess. A range drawn from one sale is one sale; say so in the count \
@@ -148,8 +166,8 @@ def build_pricing_prompt(identification: str, category: str = "") -> str:
     if category:
         parts.append(f"Category: {category}")
     parts.append(
-        "\nFind completed sales of comparable items and report the realised "
-        "price range. Sold prices only — not asking prices.")
+        "\nFind completed USD sales of comparable items and report the realised "
+        "USD price range. Sold USD prices only — not asking prices or foreign currencies.")
     return "\n".join(parts)
 
 
@@ -188,11 +206,21 @@ def parse_price_payload(payload: dict, grounded_sources: list[str]) -> GroundedP
         return None
     if payload.get("asking_prices_only"):
         return None
+    currency = str(payload.get("currency") or "USD").strip().upper()
+    if currency != "USD":
+        return None
+    raw_low = payload.get("low")
+    raw_high = payload.get("high")
+    raw_count = payload.get("sold_comp_count", 0)
+    if isinstance(raw_low, bool) or isinstance(raw_high, bool) or isinstance(raw_count, bool):
+        return None
     try:
-        low = float(payload["low"])
-        high = float(payload["high"])
-        count = int(payload.get("sold_comp_count", 0))
+        low = float(raw_low)
+        high = float(raw_high)
+        count = int(raw_count)
     except (KeyError, TypeError, ValueError):
+        return None
+    if not math.isfinite(low) or not math.isfinite(high):
         return None
     return GroundedPrice(low=low, high=high, sold_comp_count=count,
                          sources=usable_sources(grounded_sources))

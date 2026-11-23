@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import re
 from dataclasses import asdict, dataclass
 from datetime import date, datetime, timezone
@@ -33,8 +34,16 @@ def cycle_prefix(shop_id: str, cycle_id: str) -> str:
 
 
 def _required_text(value: str, field: str, *, maximum: int = 500) -> str:
-    normalized = (value or "").strip()
-    if not normalized or len(normalized) > maximum or "\x00" in normalized:
+    if not isinstance(value, str):
+        raise ValueError(f"{field} is missing or invalid")
+    normalized = value.strip()
+    if (
+        not normalized
+        or len(normalized) > maximum
+        or "\x00" in normalized
+        or "\r" in normalized
+        or "\n" in normalized
+    ):
         raise ValueError(f"{field} is missing or invalid")
     return normalized
 
@@ -96,9 +105,9 @@ class CycleRequest:
         object.__setattr__(self, "deadline", _iso_datetime(self.deadline, "deadline"))
         object.__setattr__(
             self, "email_to", _required_text(self.email_to, "email_to", maximum=320))
-        if not 0 < float(self.budget_cap) <= 1_000_000:
+        if isinstance(self.budget_cap, bool) or not math.isfinite(float(self.budget_cap)) or not 0 < float(self.budget_cap) <= 1_000_000:
             raise ValueError("budget_cap must be greater than zero")
-        if not 0 <= float(self.auto_send_threshold) <= float(self.budget_cap):
+        if isinstance(self.auto_send_threshold, bool) or not math.isfinite(float(self.auto_send_threshold)) or not 0 <= float(self.auto_send_threshold) <= float(self.budget_cap):
             raise ValueError("auto_send_threshold must be between zero and budget_cap")
         object.__setattr__(self, "budget_cap", float(self.budget_cap))
         object.__setattr__(self, "auto_send_threshold", float(self.auto_send_threshold))

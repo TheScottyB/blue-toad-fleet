@@ -119,10 +119,16 @@ def _require_publishable_output(input_dir: Path, output_dir: Path) -> None:
     if len(decision_ids) != len(set(decision_ids)):
         raise RuntimeError("pipeline decisions contain duplicate lot ids")
     allocated = [row for row in decisions if row.get("allocated") and not row.get("speculative")]
+    _ALLOWED_PROVENANCE = {
+        "grounded_search",
+        "operator_reference",
+        "container_alpha_plus_bulk",
+        "container_bulk_floor",
+    }
     for row in allocated:
         comp = row.get("comp") or {}
         if (int(comp.get("source_count") or 0) <= 0
-                or comp.get("provenance") not in {"grounded_search", "operator_reference"}):
+                or comp.get("provenance") not in _ALLOWED_PROVENANCE):
             raise RuntimeError(f"allocated lot lacks usable comp provenance: {row.get('lot_id')}")
         if row.get("mechanic") == "unknown" or row.get("needs_mechanic_ruling"):
             raise RuntimeError(f"allocated lot has unresolved mechanic: {row.get('lot_id')}")

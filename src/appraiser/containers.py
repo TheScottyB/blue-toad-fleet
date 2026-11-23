@@ -13,9 +13,12 @@ itself remains deterministic and testable.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from io import BytesIO
-from typing import Mapping
+from typing import Iterable, Mapping
+
+from src.appraiser.pricing import usable_sources
 
 
 CONTAINER_TYPES = ["box", "tub", "tray", "case", "basket", "shelf", "other", "none"]
@@ -34,8 +37,24 @@ class ContainerValueEvidence:
     upside_note: str | None = None
 
 
+_PLACEHOLDER_MARKS = frozenset({
+    "", "none", "unmarked", "no mark", "no marks", "illegible", "unreadable",
+    "obscured", "unknown", "n/a", "na", "not visible", "none visible",
+})
+_MARK_QUESTION_KEYWORDS = (
+    "mark", "hallmark", "signature", "maker", "stamp", "authentic",
+    "genuine", "reproduction", "copy", "karat", "14k", "18k", "sterling",
+    "gold-filled", "plate", "serial", "label",
+)
+
+
 def _usable_comp(raw: Mapping | None) -> tuple[float, float, int, tuple[str, ...]] | None:
     if not isinstance(raw, Mapping):
+        return None
+    raw_low = raw.get("low")
+    raw_high = raw.get("high")
+    raw_count = raw.get("source_count") if "source_count" in raw else raw.get("sources")
+    if isinstance(raw_low, bool) or isinstance(raw_high, bool) or isinstance(raw_count, bool):
         return None
     try:
         low = float(raw["low"])
@@ -43,10 +62,60 @@ def _usable_comp(raw: Mapping | None) -> tuple[float, float, int, tuple[str, ...
         count = int(raw.get("source_count") or raw.get("sources") or 0)
     except (KeyError, TypeError, ValueError):
         return None
-    citations = tuple(str(value) for value in raw.get("citations") or () if value)
+    if not math.isfinite(low) or not math.isfinite(high):
+        return None
+    citations = tuple(usable_sources(raw.get("citations") or ()))
     if low <= 0 or high < low or count < 1 or not citations:
         return None
     return low, high, count, citations
+
+
+def container_alpha_status(
+    decomposition: Mapping | None,
+    appraisal_questions: Iterable[Mapping] | None = None,
+) -> tuple[bool, str | None]:
+    """Return (alpha_confirmed, alpha_name) for a container decomposition."""
+    if not isinstance(decomposition, Mapping):
+        return False, None
+    questions = " ".join(str(value).casefold()
+                         for value in decomposition.get("questions") or ())
+    open_mark_question = any(word in questions for word in _MARK_QUESTION_KEYWORDS)
+    for q in appraisal_questions or ():
+        if not isinstance(q, Mapping):
+            continue
+        kind = str(q.get("kind") or "").strip().lower()
+        prompt = str(q.get("prompt") or q.get("question") or "").casefold()
+        if kind in {"mark", "policy", "scope"} or any(
+            word in prompt for word in _MARK_QUESTION_KEYWORDS
+        ):
+            open_mark_question = True
+            break
+    alphas = [
+        item for item in decomposition.get("contents") or ()
+        if isinstance(item, Mapping) and item.get("market_role") == "alpha"
+    ]
+    alpha = alphas[0] if len(alphas) == 1 else None
+    alpha_name = (str(alpha.get("item_name") or "").strip() if alpha else None)
+    raw_marks = alpha.get("marks_observed") if alpha else None
+    if isinstance(raw_marks, str):
+        mark_items = [raw_marks]
+    elif isinstance(raw_marks, Iterable):
+        mark_items = [str(m) for m in raw_marks if m is not None]
+    else:
+        mark_items = []
+    real_marks = [
+        m.strip() for m in mark_items
+        if m.strip() and m.strip().casefold() not in _PLACEHOLDER_MARKS
+    ]
+    alpha_conf = str((alpha or {}).get("confidence") or "high").strip().lower()
+    alpha_confirmed = bool(
+        alpha
+        and alpha_name
+        and real_marks
+        and alpha_conf not in {"none", "low"}
+        and not open_mark_question
+    )
+    return alpha_confirmed, alpha_name
 
 
 def price_container_evidence(
@@ -54,6 +123,7 @@ def price_container_evidence(
     *,
     alpha_comp: Mapping | None,
     bulk_floor: Mapping,
+    appraisal_questions: Iterable[Mapping] | None = None,
 ) -> ContainerValueEvidence:
     """Price one container as alpha-plus-bulk, or bulk-only when unconfirmed.
 
@@ -64,19 +134,9 @@ def price_container_evidence(
     bulk = _usable_comp(bulk_floor)
     if bulk is None:
         raise ValueError("container bulk floor requires cited sold evidence")
-    questions = " ".join(str(value).casefold()
-                         for value in decomposition.get("questions") or ())
-    open_mark_question = any(word in questions for word in (
-        "mark", "hallmark", "signature", "maker",
-    ))
-    alphas = [
-        item for item in decomposition.get("contents") or ()
-        if isinstance(item, Mapping) and item.get("market_role") == "alpha"
-    ]
-    alpha = alphas[0] if len(alphas) == 1 else None
-    alpha_name = (str(alpha.get("item_name") or "").strip() if alpha else None)
-    alpha_confirmed = bool(
-        alpha and alpha_name and alpha.get("marks_observed") and not open_mark_question)
+    alpha_confirmed, alpha_name = container_alpha_status(
+        decomposition, appraisal_questions=appraisal_questions,
+    )
     confirmed_comp = _usable_comp(alpha_comp) if alpha_confirmed else None
     bulk_low, bulk_high, bulk_count, bulk_citations = bulk
     if confirmed_comp is None:
@@ -180,7 +240,12 @@ def crop_to_container(
         return output.getvalue()
 
 
-def visible_contents(payload: Mapping | None) -> tuple[str, ...]:
+def visible_contents(
+    payload: Mapping | None,
+    *,
+    include_unconfirmed_alpha: bool = True,
+    appraisal_questions: Iterable[Mapping] | None = None,
+) -> tuple[str, ...]:
     """Produce conservative clerk-line item strings from a decomposition.
 
     Filler remains in the audit payload, but not in the identifying clause used
@@ -191,11 +256,16 @@ def visible_contents(payload: Mapping | None) -> tuple[str, ...]:
     if not isinstance(payload, Mapping) or not payload.get("is_container_lot"):
         return ()
 
+    alpha_ok, _ = container_alpha_status(
+        payload, appraisal_questions=appraisal_questions,
+    )
     out: list[str] = []
     seen: set[str] = set()
     for raw in payload.get("contents") or []:
         if (not isinstance(raw, Mapping)
                 or raw.get("market_role") not in {"alpha", "supporting"}):
+            continue
+        if raw.get("market_role") == "alpha" and not include_unconfirmed_alpha and not alpha_ok:
             continue
         name = " ".join(str(raw.get("item_name") or "").split())
         if not name:
@@ -225,6 +295,6 @@ def append_visible_contents(description: str, payload: Mapping | None) -> str:
 
 __all__ = [
     "CONTAINER_TYPES", "MARKET_ROLES", "ContainerValueEvidence", "NormalizedBox",
-    "crop_to_container", "visible_contents", "append_visible_contents",
-    "price_container_evidence",
+    "container_alpha_status", "crop_to_container", "visible_contents",
+    "append_visible_contents", "price_container_evidence",
 ]

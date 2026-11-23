@@ -26,6 +26,31 @@ SCRIPTS = ROOT / "scripts"
 VIDEO_MANIFEST = ROOT / "media" / "video_manifest.json"
 
 
+def _ffmpeg_usable() -> bool:
+    for tool in ("ffmpeg", "ffprobe"):
+        if not shutil.which(tool):
+            return False
+        try:
+            probe = subprocess.run(
+                [tool, "-version"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+                check=False,
+            )
+        except OSError:
+            return False
+        if probe.returncode != 0:
+            return False
+    return True
+
+
+_SKIP_BROKEN_FFMPEG = pytest.mark.skipif(
+    not _ffmpeg_usable(),
+    reason="ffmpeg/ffprobe not installed or missing shared libraries",
+)
+
+
 def test_one_authoritative_final_video_owner():
     manifest = json.loads(VIDEO_MANIFEST.read_text())
     assert manifest["final_output"] == "media/blue_toad_fleet_demo.mp4"
@@ -77,6 +102,7 @@ def test_recorders_do_not_scan_a_shared_directory_or_use_global_tmp_pages():
     assert "mkdtempSync" in helper
 
 
+@_SKIP_BROKEN_FFMPEG
 def test_verify_only_accepts_the_published_mp4_without_raw_beat_videos():
     """media/raw/ is gitignored; clone verify must not demand those files."""
     result = subprocess.run(
@@ -207,7 +233,7 @@ def test_gallery_renderer_escapes_third_party_caption(tmp_path):
     assert "&lt;script&gt;alert" in rendered
 
 
-@pytest.mark.skipif(not shutil.which("ffmpeg"), reason="FFmpeg not installed")
+@_SKIP_BROKEN_FFMPEG
 def test_short_footage_cannot_overwrite_existing_final(tmp_path):
     video = tmp_path / "video.mp4"
     audio = tmp_path / "audio.wav"
@@ -281,7 +307,7 @@ def test_short_footage_cannot_overwrite_existing_final(tmp_path):
     assert destination.read_bytes() == b"known-good-final"
 
 
-@pytest.mark.skipif(not shutil.which("ffmpeg"), reason="FFmpeg not installed")
+@_SKIP_BROKEN_FFMPEG
 def test_assembler_retains_declared_close_card(tmp_path):
     video = tmp_path / "video.mp4"
     audio = tmp_path / "audio.wav"

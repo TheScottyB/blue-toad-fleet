@@ -160,11 +160,16 @@ def close_tab(tid: str) -> None:
 async def capture(url: str, out: Path, full: bool, wait: float,
                   width: int = 1920, height: int = 1400,
                   expected_markers: tuple[str, ...] = ()) -> dict:
+    parsed_req = urllib.parse.urlparse(url or "")
+    if parsed_req.scheme not in {"http", "https"} or not parsed_req.hostname:
+        raise CaptureRejected("capture requires an HTTP(S) page")
     tab = open_tab(url)
     try:
+        ws_url = tab.get("webSocketDebuggerUrl")
+        if not ws_url:
+            raise CaptureRejected("CDP target did not expose a webSocketDebuggerUrl")
         await asyncio.sleep(wait)
-        async with websockets.connect(tab["webSocketDebuggerUrl"],
-                                      max_size=64 * 1024 * 1024) as ws:
+        async with websockets.connect(ws_url, max_size=64 * 1024 * 1024) as ws:
             n = 0
 
             async def send(method, params=None):
@@ -173,7 +178,7 @@ async def capture(url: str, out: Path, full: bool, wait: float,
                 await ws.send(json.dumps({"id": n, "method": method,
                                           "params": params or {}}))
                 while True:
-                    msg = json.loads(await ws.recv())
+                    msg = json.loads(await asyncio.wait_for(ws.recv(), timeout=30.0))
                     if msg.get("id") == n:
                         if "error" in msg:
                             raise RuntimeError(f"{method}: {msg['error']}")

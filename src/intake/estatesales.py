@@ -8,10 +8,13 @@ from EstateSales.NET listings (such as cross-listed Blue Toad Fleet auctions).
 from __future__ import annotations
 
 import json
+import os
 import re
 import ssl
 import sys
+import tempfile
 import time
+import urllib.parse
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import asdict, dataclass, field
@@ -89,11 +92,40 @@ class EstateSalesListing:
         return sum(1 for p in self.pictures if p.has_description)
 
 
+_ALLOWED_HTML_HOSTS = frozenset({"www.estatesales.net", "estatesales.net"})
+_ALLOWED_IMAGE_HOSTS = frozenset({"picturescdn.estatesales.net"})
+_SAFE_PIC_ID = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
+_MAX_HTML_BYTES = 16 * 1024 * 1024
+_MAX_IMAGE_BYTES = 32 * 1024 * 1024
+
+
+def _validate_https_url(url: str, allowed_hosts: frozenset[str], label: str) -> str:
+    parsed = urllib.parse.urlsplit((url or "").strip())
+    host = (parsed.hostname or "").lower()
+    if parsed.scheme != "https" or host not in allowed_hosts:
+        raise ValueError(f"disallowed {label} URL: {url!r}")
+    return urllib.parse.urlunsplit(parsed)
+
+
+def _sanitize_pic_id(raw_id: Any, fallback_index: int) -> str:
+    candidate = str(raw_id if raw_id is not None else "").strip()
+    if not candidate:
+        candidate = f"img_{fallback_index:04d}"
+    if not _SAFE_PIC_ID.fullmatch(candidate):
+        raise ValueError(f"unsafe picture id: {raw_id!r}")
+    return candidate
+
+
 def extract_sale_id(url_or_id: str) -> str | None:
     """Extract numeric sale ID from a URL or raw ID string."""
     cleaned = (url_or_id or "").strip()
     if cleaned.isdigit():
         return cleaned
+    if "://" in cleaned or cleaned.startswith("//"):
+        probe = "https:" + cleaned if cleaned.startswith("//") else cleaned
+        parsed = urllib.parse.urlsplit(probe)
+        if parsed.scheme not in {"http", "https"} or (parsed.hostname or "").lower() not in _ALLOWED_HTML_HOSTS:
+            return None
     m = _SALE_ID_URL_PATTERN.search(cleaned)
     return m.group(1) if m else None
 
@@ -102,11 +134,15 @@ def resolve_sale_url(url_or_id: str) -> str:
     """Resolve an input URL or numeric sale ID to a full listing URL."""
     cleaned = (url_or_id or "").strip()
     if cleaned.startswith("http://") or cleaned.startswith("https://"):
-        return cleaned
+        parsed = urllib.parse.urlsplit(cleaned)
+        host = (parsed.hostname or "").lower()
+        if host not in _ALLOWED_HTML_HOSTS:
+            raise ValueError(f"disallowed EstateSales.NET host: {cleaned!r}")
+        return urllib.parse.urlunsplit(("https", host, parsed.path, parsed.query, ""))
 
     sale_id = extract_sale_id(cleaned)
     if not sale_id:
-        return cleaned
+        raise ValueError(f"Could not resolve EstateSales.NET URL from: {url_or_id!r}")
 
     if sale_id == "5042877":
         return f"https://www.estatesales.net/WI/Genoa-City/53128/{sale_id}"
@@ -115,13 +151,12 @@ def resolve_sale_url(url_or_id: str) -> str:
 
 
 def fetch_listing_html(url: str, timeout: float = 25.0) -> str:
-    """Fetch listing HTML from EstateSales.NET with standard browser headers."""
+    """Fetch listing HTML from EstateSales.NET with verified TLS and host checks."""
+    verified_url = _validate_https_url(url, _ALLOWED_HTML_HOSTS, "listing")
     ctx = ssl.create_default_context()
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
 
     req = urllib.request.Request(
-        url,
+        verified_url,
         headers={
             "User-Agent": _USER_AGENT,
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
@@ -129,7 +164,13 @@ def fetch_listing_html(url: str, timeout: float = 25.0) -> str:
         },
     )
     with urllib.request.urlopen(req, context=ctx, timeout=timeout) as resp:
-        return resp.read().decode("utf-8", errors="ignore")
+        final_url = getattr(resp, "geturl", lambda: None)()
+        if isinstance(final_url, str):
+            _validate_https_url(final_url, _ALLOWED_HTML_HOSTS, "redirected listing")
+        data = resp.read(_MAX_HTML_BYTES + 1)
+        if len(data) > _MAX_HTML_BYTES:
+            raise ValueError("listing HTML exceeded maximum allowed size")
+        return data.decode("utf-8", errors="ignore")
 
 
 def parse_listing_page(html: str, fallback_sale_id: str | None = None, source_url: str = "") -> EstateSalesListing:
@@ -230,8 +271,8 @@ def _parse_from_ngrx_state(
     pictures_raw = entity.get("pictures") or []
     pictures: list[EstateSalesPicture] = []
 
-    for p in pictures_raw:
-        pid = str(p.get("id", ""))
+    for idx, p in enumerate(pictures_raw):
+        pid = _sanitize_pic_id(p.get("id"), idx + 1)
         p_order = int(p.get("pictureOrder", len(pictures)))
         p_url = p.get("url", "")
         p_thumb = p.get("thumbnailUrl", "")
@@ -341,6 +382,8 @@ def download_estatesales_image(
     """
     Download a single image from EstateSales.NET CDN to local disk with verification.
     """
+    if ".." in dest_path.parts:
+        return False, f"unsafe destination path: {dest_path}"
     if dest_path.exists() and dest_path.stat().st_size > 0:
         if verify_grade:
             data = dest_path.read_bytes()
@@ -349,13 +392,15 @@ def download_estatesales_image(
                 return False, f"cached file below appraisal grade: {dims}"
         return True, "cached"
 
-    ctx = ssl.create_default_context()
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
-
     clean_url = "https:" + url if url.startswith("//") else url
+    try:
+        verified_url = _validate_https_url(clean_url, _ALLOWED_IMAGE_HOSTS, "image")
+    except ValueError as exc:
+        return False, str(exc)
+
+    ctx = ssl.create_default_context()
     req = urllib.request.Request(
-        clean_url,
+        verified_url,
         headers={
             "User-Agent": _USER_AGENT,
             "Referer": "https://www.estatesales.net/",
@@ -365,7 +410,12 @@ def download_estatesales_image(
     for attempt in range(max_retries):
         try:
             with urllib.request.urlopen(req, context=ctx, timeout=timeout) as resp:
-                data = resp.read()
+                final_url = getattr(resp, "geturl", lambda: None)()
+                if isinstance(final_url, str):
+                    _validate_https_url(final_url, _ALLOWED_IMAGE_HOSTS, "redirected image")
+                data = resp.read(_MAX_IMAGE_BYTES + 1)
+                if len(data) > _MAX_IMAGE_BYTES:
+                    return False, "served image exceeded maximum allowed size"
 
             if verify_grade and not is_appraisal_grade(data):
                 dims = image_dimensions(data)
@@ -373,7 +423,16 @@ def download_estatesales_image(
                 return False, f"served image below appraisal grade ({size_desc})"
 
             dest_path.parent.mkdir(parents=True, exist_ok=True)
-            dest_path.write_bytes(data)
+            fd, tmp_name = tempfile.mkstemp(
+                prefix=dest_path.name + ".", suffix=".tmp", dir=str(dest_path.parent),
+            )
+            try:
+                with os.fdopen(fd, "wb") as handle:
+                    handle.write(data)
+                os.replace(tmp_name, dest_path)
+            except BaseException:
+                Path(tmp_name).unlink(missing_ok=True)
+                raise
             return True, "downloaded"
         except Exception as e:
             if attempt == max_retries - 1:
@@ -413,10 +472,14 @@ def cache_estatesales_listing(
     print(f"[+] Found {len(listing.pictures)} photos for '{listing.name}'")
 
     # Format standard manifest entries matching Blue Toad Fleet intake schema
+    resolved_images_dir = images_dir.resolve()
     manifest_entries = []
     for seq_idx, pic in enumerate(listing.pictures, start=1):
-        filename = f"{seq_idx:03d}_{pic.id}.jpg"
+        safe_id = _sanitize_pic_id(pic.id, seq_idx)
+        filename = f"{seq_idx:03d}_{safe_id}.jpg"
         local_dest = images_dir / filename
+        if not local_dest.resolve().is_relative_to(resolved_images_dir):
+            raise ValueError(f"unsafe image destination path: {local_dest}")
 
         manifest_entries.append({
             "sequence": seq_idx,
