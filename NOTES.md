@@ -69,7 +69,7 @@ not release evidence unless they are linked from `docs/SUBMISSION_CLAIMS.md`.
   $$\text{Target Max Bid} = \text{Low-Mid Comp} \times 0.375 \times (1.0 - \text{Condition Penalty})$$
   $$\text{All-In Cost} = \text{Max Bid} \times (1.0 + \text{Absentee Fee})$$
   * Enforces standard **$5.00 bidding increments** (up to $100) and the mandatory **15% absentee buyer fee**.
-  * Backed by 173 unit tests executing in under half a second.
+  * Backed by the release-gated offline pytest suite (run `make test` for the current count; see `docs/SUBMISSION_CLAIMS.md`).
 
 ---
 
