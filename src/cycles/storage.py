@@ -10,6 +10,7 @@ import hashlib
 import json
 import mimetypes
 import os
+import tempfile
 from pathlib import Path, PurePosixPath
 from typing import Protocol
 
@@ -61,11 +62,28 @@ class LocalObjectStore:
     ) -> None:
         path = self._path(name)
         path.parent.mkdir(parents=True, exist_ok=True)
-        if if_absent and path.exists():
-            raise CycleConflict(f"object already exists: {name}")
-        tmp = path.with_suffix(path.suffix + ".tmp")
-        tmp.write_bytes(data)
-        tmp.replace(path)
+        if if_absent:
+            try:
+                fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
+            except FileExistsError as exc:
+                raise CycleConflict(f"object already exists: {name}") from exc
+            try:
+                with os.fdopen(fd, "wb") as handle:
+                    handle.write(data)
+            except BaseException:
+                path.unlink(missing_ok=True)
+                raise
+            return
+        fd, tmp_name = tempfile.mkstemp(
+            prefix=path.name + ".", suffix=".tmp", dir=str(path.parent),
+        )
+        try:
+            with os.fdopen(fd, "wb") as handle:
+                handle.write(data)
+            os.replace(tmp_name, path)
+        except BaseException:
+            Path(tmp_name).unlink(missing_ok=True)
+            raise
 
     def get_bytes(self, name: str) -> bytes:
         path = self._path(name)
@@ -229,12 +247,25 @@ class CycleRepository:
             if not filename or filename in seen_names:
                 raise ValueError(f"missing or duplicate image filename: {filename!r}")
             seen_names.add(filename)
-            candidates = [
-                Path(str(photo.get("local_path") or "")),
-                source / "images" / filename,
-                source / filename,
-            ]
-            image = next((p for p in candidates if p.is_file()), None)
+            raw_local = str(photo.get("local_path") or "").strip()
+            candidates: list[Path] = []
+            if raw_local:
+                local_cand = Path(raw_local)
+                if not local_cand.is_absolute():
+                    local_cand = source / local_cand
+                candidates.append(local_cand)
+            candidates.extend((source / "images" / filename, source / filename))
+            image = None
+            for cand in candidates:
+                if not cand.is_file():
+                    continue
+                resolved_cand = cand.resolve()
+                if not resolved_cand.is_relative_to(source):
+                    raise ValueError(
+                        f"unsafe image local_path outside source directory: {raw_local!r}"
+                    )
+                image = resolved_cand
+                break
             if image is None:
                 raise FileNotFoundError(f"full-resolution image missing: {filename}")
             if image.stat().st_size == 0:
@@ -259,31 +290,33 @@ class CycleRepository:
             load_absorption_evidence(absorption_path)
             sidecars.append(("absorption_evidence.json", absorption_path.read_bytes()))
 
-        # A cycle ID is immutable. request.json is the creation lock.
+        manifest_bytes = _json_bytes(normalized)
+        spatial_path = source / "spatial_observations.json"
+        if spatial_path.is_file():
+            raw_spatial = json.loads(spatial_path.read_text())
+            original_manifest_sha = hashlib.sha256(
+                manifest_path.read_bytes()).hexdigest()
+            if (
+                raw_spatial.get("schema_version") != 1
+                or raw_spatial.get("model") != "gemini-3.6-flash"
+                or raw_spatial.get("manifest_sha256") != original_manifest_sha
+            ):
+                raise ValueError("spatial observations are stale or unsupported")
+            spatial_ids = [
+                str(row.get("photo_id") or "")
+                for row in raw_spatial.get("observations") or []
+            ]
+            expected_ids = {str(row["photo_id"]) for row in normalized_photos}
+            if len(spatial_ids) != len(set(spatial_ids)) or set(spatial_ids) != expected_ids:
+                raise ValueError("spatial observation coverage does not match manifest")
+            raw_spatial["staged_from_manifest_sha256"] = original_manifest_sha
+            raw_spatial["manifest_sha256"] = hashlib.sha256(manifest_bytes).hexdigest()
+            sidecars.append(("spatial_observations.json", _json_bytes(raw_spatial)))
+
+        # A cycle ID is immutable. request.json is the creation lock after all
+        # local inputs and sidecars pass validation.
         self.put_json(self.request_name(request), request.as_dict(), if_absent=True)
         try:
-            manifest_bytes = _json_bytes(normalized)
-            spatial_path = source / "spatial_observations.json"
-            if spatial_path.is_file():
-                raw_spatial = json.loads(spatial_path.read_text())
-                original_manifest_sha = hashlib.sha256(
-                    manifest_path.read_bytes()).hexdigest()
-                if (
-                    raw_spatial.get("schema_version") != 1
-                    or raw_spatial.get("model") != "gemini-3.6-flash"
-                    or raw_spatial.get("manifest_sha256") != original_manifest_sha
-                ):
-                    raise ValueError("spatial observations are stale or unsupported")
-                spatial_ids = [
-                    str(row.get("photo_id") or "")
-                    for row in raw_spatial.get("observations") or []
-                ]
-                expected_ids = {str(row["photo_id"]) for row in normalized_photos}
-                if len(spatial_ids) != len(set(spatial_ids)) or set(spatial_ids) != expected_ids:
-                    raise ValueError("spatial observation coverage does not match manifest")
-                raw_spatial["staged_from_manifest_sha256"] = original_manifest_sha
-                raw_spatial["manifest_sha256"] = hashlib.sha256(manifest_bytes).hexdigest()
-                sidecars.append(("spatial_observations.json", _json_bytes(raw_spatial)))
             self.objects.put_bytes(
                 f"{request.prefix}/input/manifest.json",
                 manifest_bytes,
@@ -328,7 +361,18 @@ class CycleRepository:
         }
 
     def mark_ready(self, request: CycleRequest) -> dict:
-        marker = self.ready_payload(request)
+        manifest_bytes = self.objects.get_bytes(f"{request.prefix}/input/manifest.json")
+        manifest = json.loads(manifest_bytes)
+        photos = manifest.get("photos") or []
+        if not photos:
+            raise CycleNotFound("staged manifest contains no photos")
+        for row in photos:
+            source_object = str(row.get("source_object") or "")
+            if not source_object or not self.objects.exists(source_object):
+                raise CycleNotFound(
+                    f"staged cycle is incomplete; missing image: {source_object or row.get('filename')}"
+                )
+        marker = self.ready_payload(request, manifest_bytes)
         self.put_json(self.ready_name(request), marker, if_absent=True)
         return marker
 

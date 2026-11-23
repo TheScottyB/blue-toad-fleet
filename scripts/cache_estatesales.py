@@ -44,6 +44,9 @@ _UA = (
 _NGRX_RE = re.compile(r'<script[^>]*>\s*(\{"NGRX_STATE"\s*:.*?\})\s*</script>', re.DOTALL)
 _SAFE_ID_RE = re.compile(r"[A-Za-z0-9_-]+")
 _HOSTS = {"estatesales.net", "www.estatesales.net"}
+_IMAGE_HOSTS = frozenset({"picturescdn.estatesales.net"})
+_MAX_HTML_BYTES = 16 * 1024 * 1024
+_MAX_IMAGE_BYTES = 32 * 1024 * 1024
 
 _EPILOG = """\
 exit status:
@@ -77,17 +80,28 @@ def parse_sale_url(url: str) -> tuple[str, str]:
     return parts[-1], canonical
 
 
-def _require_http_url(url: str, label: str) -> str:
-    candidate = "https:" + url if url.startswith("//") else url
+def _validate_https_host(
+    url: str,
+    allowed_hosts: set[str] | frozenset[str],
+    label: str,
+) -> str:
+    cleaned = (url or "").strip()
+    candidate = "https:" + cleaned if cleaned.startswith("//") else cleaned
     parsed = urllib.parse.urlsplit(candidate)
-    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
-        raise ValueError(f"invalid {label} URL: {url!r}")
+    host = (parsed.hostname or "").lower()
+    if parsed.scheme != "https" or not parsed.netloc or host not in allowed_hosts:
+        raise ValueError(f"invalid {label} URL (disallowed scheme or host): {url!r}")
     return candidate
 
 
+def _require_http_url(url: str, label: str) -> str:
+    return _validate_https_host(url, _IMAGE_HOSTS, label)
+
+
 def fetch_listing_html(url: str, *, timeout: float = 20.0, opener=urllib.request.urlopen) -> str:
+    verified_url = _validate_https_host(url, _HOSTS, "listing")
     req = urllib.request.Request(
-        url,
+        verified_url,
         headers={
             "User-Agent": _UA,
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -95,7 +109,16 @@ def fetch_listing_html(url: str, *, timeout: float = 20.0, opener=urllib.request
         },
     )
     with opener(req, timeout=timeout) as resp:
-        return resp.read().decode("utf-8", errors="ignore")
+        final_url = getattr(resp, "geturl", lambda: None)()
+        if isinstance(final_url, str):
+            _validate_https_host(final_url, _HOSTS, "redirected listing")
+        try:
+            data = resp.read(_MAX_HTML_BYTES + 1)
+        except TypeError:
+            data = resp.read()
+        if len(data) > _MAX_HTML_BYTES:
+            raise ValueError("listing HTML exceeded maximum allowed size")
+        return data.decode("utf-8", errors="ignore")
 
 
 def parse_listing_html(html: str, sale_id: str) -> tuple[str, list[dict]]:
@@ -174,9 +197,13 @@ def cache_estatesales(
     sale_name, pictures = parse_listing_html(html, sale_id)
     print(f"[+] Found {len(pictures)} photos for {sale_name or sale_id!r}.")
 
+    resolved_images_dir = images_dir.resolve()
     manifest_entries = []
     for seq, pic in enumerate(pictures, start=1):
         filename = f"{seq:03d}_{pic['photo_id']}.jpg"
+        local_dest = images_dir / filename
+        if not local_dest.resolve().is_relative_to(resolved_images_dir):
+            raise ValueError(f"unsafe image destination path: {local_dest}")
         manifest_entries.append({
             "sequence": seq,
             "es_order": pic["es_order"],
@@ -186,7 +213,7 @@ def cache_estatesales(
             "has_caption": bool(pic["caption"]),
             "thumb_url": pic["thumb_url"],
             "full_url": pic["full_url"],
-            "local_path": str(images_dir / filename),
+            "local_path": str(local_dest),
         })
 
     failures = 0
@@ -202,8 +229,11 @@ def cache_estatesales(
                     Path(entry["local_path"]),
                     referer="https://www.estatesales.net/",
                     opener=opener,
+                    allowed_hosts=_IMAGE_HOSTS,
+                    max_bytes=_MAX_IMAGE_BYTES,
                 ): entry
                 for entry in manifest_entries
+                if Path(entry["local_path"]).resolve().is_relative_to(resolved_images_dir)
             }
             for future in as_completed(futures):
                 entry = futures[future]

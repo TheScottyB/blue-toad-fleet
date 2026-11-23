@@ -6,9 +6,9 @@
 # virtenv is set; -S skips sitecustomize. Export the flag so PYTHONPATH is
 # actually imported.
 # shellcheck shell=bash
-_BTF_GCLOUD_IPV4="${TMPDIR:-/tmp}"
-_BTF_GCLOUD_IPV4="${_BTF_GCLOUD_IPV4%/}/gcloud-ipv4"
-mkdir -p "$_BTF_GCLOUD_IPV4"
+_BTF_GCLOUD_IPV4_BASE="${TMPDIR:-/tmp}"
+_BTF_GCLOUD_IPV4="$(mktemp -d "${_BTF_GCLOUD_IPV4_BASE%/}/btf-gcloud-ipv4.XXXXXXXXXX")"
+chmod 700 "$_BTF_GCLOUD_IPV4"
 cat > "$_BTF_GCLOUD_IPV4/sitecustomize.py" <<'PY'
 import socket
 _orig = socket.getaddrinfo

@@ -50,6 +50,19 @@ def _git(*args: str) -> str:
     return result.stdout.strip() if result.returncode == 0 else "unknown"
 
 
+def _git_dirty() -> bool:
+    result = subprocess.run(
+        ["git", "status", "--porcelain", "--untracked-files=normal"],
+        cwd=project_path("."),
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        return True
+    return bool(result.stdout.strip())
+
+
 def _test_counts(junit_path: Path) -> dict:
     try:
         root = ET.parse(junit_path).getroot()
@@ -65,8 +78,8 @@ def _test_counts(junit_path: Path) -> dict:
     totals["passed"] = (
         totals["tests"] - totals["failures"] - totals["errors"] - totals["skipped"]
     )
-    if totals["tests"] <= 0 or totals["passed"] < 0:
-        raise VideoBuildError("pytest JUnit report contains impossible test totals")
+    if totals["tests"] <= 0 or totals["passed"] <= 0:
+        raise VideoBuildError("pytest JUnit report contains impossible or zero-passed test totals")
     return {
         "collected": totals["tests"],
         "passed": totals["passed"],
@@ -92,7 +105,7 @@ def _run_tests() -> tuple[dict, str]:
             raise VideoBuildError(
                 "submission facts were not published because pytest failed:\n" + tail
             )
-        return _test_counts(report), shlex.join(command[:-1] + ["--junitxml=<temporary>"])
+        return _test_counts(report), "python -m pytest -q --junitxml=<temporary>"
 
 
 def _load_test_results(junit_value: str) -> tuple[dict, str]:
@@ -241,6 +254,13 @@ def _publication_facts(video_manifest: dict, source_paths: dict[str, Path]) -> d
     gallery_sha = sha256_file(source_paths["gallery_manifest"])
     if artifact.get("source_manifest_sha256") != gallery_sha:
         raise VideoBuildError("artifact manifest does not seal the gallery manifest")
+    if "pipeline_state" in source_paths:
+        sealed_state = ((artifact.get("artifacts") or {}).get("pipeline_state.json") or {})
+        state_sha = sha256_file(source_paths["pipeline_state"])
+        if sealed_state.get("sha256") != state_sha:
+            raise VideoBuildError(
+                "artifact manifest does not seal the current pipeline_state.json"
+            )
     return {
         "status": "published",
         "release_eligible": True,
@@ -343,7 +363,7 @@ def collect(manifest_value: str, output_value: str | None, junit_value: str | No
     )
 
     commit = _git("rev-parse", "HEAD")
-    dirty = bool(_git("status", "--porcelain"))
+    dirty = _git_dirty()
     source_sha256 = {
         name: sha256_file(path) for name, path in sorted(source_paths.items())
     }

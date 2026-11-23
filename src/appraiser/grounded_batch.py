@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
+import os
+import tempfile
 import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
@@ -11,6 +14,7 @@ from pathlib import Path
 from threading import Lock
 from typing import Callable
 
+from src.appraiser.containers import container_alpha_status
 from src.appraiser.engine import AppraisalEngine
 from src.appraiser.pricing import (
     MIN_CALLS, MIN_SOLD_COMPS, median_price, price_is_usable, usable_sources,
@@ -40,8 +44,35 @@ def price_one_grounded(
     engine_factory: Callable[[], AppraisalEngine] = AppraisalEngine,
 ) -> dict:
     """Take three independent grounded samples for one identified lot."""
-    engine = engine_factory()
     started_at = datetime.now(timezone.utc).isoformat()
+    decomposition = lot.get("container_decomposition")
+    if isinstance(decomposition, dict) and decomposition.get("is_container_lot"):
+        alpha_ok, alpha_name = container_alpha_status(
+            decomposition, appraisal_questions=lot.get("questions"),
+        )
+        if alpha_name and not alpha_ok:
+            return {
+                "attempt_id": uuid.uuid4().hex,
+                "started_at": started_at,
+                "finished_at": datetime.now(timezone.utc).isoformat(),
+                "method": "vertex_google_search_grounding",
+                "model": APPRAISAL_MODEL,
+                "lot_id": lot["lot_id"],
+                "identification": lot.get("identification") or "",
+                "category": lot.get("category") or "other",
+                "fit_score": lot.get("fit_score"),
+                "input_sha256": pricing_fingerprint(lot),
+                "attempt_complete": True,
+                "usable": False,
+                "low": None,
+                "high": None,
+                "sold_comp_count": 0,
+                "sources": [],
+                "samples": [],
+                "errors": [],
+                "unconfirmed_container_alpha": alpha_name,
+            }
+    engine = engine_factory()
     samples = []
     errors = []
     for _ in range(MIN_CALLS):
@@ -87,9 +118,16 @@ def price_one_grounded(
 
 def _atomic_json(path: Path, rows: list[dict]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(json.dumps(rows, indent=2) + "\n")
-    tmp.replace(path)
+    fd, tmp_name = tempfile.mkstemp(
+        prefix=path.name + ".", suffix=".tmp", dir=str(path.parent),
+    )
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.write(json.dumps(rows, indent=2) + "\n")
+        os.replace(tmp_name, path)
+    except BaseException:
+        Path(tmp_name).unlink(missing_ok=True)
+        raise
 
 
 def attempt_history_path(path: str | Path) -> Path:
@@ -148,27 +186,28 @@ class GroundedPricingPipeline:
         lot_id = lot.get("lot_id")
         if (
             not lot_id
-            or lot_id in self._lots
             or lot_id in self.excluded_lot_ids
             or lot.get("error")
             or float(lot.get("fit_score") or 0) < self.min_fit
         ):
             return False
 
-        self._lots[lot_id] = lot
-        cached = self._cached.get(lot_id)
-        if (
-            cached
-            and cached.get("attempt_complete")
-            and cached.get("input_sha256") == pricing_fingerprint(lot)
-        ):
-            self._results[lot_id] = cached
-            return True
-
-        future = self._executor.submit(
-            price_one_grounded, lot, engine_factory=self.engine_factory,
-        )
-        self._futures[future] = lot_id
+        with self._lock:
+            if lot_id in self._lots:
+                return False
+            self._lots[lot_id] = lot
+            cached = self._cached.get(lot_id)
+            if (
+                cached
+                and cached.get("attempt_complete")
+                and cached.get("input_sha256") == pricing_fingerprint(lot)
+            ):
+                self._results[lot_id] = cached
+                return True
+            future = self._executor.submit(
+                price_one_grounded, lot, engine_factory=self.engine_factory,
+            )
+            self._futures[future] = lot_id
         future.add_done_callback(self._record_result)
         return True
 
@@ -274,14 +313,15 @@ def run_grounded_pricing_batch(
                 results[lot_id] = future.result()
                 _append_attempt(path, results[lot_id])
                 completed += 1
-                ordered = [results[k] for k in sorted(results)]
-                _atomic_json(path, ordered)
+                merged_disk = {**cached, **results}
+                _atomic_json(path, [merged_disk[k] for k in sorted(merged_disk)])
                 if progress_callback:
                     progress_callback(completed, len(selected_ids))
 
     ordered = [results[lot["lot_id"]] for lot in candidates
                if lot["lot_id"] in selected_ids]
-    _atomic_json(path, ordered)
+    merged_disk = {**cached, **results}
+    _atomic_json(path, [merged_disk[k] for k in sorted(merged_disk)])
     return ordered
 
 
@@ -290,6 +330,11 @@ def grounded_reference_comps(rows: list[dict]) -> dict[str, dict]:
     out = {}
     for row in rows:
         sources = usable_sources(row.get("sources") or [])
+        raw_low = row.get("low")
+        raw_high = row.get("high")
+        raw_sold = row.get("sold_comp_count")
+        if isinstance(raw_low, bool) or isinstance(raw_high, bool) or isinstance(raw_sold, bool):
+            continue
         try:
             low = float(row["low"])
             high = float(row["high"])
@@ -297,7 +342,8 @@ def grounded_reference_comps(rows: list[dict]) -> dict[str, dict]:
         except (KeyError, TypeError, ValueError):
             continue
         if (not row.get("usable") or row.get("attempt_complete") is not True
-                or row.get("errors") or low <= 0 or high < low
+                or row.get("errors") or not math.isfinite(low) or not math.isfinite(high)
+                or low <= 0 or high < low
                 or sold_count < MIN_SOLD_COMPS or not sources):
             continue
         out[row["lot_id"]] = {

@@ -169,9 +169,9 @@ scraped or guessed. The recorded proof of why it matters: a 1966 concert
 poster and a cast-iron pencil sharpener sell at nearly the same average price
 ($22.12 vs $21.44), but the poster absorbs at 0.75 (16 months of supply)
 against the sharpener's 2.14 (5.6 months). Price cannot separate those two
-items; absorption does, and the per-lot comp reports in `data/comps/` carry
-the Seller Hub screenshots and page-printed date windows as evidence — pixels,
-because text is the medium models make things up in. Three silent-failure
+items; absorption does, and the per-lot comp reports in `data/comps/` archive
+the raw Seller Hub research JSON API responses alongside optional Seller Hub
+screenshots and verified 365-day date windows as machine-checkable evidence. Three silent-failure
 traps in the Seller Hub interface (a date control that labels without
 filtering, a row limit that renders zero instead of erroring, pagination with
 no end marker) are documented in `docs/PLAYBOOK-ebay-velocity.md`, each one a
@@ -211,7 +211,7 @@ in the mailbox:
 * And the full-coverage counterpart, from the provenance-sealed state the live
   API now serves: with every photo appraised, the allocator seats the owner's
   nine first and fills the envelope to **46 lots — $520.00 committed / $598.00
-  all-in — carrying $1,458.81–$3,308.67 estimated resale (2.44×–5.53×)**.
+  all-in — carrying $1,473.81–$3,293.67 estimated resale (2.46×–5.51×)**.
   Partial coverage left half the envelope idle; full coverage keeps every
   human decision and puts the rest of the budget to work.
 

@@ -8,6 +8,12 @@ from src.bidmath import (
 )
 
 
+def _single_line(value: str) -> str:
+    return " ".join(
+        str(value or "").replace("\x00", " ").replace("\r", " ").replace("\n", " ").split()
+    )
+
+
 def compile_absentee_email(
     *,
     to: str,
@@ -21,33 +27,52 @@ def compile_absentee_email(
     extra_instructions: list[str] | None = None,
 ) -> str:
     by_id = {l.lot_id: l for l in lots}
-    approved = [d for d in decisions if d.allocated and d.max_bid is not None]
+    approved = [
+        d for d in decisions
+        if d.allocated
+        and d.max_bid is not None
+        and not d.needs_election
+        and not d.needs_mechanic_ruling
+        and d.mechanic is not BidMechanic.UNKNOWN
+    ]
+    firm = [d for d in approved if not d.speculative]
+    contingent = [d for d in approved if d.speculative]
     summary = summarize(approved)
 
+    clean_to = _single_line(to)
+    clean_subject = _single_line(subject)
+    clean_date = _single_line(
+        deadline or "Friday, August 21, 2026 (Before 8:00 PM CDT Cutoff)"
+    )
+    clean_auction_date = _single_line(auction_date)
+    clean_venue = _single_line(venue)
+    clean_bidder = _single_line(bidder)
+
     lines = [
-        f"TO: {to}",
-        f"SUBJECT: {subject}",
-        f"DATE: {deadline or 'Friday, August 21, 2026 (Before 8:00 PM CDT Cutoff)'}",
+        f"TO: {clean_to}",
+        f"SUBJECT: {clean_subject}",
+        f"DATE: {clean_date}",
         "",
         "Blue Toad Auctions,",
         "",
-        f"Please register the following absentee proxy bids for the {auction_date} auction",
-        f"at {venue}.",
+        f"Please register the following absentee proxy bids for the {clean_auction_date} auction",
+        f"at {clean_venue}.",
         "",
         "Bidder Info:",
-        f"  Name: {bidder}",
+        f"  Name: {clean_bidder}",
         "  Resale Certificate: On file (Wisconsin Tax-Exempt)",
-        f"  Terms: {int(ABSENTEE_FEE * 100)}% Absentee Buyer Fee acknowledged (Credit Card on File)",
+        f"  Terms: {round(ABSENTEE_FEE * 100)}% Absentee Buyer Fee acknowledged (Credit Card on File)",
         "",
         "-" * 89,
     ]
 
-    for i, d in enumerate(approved, 1):
+    for i, d in enumerate(firm, 1):
         lot = by_id.get(d.lot_id)
-        description = " ".join(((lot.caption if lot else "") or d.category).split())
+        description = _single_line((lot.caption if lot else "") or d.category)
         wrapped = textwrap.wrap(description, width=78) or [description]
         start_bid = opening_bid(d.max_bid)
-        lines.append(f"{i:>2}) [{d.lot_id}]  {wrapped[0]}")
+        clean_id = _single_line(d.lot_id)
+        lines.append(f"{i:>2}) [{clean_id}]  {wrapped[0]}")
         lines.extend(f"      {line}" for line in wrapped[1:])
         # The bid line has to state the MECHANIC, not just the number. A lot
         # sold times-the-money charges the max once per unit, so a line reading
@@ -66,15 +91,28 @@ def compile_absentee_email(
                 f"x {k} of {d.unit_count} = ${d.committed_max:,.2f} TOTAL")
         else:
             lines.append(f"      START ${start_bid:,.2f}   MAX ${d.max_bid:,.2f}")
-        lines.append(f"      >> {clerk_directive(d)} <<")
+        lines.append(f"      >> {_single_line(clerk_directive(d))} <<")
         lines.append("")
+
+    if contingent:
+        lines.append("Contingent Remainder Opportunities (Only If Lot Re-Opens):")
+        lines.append("")
+        for d in contingent:
+            lot = by_id.get(d.lot_id) or by_id.get(d.lot_id.removesuffix("-R"))
+            description = _single_line((lot.caption if lot else "") or d.category)
+            wrapped = textwrap.wrap(description, width=78) or [description]
+            clean_id = _single_line(d.lot_id)
+            lines.append(f"  - [{clean_id}]  {wrapped[0]}")
+            lines.extend(f"      {line}" for line in wrapped[1:])
+            lines.append(f"      >> {_single_line(clerk_directive(d))} <<")
+            lines.append("")
 
     if extra_instructions is None:
         exceptions = [
-            f"{d.lot_id} is an exception to the one-unit rule: take "
+            f"{_single_line(d.lot_id)} is an exception to the one-unit rule: take "
             f"{units_committed(d.mechanic, d.unit_count, d.units_wanted)} of the "
             f"{d.unit_count} at the per-unit price."
-            for d in approved
+            for d in firm
             if units_committed(d.mechanic, d.unit_count, d.units_wanted) > 1
         ]
         extra_instructions = [
@@ -83,11 +121,11 @@ def compile_absentee_email(
             "Standard $5.00 bidding increments applied.",
             "Please confirm receipt of these absentee bids by reply email.",
         ]
-    instructions = extra_instructions
+    instructions = [_single_line(item) for item in extra_instructions]
     lines.extend([
         "-" * 89,
         f"TOTAL COMMITTED PROXY BIDS: ${summary.committed_max:,.2f} "
-        f"(${summary.committed_all_in:,.2f} all-in w/ {int(ABSENTEE_FEE * 100)}% fee)",
+        f"(${summary.committed_all_in:,.2f} all-in w/ {round(ABSENTEE_FEE * 100)}% fee)",
     ])
     if summary.contingent:
         lines.append(

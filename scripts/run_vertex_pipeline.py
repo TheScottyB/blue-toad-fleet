@@ -440,6 +440,7 @@ def comp_from_reference(
             decomposition,
             alpha_comp=container.get("alpha_comp"),
             bulk_floor=container.get("bulk_floor") or {},
+            appraisal_questions=raw_appraisal.get("questions"),
         )
         record.update({
             "low": resolved.low,
@@ -881,7 +882,7 @@ def run_appraisal_stage(
                 )
             )
             grounded_rows = grounded_pipeline.finish() if grounded_pipeline else []
-    except Exception:
+    except BaseException:
         if grounded_pipeline:
             grounded_pipeline.shutdown()
         raise
@@ -1013,7 +1014,7 @@ def run_decision_stage(
             if ruling:
                 mechanic, units, wanted = mechanic_from_ruling(ruling)
             elif per_unit:
-                mechanic, units, wanted = BidMechanic.CHOICE, 1, 1
+                mechanic, units, wanted = BidMechanic.UNKNOWN, 1, None
             else:
                 mechanic, units, wanted = BidMechanic.STRAIGHT, 1, None
             lot = Lot(
@@ -1052,7 +1053,7 @@ def run_decision_stage(
                 mechanic, units, wanted = mechanic_from_ruling(entry["ruling"])
             else:
                 mechanic, units, wanted = (
-                    (BidMechanic.CHOICE, 1, 1)
+                    (BidMechanic.UNKNOWN, 1, None)
                     if per_unit else (BidMechanic.STRAIGHT, 1, None)
                 )
             lot = Lot(
@@ -1448,6 +1449,23 @@ def write_pipeline_state_artifact(
     published_manifest = output_path / "manifest.json"
     if explicit_output and intake.manifest_path.resolve() != published_manifest.resolve():
         shutil.copy2(intake.manifest_path, published_manifest)
+    if explicit_output:
+        stage_artifacts = [
+            intake.triage_cache,
+            appraisal.appraisal_cache,
+            appraisal.decomposition_cache,
+        ]
+        if enable_grounded_pricing:
+            grounded_cache = intake.triage_cache.with_name("grounded_prices.json")
+            stage_artifacts.extend([
+                grounded_cache,
+                grounded_cache.with_name("grounded_prices_attempts.json"),
+            ])
+        for artifact in stage_artifacts:
+            if artifact.is_file():
+                dest = output_path / artifact.name
+                if artifact.resolve() != dest.resolve():
+                    shutil.copy2(artifact, dest)
     return state_path
 
 

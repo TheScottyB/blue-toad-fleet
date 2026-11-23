@@ -15,6 +15,7 @@ module turns an estimate into a decision, deterministically, so the decision
 is auditable and unit-testable.
 """
 
+import math
 import re
 from dataclasses import dataclass, field, replace
 from enum import Enum
@@ -315,6 +316,14 @@ def _priority_for(lot: Lot) -> Priority:
 
 def snap_to_increment(amount: float, increment: float = BID_INCREMENT) -> float:
     """Floor a bid ceiling onto the house's bidding grid."""
+    if (
+        isinstance(amount, bool)
+        or isinstance(increment, bool)
+        or not math.isfinite(amount)
+        or not math.isfinite(increment)
+        or increment <= 0
+    ):
+        raise ValueError("bid amount and increment must be positive finite numbers")
     return round((amount // increment) * increment, 2)
 
 
@@ -465,7 +474,12 @@ def allocate(
     spent = 0.0
     out: list[Decision] = []
     for d in priced:
-        if d.priority is Priority.SKIP:
+        if (
+            d.priority is Priority.SKIP
+            or d.needs_mechanic_ruling
+            or d.mechanic is BidMechanic.UNKNOWN
+            or d.needs_election
+        ):
             out.append(replace(d, allocated=False, auto_send=False))
             continue
         if spent + d.committed_all_in <= budget_cap:
@@ -483,9 +497,42 @@ def allocate(
             out.append(replace(d, allocated=False, auto_send=False,
                                reason=d.reason + " — over budget cap"))
     # A contingent remainder does not exist unless the primary lot comes back
-    # up. Keep it visible and human-approved without consuming the committed
-    # envelope as though both instructions were unconditional firm bids.
-    out.extend(replace(d, allocated=True, auto_send=False) for d in contingent)
+    # up. Keep it visible and human-approved without consuming firm headroom,
+    # while bounding cumulative contingent exposure (plus any allocated parent's
+    # spend, since partial choice + remainder can both win) to budget_cap.
+    firm_by_id = {d.lot_id: d for d in out}
+    contingent.sort(key=lambda d: (_PRIORITY_RANK[d.priority],
+                                   not d.operator_kept, d.committed_all_in))
+    contingent_spent = 0.0
+    for d in contingent:
+        if (
+            d.priority is Priority.SKIP
+            or d.needs_mechanic_ruling
+            or d.mechanic is BidMechanic.UNKNOWN
+            or d.needs_election
+        ):
+            out.append(replace(d, allocated=False, auto_send=False))
+            continue
+        parent_id = d.lot_id.removesuffix("-R") if d.lot_id.endswith("-R") else None
+        parent = firm_by_id.get(parent_id) if parent_id else None
+        if parent is not None and not parent.allocated:
+            out.append(replace(
+                d, allocated=False, auto_send=False,
+                reason=d.reason + " — primary lot not allocated",
+            ))
+            continue
+        parent_all_in = parent.committed_all_in if parent is not None else 0.0
+        if (
+            contingent_spent + d.committed_all_in <= budget_cap
+            and parent_all_in + contingent_spent + d.committed_all_in <= budget_cap
+        ):
+            contingent_spent = round(contingent_spent + d.committed_all_in, 2)
+            out.append(replace(d, allocated=True, auto_send=False))
+        else:
+            out.append(replace(
+                d, allocated=False, auto_send=False,
+                reason=d.reason + " — over budget cap",
+            ))
     return out + unpriced
 
 
@@ -508,12 +555,13 @@ class SheetSummary:
 def summarize(decisions: Iterable[Decision]) -> SheetSummary:
     s = SheetSummary()
     for d in decisions:
-        s.total_lots += 1
-        s.by_priority[d.priority.value] = s.by_priority.get(d.priority.value, 0) + 1
-        if d.needs_human_pricing:
-            s.needs_human_pricing += 1
-        elif d.priority is Priority.SKIP:
-            s.skipped += 1
+        if not d.speculative:
+            s.total_lots += 1
+            s.by_priority[d.priority.value] = s.by_priority.get(d.priority.value, 0) + 1
+            if d.needs_human_pricing:
+                s.needs_human_pricing += 1
+            elif d.priority is Priority.SKIP:
+                s.skipped += 1
         if d.allocated:
             if d.speculative:
                 s.contingent += 1
@@ -596,7 +644,13 @@ def remainder_opportunity(decision: Decision,
     actually a discount. A remainder bid at or above the lot's own max is not a
     bargain, it is a bug.
     """
-    if decision.max_bid is None or decision.mechanic is BidMechanic.STRAIGHT:
+    if (
+        decision.max_bid is None
+        or decision.mechanic in (BidMechanic.STRAIGHT, BidMechanic.UNKNOWN)
+        or decision.priority is Priority.SKIP
+        or decision.needs_election
+        or decision.needs_mechanic_ruling
+    ):
         return None
     taken = units_committed(decision.mechanic, decision.unit_count,
                             decision.units_wanted)
@@ -669,6 +723,11 @@ _MULT_RE = re.compile(
     rf"|(?<![\d.$])\b(\d{{1,3}})\s*(?:x|×)\s*(?=(?:the\s+)?{_UNIT_WORD}\b)",
     re.I)
 _CHOICE_RE = re.compile(r"(?:buyer'?s?|winner'?s?|bidder'?s?)[\s-]+choice|\bchoice\s+of\b", re.I)
+_CHOICE_K_OF_N_RE = re.compile(
+    r"(?:(?:buyer'?s?|winner'?s?|bidder'?s?)[\s-]+)?choice\s+of\s+"
+    r"(\d{1,3}|[a-z]+)\s+(?:out\s+)?of\s+(?:the\s+)?(\d{1,3}|[a-z]+)\b",
+    re.I,
+)
 _CHOICE_COUNT_RE = re.compile(
     r"(?:buyer'?s?|winner'?s?|bidder'?s?)[\s-]+choice\s+of\s+"
     r"(\d{1,3}|[a-z]+)\b",
@@ -679,21 +738,36 @@ _STRAIGHT_RE = re.compile(
     r"\bas\s+a\s+unit\b|\bcombined\b|\bgoes\s+as\s+a\s+unit\b", re.I)
 _TAKE_RE = re.compile(r"\btak(?:e|ing)\s+(?:all\s+)?(\d{1,3}|[a-z]+)\b", re.I)
 _MAXQTY_RE = re.compile(r"max(?:imum)?\s+quantity\s+is\s+(\d{1,3}|[a-z]+)", re.I)
-_ALL_RE = re.compile(r"\ball\s+(\d{1,3}|[a-z]+)\b", re.I)
+_ALL_RE = re.compile(
+    r"\ball\s+(\d{1,3}|[a-z]+)\b(?![\s-]*(?:kt|karats?|k\b|oz|lbs?|inch(?:es)?|in\b|ft|cm|mm|%))",
+    re.I,
+)
 # A ruling that names a mechanic in order to REJECT it settles nothing, and
 # reading it as agreement is the worst available direction. Negation must scope
 # the mechanic phrase itself: "do NOT limit me to one unit" affirms taking all
 # units and must not be rejected merely because the sentence contains "not".
 _MECHANIC_PHRASE = (
-    r"(?:an?\s+)?(?:x\s*\d{1,3}(?:\s+bid)?|times[\s-]+(?:the[\s-]+)?money|"
-    r"(?:buyer'?s?|winner'?s?|bidder'?s?)[\s-]+choice|choice\s+of|"
-    r"single\s+lot|one\s+lot|all\s+together|as\s+one)"
+    r"(?:an?\s+)?(?:"
+    r"[x×]\s*\d{1,3}(?:\s+bid)?|"
+    r"\d{1,3}\s*[x×](?:\s+(?:the\s+)?money|\s+bid)?|"
+    r"times[\s-]+(?:the[\s-]+)?money|"
+    r"(?:buyer'?s?|winner'?s?|bidder'?s?)[\s-]+choice(?:\s+lot)?|"
+    r"choice\s+(?:of|lot)|"
+    r"single\s+lot|one\s+lot|all\s+together|as\s+one|"
+    r"as\s+a\s+unit|goes\s+as\s+a\s+unit|combined"
+    r")"
 )
+_NEG_VERB = r"(?:(?:go(?:es|ing)?|sell(?:s|ing)?|sold|priced|billed)\s+)?(?:as\s+)?"
 _NEGATED_MECHANIC_RE = re.compile(
-    rf"^\s*no\s*,?\s+(?:that\s+is\s+)?(?:sold\s+)?(?:as\s+)?{_MECHANIC_PHRASE}"
-    rf"|\b(?:not|isn'?t|aren'?t|won'?t|no\s+longer|never)\s+"
-    rf"(?:sold\s+)?(?:as\s+)?{_MECHANIC_PHRASE}"
+    rf"^\s*no\s*,?\s+(?:(?:that|this|it|they)\s+(?:is|are|do|does)\s+)?{_NEG_VERB}{_MECHANIC_PHRASE}"
+    rf"|\b(?:not|isn'?t|aren'?t|won'?t|don'?t|doesn'?t|didn'?t|can'?t|cannot|no\s+longer|never|rather\s+than|instead\s+of|unlike)\s+"
+    rf"{_NEG_VERB}{_MECHANIC_PHRASE}"
     rf"|{_MECHANIC_PHRASE}\s+(?:is|are|was|were)\s+not\b",
+    re.I,
+)
+_CHOICE_OR_TTM_RE = re.compile(
+    r"\b(?:(?:buyer'?s?|winner'?s?|bidder'?s?)[\s-]+)?choice\s+or\s+times[\s-]+(?:the[\s-]+)?money\b"
+    r"|\btimes[\s-]+(?:the[\s-]+)?money\s+or\s+(?:(?:buyer'?s?|winner'?s?|bidder'?s?)[\s-]+)?choice\b",
     re.I,
 )
 _OF_THEM_RE = re.compile(r"\b(\d{1,3}|[a-z]+)\s+of\s+(?:them|these|those)\b", re.I)
@@ -731,7 +805,7 @@ def mechanic_from_ruling(
     if not text:
         return unknown
 
-    if _NEGATED_MECHANIC_RE.search(text):
+    if "?" in text or _NEGATED_MECHANIC_RE.search(text) or _CHOICE_OR_TTM_RE.search(text):
         return unknown
 
     # Dimensions and label chains out first (see _DIMENSION_CHAIN above), so
@@ -782,8 +856,10 @@ def mechanic_from_ruling(
     if says_straight:
         return (BidMechanic.STRAIGHT, 1, 1)
 
-    if says_ttm and says_choice and mult is None:
-        says_ttm = False        # no multiplier stated: read it as the elective form
+    if says_ttm and says_choice:
+        if mult is not None:
+            return unknown
+        says_ttm = False        # slash category label with no multiplier: elective form
 
     if says_ttm:
         n = mult
@@ -810,16 +886,29 @@ def mechanic_from_ruling(
         return (BidMechanic.TIMES_THE_MONEY, n, wanted)
 
     if says_choice:
-        n = units_available if units_available and units_available > 0 else mult
-        if n is None and (choice_count := _CHOICE_COUNT_RE.search(text)):
-            n = _as_count(choice_count.group(1))
-            if n is None:
+        if (k_of_n := _CHOICE_K_OF_N_RE.search(text)):
+            k_val = _as_count(k_of_n.group(1))
+            n_val = _as_count(k_of_n.group(2))
+            if k_val is None or n_val is None or n_val < 2 or k_val > n_val:
                 return unknown
-        if n is None:
-            for pat in (_ALL_RE, _OF_THEM_RE):
-                hit = pat.search(text)
-                if hit and (n := _as_count(hit.group(1))) is not None:
-                    break
+            n = n_val
+            if wanted is None:
+                wanted = k_val
+        else:
+            n = units_available if units_available and units_available > 1 else None
+            if n is None and (choice_count := _CHOICE_COUNT_RE.search(text)):
+                n = _as_count(choice_count.group(1))
+                if n is None or n < 2:
+                    return unknown
+            if n is None:
+                for pat in (_ALL_RE, _OF_THEM_RE):
+                    hit = pat.search(text)
+                    if hit:
+                        cand = _as_count(hit.group(1))
+                        if cand is None or cand < 2:
+                            return unknown
+                        n = cand
+                        break
         if n is None:
             # Never fabricate 1. price_lot only divides the group comp down to
             # one unit when unit_count > 1, so an invented 1 makes the WHOLE

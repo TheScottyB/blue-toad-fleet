@@ -438,22 +438,26 @@ class AppraisalEngine:
         if not prose:
             return None
 
-        price = None
-        try:
-            extracted = self._generate(
-                stage="grounding.extract",
-                model=self.appraisal_model,
-                contents=["Read the completed-sale figures out of this research note. "
-                          "Report only what it states; invent nothing.\n\n" + prose],
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                    response_schema=to_vertex(PRICE_SCHEMA),
-                    temperature=0.0,
+        extracted = self._generate(
+            stage="grounding.extract",
+            model=self.appraisal_model,
+            contents=["Read the completed-sale USD figures out of this research note. "
+                      "Report only what it states; invent nothing.\n\n" + prose],
+            config=types.GenerateContentConfig(
+                system_instruction=(
+                    "Extract only USD completed-sale price figures explicitly stated "
+                    "in the supplied research note. Never invent figures or treat "
+                    "non-USD currencies as USD."
                 ),
-            )
-            payload = json.loads(extracted.text)
+                response_mime_type="application/json",
+                response_schema=to_vertex(PRICE_SCHEMA),
+                temperature=0.0,
+            ),
+        )
+        try:
+            payload = json.loads(extracted.text or "")
             price = parse_price_payload(payload, sources)
-        except Exception:
+        except (TypeError, ValueError):
             price = None
         return {"prose": prose, "sources": sources, "price": price}
 

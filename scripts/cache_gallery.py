@@ -20,6 +20,7 @@ import re
 import sys
 import tempfile
 import time
+import urllib.parse
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
@@ -103,6 +104,17 @@ def fetch_photopanel_html(listing_id: str, feed: str = "129") -> str:
     with urllib.request.urlopen(req, timeout=20) as resp:
         return resp.read().decode("utf-8", errors="ignore")
 
+def _read_bounded(resp, max_bytes: int) -> bytes:
+    """Read at most `max_bytes` from `resp`, falling back when test stubs omit size args."""
+    try:
+        data = resp.read(max_bytes + 1)
+    except TypeError:
+        data = resp.read()
+    if len(data) > max_bytes:
+        raise ValueError("served image exceeded maximum allowed size")
+    return data
+
+
 def download_image(
     url: str,
     dest_path: Path,
@@ -110,14 +122,25 @@ def download_image(
     *,
     referer: str = "https://www.auctionzip.com/",
     opener=urllib.request.urlopen,
+    allowed_hosts: frozenset[str] | None = None,
+    max_bytes: int | None = None,
 ) -> DownloadResult:
+    if url.startswith("//"):
+        url = "https:" + url
+
+    if allowed_hosts is not None:
+        if ".." in dest_path.parts:
+            return DownloadResult(False, f"unsafe destination path: {dest_path}")
+        parsed = urllib.parse.urlsplit(url)
+        if parsed.scheme != "https" or (parsed.hostname or "").lower() not in allowed_hosts:
+            return DownloadResult(
+                False, f"invalid image URL (disallowed scheme or host): {url!r}"
+            )
+
     if dest_path.exists() and dest_path.stat().st_size > 0:
         existing = _result(dest_path.read_bytes())
         if existing.ok:
             return existing
-
-    if url.startswith("//"):
-        url = "https:" + url
 
     req = urllib.request.Request(
         url,
@@ -129,11 +152,22 @@ def download_image(
     for attempt in range(max_retries):
         try:
             with opener(req, timeout=15) as resp:
+                if allowed_hosts is not None:
+                    final_url = getattr(resp, "geturl", lambda: None)()
+                    if isinstance(final_url, str):
+                        final_parsed = urllib.parse.urlsplit(final_url)
+                        if (
+                            final_parsed.scheme != "https"
+                            or (final_parsed.hostname or "").lower() not in allowed_hosts
+                        ):
+                            raise ValueError(
+                                f"invalid redirected image URL (disallowed scheme or host): {final_url!r}"
+                            )
                 content_type = _normalise_mime(str(resp.headers.get("Content-Type") or ""))
                 if not content_type.casefold().startswith("image/"):
                     raise ValueError(
                         f"response content type is {content_type or 'missing'}, not image/*")
-                data = resp.read()
+                data = _read_bounded(resp, max_bytes) if max_bytes is not None else resp.read()
                 result = _result(data)
                 if not result.ok:
                     raise ValueError(result.error)

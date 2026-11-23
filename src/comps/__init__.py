@@ -93,7 +93,7 @@ class NonAnnualWindow(RuntimeError):
 _CHALLENGE = re.compile(
     r"pardon our interruption|security measure|captcha|verify you are human"
     r"|sign in or register|<html", re.I)
-_MONEY = re.compile(r"\$\s*([\d,]+(?:\.\d{1,2})?)")
+_MONEY = re.compile(r"(?:(?<![A-Za-z])US\s*)?(?<![A-Za-z])\$\s*(\d[\d,]*(?:\.\d{1,2})?)")
 _ZERO_MSG = re.compile(r"No (?:sold|active) results found", re.I)
 _DATE_FMT = "%b %d, %Y"
 
@@ -310,8 +310,10 @@ def _sold_row(r: dict) -> SoldRow | None:
         qty=max(1, _int(_text(r.get("itemssold"))) or 1),
         date=_text(r.get("datelastsold")),
         item_id=_get(listing, "itemId", "value"),
-        shipping=_shipping(_text(_get(r, "avgshipping", "avgshipping"))
-                           or _text(_get(r, "avgsalesprice", "averageshipping"))),
+        shipping=(
+            s if (s := _shipping(_text(_get(r, "avgshipping", "avgshipping")))) is not None
+            else _shipping(_text(_get(r, "avgsalesprice", "averageshipping")))
+        ),
         total_sales=money(_text(r.get("totalsales"))),
         image=_image(listing),
     )
@@ -370,21 +372,29 @@ def merge_sold_pages(first: SoldPage, later: list[SoldPage]) -> SoldPage:
 def parse_active_response(body: str) -> ActivePage:
     modules = split_modules(body)
     results = _module(modules, "SearchResultsModule")
+    if results is None:
+        raise SuspectEmpty(
+            "active response has no SearchResultsModule — the request was "
+            "malformed or the API changed shape, NOT a real zero")
     agg = aggregates(modules)
     # The denominator comes from eBay's own aggregate, never the row count:
     # rows are capped by `limit`, the aggregate is the whole market.
     total = _int(agg.get("Total active listings"))
-    rows = [row for row in map(_active_row, (results or {}).get("results") or [])
+    rows = [row for row in map(_active_row, results.get("results") or [])
             if row]
-    if total is None and not rows:
+    if not rows:
         if any(_ZERO_MSG.search(m) for m in _messages(modules)):
             return ActivePage(total_active=0)
         raise SuspectEmpty(
-            "no 'Total active listings' figure and no rows — malformed "
-            "response, not a real zero")
+            "zero active rows and no 'No active results found' message — "
+            "unloaded or malformed response, NOT a real zero")
+    if total is None or total < len(rows):
+        raise SuspectEmpty(
+            "missing or inconsistent 'Total active listings' figure — "
+            "refusing to substitute the capped row count")
     low, high = money_range(agg.get("Listing price range"))
     return ActivePage(
-        total_active=total if total is not None else len(rows),
+        total_active=total,
         rows=rows,
         avg_price=money(agg.get("Avg listing price")),
         price_low=low, price_high=high,

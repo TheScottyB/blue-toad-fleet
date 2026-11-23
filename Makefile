@@ -21,9 +21,9 @@ test:             ## Run the unit suite
 
 release-check:    ## Non-mutating full release gate; writes docs/evidence/RELEASE.md
 	mkdir -p artifacts/release docs/evidence
-	$(PYTHON) -m ruff check scripts/run_vertex_pipeline.py
+	$(PYTHON) -m ruff check src/ scripts/
 	$(PYTEST) tests/ -q --junitxml=artifacts/release/pytest.xml
-	$(PYTHON) -m scripts.build_release_report --junitxml artifacts/release/pytest.xml --output docs/evidence/RELEASE.md
+	. ./infra/gcloud_ipv4.sh && $(PYTHON) -m scripts.build_release_report --junitxml artifacts/release/pytest.xml --output docs/evidence/RELEASE.md
 
 clean:
 	find . -name __pycache__ -type d -exec rm -rf {} + 2>/dev/null || true
