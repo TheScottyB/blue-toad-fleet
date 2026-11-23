@@ -144,3 +144,12 @@ still refuses to publish.
 * **Total Committed Max: $275.00** | **All-In (15%): $316.25** (prior sheet: $260.00 / $299.00).
 * Benchmark used: 0.38 resale factor (operator-specified this cycle; ADR-006 codifies 0.375).
 * Artifacts: `data/aug22_absentee_bid_email_REVISED.txt`.
+
+---
+
+## 6. Session Close-Out & Archive Snapshot (2026-11-22)
+
+* **Security & Intake Consolidation:** Merged `security_audit_system` (`c5cc585`) onto `master` alongside the EstateSales.NET cacher refactor (`bb66ace`, which retired `src/intake/estatesales.py` into `scripts/cache_estatesales.py`). Ported the C-02 SSRF allowlists (`picturescdn.estatesales.net`, `estatesales.net`), redirected-host checks, path-confinement guards, and bounded HTML/image read limits (`16 MiB` / `32 MiB`) into `scripts/cache_estatesales.py` and `scripts/cache_gallery.py`.
+* **Historical September Data Archived:** Committed the Sep 4 refreshed `data/sep5_gallery_4160519/manifest.json` (`410` photos / `294` captioned; `docs/DEVPOST.md` retains its Aug 29 submitted `414`-photo snapshot) and Sep 18 / Sep 25 Seller Hub comp PNGs (`data/comps/2026-09-18/`, `data/comps/2026-09-25/`), removing the empty `data/comps/__probe_nonexistent__/` directory.
+* **Cloud Run Parity Hold:** Live Cloud Run (`https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app`) remains intentionally pinned at commit `0a6e85a` to preserve the Aug 29 Devpost submission parity release (verified `200 OK` / `healthy` on 2026-11-22). Any future deploy from `master` will ship the `c5cc585` security hardening.
+* **Archive Tag & Branch Hygiene:** Tagged `archive-2026-11-22` on `master`, removed merged worktree `security_audit_system` and stale branches/refs (`claude/sep5-gallery-4160519`, `origin/feat/puzzle-solver`, `refs/remotes/sep5/master`).
