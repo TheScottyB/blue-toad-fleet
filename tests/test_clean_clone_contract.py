@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import os
 import subprocess
-import sys
 from pathlib import Path
 
 
@@ -26,24 +25,6 @@ def test_required_photo_can_be_readded_without_force(tmp_path):
     assert removed.returncode == 0, removed.stderr
     added = _git(index, "add", "--", FIXTURE)
     assert added.returncode == 0, added.stderr
-
-
-def test_doc_guard_collects_from_a_non_root_directory(tmp_path):
-    result = subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "pytest",
-            str(ROOT / "tests/test_docs_match_the_sheet.py"),
-            "--collect-only",
-            "-q",
-        ],
-        cwd=tmp_path,
-        capture_output=True,
-        text=True,
-    )
-    assert result.returncode == 0, result.stderr
-    assert "test_docs_match_the_sheet.py:" in result.stdout
 
 
 def test_release_code_has_no_personal_absolute_paths():

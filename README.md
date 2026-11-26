@@ -7,7 +7,7 @@
 
   [![Google Cloud Run](https://img.shields.io/badge/Google%20Cloud%20Run-Live%20Service-34d399?style=flat-square&logo=googlecloud)](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app)
   [![Vertex AI](https://img.shields.io/badge/Vertex%20AI-Gemini%203.6%20Flash-a78bfa?style=flat-square&logo=google)](https://cloud.google.com/vertex-ai)
-  [![Unit Tests](https://img.shields.io/badge/Unit%20Tests-release--gated-38bdf8?style=flat-square&logo=pytest)](https://github.com/TheScottyB/blue-toad-fleet)
+  [![Unit Tests](https://img.shields.io/badge/Unit%20Tests-pytest-38bdf8?style=flat-square&logo=pytest)](https://github.com/TheScottyB/blue-toad-fleet)
   [![License: MIT](https://img.shields.io/badge/License-MIT-fbbf24?style=flat-square)](LICENSE)
 </div>
 
@@ -15,13 +15,7 @@
 
 ## Public Google Cloud Endpoint (Project: `threebatdrone-prod-420`)
 
-The endpoint exists, but repository revision parity is a release-gated fact. Do
-not treat the public service as evidence for this working tree: `make release-check`
-records the audited commit, tree state, and gate results in `docs/evidence/RELEASE.md`,
-and compares the audited commit against the deployed revision — the deploy stamps
-`GIT_COMMIT` into the service, `/health` reports it, and the release report records
-the comparison as MATCH, MISMATCH, or UNVERIFIED (an unreachable or unstamped
-deployment is UNVERIFIED, never a pass).
+The Cloud Run service exposes the Gate Console and sourcing API. `/health` reports the `git_commit` stamped into the active revision at deploy time.
 
 * **Live Gate Console & UI:** [https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app)
 * **Live Health Endpoint:** [https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/health](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/health)
@@ -30,14 +24,6 @@ deployment is UNVERIFIED, never a pass).
 * **Live Question Queue:** [https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/api/questions](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/api/questions)
 * **Live Absentee Email Generator:** [https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/api/email](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/api/email)
 * **Google spend / audit trail:** [https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/api/audit](https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app/api/audit)
-
----
-
-## Demo Video
-
-[`media/blue_toad_fleet_demo.mp4`](media/blue_toad_fleet_demo.mp4) — a narrated, four-beat walkthrough covering the commercial problem, evidence-backed photo grouping, the Gate Console, and Cloud Run/test-suite proof. The checked-in cut was assembled 2026-08-29 from sealed facts (artifact manifest `333ea63`); it is current submission evidence while `make video-verify` passes against it (~3:59, under the 4:00 cap). See [`docs/SUBMISSION_CLAIMS.md`](docs/SUBMISSION_CLAIMS.md).
-
-The rebuild workflow is declared in [`media/video_manifest.json`](media/video_manifest.json). See [`docs/VIDEO_WORKFLOW.md`](docs/VIDEO_WORKFLOW.md) before replacing the MP4. `make video-verify` checks dimensions, duration, size, and audio against the declared facts snapshot without changing the file (run `make video-prepare` first to produce that snapshot).
 
 ---
 
@@ -170,8 +156,7 @@ The checked-in August 22 fixture computes **46 allocated bids ($520.00 max)**
 and **$598.00** all-in exposure under the operator's $600 cap, from the
 provenance-sealed pipeline state (415 decision rows, resealed 2026-08-29 with
 full appraisal coverage). The owner's nine kept lots — the sheet that actually
-went to Blue Toad, $275.00/$316.25, archived with its mailbox receipt in
-`docs/evidence/` — seat first by design; the allocator fills 37 more lots
+went to Blue Toad, $275.00/$316.25 — seat first by design; the allocator fills 37 more lots
 around them. The 46 carry **$1,473.81–$3,293.67 estimated gross resale**
 (**2.46–5.51x** all-in cost before selling expenses), derived from the sealed
 decisions' own comp provenance. The sent sheet remains the only artifact ever
@@ -226,13 +211,10 @@ blue-toad-fleet/
 │   ├── run_demo.py             # Pure decision pipeline demo
 │   ├── run_cycles.py           # 2-cycle cross-cycle learning demo
 │   └── build_console.py        # Static HTML Gate Console compiler
-├── docs/                       # Architecture diagrams, Devpost text, screenshots
+├── docs/                       # Architecture diagrams, specs, screenshots
 │   ├── architecture_diagram.png
 │   ├── app_icon.png
-│   ├── DEVPOST.md              # Complete Devpost submission story
 │   ├── PLAYBOOK-ebay-velocity.md  # Measured Seller Hub failures behind src/comps guards
-│   ├── VIDEO_SCRIPT.md         # 4-minute video walkthrough script
-│   ├── VIDEO_WORKFLOW.md       # Reproducible evidence-backed media workflow
 │   └── screenshots/            # High-resolution UI captures
 ├── infra/                      # Cloud Run deployment scripts
 │   ├── deploy.sh               # Deploy service plus cycle infrastructure
@@ -263,10 +245,9 @@ blue-toad-fleet/
 
 ---
 
-## Disclosure & Solo Eligibility
+## Project History & Security
 
-All hackathon submission code (through commit `0a6e85a`) was written between August 18 and August 31, 2026; subsequent commits on `master` refine the eBay Seller Hub JSON API comp connector and post-audit hardening.
+Blue Toad Fleet originated during the August 2026 All Things Agentic Hackathon (through commit `0a6e85a`). The complete hackathon submission snapshot is preserved on tag `archive-2026-11-22`; subsequent commits on `master` refine the eBay Seller Hub JSON API comp connector and post-audit security hardening (`c5cc585`).
 
-* **Eligibility:** Built solo, in 13 days, by one person.
-* **Pre-existing Context:** The bid math and workflow implement the documented sourcing rules of Richmond General (Richmond, IL). Historical data references real sales receipts and auction manifests from Blue Toad Auctions (Genoa City, WI).
+* **Operational Context:** The bid math and workflow implement the documented sourcing rules of Richmond General (Richmond, IL). Historical data references real sales receipts and auction manifests from Blue Toad Auctions (Genoa City, WI).
 * **Zero Leaked Secrets:** All API keys and GCP service credentials are managed via environment variables and Secret Manager; no private tokens are stored in this repository.

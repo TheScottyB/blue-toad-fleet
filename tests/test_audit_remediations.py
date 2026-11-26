@@ -18,9 +18,7 @@ from scripts.cache_estatesales import (
     parse_sale_url,
 )
 from scripts.cache_gallery import download_image
-from scripts.collect_submission_facts import _publication_facts, _test_counts
 from scripts.import_ebay_absorption import import_capture
-from scripts.video_common import VideoBuildError
 from src import server as server_mod
 from src.appraiser.containers import price_container_evidence
 from src.appraiser.engine import AppraisalEngine
@@ -492,7 +490,7 @@ def test_h05_grounded_batch_preserves_previously_cached_rows_outside_min_fit(tmp
     assert "BT-010" in saved
 
 
-# --- Phase 4: Seller Hub Comps, Scrapers & Release Hygiene (C-02, H-04, H-07, H-08, H-11) ---
+# --- Phase 4: Seller Hub Comps, Scrapers & Release Hygiene (C-02, H-04, H-07, H-08) ---
 
 def test_c02_estatesales_blocks_ssrf_and_path_traversal(tmp_path):
     with pytest.raises(ValueError, match="expected"):
@@ -663,29 +661,3 @@ def test_h08_absorption_evidence_handles_zero_sales_and_rejects_incomplete_subst
         (tmp_path / name).write_bytes((base_capture.parent / name).read_bytes())
     with pytest.raises(ValueError, match="pagination"):
         import_capture(cap_file, reviewer="owner")
-
-
-def test_h11_publication_facts_verifies_pipeline_state_hash_and_nonzero_passed(tmp_path):
-    gallery = tmp_path / "manifest.json"
-    gallery.write_text('{"photos": []}')
-    state = tmp_path / "pipeline_state.json"
-    state.write_text('{"tampered": true}')
-    art = tmp_path / "artifact_manifest.json"
-    import hashlib
-    art.write_text(
-        json.dumps({
-            "schema_version": 2,
-            "source_manifest_sha256": hashlib.sha256(gallery.read_bytes()).hexdigest(),
-            "artifacts": {"pipeline_state.json": {"sha256": "0" * 64}},
-        })
-    )
-    with pytest.raises(VideoBuildError, match="pipeline_state.json"):
-        _publication_facts(
-            {"sources": {"artifact_manifest": str(art)}},
-            {"gallery_manifest": gallery, "pipeline_state": state},
-        )
-
-    all_skipped = tmp_path / "skipped.xml"
-    all_skipped.write_text('<testsuite tests="5" failures="0" errors="0" skipped="5"/>')
-    with pytest.raises(VideoBuildError, match="zero-passed"):
-        _test_counts(all_skipped)

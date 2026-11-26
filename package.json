@@ -3,8 +3,7 @@
   "version": "2.0.0",
   "type": "module",
   "scripts": {
-    "screenshots": "node scripts/capture_screenshots.mjs",
-    "gallery": "node scripts/capture_raw_gallery.mjs"
+    "screenshots": "node scripts/capture_screenshots.mjs"
   },
   "devDependencies": {
     "playwright": "^1.42.0"

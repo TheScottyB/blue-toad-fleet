@@ -2,7 +2,7 @@
 
 An engineering record of operational principles and architecture decisions for
 the **Blue Toad Fleet** supervised sourcing system. Historical observations are
-not release evidence unless they are linked from `docs/SUBMISSION_CLAIMS.md`.
+kept below for provenance alongside current architecture records.
 
 ---
 
@@ -69,7 +69,7 @@ not release evidence unless they are linked from `docs/SUBMISSION_CLAIMS.md`.
   $$\text{Target Max Bid} = \text{Low-Mid Comp} \times 0.375 \times (1.0 - \text{Condition Penalty})$$
   $$\text{All-In Cost} = \text{Max Bid} \times (1.0 + \text{Absentee Fee})$$
   * Enforces standard **$5.00 bidding increments** (up to $100) and the mandatory **15% absentee buyer fee**.
-  * Backed by the release-gated offline pytest suite (run `make test` for the current count; see `docs/SUBMISSION_CLAIMS.md`).
+  * Backed by the release-gated offline pytest suite (run `make test` for the current count).
 
 ---
 
@@ -99,8 +99,6 @@ still refuses to publish.
   The only artifact ever sent.
 * **Full-coverage allocation:** 46 lots; $520.00 max / $598.00 all-in under $600.
   Sealed output: `data/aug22_gallery_4160518/artifact_manifest.json`.
-* **Video:** `media/blue_toad_fleet_demo.mp4` is current submission evidence while
-  `make video-verify` passes. Stills in `docs/screenshots/` remain historical.
 
 ---
 
@@ -153,3 +151,10 @@ still refuses to publish.
 * **Historical September Data Archived:** Committed the Sep 4 refreshed `data/sep5_gallery_4160519/manifest.json` (`410` photos / `294` captioned; `docs/DEVPOST.md` retains its Aug 29 submitted `414`-photo snapshot) and Sep 18 / Sep 25 Seller Hub comp PNGs (`data/comps/2026-09-18/`, `data/comps/2026-09-25/`), removing the empty `data/comps/__probe_nonexistent__/` directory.
 * **Cloud Run Parity Hold:** Live Cloud Run (`https://blue-toad-fleet-u5gvrqwvua-uc.a.run.app`) remains intentionally pinned at commit `0a6e85a` to preserve the Aug 29 Devpost submission parity release (verified `200 OK` / `healthy` on 2026-11-22). Any future deploy from `master` will ship the `c5cc585` security hardening.
 * **Archive Tag & Branch Hygiene:** Tagged `archive-2026-11-22` on `master`, removed merged worktree `security_audit_system` and stale branches/refs (`claude/sep5-gallery-4160519`, `origin/feat/puzzle-solver`, `refs/remotes/sep5/master`).
+
+---
+
+## 7. Post-Hackathon Unlock & Cleanup (2026-11-26)
+
+* **Hackathon Scaffolding Removed:** With the hackathon snapshot preserved at tag `archive-2026-11-22`, removed submission-only media, video scripts, Devpost/submission docs, probe artifacts, and judge-copy lock tests from `master` for ongoing operational development.
+* **Cloud Run Parity Hold Lifted:** Lifted the `0a6e85a` parity hold and redeployed `master` to Cloud Run (`blue-toad-fleet`, `us-central1`) so the live service ships `c5cc585` security hardening and current operational code.

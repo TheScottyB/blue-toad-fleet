@@ -54,12 +54,7 @@ SEARCH_ROOTS = (Path("src"), Path("scripts"), Path("demo"))
 CANONICAL = Path("src/bidmath")
 
 # Files whose numbers are not money. Kept explicit and short.
-EXEMPT = {
-    Path("scripts/generate_architecture_diagram.py"),   # matplotlib geometry
-    Path("scripts/assemble_final.py"),                  # ffmpeg filter graph
-    Path("scripts/build_video.py"),                     # ffmpeg / timing
-    Path("scripts/make_title_cards.mjs"),
-}
+EXEMPT: set[Path] = set()
 
 
 def _python_files():

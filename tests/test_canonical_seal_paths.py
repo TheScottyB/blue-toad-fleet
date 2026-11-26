@@ -4,7 +4,6 @@ artifacts on their protected historical paths. This exact drift — cache lookup
 following --output-dir, state sealing where the facts collector never looks —
 burned two aborted full-price runs on 2026-08-29."""
 
-import json
 from pathlib import Path
 
 from scripts.run_vertex_pipeline import (
@@ -16,7 +15,6 @@ from scripts.run_vertex_pipeline import (
 )
 from src.cycles.ownership import PROTECTED_ARTIFACT_OWNERS
 
-ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = Path("data/aug22_gallery_4160518")
 
 
@@ -31,11 +29,8 @@ def test_canonical_invocation_agrees_three_ways():
     assert pipeline_cache_dir(DATA_DIR, output_dir) == DATA_DIR
     assert pipeline_cache_dir(DATA_DIR, Path("somewhere/else")) == DATA_DIR
 
-    # 2. The state seals exactly where the facts collector reads.
-    manifest = json.loads((ROOT / "media" / "video_manifest.json").read_text())
-    assert pipeline_state_path(DATA_DIR, output_path, explicit) == Path(
-        manifest["sources"]["pipeline_state"]
-    )
+    # 2. The state seals to the canonical pipeline_state.json under the fixture dir.
+    assert pipeline_state_path(DATA_DIR, output_path, explicit) == DATA_DIR / "pipeline_state.json"
 
     # 3. The money artifacts stay on their protected historical paths,
     #    refereed by the ownership declaration itself.

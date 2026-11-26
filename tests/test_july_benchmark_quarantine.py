@@ -29,7 +29,7 @@ def test_judged_copy_does_not_cite_corrupt_benchmark_figures_or_artifact():
         "2,196.50",
         "BlueToad_2026-07-11_Benchmark_Comparison.xlsx",
     )
-    for relative in ("README.md", "docs/DEVPOST.md"):
+    for relative in ("README.md",):
         text = (ROOT / relative).read_text()
         for claim in forbidden:
             assert claim not in text, f"{relative} still presents quarantined {claim}"

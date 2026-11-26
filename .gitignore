@@ -26,12 +26,9 @@ data/**/images/*
 !data/aug22_gallery_4160518/images/087_838422448.jpg
 !data/aug22_gallery_4160518/images/181_838424282.jpg
 !data/aug22_gallery_4160518/images/235_838425392.jpg
-media/raw/
-media/main.mp4
-media/open.mp4
-media/close.mp4
-media/list.txt
-media/beat*.mp4
+.DS_Store
+.ruff_cache/
+.hypothesis/
 node_modules/
 .agents/
 .claude/
@@ -43,4 +40,3 @@ pyrightconfig.json
 data/dryruns/
 data/**/estatesales_images/
 data/memory/
-artifacts/release/

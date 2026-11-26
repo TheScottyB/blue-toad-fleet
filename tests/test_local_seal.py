@@ -11,7 +11,6 @@ import hashlib
 import json
 from pathlib import Path
 
-from scripts.collect_submission_facts import _publication_facts
 from scripts.seal_aug22_artifacts import seal_cycle_outputs
 from src.cycles.model import CycleRequest
 
@@ -57,14 +56,6 @@ def test_seal_runs_the_real_publisher_and_collect_accepts_it(tmp_path):
     assert exported["source_manifest_sha256"] == hashlib.sha256(
         manifest_path.read_bytes()).hexdigest()
     assert "pipeline_state.json" in exported["artifacts"]
-
-    publication = _publication_facts(
-        {"sources": {"gallery_manifest": str(manifest_path),
-                     "artifact_manifest": str(tmp_path / "artifact_manifest.json")}},
-        {"gallery_manifest": manifest_path},
-    )
-    assert publication["release_eligible"] is True
-    assert publication["status"] == "published"
 
 
 def test_seal_is_idempotent_for_identical_outputs(tmp_path):
